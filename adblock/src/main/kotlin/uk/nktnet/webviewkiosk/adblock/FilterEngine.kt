@@ -48,6 +48,8 @@ enum class BlockingResponse(
     EMPTY_VAST4("noop-vast4.xml", "text/xml"),
     EMPTY_VMAP("noop-vmap1.xml", "text/xml"),
     TRANSPARENT_3X2_PNG("3x2.png", "image/png"),
+    GOOGLE_IMA("google-ima.js", "application/javascript"),
+    PIANO_ANALYTICS("piano-analytics.js", "application/javascript"),
 }
 
 enum class RuleLoadStage(val description: String) {
@@ -72,6 +74,7 @@ data class CosmeticProcedure(
     val upwardSelector: String? = null,
     val textSelector: String? = null,
     val textPattern: Boolean = false,
+    val media: String? = null,
 )
 
 /** Trust is assigned by the subscription loader, never by text inside a list. */

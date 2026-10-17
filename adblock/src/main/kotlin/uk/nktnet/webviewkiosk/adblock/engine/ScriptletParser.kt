@@ -143,6 +143,9 @@ internal object ScriptletParser {
         if (arguments.any { it.length > maxLength || it.any(Char::isISOControl) }) {
             return null
         }
+        if (type == ScriptletType.PREVENT_ADD_EVENT_LISTENER) {
+            return listener(arguments)
+        }
         if (type in JsonEditing.types) {
             return JsonEditing.validated(type, arguments)
         }
@@ -228,6 +231,60 @@ internal object ScriptletParser {
         return ScriptletInstruction(type, args.toList())
     }
 
+    private fun listener(args: List<String>): ScriptletInstruction? {
+        if (args.size !in setOf(1, 2, 4, 6, 8)) {
+            return null
+        }
+        val event = args[0]
+        val callback = args.getOrElse(1) { "" }
+        if (
+            (event.isEmpty() && callback.isEmpty()) ||
+                !pattern(event) ||
+                !pattern(callback)
+        ) {
+            return null
+        }
+        val options = args.drop(2).chunked(2)
+        if (
+            options.map { it[0] }.distinct().size != options.size ||
+                options.any { (key, value) ->
+                    when (key) {
+                        "runAt" ->
+                            value !in setOf("", "loading", "interactive", "complete")
+                        "protect" -> value !in setOf("", "0", "1")
+                        "elements" ->
+                            value.isNotEmpty() &&
+                                value !in setOf("window", "document") &&
+                                (!AdditionalScriptlets.selector(value) ||
+                                    ":scope" in value)
+                        else -> true
+                    }
+                }
+        ) {
+            return null
+        }
+        val values = options.associate { it[0] to it[1] }
+        val stage =
+            values["runAt"].orEmpty().takeUnless { it == "loading" }.orEmpty()
+        val elements = values["elements"].orEmpty()
+        val protect =
+            if (values["protect"] == "1") {
+                "1"
+            } else {
+                ""
+            }
+        val canonical = listOf(event, callback)
+        return ScriptletInstruction(
+            ScriptletType.PREVENT_ADD_EVENT_LISTENER,
+            if (stage.isEmpty() && elements.isEmpty() && protect.isEmpty()) {
+                canonical
+            } else {
+                canonical +
+                    listOf("runAt", stage, "elements", elements, "protect", protect)
+            },
+        )
+    }
+
     /**
      * uBO quotes whole arguments; unquoted quotes inside patterns remain literal.
      */
@@ -295,6 +352,10 @@ internal object ScriptletParser {
                         name == "trusted-set-cookie-reload"
                 ) {
                     fieldLimit = CookieScriptlets.MAX_ARGUMENTS + 1
+                } else if (
+                    aliases[name] == ScriptletType.PREVENT_ADD_EVENT_LISTENER
+                ) {
+                    fieldLimit = 9
                 }
             }
             if (result.size > fieldLimit) {

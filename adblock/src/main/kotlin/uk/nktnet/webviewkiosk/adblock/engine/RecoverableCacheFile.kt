@@ -2,7 +2,9 @@ package uk.nktnet.webviewkiosk.adblock.engine
 
 import java.io.File
 import java.io.FileOutputStream
+import java.io.FilterOutputStream
 import java.io.IOException
+import java.io.OutputStream
 
 /** AtomicFile-style rollback without introducing Android into the JVM engine. */
 internal class RecoverableCacheFile(private val file: File) {
@@ -21,7 +23,7 @@ internal class RecoverableCacheFile(private val file: File) {
         return file
     }
 
-    fun write(maxBytes: Long, writer: (FileOutputStream) -> Unit) {
+    fun write(maxBytes: Long, writer: (OutputStream) -> Unit) {
         recover()
         val parent = file.parentFile ?: return
         if (!parent.isDirectory && !parent.mkdirs()) {
@@ -29,7 +31,32 @@ internal class RecoverableCacheFile(private val file: File) {
         }
         try {
             FileOutputStream(pending).use { output ->
-                writer(output)
+                val limited =
+                    object : FilterOutputStream(output) {
+                        private var written = 0L
+
+                        private fun reserve(count: Int) {
+                            if (count.toLong() > maxBytes - written) {
+                                throw IOException("Cache exceeds the size limit")
+                            }
+                            written += count
+                        }
+
+                        override fun write(value: Int) {
+                            reserve(1)
+                            out.write(value)
+                        }
+
+                        override fun write(
+                            bytes: ByteArray,
+                            offset: Int,
+                            count: Int,
+                        ) {
+                            reserve(count)
+                            out.write(bytes, offset, count)
+                        }
+                    }
+                writer(limited)
                 output.flush()
                 output.fd.sync()
             }

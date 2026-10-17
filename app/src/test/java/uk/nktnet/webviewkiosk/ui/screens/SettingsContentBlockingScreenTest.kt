@@ -38,6 +38,8 @@ import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 import uk.nktnet.webviewkiosk.blocking.FilterListStore
+import uk.nktnet.webviewkiosk.blocking.FilterListType
+import uk.nktnet.webviewkiosk.blocking.SuggestedFilterLists
 
 @OptIn(ExperimentalComposeUiApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -87,7 +89,11 @@ class SettingsContentBlockingScreenTest {
         view = ComposeView(activity)
         view.setParentCompositionContext(recomposer)
         activity.setContentView(view)
-        val navController = NavController(activity)
+        renderScreen()
+    }
+
+    private fun renderScreen() {
+        val navController = NavController(activityController.get())
         view.setContent {
             MaterialTheme { SettingsContentBlockingScreen(navController) }
         }
@@ -115,6 +121,57 @@ class SettingsContentBlockingScreenTest {
         assertEquals(2, store.info(saved.first().id).skipReasons.values.sum())
         assertEquals(saved, store.list())
         click("Close")
+    }
+
+    @Test
+    fun addDefaultActionConfirmsOnlyMissingPresetsAndCancelPreservesLists() {
+        val preset = SuggestedFilterLists.defaults.first()
+        store.importFrom(
+            "Already added",
+            "||ads.example^".byteInputStream(),
+            preset.url,
+            FilterListType.URL,
+        )
+        val saved = store.list()
+        view.disposeComposition()
+        renderScreen()
+        click("Actions")
+        click("Add Default")
+        assertTrue(hasText("Add default filter lists?"))
+        assertFalse(hasText(preset.name))
+        SuggestedFilterLists.defaults.drop(1).forEach {
+            assertTrue(hasText(it.name))
+        }
+        assertEquals(saved, store.list())
+        click("Cancel")
+        assertFalse(hasText("Add default filter lists?"))
+        assertEquals(saved, store.list())
+    }
+
+    @Test
+    fun emptyListsOfferAddDefaultAndBothEntryPointsUseTheSameConfirmation() {
+        enterManage()
+        clickDescription("Select all filter lists")
+        click("Actions")
+        click("Remove selected")
+        click("Remove")
+        awaitCondition {
+            store.list().isEmpty() &&
+                hasText("No filter lists have been added") &&
+                !disabled(textNode("Done"))
+        }
+        click("Done")
+        repeat(2) { entry ->
+            if (entry == 1) {
+                click("Actions")
+            }
+            click("Add Default")
+            assertTrue(hasText("Add default filter lists?"))
+            SuggestedFilterLists.defaults.forEach { assertTrue(hasText(it.name)) }
+            assertTrue(store.list().isEmpty())
+            click("Cancel")
+            assertTrue(store.list().isEmpty())
+        }
     }
 
     @Test

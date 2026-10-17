@@ -145,6 +145,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     val snackbar = remember { SnackbarHostState() }
     var lists by remember { mutableStateOf(store.list()) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
+    val missingDefaults = SuggestedFilterLists.missingDefaults(lists)
+    var pendingDefaults by remember {
+        mutableStateOf(emptyList<SuggestedFilterList>())
+    }
     var working by remember { mutableStateOf(false) }
     var workingMessage by remember { mutableStateOf<String?>(null) }
     val busy = working
@@ -254,17 +258,17 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         }
     }
 
-    fun downloadDefaults() {
+    fun downloadDefaults(requested: List<SuggestedFilterList>) {
         var summary = FilterRefreshResult(0, 0, emptyList())
         update(
             progressMessage = "Downloading and validating uBlock Origin defaults…",
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.ADD_DEFAULTS) {
-                    downloadDefaults()
+                    downloadDefaults(requested)
                 }
             },
         ) {
-            summary = downloader.downloadDefaults(store)
+            summary = downloader.downloadDefaults(store, requested)
         }
     }
 
@@ -581,16 +585,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                     DropdownMenuItem(
                                         text = { Text("Add Default") },
                                         enabled =
-                                            !busy &&
-                                                SuggestedFilterLists.defaults.any {
-                                                    preset ->
-                                                    lists.none {
-                                                        it.sourceUrl == preset.url
-                                                    }
-                                                },
+                                            !busy && missingDefaults.isNotEmpty(),
                                         onClick = {
                                             bulkActionsExpanded = false
-                                            downloadDefaults()
+                                            pendingDefaults = missingDefaults
                                         },
                                     )
                                 }
@@ -703,7 +701,12 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     }
                 }
                 if (lists.isEmpty()) {
-                    item(key = "empty") { EmptyFilterListsCard() }
+                    item(key = "empty") {
+                        EmptyFilterListsCard(
+                            enabled = !busy,
+                            onAddDefault = { pendingDefaults = missingDefaults },
+                        )
+                    }
                 }
                 if (lists.isNotEmpty()) {
                     item(key = "filter-list-items") {
@@ -861,6 +864,41 @@ fun SettingsContentBlockingScreen(navController: NavController) {
 
     pendingInfo?.let { item ->
         FilterListInfoDialog(item, store, onDismiss = { pendingInfo = null })
+    }
+
+    if (pendingDefaults.isNotEmpty()) {
+        val adding = pendingDefaults
+        AlertDialog(
+            onDismissRequest = { pendingDefaults = emptyList() },
+            title = { Text("Add default filter lists?") },
+            text = {
+                Column(
+                    modifier =
+                        Modifier.heightIn(max = 320.dp)
+                            .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("The following preset lists will be downloaded and added:")
+                    adding.forEach { preset -> Text(preset.name) }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingDefaults = emptyList()
+                        downloadDefaults(adding)
+                    },
+                    enabled = !busy,
+                ) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDefaults = emptyList() }) {
+                    Text("Cancel")
+                }
+            },
+        )
     }
 
     if (pendingRemoval.isNotEmpty()) {
@@ -1074,7 +1112,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
 }
 
 @Composable
-private fun EmptyFilterListsCard() {
+private fun EmptyFilterListsCard(enabled: Boolean, onAddDefault: () -> Unit) {
     OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
         colors =
@@ -1082,12 +1120,18 @@ private fun EmptyFilterListsCard() {
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow
             ),
     ) {
-        Text(
-            "No filter lists have been added",
+        Column(
             modifier = Modifier.fillMaxWidth().padding(24.dp),
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
-        )
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                "No filter lists have been added",
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+            )
+            Button(onClick = onAddDefault, enabled = enabled) { Text("Add Default") }
+        }
     }
 }
 

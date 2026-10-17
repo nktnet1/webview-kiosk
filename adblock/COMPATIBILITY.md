@@ -1,6 +1,55 @@
 # uAssets and subscription compatibility
 
+## v1.0.26 roadmap assessment
+
+Production persists all four native network bucket families, validates their
+complete membership and rebuilds/repairs invalid ones. Activation does not depend
+on a benchmark result. Plain-host sets, cosmetic indexes and scriptlet routing
+still rebuild; see [CACHE.md](CACHE.md).
+
+Document-start routing now pools identical instructions across domain rules. Each
+matching instruction is decoded once, exception/deduplication checks use IDs, and
+only runtime families selected for the current frame are initialized. Wildcard
+origin registration remains necessary for arbitrary ports and descendant scopes;
+it does not imply processing all rules in each frame.
+
+Listener scriptlets add `runAt`, `elements` and `protect` arguments. Readiness uses
+native events and element scopes use native `matches()`, without selector scans.
+JSONPath editing adds bounded regex selectors, regex comparisons, current-node
+filters and guarded query chains with cardinality quantifiers. Query execution
+remains a data interpreter with shared traversal budgets; this is not complete
+upstream DSL or trusted-assignment support.
+
+`:matches-media()` on a native CSS subject, optionally followed by `:style()`, now
+produces an `@media` stylesheet rule. Browser CSS handles resize/media changes;
+no new observer, polling or DOM scan is added. IMA's fixed local media API shim
+and the redirect-only Piano Analytics shim are bundled on demand. IMA callbacks
+use captured animation frames when injected alongside scriptlets.
+
+| Roadmap item | Result |
+| --- | --- |
+| Document-start overhead | Improved with shared instruction data and per-frame runtime selection. JavaScript source still has to be parsed by WebView. |
+| Scriptlet arguments / DSLs | Expanded tested subsets; request-body streams, trusted assignments/functions and unsupported options remain explicit skips. |
+| Efficient procedural cosmetics | Native media queries added. Wider DOM procedures require incremental targeting before expansion. |
+| Redirect/API shims | IMA and Piano added. DAI remains unsupported pending trust and request-lifecycle integration. |
+| Iframe and worker metadata | Existing native Referer/Origin and ancestor-origin routing retained; unavailable initiators remain unknown. |
+| Compiled index persistence | Enabled in production for four network families, independently of benchmark results. |
+| Popup/popunder | Still conditional; this app does not own a multiple-window lifecycle. |
+| WebSocket / beacon | Optional partial wrappers remain future work, not a promise of complete interception. |
+| CSP / HTML response rewriting | Remains unsupported; no replacement networking layer is introduced. |
+
+The principle remains maximum correct compatibility without disproportionate
+WebView workarounds. Capacity safeguards and malicious-input validation remain.
+
+The empty list screen now offers the same Add Default action as the Actions menu.
+Both open a confirmation listing only missing presets. Downloading starts after
+confirmation, and the downloader is restricted to that named batch. Existing
+source URLs are skipped, preserving custom names, ordering and enabled states.
+
 ## v1.0.25 changes and remaining work
+
+The following section records the v1.0.25 state; the assessment above supersedes
+its disabled-persistence decision and the corresponding completed items.
 
 The capacity safeguards rise to 2,000,000 combined rule entries, 65,536 scriptlet
 rules, 1024 instructions per frame, and 16 MiB routing data. These bound untrusted

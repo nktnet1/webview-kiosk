@@ -51,6 +51,31 @@ class CosmeticCompatibilityTest {
     }
 
     @Test
+    fun mediaQueriesCompileToStylesheetsAndSurviveTheCache() {
+        val text =
+            "site.example##.ad:matches-media((min-width: 800px))\n" +
+                "site.example##pre:matches-media(print):style(white-space: pre-line)\n" +
+                "site.example##.ad:matches-media(all){}body{color:red}\n" +
+                "site.example##.ad:matches-media(screen):has-text(Ads)"
+        val file = File(folder.root, "media.bin")
+        val original = KotlinFilterEngine(file)
+        original.replace(listOf(text))
+        assertEquals(2, original.unsupportedRuleCount())
+        val restored = KotlinFilterEngine(file)
+        restored.replace(listOf(text))
+        val procedures = restored.cosmeticProcedures("https://site.example/")
+        assertEquals(
+            original.cosmeticProcedures("https://site.example/"),
+            procedures,
+        )
+        assertEquals(2, procedures.size)
+        assertEquals("(min-width: 800px)", procedures[0].media)
+        assertEquals("display: none !important;", procedures[0].style)
+        assertEquals("print", procedures[1].media)
+        assertEquals("white-space: pre-line", procedures[1].style)
+    }
+
+    @Test
     fun unsupportedTextChainsAndUnsafePatternsRemainWholeRuleSkips() {
         val engine = KotlinFilterEngine()
         engine.replace(

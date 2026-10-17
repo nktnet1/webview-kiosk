@@ -15,8 +15,8 @@ import uk.nktnet.webviewkiosk.adblock.ScriptletType
 /**
  * One disposable, versioned binary snapshot of normalized rules, never Java object
  * serialization. The source digest prevents stale activation; a checksum rejects
- * damaged cache data. Production rebuilds indexes from these records. Experiments
- * can also restore bounded network bucket IDs, without cached executable source.
+ * damaged cache data. Production restores validated network bucket IDs. Normalized
+ * records rebuild missing/invalid buckets, without cached executable source.
  */
 internal class CompiledFilterCache(
     private val file: File,
@@ -187,6 +187,7 @@ internal class CompiledFilterCache(
                                         strings.read().ifEmpty { null },
                                         strings.read().ifEmpty { null },
                                         input.readBoolean(),
+                                        strings.read().ifEmpty { null },
                                     )
                                 } else {
                                     null
@@ -475,6 +476,7 @@ internal class CompiledFilterCache(
                         strings.write(procedure.upwardSelector.orEmpty())
                         strings.write(procedure.textSelector.orEmpty())
                         output.writeBoolean(procedure.textPattern)
+                        strings.write(procedure.media.orEmpty())
                     }
                 }
                 output.writeInt(rules.scriptlets.size)
@@ -612,7 +614,7 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 15
+        private const val VERSION = 16
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 

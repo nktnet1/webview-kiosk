@@ -208,6 +208,7 @@ private constructor(
                             procedure.textSelector ?: JSONObject.NULL,
                         )
                         .put("textPattern", procedure.textPattern)
+                        .put("media", procedure.media ?: JSONObject.NULL)
                         .put("upward", procedure.upward)
                         .put("remove", procedure.remove)
                         .put("style", procedure.style ?: JSONObject.NULL)

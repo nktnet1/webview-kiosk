@@ -655,7 +655,7 @@
         ['ALERT_BUSTER', () => wrap(self, 'alert', () => undefined)],
         ['RESOURCE', args => {
             const factory = resources[args[0]];
-            if (typeof factory === 'function') { factory(timeout, clearTimeout); }
+            if (typeof factory === 'function') { factory(timeout, clearTimeout, frame); }
         }],
     ]);
     for (const type of ['SET_ATTRIBUTE', 'TRUSTED_SET_ATTRIBUTE', 'REMOVE_ATTRIBUTE',

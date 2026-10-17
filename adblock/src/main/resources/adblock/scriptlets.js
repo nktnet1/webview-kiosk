@@ -23,7 +23,7 @@
 /* Modified for Webview Kiosk on 2026-10-17: bounded shared hooks and frame routing.
  * Source attribution: META-INF/ublock-NOTICE.txt. Keep this a function expression.
  */
-(function(routes, records, extension, resources, network, advanced) {
+(function(routes, records, instructions, extension, resources, network, advanced) {
     'use strict';
     if (location.protocol !== 'https:' && location.protocol !== 'http:') { return; }
     const host = location.hostname.toLowerCase().replace(/\.$/, '').replace(/^\[|\]$/g, '');
@@ -153,19 +153,22 @@
                 targets.every(target => target[5]) && !rule[6].length && !rule[7].length ||
                 targets.some(target => !target[5] && targetMatches(target));
         });
-    if (matching.some(rule => rule[3] && rule[0] === null)) { return; }
-    const key = rule => JSON.stringify([rule[0], rule[1]]);
-    const excepted = new Set(matching.filter(rule => rule[3]).map(key));
+    if (matching.some(rule => rule[3] && rule[0] === -1)) { return; }
+    const excepted = new Set(matching.filter(rule => rule[3]).map(rule => rule[0]));
     const seen = new Set();
     const selected = matching.filter(rule => {
-        const id = key(rule);
+        const id = rule[0];
         if (rule[3] || excepted.has(id) || seen.has(id) || seen.size >= routes.limit) {
             return false;
         }
         seen.add(id);
         return true;
+    }).map(rule => {
+        const offset = rule[0];
+        return JSON.parse(instructions.slice(offset, instructions.indexOf('\n', offset)));
     });
     if (selected.length === 0) { return; }
+    const modules = new Set(selected.map(rule => rule[2]));
 
     // Capture intrinsics before any selected property rule can change them.
     const apply = Reflect.apply;
@@ -206,7 +209,7 @@
         }
         return text;
     }
-    function matcher(raw = '', negate = false) {
+    function matcher(raw = '', negate = false, exact = false) {
         const inverted = negate && raw.startsWith('!');
         if (inverted) { raw = raw.slice(1); }
         const end = raw.lastIndexOf('/');
@@ -215,7 +218,7 @@
         return value => {
             if (typeof value !== 'string' || value.length > 65536) { return false; }
             const match = regex ? apply(regexpTest, regex, [value])
-                : apply(stringIncludes, value, [raw]);
+                : exact && raw !== '' ? value === raw : apply(stringIncludes, value, [raw]);
             return inverted ? !match : match;
         };
     }
@@ -445,11 +448,22 @@
         } catch {}
     }
     function installListener() {
-        const tests = groups.get('PREVENT_ADD_EVENT_LISTENER').map(args => ({
-            type: matcher(args[0]), handler: matcher(args[1]), anyHandler: args[1] === '',
-        }));
-        try {
-            wrap(EventTarget.prototype, 'addEventListener', (target, receiver, args) => {
+        const stage = value => value === 'complete' ? 2 : value === 'interactive' ? 1 : 0;
+        const matches = self.Element?.prototype.matches;
+        const tests = groups.get('PREVENT_ADD_EVENT_LISTENER').map(args => {
+            const extra = new Map();
+            for (let i = 2; i < args.length; i += 2) { extra.set(args[i], args[i + 1]); }
+            return { type: matcher(args[0], false, true), handler: matcher(args[1]),
+                anyHandler: args[1] === '', at: stage(extra.get('runAt')),
+                elements: extra.get('elements') || '', protect: extra.get('protect') === '1',
+                active: false };
+        });
+        const owners = [EventTarget.prototype];
+        for (const owner of [document, self]) {
+            if (descriptor(owner, 'addEventListener')) { owners.push(owner); }
+        }
+        const installed = new Set(), protectedOwners = new Set();
+        const intercept = (target, receiver, args) => {
                 if (typeof args[0] !== 'string') { return apply(target, receiver, args); }
                 let callback = args[1];
                 try {
@@ -458,15 +472,43 @@
                     }
                     let text;
                     for (const test of tests) {
-                        if (!test.type(args[0]) || callback == null) { continue; }
+                        if (!test.active || !test.type(args[0]) || callback == null) { continue; }
+                        if (test.elements) {
+                            const element = test.elements === 'window' ? receiver === self
+                                : test.elements === 'document' ? receiver === document
+                                    : matches && self.Element && receiver instanceof self.Element &&
+                                        apply(matches, receiver, [test.elements]);
+                            if (!element) { continue; }
+                        }
                         if (test.anyHandler) { return; }
                         if (text === undefined) { text = source(callback); }
                         if (test.handler(text)) { return; }
                     }
                 } catch {}
                 return apply(target, receiver, args);
-            });
-        } catch {}
+        };
+        const activate = () => {
+            const ready = stage(document.readyState);
+            for (const test of tests) { test.active ||= ready >= test.at; }
+            if (!tests.some(test => test.active)) { return; }
+            for (const owner of owners) {
+                try {
+                    if (!installed.has(owner)) {
+                        wrap(owner, 'addEventListener', intercept); installed.add(owner);
+                    }
+                    if (!protectedOwners.has(owner) &&
+                        tests.some(test => test.active && test.protect)) {
+                        const fn = owner.addEventListener;
+                        define(owner, 'addEventListener', { get: () => fn, set() {} });
+                        protectedOwners.add(owner);
+                    }
+                } catch {}
+            }
+        };
+        activate();
+        if (tests.some(test => !test.active)) {
+            apply(nativeAdd, document, ['readystatechange', activate]);
+        }
     }
     function installTimeout() {
         const tests = groups.get('PREVENT_SET_TIMEOUT').map(args => {
@@ -544,8 +586,20 @@
     }
     // The compiler supplies a JSON AST, never expressions to evaluate as JavaScript.
     function jsonEditor(args) {
-        const [v2, steps] = nativeParse(args[1]);
+        const [v2, steps, guards = []] = nativeParse(args[1]);
         const stringKeys = ownKeys;
+        const regexes = new Map();
+        const prepare = node => {
+            if (isArray(node)) { node.forEach(prepare); }
+            else if (node && typeof node === 'object' && typeof node.regex === 'string') {
+                regexes.set(node, new RegExp(node.regex, node.flags));
+            }
+        };
+        prepare(steps); prepare(guards);
+        const testRegex = (node, value) => {
+            const text = String(value);
+            return text.length <= 65536 && apply(regexpTest, regexes.get(node), [text]);
+        };
         function edit(value, work = { remaining: 16384 }) {
             const root = { value };
             const consume = () => { if (--work.remaining < 0) { throw null; } };
@@ -559,6 +613,7 @@
                 consume();
                 const values = stringKeys(owner);
                 if (values.length > work.remaining) { throw null; }
+                work.remaining -= values.length;
                 return isArray(owner) ? values.map(key => /^(?:0|[1-9]\d*)$/.test(key)
                     ? Number(key) : key) : values;
             };
@@ -594,11 +649,15 @@
                     case '^=': matched = String(value).startsWith(rhs); break;
                     case '$=': matched = String(value).endsWith(rhs); break;
                     case '*=': matched = String(value).includes(rhs); break;
+                    case 're': matched = testRegex(rhs, value); break;
                     default: return false;
                 }
                 return matched !== negated;
             };
             const evaluate = (program, input, predicate) => {
+                if (!program.length && predicate) {
+                    return input.filter(entry => compare(entry, predicate));
+                }
                 let entries = input;
                 program.forEach(([recursive, selectors, filter], stepIndex) => {
                     const result = [];
@@ -627,6 +686,9 @@
                                     else if (typeof selector === 'number') {
                                         names = !isArray(owner) ? []
                                             : [selector < 0 ? owner.length + selector : selector];
+                                    } else if (typeof selector === 'object') {
+                                        names = keys(owner).map(String)
+                                            .filter(name => testRegex(selector, name));
                                     } else { names = [selector]; }
                                     for (const name of names) {
                                         const candidate = ref(owner, name);
@@ -645,7 +707,12 @@
                 return entries;
             };
             try {
-                const edits = evaluate(steps, [ref(root, 'value')]);
+                const input = [ref(root, 'value')];
+                for (const [path, minimum, maximum] of guards) {
+                    const count = evaluate(path, input).length;
+                    if (count < minimum || count > maximum) { return false; }
+                }
+                const edits = evaluate(steps, input);
                 const seen = new WeakMap(), pending = [];
                 for (const entry of edits) {
                     const desc = descriptor(entry.owner, entry.key);
@@ -754,14 +821,12 @@
         trap, abort, resources: resources || {}, jsonPruner, jsonEditor,
         nativeThen, resolved, rejected, NativeResponse, NativeRequest,
     };
-    const extra = typeof extension === 'function' ? extension(environment) : new Map();
-    const advancedHooks = typeof advanced === 'function' ? advanced(environment) : new Map();
-    const responses = typeof network === 'function' &&
-        ['PREVENT_XHR', 'TRUSTED_PREVENT_XHR', 'JSON_PRUNE_FETCH', 'JSON_PRUNE_XHR',
-            'XML_PRUNE', 'M3U_PRUNE', 'MPEGDASH_PRUNE',
-            'JSON_EDIT_FETCH', 'JSON_EDIT_XHR', 'JSONL_EDIT_FETCH', 'JSONL_EDIT_XHR',
-            'TRUSTED_REPLACE_FETCH', 'TRUSTED_REPLACE_XHR']
-            .some(type => groups.has(type)) ? network(environment) : new Map();
+    const extra = modules.has(1) && typeof extension === 'function'
+        ? extension(environment) : new Map();
+    const advancedHooks = modules.has(3) && typeof advanced === 'function'
+        ? advanced(environment) : new Map();
+    const responses = modules.has(2) && typeof network === 'function'
+        ? network(environment) : new Map();
     for (const [type, installer] of [...extra, ...advancedHooks, ...responses]) {
         installers.set(type, installer);
     }

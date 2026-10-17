@@ -125,7 +125,7 @@ class ScriptletTest {
                 "+js(nowoif, ad, 10, obj)",
                 "+js(nowoif, debug)",
                 "+js(aeld)",
-                "+js(aeld, click, , elements, [src])",
+                "+js(aeld, click, , elements, :scope > body)",
                 "+js(nostif)",
                 "+js(nostif, ad, 200-100)",
                 "+js(nostif, /(a+)+/)",

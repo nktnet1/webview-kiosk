@@ -129,6 +129,18 @@ test("CSS hides are deduplicated and invalid selectors cannot inject declaration
   assert.deepEqual(p.styles()[0].sheet.cssRules, [".ad{display:none!important}", "#sponsor{display:none!important}"]);
 });
 
+test("media cosmetics stay in CSSOM and reject injected media statements", () => {
+  const p = page();
+  p.run(); p.flush();
+  const entry = { selector: ".ad", text: null, upward: 0, remove: false,
+    style: "display: none !important;", removeAttribute: null, removeClass: null,
+    upwardSelector: null, media: "(min-width: 800px)" };
+  p.reply({ procedures: [entry, entry, { ...entry, media: "all{}body{color:red}" }] });
+  assert.deepEqual(p.styles()[0].sheet.cssRules,
+    ["@media (min-width: 800px){.ad{display: none !important;}}"]);
+  assert.equal(p.timers.size, 0);
+});
+
 test("new classes and IDs are queried without resending already observed tokens", () => {
   const p = page({ elements: [{ id: "sponsor", classes: ["ad", "ad"] }] });
   p.run();

@@ -587,7 +587,7 @@ class KotlinFilterEngineTest {
                     "||css.example^\$stylesheet,redirect=noopcss\n" +
                     "||html.example^\$subdocument,redirect=noophtml\n" +
                     "||plain.example^\$empty\n" +
-                    "||special.example^\$script,redirect=google-ima.js"
+                    "||special.example^\$script,redirect=unlisted-shim.js"
             )
         assertEquals(
             BlockingResponse.EMPTY_SCRIPT,

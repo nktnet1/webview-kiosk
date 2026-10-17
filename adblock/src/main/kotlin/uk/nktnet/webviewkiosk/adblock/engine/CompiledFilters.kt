@@ -261,8 +261,8 @@ private class NetworkIndex(
     restored: NetworkRouting? = null,
 ) {
     val routing =
-        restored?.takeIf { it.ruleCount == rules.size }
-            ?: NetworkRouting.build(rules)
+        restored?.takeIf { it.validFor(rules) } ?: NetworkRouting.build(rules)
+    val restoredIndexes = routing === restored
     private val hosts = routing.hosts
     private val pages = routing.pages
     private val pageEntities = routing.entities
@@ -476,6 +476,13 @@ internal class CompiledFilters(
                 redirectExceptions.routing,
                 parameterRules.routing,
             )
+
+    val restoredNetworkIndexes: Boolean
+        get() =
+            requests.restoredIndexes &&
+                hideExceptions.restoredIndexes &&
+                redirectExceptions.restoredIndexes &&
+                parameterRules.restoredIndexes
 
     fun responseFor(
         url: String,

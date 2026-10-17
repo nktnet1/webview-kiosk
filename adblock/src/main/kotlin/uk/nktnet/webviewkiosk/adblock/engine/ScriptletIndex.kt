@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.adblock.engine
 
 import uk.nktnet.webviewkiosk.adblock.ScriptletInjection
 import uk.nktnet.webviewkiosk.adblock.ScriptletInstruction
+import uk.nktnet.webviewkiosk.adblock.ScriptletType
 
 /** Host-indexed routing is mirrored in the synchronous document-start dispatcher. */
 internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
@@ -104,15 +105,32 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
         if (rules.none { !it.exception }) {
             return null
         }
+        // Domain rules often share an instruction. Serialize arguments once, then
+        // decode only selected instruction IDs in the document-start dispatcher.
+        val instructionOffsets = linkedMapOf<ScriptletInstruction, Int>()
+        val instructions = buildString {
+            for (rule in rules) {
+                val instruction = rule.instruction ?: continue
+                if (instruction in instructionOffsets) {
+                    continue
+                }
+                instructionOffsets[instruction] = length
+                append('[').append(json(instruction.type.name)).append(',')
+                strings(instruction.arguments)
+                append(',').append(module(instruction.type)).append("]\n")
+                require(length <= MAX_ROUTING_BYTES) {
+                    "Scriptlet instruction data exceeds 16 MiB"
+                }
+            }
+        }
         val offsets = mutableListOf<Int>()
         val data = buildString {
             for (rule in rules) {
                 offsets += length
                 append('[')
                 val instruction = rule.instruction
-                append(instruction?.type?.name?.let(::json) ?: "null")
-                append(',')
-                strings(instruction?.arguments.orEmpty())
+                append(instruction?.let(instructionOffsets::get) ?: -1)
+                append(",null")
                 append(',')
                 strings(rule.domains.excluded)
                 append(',').append(rule.exception).append(',')
@@ -206,63 +224,43 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
                 "\"suffixes\":$suffixData," +
                 "\"limit\":$MAX_PER_PAGE}"
         require(
-            data.toByteArray().size.toLong() + routes.toByteArray().size <=
-                MAX_ROUTING_BYTES
+            data.toByteArray().size.toLong() +
+                routes.toByteArray().size +
+                instructions.toByteArray().size <= MAX_ROUTING_BYTES
         ) {
             "Scriptlet routing data exceeds 16 MiB"
         }
         // Only matching buckets and records are parsed in each frame. The wildcard
         // origin also covers arbitrary ports and cross-origin descendant scopes.
         // No bridge or privileged page-callable API is exposed.
-        val additional = rules.any {
-            (it.instruction?.type?.ordinal ?: 0) >
-                uk.nktnet.webviewkiosk.adblock.ScriptletType.PREVENT_FETCH.ordinal
-        }
+        val modules = instructionOffsets.keys.map { module(it.type) }.toSet()
+        val resources =
+            instructionOffsets.keys
+                .filter { it.type == ScriptletType.RESOURCE }
+                .map { it.arguments.first() }
+                .toSet()
         val libraries =
-            if (additional) {
-                val resources =
-                    rules
-                        .mapNotNull { rule ->
-                            rule.instruction
-                                ?.takeIf {
-                                    it.type ==
-                                        uk.nktnet.webviewkiosk.adblock.ScriptletType
-                                            .RESOURCE
-                                }
-                                ?.arguments
-                                ?.firstOrNull()
-                        }
-                        .toSet()
-                val network =
-                    if (
-                        rules.any {
-                            it.instruction?.type in ResponseScriptlets.networkTypes
-                        }
-                    ) {
-                        ",$networkRuntime"
+            listOf(
+                    if (1 in modules) {
+                        extraRuntime
                     } else {
-                        ""
-                    }
-                val advanced =
-                    if (
-                        rules.any {
-                            it.instruction?.type in AdvancedScriptlets.aliases.values
-                        }
-                    ) {
-                        if (network.isEmpty()) {
-                            ",null,$advancedRuntime"
-                        } else {
-                            ",$advancedRuntime"
-                        }
+                        "null"
+                    },
+                    ScriptletResources.factories(resources),
+                    if (2 in modules) {
+                        networkRuntime
                     } else {
-                        ""
-                    }
-                ",$extraRuntime,${ScriptletResources.factories(resources)}$network$advanced"
-            } else {
-                ""
-            }
+                        "null"
+                    },
+                    if (3 in modules) {
+                        advancedRuntime
+                    } else {
+                        "null"
+                    },
+                )
+                .joinToString(",", prefix = ",")
         return ScriptletInjection(
-            "$runtime($routes,${json(data)}$libraries);",
+            "$runtime($routes,${json(data)},${json(instructions)}$libraries);",
             setOf("*"),
         )
     }
@@ -271,6 +269,25 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
         const val MAX_RULES = 65_536
         const val MAX_PER_PAGE = 1024
         const val MAX_ROUTING_BYTES = 16 * 1024 * 1024
+
+        private fun module(type: ScriptletType): Int =
+            when (type) {
+                in ResponseScriptlets.networkTypes -> 2
+                in AdvancedScriptlets.aliases.values -> 3
+                ScriptletType.SET,
+                ScriptletType.ABORT_READ,
+                ScriptletType.ABORT_WRITE,
+                ScriptletType.PREVENT_WINDOW_OPEN,
+                ScriptletType.PREVENT_ADD_EVENT_LISTENER,
+                ScriptletType.ABORT_CURRENT_SCRIPT,
+                ScriptletType.JSON_PRUNE,
+                ScriptletType.JSON_EDIT,
+                ScriptletType.PREVENT_FETCH,
+                ScriptletType.TRUSTED_PREVENT_FETCH,
+                ScriptletType.TRUSTED_SET -> 0
+                else -> 1
+            }
+
         private val PRIVATE_HOSTS =
             setOf(
                 "appassets.androidplatform.net",

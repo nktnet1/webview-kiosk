@@ -1,4 +1,4 @@
-# Scriptlet compatibility - v1.0.25
+# Scriptlet compatibility - v1.0.26
 
 The engine compiles validated `##+js(...)` data into fixed local JavaScript.
 Ordinary imports cannot enable trusted operations. No downloaded list supplies
@@ -7,7 +7,7 @@ can alter executable page content; only approved preset downloads can enable the
 Other trusted replacements are strings or bounded JSON.
 
 The pinned upstream catalogue has 129 canonical names. This version implements
-87 names: 86 tested subsets and one conditional Navigation API operation. See the
+88 names: 87 tested subsets and one conditional Navigation API operation. See the
 [complete catalogue](SCRIPTLET-CATALOG.md) for aliases and remaining exclusions.
 Support for a name does not imply support for all its upstream argument forms.
 
@@ -24,7 +24,7 @@ Unknown arguments discard the whole instruction. There is no approximate fallbac
 | ✅ | `aost` | Property, bounded normalized stack pattern, optional negation |
 | ✅ | `acs`, `acis` | Property, current-script text, optional script source pattern |
 | ✅ | `nowoif` | All calls or pattern/negation; no delayed decoys |
-| ✅ | `aeld` | Event name and callback/handleEvent source; no extra options |
+| ✅ | `aeld` | Exact event name or regex, callback/handleEvent source, readiness, element scopes and hook protection |
 | ✅ | `nostif`, `nosiif` | Callback pattern, exact/range delay, negation |
 | ✅ | `norafif` | Callback pattern or negation; logging-only invocation skipped |
 | ✅ | `nano-stb`, `nano-sib` | Pattern, exact delay or `*`, finite multiplier |
@@ -50,7 +50,7 @@ Unknown arguments discard the whole instruction. There is no approximate fallbac
 | ✅ | `nobab` | Upstream BAB eval signatures and timeout signature |
 | ✅ | `alert-buster` | Defuses alert; confirm and prompt retain native behavior |
 | ✅ | `multiup` | Direct form button link navigation, HTTP(S) destinations only |
-| ✅ | Fourteen fixed API shims | No filter arguments; see catalogue for exact names |
+| ✅ | Fifteen fixed API shims | No filter arguments; includes IMA lifecycle callbacks; see catalogue for exact names |
 | ⚠️ | `prevent-navigation` | Requires native Navigation API and cancelable automatic events |
 | ✅ | `no-xhr-if` / `prevent-xhr` | URL/method predicates, canned responses and native instances |
 | ✅ | JSON Fetch/XHR pruning | Own paths, guards, URL/method and optional stack predicates |
@@ -59,8 +59,8 @@ Unknown arguments discard the whole instruction. There is no approximate fallbac
 | ✅ | `m3u-prune` | HLS EXTINF/URI segment pairs and following discontinuity |
 | ✅ | `overlay-buster` | Shared observer, bounded sweep and 30-second deadline |
 | ✅ | `mpegdash-prune` | XHR MPD Period durations/starts; fully timed manifests only |
-| ✅ | JSON/JSONL response editors | Bounded JSONPath child/recursive selectors, indexes, unions, filters, Fetch/XHR predicates and JSONL capture extraction |
-| ❌ | Other editing DSLs | Request-body editors, assignments, JSONPath functions/regex selectors and XPath remain unimplemented |
+| ✅ | JSON/JSONL response editors | Bounded JSONPath selectors, indexes, unions, filters, regexes, guarded query chains, Fetch/XHR predicates and JSONL capture extraction |
+| ❌ | Other editing DSLs | Request-body editors, assignments, JSONPath functions and XPath remain unimplemented |
 | ❌ | Debug/close-window | Deliberate debugger exclusion and no native window lifecycle |
 
 The safe constant set is empty string, undefined/null, booleans, empty arrays or
@@ -70,6 +70,14 @@ Attribute setters reject executable attributes and navigation/HTML/CSS destinati
 Href sanitation accepts only HTTP(S) destinations; transformation pipelines are skipped.
 CSS spoofing permits display, visibility, opacity, position, dimensions, offsets and
 four private rectangle fields. No arbitrary CSS declarations are installed.
+
+`aeld` accepts unique `runAt`, `elements` and `protect` option pairs after its two
+positional arguments. `runAt` is `loading` (default), `interactive` or `complete`;
+`elements` is `window`, `document` or a bounded native CSS selector without `:scope`;
+`protect` is `1` (or empty/`0` for default). Unknown options discard the instruction.
+Readiness listeners install the shared wrapper when needed. Native `matches()`
+handles element tests without document-wide queries. Event-name literals match
+exactly, as upstream specifies. Empty event/callback logging-only calls stay skipped.
 
 Patterns use the existing bounded literal/regex subset. Lookarounds, backreferences,
 repeated groups, unsafe repeats and sticky flags are skipped. Global flags are
@@ -88,18 +96,32 @@ text. Optional `propsToMatch` predicates support URL/method matching. JSONL
 regex capture indices. `json-edit` also accepts its `matches` text predicate.
 
 Accepted JSONPath forms include `.name`, `..name`, `[*]`, quoted property names,
-positive/negative array indexes, unions, and existence/primitive-comparison filters.
+positive/negative array indexes, unions, existence/primitive-comparison filters,
+current-node comparisons (`v2:$.values[?@>=2]`), regex property selectors
+(`v2:$../^ad/`) and regex comparisons (`v2:$.items[?@.kind=/^ad$/i]`).
 Examples: `..ads`, `$.items[*].advert`, `$.items[?@.kind=="ad"]`, and
 `v2:$.items[?!@.content]`. Legacy and `v2:` object-filter semantics differ upstream;
-the interpreter preserves that distinction. Parenthesized filter expressions,
-assignments, functions, regex selectors, slices, and query chaining remain skipped.
+the interpreter preserves that distinction. Up to eight guard queries may precede
+the editing query, for example `v2:$.required;$..ads` or
+`v2:$.missing{0};$.items[*]{2,4};$..ads`. Guards never mutate their selections.
+Supported cardinalities are `{n}`, `{n,}`, `{,n}`, `{n,m}`, with a default of one
+or more and bounds up to 1,000,000. All guards share the editing traversal budget.
+Parenthesized/logical filter expressions, absolute-root filters, assignments,
+functions and slices remain skipped. Regexes retain the bounded safe grammar;
+selectors have no flags and regex comparisons permit only the optional `i` flag.
+Use dot notation for regex selectors; bracket regexes are skipped to agree with
+the pinned interpreter. Negated regex comparisons and
+zero-ended range quantifiers are skipped because upstream interpretation is
+inconsistent; use the exact `{0}` guard to test absence. Bracket property
+names must be quoted.
 Unsupported queries reject the whole instruction, rather than dropping constraints.
 
 The compiler stores a data AST; cached ASTs must match recompilation of their query.
 No query is executed as JavaScript. Traversal uses own data descriptors, a depth of
 64, at most 4096 selected edits, and a shared work budget. Each query finishes
-traversing before mutating. Array-member deletion splices entries rather than
-leaving holes. Oversized or exhausted work retains that query's input.
+traversing before mutating. Numeric array-index deletion splices entries;
+regex-selected string keys preserve upstream sparse-array behavior. Oversized or
+exhausted work retains that query's input.
 
 ## Domains, ordering and security
 

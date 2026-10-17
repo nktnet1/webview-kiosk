@@ -11,6 +11,78 @@ internal class NetworkRouting(
     val tokens: Map<Int, IntArray>,
     val fallback: IntArray,
 ) {
+    /**
+     * Check cached membership without allocating and grouping replacement buckets.
+     */
+    fun validFor(rules: List<NetworkIdentity>): Boolean {
+        if (ruleCount != rules.size || fallback.size > 2048) {
+            return false
+        }
+        val references = IntArray(ruleCount)
+        fun check(ids: IntArray, accepts: (NetworkIdentity) -> Boolean): Boolean {
+            if (ids.isEmpty()) {
+                return false
+            }
+            var previous = -1
+            for (id in ids) {
+                if (id !in rules.indices || id <= previous || !accepts(rules[id])) {
+                    return false
+                }
+                previous = id
+                references[id]++
+            }
+            return true
+        }
+        fun scoped(rule: NetworkIdentity): Boolean =
+            rule.conditions.domains.included.isNotEmpty() ||
+                rule.conditions.domains.includedEntities.isNotEmpty()
+        fun token(rule: NetworkIdentity): Int? =
+            rule.pattern.indexToken ?: rule.removeParam?.indexToken
+        if (
+            hosts.any { (key, ids) ->
+                !check(ids) { it.pattern.hostIndex == key }
+            } ||
+                pages.any { (key, ids) ->
+                    !check(ids) {
+                        it.pattern.hostIndex == null &&
+                            key in it.conditions.domains.included
+                    }
+                } ||
+                entities.any { (key, ids) ->
+                    !check(ids) {
+                        it.pattern.hostIndex == null &&
+                            key in it.conditions.domains.includedEntities
+                    }
+                } ||
+                tokens.any { (key, ids) ->
+                    !check(ids) {
+                        it.pattern.hostIndex == null &&
+                            !scoped(it) &&
+                            token(it) == key
+                    }
+                } ||
+                fallback.isNotEmpty() &&
+                    !check(fallback) {
+                        it.pattern.hostIndex == null &&
+                            !scoped(it) &&
+                            token(it) == null
+                    }
+        ) {
+            return false
+        }
+        return rules.indices.all { index ->
+            val rule = rules[index]
+            val expected =
+                if (rule.pattern.hostIndex == null && scoped(rule)) {
+                    rule.conditions.domains.included.size +
+                        rule.conditions.domains.includedEntities.size
+                } else {
+                    1
+                }
+            references[index] == expected
+        }
+    }
+
     private fun <T> same(
         first: Map<T, IntArray>,
         second: Map<T, IntArray>,

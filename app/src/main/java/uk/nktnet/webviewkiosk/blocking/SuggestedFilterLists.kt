@@ -116,6 +116,11 @@ internal object SuggestedFilterLists {
     // The nine globally enabled subscriptions in upstream assets/assets.json.
     // Regional and optional annoyance lists depend on user preference.
     val defaults = ublock + others.take(4)
+
+    fun missingDefaults(lists: List<ImportedFilterList>): List<SuggestedFilterList> {
+        val existing = lists.mapNotNull { it.sourceUrl }.toSet()
+        return defaults.filterNot { it.url in existing }
+    }
 }
 
 internal fun String.toFilterListUrlOrNull(): HttpUrl? =
@@ -174,11 +179,19 @@ internal class SuggestedFilterListDownloader(
     /**
      * Add missing defaults, preserving existing order, edits, and enabled states.
      */
-    fun downloadDefaults(store: FilterListStore): FilterRefreshResult {
-        val missing =
-            SuggestedFilterLists.defaults.filterNot {
-                store.containsSource(it.url)
-            }
+    fun downloadDefaults(
+        store: FilterListStore,
+        requested: List<SuggestedFilterList> = SuggestedFilterLists.defaults,
+    ): FilterRefreshResult {
+        require(
+            requested.distinct().size == requested.size &&
+                requested.all { it in SuggestedFilterLists.defaults }
+        ) {
+            "Only default presets may be added by this action"
+        }
+        val missing = requested.filterNot {
+            store.containsSource(it.url)
+        }
         val failures = mutableListOf<FilterRefreshFailure>()
         var added = 0
         missing.forEach { suggestion ->

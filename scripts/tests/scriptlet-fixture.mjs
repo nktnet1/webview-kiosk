@@ -46,7 +46,7 @@ export function page(rules, { host = 'site.example', protocol = 'https:', before
     context.addEventListener = Target.prototype.addEventListener;
     context.removeEventListener = Target.prototype.removeEventListener;
     if (before) { runInContext(before, context); }
-    const [routes, records] = routingPayload(rules, suffixes);
+    const [routes, records, instructions] = routingPayload(rules, suffixes);
     const names = [...new Set(rules.filter(rule => rule[0] === 'RESOURCE')
         .map(rule => rule[1][0]))];
     const factories = names.map(name => {
@@ -54,10 +54,12 @@ export function page(rules, { host = 'site.example', protocol = 'https:', before
         if (!/^[a-z0-9_-]+\.js$/.test(name)) { throw new Error('Invalid fixture resource'); }
         const code = readFileSync(new URL(
             '../../adblock/src/main/resources/adblock/ubo/' + name, import.meta.url), 'utf8');
-        return JSON.stringify(name) + ':function(setTimeout,clearTimeout){\n' + code + '\n}';
+        return JSON.stringify(name) +
+            ':function(setTimeout,clearTimeout,requestAnimationFrame){\n' + code + '\n}';
     }).join(',');
     const source = `${runtime}(${JSON.stringify(routes)}, ` +
-        `${JSON.stringify(records)}, ${extension}, {${factories}}, ` +
+        `${JSON.stringify(records)}, ${JSON.stringify(instructions)}, ` +
+        `${extension}, {${factories}}, ` +
         `${network}, ${advanced});`;
     return {
         source, calls, context, document: context.document, Script,

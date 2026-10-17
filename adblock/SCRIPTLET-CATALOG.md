@@ -4,8 +4,8 @@ The supplied archive contains 99 parameterized scriptlets and 30 JavaScript reso
 129 canonical names, or 194 names including aliases. Its 54 helper functions are separate.
 Only 21 of the 30 resources have upstream inline-injection eligibility (`data: text`).
 
-This version implements 87 canonical names: 86 tested subsets plus
-`prevent-navigation`, which requires a native Navigation API. The other 42 remain skipped as `+js` entry points.
+This version implements 88 canonical names: 87 tested subsets plus
+`prevent-navigation`, which requires a native Navigation API. The other 41 remain skipped as `+js` entry points.
 The earlier supplied list used 39 names resolving to 38 canonical names. Absence from
 that list is not a reason for exclusion.
 All ✅ entries remain subject to the argument contracts in [SCRIPTLETS.md](SCRIPTLETS.md).
@@ -155,7 +155,7 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `google-analytics_cx_api.js` | ↪️ bundled redirect-only resource; no `+js` eligibility |
 | `google-analytics_ga.js` | ✅ fixed API shim |
 | `google-analytics_inpage_linkid.js` | ↪️ bundled redirect-only resource; no `+js` eligibility |
-| `google-ima.js` | ❌ unverified media adapter |
+| `google-ima.js` | ✅ fixed media API shim; event/callback lifecycle tested |
 | `google-ima-dai.js` | ❌ operation not implemented; trust is enforced |
 | `googlesyndication_adsbygoogle.js` | ❌ unverified iframe adapter |
 | `googletagservices_gpt.js` | ✅ fixed API shim |
@@ -167,7 +167,7 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `nofab.js` | ✅ fixed API shim |
 | `noop.js` | ❌ no blocking behavior |
 | `outbrain-widget.js` | ❌ redirect-only upstream resource |
-| `piano-analytics.js` | ❌ redirect-only upstream resource |
+| `piano-analytics.js` | ↪️ bundled `$redirect`; upstream has no `+js` entry |
 | `popads.js` | ✅ fixed API shim |
 | `popads-dummy.js` | ✅ fixed API shim |
 | `prebid-ads.js` | ✅ fixed API shim |

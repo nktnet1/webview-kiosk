@@ -1,9 +1,22 @@
 // Mirrors the portable wire format; integration tests also execute Kotlin exports.
+const core = new Set(['SET', 'ABORT_READ', 'ABORT_WRITE', 'PREVENT_WINDOW_OPEN',
+    'PREVENT_ADD_EVENT_LISTENER', 'ABORT_CURRENT_SCRIPT', 'JSON_PRUNE', 'JSON_EDIT',
+    'PREVENT_FETCH', 'TRUSTED_PREVENT_FETCH', 'TRUSTED_SET']);
+const network = new Set(['PREVENT_XHR', 'TRUSTED_PREVENT_XHR', 'JSON_PRUNE_FETCH', 'JSON_PRUNE_XHR',
+    'JSON_EDIT_FETCH', 'JSON_EDIT_XHR', 'JSONL_EDIT_FETCH', 'JSONL_EDIT_XHR', 'XML_PRUNE',
+    'M3U_PRUNE', 'MPEGDASH_PRUNE', 'TRUSTED_REPLACE_FETCH', 'TRUSTED_REPLACE_XHR']);
+const advanced = new Set(['TRUSTED_REPLACE_ARGUMENT', 'TRUSTED_REPLACE_OUTBOUND_TEXT',
+    'TRUSTED_SUPPRESS_NATIVE_METHOD', 'TRUSTED_OVERRIDE_ELEMENT_METHOD',
+    'TRUSTED_PREVENT_DOM_BYPASS', 'PREVENT_CLIPBOARD_WRITE', 'TRUSTED_REPLACE_NODE_TEXT',
+    'TRUSTED_CLICK_ELEMENT', 'TRUSTED_CREATE_HTML']);
+
 export function routingPayload(rules, suffixes) {
     const routes = { hosts: new Map(), entities: new Map(), ancestors: new Map(),
         ancestorEntities: new Map(), regex: [], exceptions: [], usesAncestors: false, limit: 1024 };
     const labels = new Set();
     let records = '';
+    let instructions = '';
+    const offsets = new Map();
     const add = (table, name, offset) => {
         if (!routes[table].has(name)) { routes[table].set(name, []); }
         routes[table].get(name).push(offset);
@@ -25,6 +38,12 @@ export function routingPayload(rules, suffixes) {
         return [host, slash < 0 ? null : raw.slice(slash), false, entity, ancestor, excluded];
     };
     for (const [type, args, domain = 'site.example', excluded = [], exception = false] of rules) {
+        const instruction = JSON.stringify([type, args]);
+        if (type !== null && !offsets.has(instruction)) {
+            offsets.set(instruction, instructions.length);
+            const module = core.has(type) ? 0 : network.has(type) ? 2 : advanced.has(type) ? 3 : 1;
+            instructions += JSON.stringify([type, args, module]) + '\n';
+        }
         const offset = records.length;
         const targets = [], includedHosts = [], includedEntities = [], excludedHosts = [],
             excludedEntities = [];
@@ -51,7 +70,8 @@ export function routingPayload(rules, suffixes) {
         }
         if (!includedHosts.length && !includedEntities.length &&
             targets.every(value => value[5])) { routes.exceptions.push(offset); }
-        records += JSON.stringify([type, args, excludedHosts, exception, excludedEntities,
+        records += JSON.stringify([type === null ? -1 : offsets.get(instruction), null,
+            excludedHosts, exception, excludedEntities,
             targets, includedHosts, includedEntities]) + '\n';
     }
     for (const key of ['hosts', 'entities', 'ancestors', 'ancestorEntities']) {
@@ -61,5 +81,5 @@ export function routingPayload(rules, suffixes) {
     routes.regex = JSON.stringify(routes.regex);
     routes.entityLabels = [...labels].sort().map(label => label + '\n').join('');
     routes.suffixes = suffixes ? JSON.stringify(suffixes) : null;
-    return [routes, records];
+    return [routes, records, instructions];
 }

@@ -198,6 +198,17 @@ class WebViewCompatibilityTest {
                 "$.items[?@.value>=3]",
                 "$.items[?!@.content]",
                 "$['ad-key']",
+                "v2:$.items[*]{3};$..ads",
+                "v2:$.missing{0};$..ads",
+                "v2:$.missing;$..ads",
+                "v2:$.items[*]{2,4};$.ads",
+                "v2:$.items[*]{,2};$.ads",
+                "v2:$.items[*]{3,};$.missing{0};$.ads",
+                "v2:$../^ad/",
+                "v2:$.items[?@.kind=/^AD\$/i]",
+                "v2:$.numbers[?@>=2]",
+                "v2:$.items[?@.kind=/^ad\$/];$.ads",
+                "$.numbers./^[12]\$/",
             )
         val rules = queries.map {
             "site.example##+js(json-edit, '${it.replace("'", "\\'")}')"
@@ -218,6 +229,17 @@ class WebViewCompatibilityTest {
                 "$.items[?(@.ad)]",
                 "$.__proto__",
                 "$.x[?@.value=/(a+)+$/]",
+                "$.x{1}",
+                "$.x{2,1};$.y",
+                "$.x;@.y",
+                "$.x[?$.y]",
+                "$.x[/^(a+)+$/]",
+                "v2:$.x[unquoted]",
+                "$.x[unquoted]",
+                "v2:$.x[/^ad/]",
+                "$.x[/^ad/]",
+                "v2:$.x[?!@.kind=/^ad\$/]",
+                "v2:$.x{0,0};$.ads",
             )) {
             assertNull(query, JsonEditing.compile(query))
         }
@@ -291,6 +313,87 @@ class WebViewCompatibilityTest {
                 "GET",
             )
         )
+    }
+
+    @Test
+    fun listenerOptionsAreCanonicalBoundedAndRevalidatedAfterCacheRestoration() {
+        val basic = ScriptletParser.parse("+js(aeld, click)")!!
+        assertEquals(
+            basic,
+            ScriptletParser.parse("+js(aeld, click, , runAt, loading)"),
+        )
+        val text =
+            "site.example##+js(aeld, click, advert, protect, 1, " +
+                "elements, .ad, runAt, complete)"
+        val file = File(folder.root, "listener.bin")
+        val engine = KotlinFilterEngine(file)
+        engine.replace(listOf(text))
+        val restored = KotlinFilterEngine(file)
+        restored.replace(listOf(text))
+        assertEquals(engine.scriptletInjection(), restored.scriptletInjection())
+        assertEquals(
+            listOf(
+                "click",
+                "advert",
+                "runAt",
+                "complete",
+                "elements",
+                ".ad",
+                "protect",
+                "1",
+            ),
+            restored.scriptlets("https://site.example/").single().arguments,
+        )
+        for (options in
+            listOf(
+                "runAt, idle",
+                "protect, yes",
+                "elements, :scope > body",
+                "elements, .ad, elements, .other",
+                "unknown, 1",
+            )) {
+            assertNull(
+                options,
+                ScriptletParser.parse("+js(aeld, click, , $options)"),
+            )
+        }
+        System.getenv("SCRIPTLET_OUTPUT_DIR")?.let { output ->
+            File(output).mkdirs()
+            File(output, "listener-injection.js")
+                .writeText(engine.scriptletInjection()!!.source)
+        }
+    }
+
+    @Test
+    fun newShimsRetainTheirRedirectAndInjectionEligibility() {
+        val text =
+            "site.example##+js(google-ima3)\n" +
+                "||ima.example^\$script,redirect=google-ima3\n" +
+                "||piano.example^\$script,redirect=piano-analytics.js\n" +
+                "site.example##+js(piano-analytics)"
+        val engine = KotlinFilterEngine()
+        engine.replace(listOf(text))
+        assertEquals(1, engine.unsupportedRuleCount())
+        assertEquals(
+            listOf("google-ima.js"),
+            engine.scriptlets("https://site.example/").single().arguments,
+        )
+        for ((url, expected) in
+            listOf(
+                "https://ima.example/script.js" to BlockingResponse.GOOGLE_IMA,
+                "https://piano.example/script.js" to
+                    BlockingResponse.PIANO_ANALYTICS,
+            )) {
+            assertEquals(
+                expected,
+                engine.responseFor(url, "https://site.example/", "script", "GET"),
+            )
+            assertNotNull(
+                javaClass.getResourceAsStream(
+                    "/adblock/ubo/${expected.resourcePath}"
+                )
+            )
+        }
     }
 
     @Test

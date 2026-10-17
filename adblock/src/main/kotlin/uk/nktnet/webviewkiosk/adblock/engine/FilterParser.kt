@@ -140,6 +140,7 @@ internal object FilterParser {
             ":matches-css(",
             ":matches-css-before(",
             ":matches-css-after(",
+            ":matches-media(",
             ":matches-path(",
             ":min-text-length(",
             ":upward(",
@@ -629,6 +630,29 @@ internal object FilterParser {
                 safeStyle(selector.substring(styleStart + 7, selector.length - 1))
             selector = selector.substring(0, styleStart)
         }
+        val mediaStart = selector.indexOf(":matches-media(")
+        if (mediaStart >= 0) {
+            val open = mediaStart + ":matches-media".length
+            val close = closingParenthesis(selector, open)
+            val media =
+                selector.substring(open + 1, close.coerceAtLeast(open + 1)).trim()
+            val subject = selector.substring(0, mediaStart)
+            if (
+                close != selector.lastIndex ||
+                    media.length !in 1..256 ||
+                    !Regex("[A-Za-z0-9 ():.%+,-]+").matches(media) ||
+                    !AdditionalScriptlets.selector(subject) ||
+                    !safeSelector(subject, 256) ||
+                    procedural.any(subject::contains)
+            ) {
+                throw Unsupported()
+            }
+            return CosmeticProcedure(
+                selector = subject,
+                style = style ?: "display: none !important;",
+                media = media,
+            )
+        }
         val remove = selector.endsWith(":remove()")
         if (remove) {
             selector = selector.removeSuffix(":remove()")
@@ -870,6 +894,7 @@ internal object FilterParser {
             "background-image",
             "color",
             "visibility",
+            "white-space",
             "transform",
         )
 

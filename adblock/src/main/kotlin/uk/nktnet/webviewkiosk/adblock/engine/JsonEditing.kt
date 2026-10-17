@@ -4,6 +4,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import uk.nktnet.webviewkiosk.adblock.ScriptletInstruction
 import uk.nktnet.webviewkiosk.adblock.ScriptletType
@@ -98,9 +99,27 @@ internal object JsonEditing {
     fun compile(query: String): String? = runCatching {
         require(query.length in 1..2048)
         val parser = Reader(query.removePrefix("v2:"))
-        val steps = parser.path(0)
-        require(parser.position == parser.text.length && steps.isNotEmpty())
-        JsonArray(listOf(JsonPrimitive(query.startsWith("v2:")), JsonArray(steps)))
+        val guards = mutableListOf<JsonElement>()
+        var path = parser.path(0)
+        require(path.isNotEmpty())
+        while (parser.position < parser.text.length) {
+            require(guards.size < 8)
+            val bounds = parser.quantifier()
+            require(parser.text.startsWith(";$", parser.position))
+            parser.position++
+            guards.add(
+                JsonArray(listOf(JsonArray(path), bounds.first, bounds.second))
+            )
+            path = parser.path(0)
+            require(path.isNotEmpty())
+        }
+        JsonArray(
+                listOf(
+                    JsonPrimitive(query.startsWith("v2:")),
+                    JsonArray(path),
+                    JsonArray(guards),
+                )
+            )
             .toString()
     }
         .getOrNull()
@@ -118,8 +137,68 @@ internal object JsonEditing {
             }
         }
 
+        fun quantifier(): Pair<JsonPrimitive, JsonPrimitive> {
+            if (text.getOrNull(position) != '{') {
+                return JsonPrimitive(1) to JsonPrimitive(1_000_000)
+            }
+            val end = text.indexOf('}', position)
+            require(end > position)
+            val raw = text.substring(position + 1, end)
+            require(
+                Regex("[0-9]{1,7}|[0-9]{1,7},[0-9]{0,7}|,[0-9]{1,7}").matches(raw)
+            )
+            val minimum = raw.substringBefore(',').toIntOrNull() ?: 0
+            val maximum =
+                if (',' in raw) {
+                    raw.substringAfter(',').toIntOrNull() ?: 1_000_000
+                } else {
+                    minimum
+                }
+            require(minimum <= maximum && maximum <= 1_000_000)
+            // Upstream treats a zero range endpoint as its omitted default.
+            // Exact {0} is the unambiguous absence guard.
+            require(',' !in raw || maximum != 0)
+            position = end + 1
+            return JsonPrimitive(minimum) to JsonPrimitive(maximum)
+        }
+
+        private fun regex(flagsAllowed: Boolean): JsonObject {
+            require(text.getOrNull(position++) == '/')
+            val start = position
+            var escaped = false
+            while (position < text.length) {
+                val char = text[position++]
+                if (escaped) {
+                    escaped = false
+                } else if (char == '\\') {
+                    escaped = true
+                } else if (char == '/') {
+                    val source = text.substring(start, position - 1)
+                    val flags =
+                        if (flagsAllowed && text.getOrNull(position) == 'i') {
+                            position++
+                            "i"
+                        } else {
+                            ""
+                        }
+                    require(ScriptletParser.pattern("/$source/$flags"))
+                    return JsonObject(
+                        mapOf(
+                            "regex" to JsonPrimitive(source),
+                            "flags" to JsonPrimitive(flags),
+                        )
+                    )
+                }
+            }
+            error("Unterminated JSONPath regex")
+        }
+
         private fun name(literal: Boolean = true): JsonElement {
             val quote = text.getOrNull(position)
+            if (quote == '/') {
+                require(!literal)
+                return regex(flagsAllowed = false)
+            }
             if (quote == '\'' || quote == '"') {
                 require(literal)
                 position++
@@ -151,6 +230,7 @@ internal object JsonEditing {
                 )
             position += match.value.length
             require(match.value !in forbidden)
+            require(!literal || match.value == "*")
             return JsonPrimitive(match.value)
         }
 
@@ -183,15 +263,37 @@ internal object JsonEditing {
                     if (negated) {
                         position++
                     }
+                    val start = position
+                    require(text.getOrNull(position) != '$')
                     val nested = path(depth + 1)
-                    require(nested.isNotEmpty())
+                    require(nested.isNotEmpty() || text.getOrNull(start) == '@')
                     spaces()
                     val operator =
-                        listOf("==", "!=", "<=", ">=", "^=", "$=", "*=", "<", ">")
-                            .firstOrNull { text.startsWith(it, position) }
-                            .orEmpty()
+                        if (text.startsWith("=/", position)) {
+                            "re"
+                        } else {
+                            listOf(
+                                    "==",
+                                    "!=",
+                                    "<=",
+                                    ">=",
+                                    "^=",
+                                    "$=",
+                                    "*=",
+                                    "<",
+                                    ">",
+                                )
+                                .firstOrNull { text.startsWith(it, position) }
+                                .orEmpty()
+                        }
                     var value: JsonElement = JsonNull
-                    if (operator.isNotEmpty()) {
+                    if (operator == "re") {
+                        // Negated regex filters have inconsistent upstream
+                        // semantics.
+                        require(!negated)
+                        position++
+                        value = regex(flagsAllowed = true)
+                    } else if (operator.isNotEmpty()) {
                         position += operator.length
                         spaces()
                         if (text.getOrNull(position) == '\'') {

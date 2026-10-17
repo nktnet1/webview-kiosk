@@ -64,3 +64,21 @@ on 2026-10-17. SHA-256 of the bundled bytes:
   noop-vast4.xml: d06c733ba42b81cd66c7fcaabc75b51c59292cdbccdcfb6a88bf2b57d262047b
   noop-vmap1.xml: fcc40f36d86c8f7146d4b2f0c1273cc46282c2c236303dabc172dfacfdf86508
   3x2.png: c3fdb994f265ca41374d5aeeafefe0e0fe79b74508c7f09d26f6767971317eed
+
+The v1.0.26 JSONPath additions follow the same upstream jsonpath.js implementation:
+guard quantifiers, regex selectors/comparisons and current-node predicates.
+Listener options follow src/js/resources/prevent-addeventlistener.js at the
+pinned dfca51bea2b8605353547f605e9cffbb6dfa0789 commit, with shared hooks and native
+element matching instead of document-query fallback.
+
+Additional redirect resources from that pinned commit:
+  piano-analytics.js: b53897c0a853b71d7c0b1234ba5431f7253cbd2fd3a21d65bb1d3a68f2757df8
+  google-ima.js: 4bf71a6a89fdea1a8d6e3df8b1521eab679a544a1db355367fa0ab9808d20682
+Piano retains its original source bytes. IMA retains its source notices and
+implementation; source-comment whitespace was normalized to meet the column limit.
+IMA is also eligible for inline injection upstream and is included on demand.
+Its original MPL-2.0 notice applies; full licence: META-INF/licenses/google-ima-MPL-2.0.txt.
+Original Mozilla shim:
+https://searchfox.org/mozilla-central/rev/d317e93d9a59c9e4c06ada85fbff9f6a1ceaaad1/browser/extensions/webcompat/shims/google-ima.js
+The inline resource wrapper supplies captured animation frames and timers to keep
+local shim callbacks independent of selected page-timer scriptlets.

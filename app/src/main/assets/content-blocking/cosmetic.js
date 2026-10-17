@@ -88,8 +88,9 @@
     }
     var sheet = style.sheet;
     if (!sheet) return;
-    function insert(selector, declarations) {
+    function insert(selector, declarations, media) {
       var key = selector + "{" + declarations + "}";
+      if (media) { key = "@media " + media + "{" + key + "}"; }
       if (installedSelectors.has(key)) return;
       try {
         // The Kotlin parser validates declarations; WebView validates selectors.
@@ -104,7 +105,7 @@
       insert(selector, "display:none!important");
     });
     procedures.forEach(function (rule) {
-      if (rule.style !== null) insert(rule.selector, rule.style);
+      if (rule.style !== null) { insert(rule.selector, rule.style, rule.media); }
     });
   }
 
@@ -239,6 +240,9 @@
           typeof entry.remove !== "boolean" ||
           !(entry.style === null ||
             (typeof entry.style === "string" && entry.style.length <= 256)) ||
+          !(entry.media == null || (typeof entry.media === "string" &&
+            entry.media.length <= 256 && /^[A-Za-z0-9 ():.%+,-]+$/.test(entry.media) &&
+            typeof entry.style === "string")) ||
           !(entry.removeAttribute === null || typeof entry.removeAttribute === "string") ||
           !(entry.removeClass === null || typeof entry.removeClass === "string") ||
           !(entry.upwardSelector === null ||

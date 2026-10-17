@@ -65,9 +65,9 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
         val rules = saved ?: FilterCompiler.merge(requireNotNull(sourceRules))
         onProgress(RuleLoadStage.INDEXING)
         val replacement = rules.build()
-        if (saved == null && key != null) {
+        if (key != null && (saved == null || !replacement.restoredNetworkIndexes)) {
             onProgress(RuleLoadStage.SAVING_CACHE)
-            cache.write(key, rules)
+            cache.write(key, rules, replacement.networkIndexes)
             cachedSources?.let { sourceCache?.save(it) }
         }
         compiled = replacement

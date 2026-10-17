@@ -79,9 +79,10 @@ function timerCost(rules) {
         const sandbox = context('site.example');
         new Script('setTimeout = function(){ return 1; };').runInContext(sandbox);
         if (rules.length) {
-            const [routes, records] = routingPayload(rules.map(rule =>
+            const [routes, records, instructions] = routingPayload(rules.map(rule =>
                 [rule[0], rule[1], 'site.example']));
-            new Script(`${runtime}(${JSON.stringify(routes)}, ${JSON.stringify(records)});`)
+            new Script(`${runtime}(${JSON.stringify(routes)}, ${JSON.stringify(records)},` +
+                `${JSON.stringify(instructions)});`)
                 .runInContext(sandbox);
         }
         const duration = timed(() => loop.runInContext(sandbox));

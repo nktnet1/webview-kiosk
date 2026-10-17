@@ -18,6 +18,8 @@ internal object ScriptletResources {
             "googletagmanager.com/gtm" to "google-analytics_analytics.js",
             "google-analytics_ga" to "google-analytics_ga.js",
             "google-analytics.com/ga" to "google-analytics_ga.js",
+            "google-ima" to "google-ima.js",
+            "google-ima3" to "google-ima.js",
             "googletagservices_gpt" to "googletagservices_gpt.js",
             "googletagservices.com/gpt" to "googletagservices_gpt.js",
             "googletagservices-gpt" to "googletagservices_gpt.js",
@@ -34,6 +36,7 @@ internal object ScriptletResources {
     // Upstream marks these resources redirect-only; they are not +js entry points.
     val redirectAliases =
         mapOf(
+            "piano-analytics" to "piano-analytics.js",
             "google-analytics_cx_api" to "google-analytics_cx_api.js",
             "google-analytics.com/cx/api" to "google-analytics_cx_api.js",
             "google-analytics_inpage_linkid" to "google-analytics_inpage_linkid.js",
@@ -54,6 +57,6 @@ internal object ScriptletResources {
                     .bufferedReader()
                     .use { it.readText() }
             ScriptletIndex.json(name) +
-                ":function(setTimeout,clearTimeout){\n$source\n}"
+                ":function(setTimeout,clearTimeout,requestAnimationFrame){\n$source\n}"
         }
 }

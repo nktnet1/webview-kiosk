@@ -65,6 +65,36 @@ class SuggestedFilterListDownloaderTest {
         )
 
     @Test
+    fun confirmationBatchAddsOnlyTheRequestedMissingDefaults() {
+        val requested = SuggestedFilterLists.defaults.take(2)
+        val first =
+            store.importFrom(
+                "Already added",
+                "||ads.example^".byteInputStream(),
+                requested.first().url,
+                FilterListType.URL,
+            )
+        assertEquals(
+            SuggestedFilterLists.defaults.drop(1),
+            SuggestedFilterLists.missingDefaults(store.list()),
+        )
+        val requests = AtomicInteger()
+        val result =
+            downloader(
+                    requests = requests,
+                    suggestion = requested[1],
+                )
+                .downloadDefaults(store, requested)
+        assertEquals(1, requests.get())
+        assertEquals(1, result.updated)
+        assertEquals(1, result.total)
+        assertEquals(
+            listOf(first.sourceUrl, requested[1].url),
+            store.list().map { it.sourceUrl },
+        )
+    }
+
+    @Test
     fun annoyancePresetsAreTrustedOnlyAfterDownloadAndStayOutOfDefaults() {
         val suggestion =
             SuggestedFilterLists.all.first {
