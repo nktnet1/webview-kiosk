@@ -24,6 +24,7 @@ class WebViewBlockerTest {
     @Before
     fun setup() {
         val context = RuntimeEnvironment.getApplication()
+        okhttp3.OkHttp.initialize(context)
         context
             .getSharedPreferences("content_blocking_lists", 0)
             .edit()
@@ -52,7 +53,7 @@ class WebViewBlockerTest {
     }
 
     @Test
-    fun blocksOnlyHttpSubresourcesOnKnownWebPages() {
+    fun blocksHttpDocumentsAndOnlySubresourcesOnKnownWebPages() {
         val target = "https://ads.example/pixel"
         val page = "https://publisher.example/index"
         assertTrue(
@@ -65,7 +66,7 @@ class WebViewBlockerTest {
                 service,
             )
         )
-        assertFalse(
+        assertTrue(
             WebViewBlocker.shouldBlock(
                 target,
                 true,
@@ -124,6 +125,7 @@ class WebViewBlockerTest {
     fun webViewReturnsCorrectMimeTypesForNoopResources() {
         val context = RuntimeEnvironment.getApplication()
         val store = FilterListStore(context)
+        store.remove(store.list().map { it.id }.toSet())
         store.importFrom(
             "surrogates.txt",
             ("||ads.example^\$script,redirect=noopjs\n" +
@@ -266,7 +268,123 @@ class WebViewBlockerTest {
         assertEquals(0x89, png.data.read())
     }
 
-    private fun request(url: String, type: String, mainFrame: Boolean = false) =
+    @Test
+    fun documentsUseTheirOwnContextAndActualMethodRegardlessOfHeaders() {
+        val blocker =
+            realService(
+                "||forms.example^\$doc,method=POST,domain=forms.example,~third-party\n" +
+                    "@@||forms.example/safe\$document"
+            )
+        val blocked =
+            WebViewBlocker.shouldBlockDocument(
+                "https://forms.example/send",
+                "POST",
+                blocker,
+            )
+        assertTrue(blocker.lastError.value, blocked)
+        assertNull(
+            WebViewBlocker.intercept(
+                request("https://forms.example/send", "document", true),
+                "",
+                blocker,
+            )
+        )
+        val response =
+            WebViewBlocker.intercept(
+                request("https://forms.example/send", "image", true, "POST"),
+                "about:blank",
+                blocker,
+            )!!
+        assertEquals(403, response.statusCode)
+        assertEquals("text/html", response.mimeType)
+        assertEquals("UTF-8", response.encoding)
+        assertEquals("no-store", response.responseHeaders["Cache-Control"])
+        assertEquals("nosniff", response.responseHeaders["X-Content-Type-Options"])
+        assertTrue(
+            response.data
+                .bufferedReader()
+                .use { it.readText() }
+                .contains("Access Blocked")
+        )
+        assertNull(
+            WebViewBlocker.intercept(
+                request("https://forms.example/safe", "document", true, "POST"),
+                "",
+                blocker,
+            )
+        )
+        assertNull(
+            WebViewBlocker.intercept(
+                request("https://forms.example/send", "document", false, "POST"),
+                "https://forms.example/",
+                blocker,
+            )
+        )
+    }
+
+    @Test
+    fun interceptedDocumentsUseProvidedBlockPageAndRespectDisable() {
+        val url = "https://ads.example/"
+        val response =
+            WebViewBlocker.intercept(request(url, "document", true), "", service) {
+                assertEquals(url, it)
+                "<html>Custom block page</html>"
+            }!!
+        assertEquals(
+            "<html>Custom block page</html>",
+            response.data.bufferedReader().use { it.readText() },
+        )
+        service.setEnabled(false)
+        assertFalse(WebViewBlocker.shouldBlockDocument(url, "GET", service))
+        assertNull(
+            WebViewBlocker.intercept(request(url, "document", true), "", service)
+        )
+    }
+
+    @Test
+    fun documentsKeepInternalAssetsAndNonWebSchemesExempt() {
+        listOf(
+                "https://appassets.androidplatform.net",
+                "https://pdf-dummy.webviewkiosk.nktnet.uk/pdf.js",
+                "file:///sdcard/index.html",
+                "about:blank",
+                "data:text/html,hello",
+                "blob:https://ads.example/123",
+            )
+            .forEach {
+                assertFalse(
+                    it,
+                    WebViewBlocker.shouldBlockDocument(it, "GET", service),
+                )
+            }
+    }
+
+    private fun realService(text: String): ContentBlockingService {
+        val store = FilterListStore(RuntimeEnvironment.getApplication())
+        store.remove(store.list().map { it.id }.toSet())
+        store.importFrom("documents.txt", text.byteInputStream())
+        return ContentBlockingService(
+                store,
+                KotlinFilterEngine(),
+                Executor { it.run() },
+            )
+            .also {
+                it.start()
+                assertEquals(
+                    it.lastError.value,
+                    BlockingStatus.ACTIVE,
+                    it.status.value,
+                )
+                assertEquals(0, it.skippedRules.value)
+            }
+    }
+
+    private fun request(
+        url: String,
+        type: String,
+        mainFrame: Boolean = false,
+        method: String = "GET",
+    ) =
         object : WebResourceRequest {
             override fun getUrl(): Uri = Uri.parse(url)
 
@@ -276,7 +394,7 @@ class WebViewBlockerTest {
 
             override fun hasGesture() = false
 
-            override fun getMethod() = "GET"
+            override fun getMethod() = method
 
             override fun getRequestHeaders(): Map<String, String> =
                 mapOf("Sec-Fetch-Dest" to type)

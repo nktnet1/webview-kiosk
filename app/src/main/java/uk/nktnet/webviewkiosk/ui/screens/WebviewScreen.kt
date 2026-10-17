@@ -51,6 +51,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
+import uk.nktnet.webviewkiosk.blocking.WebViewBlocker
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -113,6 +115,7 @@ import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.handlers.registerPdfSource
+import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
 import uk.nktnet.webviewkiosk.utils.webview.html.generatePdfRendererHtml
 import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
@@ -147,6 +150,7 @@ fun WebviewScreen(navController: NavController) {
 
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
+    val contentBlocker = remember(context) { ContentBlockingService.get(context) }
     val isLocked by LockStateSingleton.isLocked
     val scope = rememberCoroutineScope()
 
@@ -395,13 +399,22 @@ fun WebviewScreen(navController: NavController) {
                 userSettings,
             ) ?: return
         systemSettings.urlBeingHandled = url
-        val (schemeType, blockCause) =
+        val (schemeType, policyBlockCause) =
             getBlockInfo(
                 url = url,
                 blacklistRegexes = blacklistRegexes,
                 whitelistRegexes = whitelistRegexes,
                 userSettings = userSettings,
             )
+        val blockCause =
+            policyBlockCause
+                ?: if (
+                    WebViewBlocker.shouldBlockDocument(url, "GET", contentBlocker)
+                ) {
+                    BlockCause.CONTENT_BLOCKING
+                } else {
+                    null
+                }
         if (blockCause != null) {
             loadBlockedPage(
                 webView,
@@ -874,6 +887,21 @@ private fun handlePdfUrlRendering(
     targetPdfUrl: String,
 ) {
     if (targetPdfUrl.isEmpty()) {
+        return
+    }
+    if (
+        WebViewBlocker.shouldBlockDocument(
+            targetPdfUrl,
+            "GET",
+            ContentBlockingService.get(webView.context),
+        )
+    ) {
+        loadBlockedPage(
+            webView,
+            UserSettings(webView.context),
+            targetPdfUrl,
+            BlockCause.CONTENT_BLOCKING,
+        )
         return
     }
 

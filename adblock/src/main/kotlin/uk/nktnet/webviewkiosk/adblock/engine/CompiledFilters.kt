@@ -463,6 +463,9 @@ internal class CompiledFilters(
         method: String,
     ): BlockingResponse {
         val target = httpAddress(url) ?: return BlockingResponse.ALLOW
+        if (ResourceTypes.request(type) == ResourceTypes.request("document")) {
+            return documentResponse(target, method)
+        }
         val source = httpAddress(sourceUrl) ?: return BlockingResponse.ALLOW
         var blocked = false
         var allowed = false
@@ -534,6 +537,69 @@ internal class CompiledFilters(
                     redirect ?: redirectRule ?: BlockingResponse.BLOCK
                 }
             else -> BlockingResponse.ALLOW
+        }
+    }
+
+    private fun documentResponse(target: HttpUrl, method: String): BlockingResponse {
+        var blocked = false
+        var allowed = false
+        hostSuffixes(target.host.removeSuffix(".")) { host ->
+            if (host in importantHosts) {
+                return BlockingResponse.BLOCK
+            }
+            if (host in blockedHosts) {
+                blocked = true
+            }
+            if (host in allowedHosts) {
+                allowed = true
+            }
+        }
+        // A root document is its own first-party context. Never inherit the
+        // previous page's hostname, including on redirects and an initial load.
+        val facts =
+            RequestFacts(
+                target,
+                target,
+                ResourceTypes.request("document"),
+                method.uppercase(Locale.ROOT),
+            )
+        val important =
+            requests.any(facts) { rule ->
+                !rule.redirectOnly &&
+                    // Negated resource types are not typeless strict blocks.
+                    // They apply to documents only with an explicit $document.
+                    (rule.conditions.types != 0 ||
+                        rule.conditions.excludedTypes == 0) &&
+                    (rule.important ||
+                        (rule.exception && !allowed) ||
+                        (!rule.exception && !blocked)) &&
+                    facts.matches(rule.conditions) &&
+                    rule.pattern.matches(
+                        target,
+                        facts.url,
+                        facts.budget,
+                        hostnameOnly = !rule.exception && rule.conditions.types == 0,
+                    ) &&
+                    if (rule.important) {
+                        true
+                    } else {
+                        if (rule.exception) {
+                            allowed = true
+                        } else {
+                            blocked = true
+                        }
+                        false
+                    }
+            }
+        if (facts.budget.exhausted) {
+            return BlockingResponse.ALLOW
+        }
+        // Document redirects are blocks, not script/image surrogate responses.
+        // Important blocks override either generic or explicit exceptions.
+        return if (important || (blocked && !allowed)) {
+            BlockingResponse.BLOCK
+        } else {
+            BlockingResponse.ALLOW
         }
     }
 

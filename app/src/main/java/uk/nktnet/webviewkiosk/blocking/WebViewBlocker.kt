@@ -11,7 +11,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 /**
  * WebView has no reliable resource-type or initiator-frame API. Only match
  * subresources with a known top-level URL; unknown types are "other" and can
- * underblock typed rules.
+ * underblock typed rules. Main frames use the engine's document matcher instead.
  */
 internal object WebViewBlocker {
     private val empty = ByteArray(0)
@@ -61,6 +61,14 @@ internal object WebViewBlocker {
             service,
         ) != BlockingResponse.ALLOW
 
+    fun shouldBlockDocument(
+        url: String,
+        method: String,
+        service: ContentBlockingService,
+    ): Boolean =
+        responseFor(url, true, "", emptyMap(), method, service) !=
+            BlockingResponse.ALLOW
+
     private fun responseFor(
         url: String,
         isMainFrame: Boolean,
@@ -69,7 +77,13 @@ internal object WebViewBlocker {
         method: String,
         service: ContentBlockingService,
     ): BlockingResponse {
-        if (isMainFrame || !isFilterableUrl(url) || !isFilterableUrl(pageUrl)) {
+        if (!isFilterableUrl(url)) {
+            return BlockingResponse.ALLOW
+        }
+        if (isMainFrame) {
+            return service.responseFor(url, url, "document", method)
+        }
+        if (!isFilterableUrl(pageUrl)) {
             return BlockingResponse.ALLOW
         }
         return service.responseFor(
@@ -84,6 +98,10 @@ internal object WebViewBlocker {
         request: WebResourceRequest,
         pageUrl: String,
         service: ContentBlockingService,
+        blockedDocumentHtml: (String) -> String = {
+            "<!doctype html><title>Access Blocked</title>" +
+                "<h1>Access Blocked</h1><p>URL matches a content blocking filter</p>"
+        },
     ): WebResourceResponse? {
         val response =
             responseFor(
@@ -94,6 +112,22 @@ internal object WebViewBlocker {
                 request.method,
                 service,
             )
+        if (response == BlockingResponse.ALLOW) {
+            return null
+        }
+        if (request.isForMainFrame) {
+            return WebResourceResponse(
+                "text/html",
+                "UTF-8",
+                403,
+                "Forbidden",
+                mapOf(
+                    "Cache-Control" to "no-store",
+                    "X-Content-Type-Options" to "nosniff",
+                ),
+                blockedDocumentHtml(request.url.toString()).byteInputStream(),
+            )
+        }
         val type =
             response.mimeType
                 ?: when (response) {

@@ -255,7 +255,22 @@ internal data class UrlPattern(
         address: HttpUrl,
         canonicalUrl: String,
         budget: MatchBudget,
+        hostnameOnly: Boolean = false,
     ): Boolean {
+        // Like uBO strict blocking, a typeless navigation block must end at the
+        // hostname (optionally consuming its separator). A path match such as
+        // /ads/ is useful for subresources, but must not deny a whole page.
+        if (
+            hostnameOnly &&
+                text.none {
+                    it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' || it == '_'
+                }
+        ) {
+            return false
+        }
+        plainHost?.let {
+            return domainMatches(address.host.removeSuffix("."), it)
+        }
         // OkHttp escapes literal path pipes. Match their equivalent spelling only
         // for glob filters which explicitly contain that literal character.
         val url =
@@ -267,19 +282,76 @@ internal data class UrlPattern(
             } else {
                 canonicalUrl
             }
+        val hostStart =
+            if (domainAnchor || hostnameOnly) {
+                hostnameStart(url)
+            } else {
+                0
+            }
+        fun accepts(end: Int): Boolean {
+            if (end < 0) {
+                return false
+            }
+            if (!hostnameOnly) {
+                return true
+            }
+            val hostEnd =
+                hostStart +
+                    address.host.length +
+                    if (address.host.contains(':')) {
+                        2
+                    } else {
+                        0
+                    }
+            val minimumEnd =
+                if (address.host.endsWith('.')) {
+                    hostEnd - 1
+                } else {
+                    hostEnd
+                }
+            return end in minimumEnd..hostEnd + 1
+        }
+
         compiledRegex?.let { pattern ->
             // RE2/J has no backtracking. Also cap aggregate automaton work per
             // request.
-            return budget.consume(
-                (url.length + 1) * maxOf(1, pattern.programSize() / 4)
-            ) && pattern.matcher(url).find()
+            if (
+                !budget.consume(
+                    (url.length + 1) * maxOf(1, pattern.programSize() / 4)
+                )
+            ) {
+                return false
+            }
+            val matcher = pattern.matcher(url)
+            return matcher.find() && accepts(matcher.end())
         }
         if (!domainAnchor) {
-            return glob(url, 0, !startAnchor, budget)
+            return accepts(glob(url, 0, !startAnchor, budget))
         }
-        if (hostIndex != null && !domainMatches(address.host, hostIndex)) {
+        if (
+            hostIndex != null &&
+                !domainMatches(address.host.removeSuffix("."), hostIndex)
+        ) {
             return false
         }
+        if (accepts(glob(url, hostStart, false, budget))) {
+            return true
+        }
+        if (address.host.contains(':')) {
+            return false
+        }
+        val hostEnd = hostStart + address.host.length
+        var dot = url.indexOf('.', hostStart)
+        while (dot in hostStart until hostEnd) {
+            if (accepts(glob(url, dot + 1, false, budget))) {
+                return true
+            }
+            dot = url.indexOf('.', dot + 1)
+        }
+        return false
+    }
+
+    private fun hostnameStart(url: String): Int {
         val authorityStart = url.indexOf("://") + 3
         val authorityEnd =
             url.indexOf('/', authorityStart).let {
@@ -289,29 +361,13 @@ internal data class UrlPattern(
                     it
                 }
             }
-        val hostStart =
-            url.lastIndexOf('@', authorityEnd - 1).let {
-                if (it >= authorityStart) {
-                    it + 1
-                } else {
-                    authorityStart
-                }
-            }
-        if (glob(url, hostStart, false, budget)) {
-            return true
+        // Credentials may contain the same text as the target hostname.
+        val at = url.lastIndexOf('@', authorityEnd - 1)
+        return if (at >= authorityStart) {
+            at + 1
+        } else {
+            authorityStart
         }
-        if (address.host.contains(':')) {
-            return false
-        }
-        val hostEnd = hostStart + address.host.length
-        var dot = url.indexOf('.', hostStart)
-        while (dot in hostStart until hostEnd) {
-            if (glob(url, dot + 1, false, budget)) {
-                return true
-            }
-            dot = url.indexOf('.', dot + 1)
-        }
-        return false
     }
 
     /**
@@ -322,7 +378,7 @@ internal data class UrlPattern(
         start: Int,
         search: Boolean,
         budget: MatchBudget,
-    ): Boolean {
+    ): Int {
         var p = 0
         var u = start
         var star =
@@ -334,10 +390,10 @@ internal data class UrlPattern(
         var retry = start
         while (u < url.length) {
             if (!budget.consume()) {
-                return false
+                return -1
             }
             if (p == text.length && !endAnchor) {
-                return true
+                return u
             }
             if (p < text.length && text[p] == '*') {
                 star = p++
@@ -361,11 +417,15 @@ internal data class UrlPattern(
                     }
                 u = ++retry
             } else {
-                return false
+                return -1
             }
         }
         while (p < text.length && (text[p] == '*' || text[p] == '^')) p++
-        return p == text.length
+        return if (p == text.length) {
+            u
+        } else {
+            -1
+        }
     }
 
     companion object {

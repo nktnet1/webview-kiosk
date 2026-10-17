@@ -29,6 +29,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
@@ -1464,6 +1465,57 @@ class PdfSourceRequestTest {
     private fun cookiePairs(header: String?): Set<String> =
         header?.split(';')?.map { it.trim() }?.toSet().orEmpty()
 
+    @Test
+    fun documentFiltersBlockPdfSourcesBeforeAnyNetworkRequest() {
+        val requests = AtomicInteger()
+        val url = "$remote/blocked.pdf"
+        server.createContext("/blocked.pdf") { exchange ->
+            requests.incrementAndGet()
+            respond(exchange, 200, "PDF")
+        }
+        val engine =
+            KotlinFilterEngine().also {
+                it.replace(listOf("|$url\$doc"))
+            }
+        assertStatus(
+            403,
+            load(
+                register(url),
+                isDocumentBlocked = {
+                    engine.shouldBlock(it, "", "document", "GET")
+                },
+            ),
+        )
+        assertEquals(0, requests.get())
+    }
+
+    @Test
+    fun documentFiltersCheckEveryPdfRedirectAndHonorExceptions() {
+        val requests = CopyOnWriteArrayList<String>()
+        server.createContext("/entry") { exchange ->
+            requests.add("entry")
+            respond(exchange, 302, "redirect", "Location" to "/blocked.pdf")
+        }
+        server.createContext("/blocked.pdf") { exchange ->
+            requests.add("blocked")
+            respond(exchange, 200, "PDF")
+        }
+        val url = "$remote/blocked.pdf"
+        val rule = "|$url\$document"
+        val engine = KotlinFilterEngine().also { it.replace(listOf(rule)) }
+        val isBlocked: (String) -> Boolean = {
+            engine.shouldBlock(it, "", "document", "GET")
+        }
+        val token = register("$remote/entry")
+        assertStatus(403, load(token, isDocumentBlocked = isBlocked))
+        assertEquals(listOf("entry"), requests)
+        engine.replace(listOf(rule, "@@|$url\$doc"))
+        val response = load(token, isDocumentBlocked = isBlocked)!!
+        assertEquals(200, response.statusCode)
+        assertEquals("PDF", response.data.bufferedReader().use { it.readText() })
+        assertEquals(listOf("entry", "entry", "blocked"), requests)
+    }
+
     private fun assertStatus(expected: Int, response: WebResourceResponse?) {
         val actual = requireNotNull(response)
         try {
@@ -1535,6 +1587,7 @@ class PdfSourceRequestTest {
             },
         onAuthenticated: (String, String) -> Unit = { _, _ -> },
         onViewerEvent: (String, String, String) -> Unit = { _, _, _ -> },
+        isDocumentBlocked: (String) -> Boolean = { false },
     ) =
         handlePdfSourceRequest(
             context = context,
@@ -1559,6 +1612,7 @@ class PdfSourceRequestTest {
             onAuthenticationRequired = onAuthenticationRequired,
             onAuthenticated = onAuthenticated,
             onViewerEvent = onViewerEvent,
+            isDocumentBlocked = isDocumentBlocked,
         )
 
     private fun respond(

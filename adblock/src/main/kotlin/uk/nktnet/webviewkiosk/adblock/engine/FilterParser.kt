@@ -53,6 +53,7 @@ internal object ResourceTypes {
                 when (name) {
                     "css" -> "stylesheet"
                     "frame" -> "subdocument"
+                    "doc" -> "document"
                     "xhr" -> "xmlhttprequest"
                     else -> name
                 }

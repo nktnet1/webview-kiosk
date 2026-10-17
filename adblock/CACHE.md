@@ -1,4 +1,4 @@
-# Compiled cache - v1.0.17
+# Compiled cache - v1.0.20
 
 All four opportunities are technically possible, with different tradeoffs:
 
@@ -11,16 +11,17 @@ All four opportunities are technically possible, with different tradeoffs:
 
 ## Representation and invalidation
 
-Schema 9 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
+Schema 10 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
 normalized network/cosmetic/scriptlet records, bounded counts and trailing CRC32.
 It does not use Java object serialization. Identity includes exact input text,
 list boundaries, ordering and trust bits. Cached scriptlet arguments are validated
 again. The optional engine `cacheVersion` remains an explicit compatibility salt,
 with a stable production default. Parsing, matching, scriptlet-contract and binary
 changes require bumping `CompiledFilterCache.VERSION`; app-only releases do not.
-Schema 9 adds a regex discriminator and child-text cosmetic predicate fields.
-RE2/J programs are rebuilt and bounded when records are restored. Older schemas
-recompile once.
+Schema 9 added a regex discriminator and child-text cosmetic predicate fields.
+Schema 10 invalidates records for document-specific navigation matching; it still
+rebuilds runtime indexes. RE2/J programs are rebuilt and bounded when records are
+restored. Older schemas recompile once.
 
 The warm path reads one aggregate snapshot and constructs the indexes. On a miss,
 per-source SHA-256-keyed records in `compiled-rules.bin.sources` allow only changed,

@@ -146,6 +146,7 @@ fun handlePdfSourceRequest(
     userSettings: UserSettings,
     blacklistRegexes: List<Regex>,
     whitelistRegexes: List<Regex>,
+    isDocumentBlocked: (String) -> Boolean,
     onAuthenticationRequired:
         (token: String, url: String, request: HttpAuthRequest) -> Unit =
         { _, _, request ->
@@ -205,7 +206,7 @@ fun handlePdfSourceRequest(
                 whitelistRegexes = whitelistRegexes,
                 userSettings = userSettings,
             )
-        if (blockCause != null) {
+        if (blockCause != null || isDocumentBlocked(sourceUrl)) {
             return errorResponse(403, "PDF source is blocked")
         }
 
@@ -230,6 +231,7 @@ fun handlePdfSourceRequest(
                     onAuthenticated = onAuthenticated,
                     onClientCertificateRequired = onClientCertificateRequired,
                     onSslError = onSslError,
+                    isDocumentBlocked = isDocumentBlocked,
                 )
             else -> errorResponse(400, "Unsupported PDF URL")
         }
@@ -274,6 +276,7 @@ private fun remotePdfResponse(
     onAuthenticated: (String, String) -> Unit,
     onClientCertificateRequired: (String, String, ClientCertRequest) -> Unit,
     onSslError: (String, String, SslErrorRequest) -> Unit,
+    isDocumentBlocked: (String) -> Boolean,
 ): WebResourceResponse {
     var currentUrl = sourceUrl
     var redirectCount = 0
@@ -291,7 +294,11 @@ private fun remotePdfResponse(
                 whitelistRegexes = whitelistRegexes,
                 userSettings = userSettings,
             )
-        if (schemeType != SchemeType.WEB || blockCause != null) {
+        if (
+            schemeType != SchemeType.WEB ||
+                blockCause != null ||
+                isDocumentBlocked(currentUrl)
+        ) {
             throw PdfSourceBlockedException("Blocked redirect target: $currentUrl")
         }
 
