@@ -154,6 +154,28 @@ class SubscriptionCompatibilityTest {
     }
 
     @Test
+    fun expandedUblockAdsAndBadwareCompileWhenArchiveIsAvailable() {
+        val directory = System.getenv("UASSETS_FILTERS_DIR")
+        assumeTrue(
+            "Set UASSETS_FILTERS_DIR to verify uBlock lists",
+            directory != null,
+        )
+        val root = File(directory!!)
+        fun expand(name: String): String =
+            expandFilterListIncludes(File(root, name).readText()) { include ->
+                expand(include)
+            }
+        val sources =
+            listOf("filters.txt", "badware.txt").map {
+                FilterSource(expand(it), trusted = true)
+            }
+        val engine = KotlinFilterEngine()
+        sources.forEach(engine::validateSource)
+        engine.replaceSources(sources) {}
+        assertTrue(engine.scriptletInjection() != null)
+    }
+
+    @Test
     fun auditEasylistAndEasyprivacy() {
         val path = System.getenv("EASYLIST_DIR")
         assumeTrue("Set EASYLIST_DIR to inspect subscriptions", path != null)

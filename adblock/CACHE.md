@@ -1,4 +1,4 @@
-# Compiled cache - v1.0.23
+# Compiled cache - v1.0.24
 
 All four opportunities are technically possible, with different tradeoffs:
 
@@ -11,7 +11,7 @@ All four opportunities are technically possible, with different tradeoffs:
 
 ## Representation and invalidation
 
-Schema 13 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
+Schema 14 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
 normalized network/cosmetic/scriptlet records, bounded counts and trailing CRC32.
 It does not use Java object serialization. Identity includes exact input text,
 list boundaries, ordering and trust bits. Cached scriptlet arguments are validated
@@ -27,6 +27,10 @@ when records are restored. Schema 12 adds scriptlet entity scopes and canonical
 cookie flags; older schemas recompile once. The binary layout remains normalized
 rules, with runtime indexes rebuilt on load. Schema 13 invalidates old trusted-cookie
 argument contracts and permits their bounded ten-argument representation.
+Schema 14 recompiles source shards because incomplete hostname prefixes ending in
+hyphens are now valid. The scriptlet-rule limit rises from 8,192 to 16,384:
+the supplied uBlock Ads list with includes has 8,812 accepted scriptlet rules.
+The existing 2 MiB routing-data limit and 128 instructions per page remain.
 
 The warm path reads one aggregate snapshot and constructs the indexes. On a miss,
 per-source SHA-256-keyed records in `compiled-rules.bin.sources` allow only changed,
@@ -75,7 +79,7 @@ A suitable format uses interned key tables, offsets and integer rule IDs for
 network, cosmetic and scriptlet buckets, separately from Kotlin runtime objects.
 It needs bounded decoding, equivalence tests and a schema bump.
 
-This remains a separate startup optimization; schema 13 does not persist indexes.
+This remains a separate startup optimization; schema 14 does not persist indexes.
 The next cache implementation should save bucket keys, offsets and integer rule IDs
 for the four network indexes, plain-host sets, cosmetic maps and scriptlet routing.
 Restore those buckets into the existing lookup structures so request matching keeps

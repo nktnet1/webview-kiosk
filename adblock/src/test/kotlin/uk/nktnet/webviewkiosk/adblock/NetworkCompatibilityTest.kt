@@ -76,6 +76,50 @@ class NetworkCompatibilityTest {
     }
 
     @Test
+    fun badwareHostPrefixesCanEndInHyphensButCompleteHostnameLabelsCannot() {
+        val rules =
+            "||air-bnb.check-\$doc\n" +
+                "||chrome-chrome-\$doc\n" +
+                "||claude-code-\$doc,to=edgeone.app|pages.dev|squarespace.com"
+        val file = File(folder.root, "badware-prefix.bin")
+        val source = FilterSource(rules, trusted = true)
+        val engine = KotlinFilterEngine(file)
+        engine.validateSource(source)
+        engine.replaceSources(listOf(source)) {}
+        val restored = KotlinFilterEngine(file)
+        restored.replaceSources(listOf(source)) {}
+        assertEquals(0, restored.unsupportedRuleCount())
+        assertTrue(
+            blocked(
+                restored,
+                "https://air-bnb.check-verification.example/",
+                "document",
+            )
+        )
+        assertTrue(
+            blocked(restored, "https://chrome-chrome-download.example/", "document")
+        )
+        assertTrue(
+            blocked(restored, "https://claude-code-login.pages.dev/", "document")
+        )
+        assertFalse(
+            blocked(restored, "https://claude-code-login.example/", "document")
+        )
+        assertFalse(blocked(restored, "https://air-bnb.check.example/", "document"))
+        assertFalse(
+            blocked(restored, "https://site.example/air-bnb.check-fake", "document")
+        )
+        try {
+            engine.validate("||invalid-.example^\$doc")
+            throw AssertionError(
+                "An incomplete non-final hostname label must be rejected"
+            )
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message.orEmpty().contains("invalid host anchor"))
+        }
+    }
+
+    @Test
     fun redirectExceptionsSuppressSurrogatesWithoutAllowingBlockedRequests() {
         val engine = KotlinFilterEngine()
         engine.replace(

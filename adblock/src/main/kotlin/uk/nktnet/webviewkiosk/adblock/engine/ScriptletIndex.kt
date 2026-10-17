@@ -196,7 +196,7 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
     }
 
     companion object {
-        const val MAX_RULES = 8192
+        const val MAX_RULES = 16384
         const val MAX_PER_PAGE = 128
         private val PRIVATE_HOSTS =
             setOf(

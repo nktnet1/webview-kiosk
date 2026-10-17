@@ -38,11 +38,12 @@ internal fun normalizedHost(value: String, allowPrefix: Boolean = false): String
                 })
                 .split('.')
         if (
-            labels.any {
-                it.isEmpty() ||
-                    it.length > 63 ||
-                    it.startsWith('-') ||
-                    it.endsWith('-')
+            labels.withIndex().any { (index, label) ->
+                label.isEmpty() ||
+                    label.length > 63 ||
+                    label.startsWith('-') ||
+                    (label.endsWith('-') &&
+                        (!allowPrefix || index != labels.lastIndex))
             }
         ) {
             return null
