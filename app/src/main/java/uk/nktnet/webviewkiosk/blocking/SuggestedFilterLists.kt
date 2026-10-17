@@ -270,8 +270,15 @@ internal class SuggestedFilterListDownloader(
      * Continue past individual failures. Callers queue one engine reload after the
      * batch.
      */
-    fun refreshAll(store: FilterListStore): FilterRefreshResult {
-        val candidates = store.list().filter { it.sourceUrl != null }
+    fun refreshAll(store: FilterListStore): FilterRefreshResult =
+        refreshSelected(store, store.list().map { it.id }.toSet())
+
+    /** Refresh only the selected subscriptions; local lists have no download URL. */
+    fun refreshSelected(
+        store: FilterListStore,
+        ids: Set<String>,
+    ): FilterRefreshResult {
+        val candidates = store.list().filter { it.id in ids && it.sourceUrl != null }
         val failures = mutableListOf<FilterRefreshFailure>()
         var updated = 0
         candidates.forEach { item ->

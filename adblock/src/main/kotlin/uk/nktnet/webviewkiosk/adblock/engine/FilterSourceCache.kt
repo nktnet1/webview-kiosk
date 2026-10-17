@@ -8,7 +8,7 @@ import uk.nktnet.webviewkiosk.adblock.RuleLoadStage
 internal class FilterSourceCache(file: File, private val version: Int) {
     private val directory = File(file.parentFile, "${file.name}.sources")
 
-    data class Entry(
+    class Entry(
         val file: File,
         val key: ByteArray,
         val rules: CompiledRuleSet,

@@ -549,26 +549,32 @@ internal class FilterListStore(
 
     @Synchronized
     fun setEnabled(id: String, enabled: Boolean) {
+        setEnabled(setOf(id), enabled)
+    }
+
+    /** Validate the selection before committing one index change. */
+    @Synchronized
+    fun setEnabled(ids: Set<String>, enabled: Boolean) {
         val existing = list()
-        require(existing.any { it.id == id }) { "Unknown filter list" }
-        save(
-            existing.map {
-                if (it.id == id) {
-                    it.copy(enabled = enabled)
-                } else {
-                    it
-                }
+        require(existing.map { it.id }.toSet().containsAll(ids)) {
+            "Unknown filter list"
+        }
+        val updated = existing.map {
+            if (it.id in ids) {
+                it.copy(enabled = enabled)
+            } else {
+                it
             }
-        )
+        }
+        if (updated != existing) {
+            save(updated)
+        }
     }
 
     /** Persist one bulk change; callers queue one engine reload after it commits. */
     @Synchronized
     fun setAllEnabled(enabled: Boolean) {
-        val existing = list()
-        if (existing.any { it.enabled != enabled }) {
-            save(existing.map { it.copy(enabled = enabled) })
-        }
+        setEnabled(list().map { it.id }.toSet(), enabled)
     }
 
     /** Persist display order and engine input order without touching rule files. */
@@ -590,10 +596,21 @@ internal class FilterListStore(
 
     @Synchronized
     fun remove(id: String) {
+        remove(setOf(id))
+    }
+
+    /** Commit the remaining index before deleting any selected rule files. */
+    @Synchronized
+    fun remove(ids: Set<String>) {
+        if (ids.isEmpty()) {
+            return
+        }
         val existing = list()
-        require(existing.any { it.id == id }) { "Unknown filter list" }
-        save(existing.filterNot { it.id == id })
-        fileFor(id).delete()
+        require(existing.map { it.id }.toSet().containsAll(ids)) {
+            "Unknown filter list"
+        }
+        save(existing.filterNot { it.id in ids })
+        ids.forEach { fileFor(it).delete() }
     }
 
     @Synchronized fun enabledTexts(): List<String> = enabledSources().map { it.text }

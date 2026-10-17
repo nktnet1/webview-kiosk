@@ -892,4 +892,124 @@ class SuggestedFilterListDownloaderTest {
             store.list(),
         )
     }
+
+    @Test
+    fun updateSelectionSkipsUnselectedListsAndLocalFiles() {
+        val selectedPreset =
+            store.importFrom(
+                "Preset",
+                "||old.example^".byteInputStream(),
+                preset.url,
+                FilterListType.PRESET,
+            )
+        val selectedUrl =
+            store.importFrom(
+                "URL",
+                "||old.example^".byteInputStream(),
+                "https://example.org/selected.txt",
+            )
+        val unselected =
+            store.importFrom(
+                "Unselected",
+                "||unchanged.example^".byteInputStream(),
+                "https://example.org/unselected.txt",
+            )
+        val local = store.importFrom("Local", "||local.example^".byteInputStream())
+        store.setEnabled(selectedUrl.id, false)
+        val requests = mutableListOf<String>()
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        requests += chain.request().url.toString()
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("test")
+                            .body("||updated.example^".toResponseBody())
+                            .build()
+                    }
+                    .build()
+            )
+        currentTime = 2_000L
+
+        val result =
+            client.refreshSelected(
+                store,
+                setOf(selectedPreset.id, selectedUrl.id, local.id),
+            )
+
+        assertEquals(FilterRefreshResult(2, 2, emptyList()), result)
+        assertEquals(listOf(preset.url, selectedUrl.sourceUrl), requests)
+        assertEquals(
+            listOf(
+                selectedPreset.copy(lastRefreshedAt = 2_000L, trusted = true),
+                selectedUrl.copy(lastRefreshedAt = 2_000L, enabled = false),
+                unselected,
+                local,
+            ),
+            store.list(),
+        )
+        assertEquals(
+            listOf("||updated.example^", "||unchanged.example^", "||local.example^"),
+            store.enabledTexts(),
+        )
+        assertEquals(
+            FilterRefreshResult(0, 0, emptyList()),
+            client.refreshSelected(store, emptySet()),
+        )
+        assertEquals(2, requests.size)
+    }
+
+    @Test
+    fun failedSelectedDownloadKeepsItsRulesAndContinuesToNextSelection() {
+        val bad =
+            store.importFrom(
+                "Bad",
+                "||old.example^".byteInputStream(),
+                "https://example.org/bad.txt",
+            )
+        val good =
+            store.importFrom(
+                "Good",
+                "||old.example^".byteInputStream(),
+                preset.url,
+                FilterListType.PRESET,
+            )
+        val requests = mutableListOf<String>()
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        val url = chain.request().url.toString()
+                        requests += url
+                        if (url == bad.sourceUrl) {
+                            throw IOException("Unavailable")
+                        }
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("test")
+                            .body("||updated.example^".toResponseBody())
+                            .build()
+                    }
+                    .build()
+            )
+        currentTime = 2_000L
+
+        val result = client.refreshSelected(store, setOf(bad.id, good.id))
+
+        assertEquals(2, result.total)
+        assertEquals(1, result.updated)
+        assertEquals(listOf("Bad"), result.failures.map { it.name })
+        assertEquals(listOf(bad.sourceUrl, good.sourceUrl), requests)
+        assertEquals(bad, store.list().first())
+        assertEquals(2_000L, store.list().last().lastRefreshedAt)
+        assertEquals(
+            listOf("||old.example^", "||updated.example^"),
+            store.enabledTexts(),
+        )
+    }
 }

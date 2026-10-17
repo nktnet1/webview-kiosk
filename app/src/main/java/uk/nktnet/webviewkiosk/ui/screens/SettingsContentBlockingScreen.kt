@@ -32,6 +32,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -50,6 +51,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -59,6 +61,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -73,6 +76,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -145,8 +149,21 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     var workingMessage by remember { mutableStateOf<String?>(null) }
     val busy = working
     var bulkActionsExpanded by remember { mutableStateOf(false) }
-    var rearranging by rememberSaveable { mutableStateOf(false) }
-    var pendingRemoval by remember { mutableStateOf<ImportedFilterList?>(null) }
+    var managing by rememberSaveable { mutableStateOf(false) }
+    var selectedIds by
+        rememberSaveable(
+            stateSaver =
+                listSaver<Set<String>, String>(
+                    save = { it.toList() },
+                    restore = { it.toSet() },
+                )
+        ) {
+            mutableStateOf(emptySet())
+        }
+    val selectedLists = lists.filter { it.id in selectedIds }
+    var pendingRemoval by remember {
+        mutableStateOf(emptyList<ImportedFilterList>())
+    }
     var pendingEdit by remember { mutableStateOf<ImportedFilterList?>(null) }
     var pendingInfo by remember { mutableStateOf<ImportedFilterList?>(null) }
     var editName by remember { mutableStateOf("") }
@@ -214,6 +231,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         store.list()
                     }
                 lists = savedLists
+                selectedIds = selectedIds.intersect(savedLists.map { it.id }.toSet())
                 onStored?.invoke()
                 working = false
                 workingMessage = null
@@ -262,6 +280,30 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         }
     }
 
+    fun refreshSelected(ids: Set<String>) {
+        var summary = FilterRefreshResult(0, 0, emptyList())
+        update(
+            affectsRules =
+                lists.any {
+                    it.id in ids && it.enabled && it.sourceUrl != null
+                },
+            progressMessage = "Downloading and validating selected filter lists…",
+            onSuccess = {
+                reportBatch(summary, FilterListBatchAction.REFRESH) {
+                    refreshSelected(ids)
+                }
+            },
+        ) {
+            summary = downloader.refreshSelected(store, ids)
+        }
+    }
+
+    fun finishManaging() {
+        managing = false
+        selectedIds = emptySet()
+        bulkActionsExpanded = false
+    }
+
     fun goBack() {
         if (!navController.popBackStack()) {
             navigateToWebViewScreen(navController)
@@ -273,11 +315,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             !showAddDialog &&
                 pendingEdit == null &&
                 pendingInfo == null &&
-                pendingRemoval == null
+                pendingRemoval.isEmpty()
     ) {
         if (!working) {
-            if (rearranging) {
-                rearranging = false
+            if (managing) {
+                finishManaging()
             } else {
                 goBack()
             }
@@ -360,8 +402,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             stringResource(R.string.settings_content_blocking_title),
             onBackClick = {
                 if (!working) {
-                    if (rearranging) {
-                        rearranging = false
+                    if (managing) {
+                        finishManaging()
                     } else {
                         goBack()
                     }
@@ -405,52 +447,101 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             Arrangement.spacedBy(8.dp, Alignment.End),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (rearranging) {
-                            Button(
-                                onClick = { rearranging = false },
-                                enabled = !busy,
+                        Box(modifier = Modifier.weight(1f, fill = false)) {
+                            OutlinedButton(
+                                onClick = { bulkActionsExpanded = true },
+                                enabled =
+                                    !busy &&
+                                        (!managing || selectedLists.isNotEmpty()),
                             ) {
-                                Text("Done")
+                                Text(
+                                    "Actions",
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Icon(
+                                    painterResource(
+                                        R.drawable.outline_keyboard_arrow_down_24
+                                    ),
+                                    contentDescription = null,
+                                )
                             }
-                        } else {
-                            Box(modifier = Modifier.weight(1f, fill = false)) {
-                                OutlinedButton(
-                                    onClick = { bulkActionsExpanded = true },
-                                    enabled = !busy,
-                                ) {
-                                    Text(
-                                        "Actions",
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                    Icon(
-                                        painterResource(
-                                            R.drawable.outline_keyboard_arrow_down_24
-                                        ),
-                                        contentDescription = null,
-                                    )
-                                }
-                                DropdownMenu(
-                                    expanded = bulkActionsExpanded,
-                                    onDismissRequest = {
-                                        bulkActionsExpanded = false
-                                    },
-                                ) {
+                            DropdownMenu(
+                                expanded = bulkActionsExpanded,
+                                onDismissRequest = { bulkActionsExpanded = false },
+                            ) {
+                                if (managing) {
                                     DropdownMenuItem(
-                                        text = {
-                                            Text("Add Defaults")
-                                        },
+                                        text = { Text("Enable selected") },
                                         enabled =
                                             !busy &&
-                                                SuggestedFilterLists.defaults.any {
-                                                    preset ->
-                                                    lists.none {
-                                                        it.sourceUrl == preset.url
-                                                    }
+                                                selectedLists.any { !it.enabled },
+                                        onClick = {
+                                            bulkActionsExpanded = false
+                                            val ids =
+                                                selectedLists.map { it.id }.toSet()
+                                            update(
+                                                successMessage =
+                                                    "Selected lists enabled"
+                                            ) {
+                                                store.setEnabled(ids, true)
+                                            }
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Disable selected") },
+                                        enabled =
+                                            !busy &&
+                                                selectedLists.any { it.enabled },
+                                        onClick = {
+                                            bulkActionsExpanded = false
+                                            val ids =
+                                                selectedLists.map { it.id }.toSet()
+                                            update(
+                                                successMessage =
+                                                    "Selected lists disabled"
+                                            ) {
+                                                store.setEnabled(ids, false)
+                                            }
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Update selected") },
+                                        enabled =
+                                            !busy &&
+                                                selectedLists.any {
+                                                    it.sourceUrl != null
                                                 },
                                         onClick = {
                                             bulkActionsExpanded = false
-                                            downloadDefaults()
+                                            refreshSelected(
+                                                selectedLists.map { it.id }.toSet()
+                                            )
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                "Remove selected",
+                                                color =
+                                                    MaterialTheme.colorScheme.error,
+                                            )
+                                        },
+                                        enabled =
+                                            !busy && selectedLists.isNotEmpty(),
+                                        onClick = {
+                                            bulkActionsExpanded = false
+                                            pendingRemoval = selectedLists
+                                        },
+                                    )
+                                } else {
+                                    DropdownMenuItem(
+                                        text = { Text("Manage") },
+                                        enabled = !busy && lists.isNotEmpty(),
+                                        onClick = {
+                                            bulkActionsExpanded = false
+                                            selectedIds = emptySet()
+                                            managing = true
                                         },
                                     )
                                     DropdownMenuItem(
@@ -488,15 +579,31 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Rearrange") },
-                                        enabled = !busy && lists.size > 1,
+                                        text = { Text("Add Default") },
+                                        enabled =
+                                            !busy &&
+                                                SuggestedFilterLists.defaults.any {
+                                                    preset ->
+                                                    lists.none {
+                                                        it.sourceUrl == preset.url
+                                                    }
+                                                },
                                         onClick = {
                                             bulkActionsExpanded = false
-                                            rearranging = true
+                                            downloadDefaults()
                                         },
                                     )
                                 }
                             }
+                        }
+                        if (managing) {
+                            Button(
+                                onClick = { finishManaging() },
+                                enabled = !busy,
+                            ) {
+                                Text("Done")
+                            }
+                        } else {
                             Button(
                                 onClick = {
                                     editError = null
@@ -559,6 +666,47 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         )
                     }
                 }
+                if (managing) {
+                    item(key = "selection") {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                TriStateCheckbox(
+                                    state =
+                                        when {
+                                            selectedLists.isEmpty() ->
+                                                ToggleableState.Off
+                                            selectedLists.size == lists.size ->
+                                                ToggleableState.On
+                                            else -> ToggleableState.Indeterminate
+                                        },
+                                    enabled = !busy && lists.isNotEmpty(),
+                                    onClick = {
+                                        selectedIds =
+                                            if (selectedLists.size == lists.size) {
+                                                emptySet()
+                                            } else {
+                                                lists.map { it.id }.toSet()
+                                            }
+                                    },
+                                    modifier =
+                                        Modifier.semantics {
+                                            contentDescription =
+                                                "Select all filter lists"
+                                        },
+                                )
+                                Text(
+                                    "${selectedLists.size} selected",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                            Text(
+                                "Drag to reorder. Update applies to selected URL and preset lists.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
                 if (lists.isEmpty()) {
                     item(key = "empty") { EmptyFilterListsCard() }
                 }
@@ -567,7 +715,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         ReorderableColumn(
                             list = lists,
                             onSettle = { from, to ->
-                                if (rearranging && !busy && from != to) {
+                                if (managing && !busy && from != to) {
                                     val reordered =
                                         lists.toMutableList().apply {
                                             add(to, removeAt(from))
@@ -597,7 +745,16 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                     FilterListRow(
                                         item = item,
                                         busy = busy,
-                                        rearranging = rearranging,
+                                        managing = managing,
+                                        selected = item.id in selectedIds,
+                                        onSelectedChange = { selected ->
+                                            selectedIds =
+                                                if (selected) {
+                                                    selectedIds + item.id
+                                                } else {
+                                                    selectedIds - item.id
+                                                }
+                                        },
                                         onEnabledChange = { enabled ->
                                             update {
                                                 store.setEnabled(item.id, enabled)
@@ -625,15 +782,13 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                                 store.cloneList(item.id)
                                             }
                                         },
-                                        onRemove = { pendingRemoval = item },
+                                        onRemove = { pendingRemoval = listOf(item) },
                                         dragHandle = {
                                             Box(
                                                 modifier =
                                                     Modifier.size(48.dp)
                                                         .then(
-                                                            if (
-                                                                busy || !rearranging
-                                                            ) {
+                                                            if (busy || !managing) {
                                                                 Modifier
                                                             } else {
                                                                 Modifier
@@ -713,26 +868,42 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         FilterListInfoDialog(item, store, onDismiss = { pendingInfo = null })
     }
 
-    pendingRemoval?.let { item ->
+    if (pendingRemoval.isNotEmpty()) {
+        val removing = pendingRemoval
         AlertDialog(
             onDismissRequest = {
                 if (!busy) {
-                    pendingRemoval = null
+                    pendingRemoval = emptyList()
                 }
             },
-            title = { Text("Remove filter list?") },
-            text = {
+            title = {
                 Text(
-                    item.displayName(),
-                    maxLines = 4,
-                    overflow = TextOverflow.Ellipsis,
+                    if (removing.size == 1) {
+                        "Remove filter list?"
+                    } else {
+                        "Remove ${removing.size} filter lists?"
+                    }
                 )
+            },
+            text = {
+                Column(
+                    modifier =
+                        Modifier.heightIn(max = 320.dp)
+                            .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    removing.forEach { item ->
+                        Text(item.displayName())
+                    }
+                }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        pendingRemoval = null
-                        update { store.remove(item.id) }
+                        pendingRemoval = emptyList()
+                        update(affectsRules = removing.any { it.enabled }) {
+                            store.remove(removing.map { it.id }.toSet())
+                        }
                     },
                     enabled = !busy,
                 ) {
@@ -740,7 +911,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingRemoval = null }, enabled = !busy) {
+                TextButton(
+                    onClick = { pendingRemoval = emptyList() },
+                    enabled = !busy,
+                ) {
                     Text("Cancel")
                 }
             },
@@ -1151,7 +1325,9 @@ private fun InfoStat(
 private fun FilterListRow(
     item: ImportedFilterList,
     busy: Boolean,
-    rearranging: Boolean,
+    managing: Boolean,
+    selected: Boolean,
+    onSelectedChange: (Boolean) -> Unit,
     onEnabledChange: (Boolean) -> Unit,
     onRefresh: () -> Unit,
     onEdit: () -> Unit,
@@ -1171,13 +1347,23 @@ private fun FilterListRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Switch(
-                checked = item.enabled,
-                enabled = !busy && !rearranging,
-                onCheckedChange = onEnabledChange,
-                modifier =
-                    Modifier.semantics { contentDescription = "Filter $name" },
-            )
+            if (managing) {
+                Checkbox(
+                    checked = selected,
+                    enabled = !busy,
+                    onCheckedChange = onSelectedChange,
+                    modifier =
+                        Modifier.semantics { contentDescription = "Select $name" },
+                )
+            } else {
+                Switch(
+                    checked = item.enabled,
+                    enabled = !busy,
+                    onCheckedChange = onEnabledChange,
+                    modifier =
+                        Modifier.semantics { contentDescription = "Filter $name" },
+                )
+            }
             Column(modifier = Modifier.weight(1f).padding(vertical = 12.dp)) {
                 Text(
                     name,
@@ -1203,11 +1389,23 @@ private fun FilterListRow(
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(
+                    val type =
                         when (item.type) {
                             FilterListType.FILE -> "Custom"
                             FilterListType.URL -> "URL"
                             FilterListType.PRESET -> "Preset"
+                        }
+                    val status =
+                        if (item.enabled) {
+                            "Enabled"
+                        } else {
+                            "Disabled"
+                        }
+                    Text(
+                        if (managing) {
+                            "$type · $status"
+                        } else {
+                            type
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1216,7 +1414,7 @@ private fun FilterListRow(
                     )
                 }
             }
-            if (rearranging) {
+            if (managing) {
                 dragHandle()
             } else {
                 Box {
