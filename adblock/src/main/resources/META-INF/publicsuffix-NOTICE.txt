@@ -1,0 +1,8 @@
+Public Suffix List data
+
+The build copies PublicSuffixDatabase.list from the resolved OkHttp dependency.
+The Public Suffix List is licensed under the Mozilla Public License 2.0.
+License: https://mozilla.org/MPL/2.0/
+Source: https://publicsuffix.org/list/public_suffix_list.dat
+OkHttp data generation: https://github.com/square/okhttp/tree/master/okhttp
+No independent copy of the source list is maintained in this project.

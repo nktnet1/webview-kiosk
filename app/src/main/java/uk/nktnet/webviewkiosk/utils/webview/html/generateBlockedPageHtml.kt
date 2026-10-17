@@ -6,6 +6,7 @@ import uk.nktnet.webviewkiosk.config.option.ThemeOption
 
 enum class BlockCause(val label: String) {
     BLACKLIST("URL matches blacklist"),
+    CONTENT_BLOCKING("URL matches a content blocking filter"),
     LOCAL_FILE("Local files are forbidden");
 
     override fun toString() = label

@@ -194,6 +194,13 @@ class FilterListStoreTest {
         assertEquals(3, info.cosmeticRules)
         assertEquals(1, info.unsupportedRules)
         assertEquals(1, info.invalidRules)
+        assertEquals(
+            mapOf(
+                uk.nktnet.webviewkiosk.adblock.FilterSkipReason.POPUP to 1,
+                uk.nktnet.webviewkiosk.adblock.FilterSkipReason.INVALID to 1,
+            ),
+            info.skipReasons,
+        )
         assertEquals(2, info.skippedRules)
         assertEquals(9, info.totalRules)
         assertEquals(saved, store.list())
@@ -317,6 +324,95 @@ class FilterListStoreTest {
     fun bulkTogglesOnAnEmptyStoreDoNotCreateSavedEntries() {
         store.setAllEnabled(true)
         store.setAllEnabled(false)
+        assertTrue(store.list().isEmpty())
+        assertFalse(
+            RuntimeEnvironment.getApplication()
+                .getSharedPreferences("content_blocking_lists", 0)
+                .contains("imports")
+        )
+    }
+
+    @Test
+    fun selectedTogglesPreserveOtherListsAndFollowIdsAfterReordering() {
+        val first = store.importFrom("First", "||first.example^".byteInputStream())
+        val other =
+            store.importFrom(
+                "Other",
+                "||other.example^".byteInputStream(),
+                "https://lists.example/other.txt",
+            )
+        val last = store.importFrom("Last", "||last.example^".byteInputStream())
+        store.reorder(listOf(last.id, other.id, first.id))
+        val saved = store.list()
+        val selected = setOf(first.id, last.id)
+
+        store.setEnabled(selected, false)
+        val expected = saved.map {
+            if (it.id in selected) {
+                it.copy(enabled = false)
+            } else {
+                it
+            }
+        }
+        assertEquals(expected, store.list())
+        assertEquals(
+            expected,
+            FilterListStore(RuntimeEnvironment.getApplication()).list(),
+        )
+        assertEquals(listOf("||other.example^"), store.enabledTexts())
+        store.setEnabled(selected, true)
+        assertEquals(saved, store.list())
+        assertEquals(
+            listOf("||last.example^", "||other.example^", "||first.example^"),
+            store.enabledTexts(),
+        )
+    }
+
+    @Test
+    fun selectedRemovalDeletesOnlySelectedRulesAndPreservesRemainingOrder() {
+        val first = store.importFrom("First", "||first.example^".byteInputStream())
+        val other = store.importFrom("Other", "||other.example^".byteInputStream())
+        val last = store.importFrom("Last", "||last.example^".byteInputStream())
+        store.setEnabled(last.id, false)
+
+        store.remove(setOf(first.id, last.id))
+
+        val reloaded = FilterListStore(RuntimeEnvironment.getApplication())
+        assertEquals(listOf(other), reloaded.list())
+        assertEquals(listOf("||other.example^"), reloaded.enabledTexts())
+        val directory =
+            java.io.File(
+                RuntimeEnvironment.getApplication().filesDir,
+                "content-blocking-lists",
+            )
+        assertEquals(listOf("${other.id}.txt"), directory.list()!!.toList())
+    }
+
+    @Test
+    fun staleSelectionsCannotPartiallyToggleOrRemoveLists() {
+        val first = store.importFrom("First", "||first.example^".byteInputStream())
+        val other = store.importFrom("Other", "||other.example^".byteInputStream())
+        val saved = store.list()
+        val invalid = setOf(first.id, "unknown")
+
+        assertThrows(IllegalArgumentException::class.java) {
+            store.setEnabled(invalid, false)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            store.remove(invalid)
+        }
+        assertEquals(saved, store.list())
+        assertEquals(listOf(first.id, other.id), store.list().map { it.id })
+        assertEquals(
+            listOf("||first.example^", "||other.example^"),
+            store.enabledTexts(),
+        )
+    }
+
+    @Test
+    fun emptySelectionsDoNotCreateSavedEntries() {
+        store.setEnabled(emptySet(), true)
+        store.remove(emptySet())
         assertTrue(store.list().isEmpty())
         assertFalse(
             RuntimeEnvironment.getApplication()

@@ -11,7 +11,7 @@ usage() {
 Usage: sh scripts/ci/test-local.sh <suite>
 
 Suites:
-  checks          Offline CI, asset-exporter and cosmetic script tests (Python/Node)
+  checks          Offline CI, asset-exporter, cosmetic and scriptlet tests (Python/Node)
   jvm             Filter-engine JVM and Android JVM/Robolectric unit tests
   docs            Documentation format/lint and Vitest tests
   docs-browser    Build docs and run Playwright Chromium tests
@@ -63,9 +63,11 @@ fi
 checks() {
     require_tool python3
     require_tool node
-    printf 'Local tests: checking CI scripts, test assets and cosmetic filtering\n'
+    printf 'Local tests: checking CI scripts, test assets, cosmetics and scriptlets\n'
     python3 -m unittest discover -s scripts/tests -p 'test_*.py'
-    node --test scripts/tests/cosmetic.test.mjs
+    node --test scripts/tests/cosmetic.test.mjs scripts/tests/scriptlets.test.mjs \
+      scripts/tests/additional-scriptlets.test.mjs scripts/tests/response-scriptlets.test.mjs \
+      scripts/tests/advanced-scriptlets.test.mjs
 }
 
 jvm() {

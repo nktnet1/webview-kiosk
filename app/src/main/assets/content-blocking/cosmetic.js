@@ -2,11 +2,16 @@
   "use strict";
   if (!/^https?:$/.test(location.protocol) || !window.wkCosmeticRules) return;
   // The same private asset hosts are excluded by WebViewBlocker on the app side.
-  if (["appassets.androidplatform.net", "pdf-dummy.webviewkiosk.nktnet.uk"].indexOf(location.hostname) !== -1) return;
+  if (["appassets.androidplatform.net", "pdf-dummy.webviewkiosk.nktnet.uk"]
+      .indexOf(location.hostname) !== -1) return;
   if (window.__wkCosmeticsInstalled) return;
   Object.defineProperty(window, "__wkCosmeticsInstalled", { value: true });
 
   var bridge = window.wkCosmeticRules;
+  // Installed before scriptlets: cosmetic work must keep using native timers.
+  var scheduleTimeout = setTimeout.bind(window);
+  var cancelTimeout = clearTimeout.bind(window);
+  var regexTest = Function.prototype.call.bind(RegExp.prototype.test);
   var seenClasses = new Set();
   var seenIds = new Set();
   var classes = new Set();
@@ -28,7 +33,7 @@
 
   function schedule(delay) {
     if (stopped || timer !== null) return;
-    timer = setTimeout(flush, delay === undefined ? 50 : delay);
+    timer = scheduleTimeout(flush, delay === undefined ? 50 : delay);
   }
 
   function queue(root) {
@@ -83,8 +88,9 @@
     }
     var sheet = style.sheet;
     if (!sheet) return;
-    function insert(selector, declarations) {
+    function insert(selector, declarations, media) {
       var key = selector + "{" + declarations + "}";
+      if (media) { key = "@media " + media + "{" + key + "}"; }
       if (installedSelectors.has(key)) return;
       try {
         // The Kotlin parser validates declarations; WebView validates selectors.
@@ -99,7 +105,7 @@
       insert(selector, "display:none!important");
     });
     procedures.forEach(function (rule) {
-      if (rule.style !== null) insert(rule.selector, rule.style);
+      if (rule.style !== null) { insert(rule.selector, rule.style, rule.media); }
     });
   }
 
@@ -122,8 +128,24 @@
         for (var i = 0; i < matches.length && i < 256 && budget > 0; i++) {
           budget--;
           var element = matches[i];
-          if (rule.text !== null &&
-              (!element.textContent || element.textContent.indexOf(rule.text) < 0)) continue;
+          if (rule.text !== null) {
+            var textNodes = rule.textSelector
+              ? element.querySelectorAll(rule.textSelector) : [element];
+            var textMatched = false;
+            for (var child = 0; child < textNodes.length && child < 64 && budget > 0; child++) {
+              if (Date.now() >= deadline) break;
+              budget--;
+              var text = textNodes[child].textContent;
+              if (typeof text !== "string" || text.length > 65536) continue;
+              var matched = rule._textRegex
+                ? regexTest(rule._textRegex, text) : text.indexOf(rule.text) >= 0;
+              if (matched) {
+                textMatched = true;
+                break;
+              }
+            }
+            if (!textMatched) continue;
+          }
           for (var depth = 0; depth < rule.upward && element; depth++) {
             element = element.parentElement;
           }
@@ -156,7 +178,7 @@
   function stop() {
     stopped = true;
     observer.disconnect();
-    if (timer !== null) clearTimeout(timer);
+    if (timer !== null) cancelTimeout(timer);
     timer = null;
     work = [];
     classes.clear();
@@ -210,11 +232,17 @@
     (response.procedures || []).forEach(function (entry) {
       if (!entry || typeof entry.selector !== "string" || entry.selector.length > 256 ||
           !(entry.text === null || typeof entry.text === "string") ||
+          !(entry.textSelector == null ||
+            (typeof entry.textSelector === "string" && entry.textSelector.length <= 256)) ||
+          !(entry.textPattern === undefined || typeof entry.textPattern === "boolean") ||
           (entry.text !== null && entry.text.length > 128) ||
           !Number.isInteger(entry.upward) || entry.upward < 0 || entry.upward > 4 ||
           typeof entry.remove !== "boolean" ||
           !(entry.style === null ||
             (typeof entry.style === "string" && entry.style.length <= 256)) ||
+          !(entry.media == null || (typeof entry.media === "string" &&
+            entry.media.length <= 256 && /^[A-Za-z0-9 ():.%+,-]+$/.test(entry.media) &&
+            typeof entry.style === "string")) ||
           !(entry.removeAttribute === null || typeof entry.removeAttribute === "string") ||
           !(entry.removeClass === null || typeof entry.removeClass === "string") ||
           !(entry.upwardSelector === null ||
@@ -222,6 +250,14 @@
           procedures.size >= 128) return;
       var key = JSON.stringify(entry);
       if (!procedures.has(key)) {
+        if (entry.textPattern) {
+          var end = entry.text.lastIndexOf("/");
+          if (entry.text[0] !== "/" || end <= 0) return;
+          try {
+            entry._textRegex = new RegExp(entry.text.slice(1, end), entry.text.slice(end + 1));
+          }
+          catch (_) { return; }
+        }
         procedures.set(key, entry);
         if (entry.style === null) domProcedureCount++;
       }
@@ -245,7 +281,7 @@
     attributes: true, attributeFilter: ["class", "id"] });
   window.addEventListener("pagehide", function () {
     observer.disconnect();
-    if (timer !== null) clearTimeout(timer);
+    if (timer !== null) cancelTimeout(timer);
     timer = null;
   });
   window.addEventListener("pageshow", function () {

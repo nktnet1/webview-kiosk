@@ -14,12 +14,12 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.adblock.BlockingResponse
 import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
 import uk.nktnet.webviewkiosk.adblock.RuleLoadStage
+import uk.nktnet.webviewkiosk.adblock.ScriptletInjection
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 
@@ -55,6 +55,9 @@ internal class ContentBlockingService(
 
     private val _initialLoadComplete = MutableStateFlow(false)
     val initialLoadComplete = _initialLoadComplete.asStateFlow()
+
+    private val _scriptletInjection = MutableStateFlow<ScriptletInjection?>(null)
+    val scriptletInjection = _scriptletInjection.asStateFlow()
 
     // Saved list changes do not need recompiling while Settings is open.
     // The WebView gate consumes this flag before creating the next page.
@@ -170,6 +173,7 @@ internal class ContentBlockingService(
         val revision = generation.incrementAndGet()
         if (!_enabled.value) {
             ready = false
+            _scriptletInjection.value = null
             _status.value = BlockingStatus.DISABLED
             _loadStage.value = null
             _lastError.value = null
@@ -186,19 +190,19 @@ internal class ContentBlockingService(
                     if (revision != generation.get()) {
                         return@execute
                     }
-                    val texts = store.enabledTexts()
+                    val sources = store.enabledSources()
                     if (revision != generation.get()) {
                         return@execute
                     }
-                    if (texts.isEmpty()) {
+                    if (sources.isEmpty()) {
                         updateStage(revision, RuleLoadStage.CLEARING)
                         engine.clear()
                     } else {
-                        engine.replace(texts) { stage ->
+                        engine.replaceSources(sources) { stage ->
                             updateStage(revision, stage)
                         }
                     }
-                    finishReload(revision, texts.isNotEmpty())
+                    finishReload(revision, sources.isNotEmpty())
                 } catch (e: Exception) {
                     reportError(revision, e)
                 } catch (e: LinkageError) {
@@ -243,6 +247,12 @@ internal class ContentBlockingService(
         }
         _lastError.value = null
         ready = hasRules
+        _scriptletInjection.value =
+            if (ready) {
+                engine.scriptletInjection()
+            } else {
+                null
+            }
         _skippedRules.value = engine.unsupportedRuleCount()
         _status.value =
             if (ready) {
@@ -304,6 +314,24 @@ internal class ContentBlockingService(
         }
     }
 
+    fun removeQueryParameters(
+        url: String,
+        sourceUrl: String,
+        type: String,
+        method: String,
+    ): String {
+        if (!ready) {
+            return url
+        }
+        return try {
+            engine.removeQueryParameters(url, sourceUrl, type, method)
+        } catch (error: LinkageError) {
+            ready = false
+            reportError(generation.get(), error)
+            url
+        }
+    }
+
     fun cosmeticSelectors(
         url: String,
         classes: List<String>,
@@ -350,8 +378,7 @@ internal class ContentBlockingService(
                                         File(
                                             context.applicationContext.cacheDir,
                                             "content-blocking/compiled-rules.bin",
-                                        ),
-                                    cacheVersion = BuildConfig.VERSION_CODE,
+                                        )
                                 ),
                                 Executors.newSingleThreadExecutor { task ->
                                     Thread(task, "content-blocking-loader").apply {

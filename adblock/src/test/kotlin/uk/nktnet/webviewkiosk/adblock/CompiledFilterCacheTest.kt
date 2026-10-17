@@ -254,7 +254,7 @@ class CompiledFilterCacheTest {
     @Test
     fun missingTruncatedCorruptAndIncompatibleCachesRecompileAndRepair() {
         val file = File(folder.root, "compiled.bin")
-        val cache = CompiledFilterCache(file, buildVersion = 1)
+        val cache = CompiledFilterCache(file, compatibilityVersion = 1)
         val lists = listOf("||ads.example^\n##.ad")
         KotlinFilterEngine(file, cacheVersion = 1).replace(lists)
         val valid = file.readBytes()
@@ -263,7 +263,9 @@ class CompiledFilterCacheTest {
                 byteArrayOf(),
                 valid.copyOf(valid.size / 2),
                 valid.copyOf().apply { this[4] = 127 }, // Unknown cache format.
-                valid.copyOf().apply { this[8] = 127 }, // Different app build.
+                valid.copyOf().apply {
+                    this[8] = 127
+                }, // Different explicit engine cache salt.
                 valid.copyOf().apply {
                     this[lastIndex - 10] =
                         (this[lastIndex - 10].toInt() xor 1).toByte()
@@ -275,7 +277,7 @@ class CompiledFilterCacheTest {
             val stages = mutableListOf<RuleLoadStage>()
             val engine = KotlinFilterEngine(file, cacheVersion = 1)
             engine.replace(lists, stages::add)
-            assertTrue(RuleLoadStage.COMPILING in stages)
+            assertTrue(RuleLoadStage.RESTORING in stages)
             assertTrue(
                 engine.shouldBlock(
                     "https://ads.example/a",
@@ -289,7 +291,7 @@ class CompiledFilterCacheTest {
         file.delete()
         val stages = mutableListOf<RuleLoadStage>()
         KotlinFilterEngine(file, cacheVersion = 1).replace(lists, stages::add)
-        assertTrue(RuleLoadStage.COMPILING in stages)
+        assertTrue(RuleLoadStage.RESTORING in stages)
     }
 
     @Test

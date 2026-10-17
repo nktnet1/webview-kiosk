@@ -6,12 +6,14 @@ import android.net.Uri
 import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.ComposeView
 import androidx.navigation.NavHostController
+import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,9 +21,13 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotSame
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -34,12 +40,18 @@ import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 import uk.nktnet.webviewkiosk.MainActivity
+import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
+import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
+import uk.nktnet.webviewkiosk.blocking.FilterListStore
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.HistoryEntry
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
+import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager.RemoteMessage.Source
 import uk.nktnet.webviewkiosk.utils.WEBVIEW_RECREATION_REQUEST_KEY
@@ -60,6 +72,13 @@ class MainActivityWebViewRefreshTest {
     private var scope =
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate + clock)
     private var frameNanos = 0L
+    private var documentRulesInstalled = false
+    private var previousBlocker: ContentBlockingService? = null
+    private lateinit var blockingSettings: AutoCloseable
+    private val blockerField =
+        ContentBlockingService::class.java.getDeclaredField("instance").apply {
+            isAccessible = true
+        }
 
     @Before
     fun setUp() {
@@ -89,6 +108,21 @@ class MainActivityWebViewRefreshTest {
             resetOnLaunch = false
             resetOnInactivitySeconds = 0
         }
+        // Robolectric replaces the Application between methods, while this app
+        // singleton retains its original store. Scope a real compiler/store to
+        // this fixture and run its loader deterministically.
+        previousBlocker = blockerField.get(null) as? ContentBlockingService
+        okhttp3.OkHttp.initialize(context)
+        val store = FilterListStore(context)
+        store.remove(store.list().map { it.id }.toSet())
+        val blocker =
+            ContentBlockingService(
+                store,
+                KotlinFilterEngine(),
+                Executor { it.run() },
+            )
+        blockingSettings = blocker.bindSettings(context)
+        blockerField.set(null, blocker)
         activityController =
             Robolectric.buildActivity(MainActivity::class.java).create()
         activity = activityController.get()
@@ -112,7 +146,341 @@ class MainActivityWebViewRefreshTest {
         recomposer.cancel()
         scope.cancel()
         WebViewStartup.setGateForTests(null)
+        if (documentRulesInstalled) {
+            val store = FilterListStore(activity)
+            store.remove(store.list().map { it.id }.toSet())
+            reloadDocumentRules()
+        }
+        blockingSettings.close()
+        blockerField.set(null, previousBlocker)
     }
+
+    @Test
+    fun directLoadsAndHeaderLoadsApplyDocumentRulesBeforeLoading() {
+        documentRules("||blocked.example^\$doc\n@@||blocked.example/safe\$document")
+        val webView = webView()
+        val before = shadowOf(webView).lastLoadedUrl
+        webView.loadUrl("https://blocked.example/")
+        assertBlockedDocument(webView, "https://blocked.example/")
+        assertEquals(before, shadowOf(webView).lastLoadedUrl)
+        webView.loadUrl("https://blocked.example/safe")
+        assertEquals("https://blocked.example/safe", shadowOf(webView).lastLoadedUrl)
+        webView.loadUrl("https://blocked.example/headers", mapOf("X-Test" to "kept"))
+        assertBlockedDocument(webView, "https://blocked.example/headers")
+        assertEquals("https://blocked.example/safe", shadowOf(webView).lastLoadedUrl)
+        webView.loadUrl("https://allowed.example/", mapOf("X-Test" to "kept"))
+        assertEquals(
+            mapOf("X-Test" to "kept"),
+            shadowOf(webView).lastAdditionalHttpHeaders,
+        )
+    }
+
+    @Test
+    fun appPostUsesPostMethodAndCustomBlockPageWithoutBecomingAGet() {
+        documentRules("||forms.example^\$document,method=POST")
+        val url = "https://forms.example/submit"
+        val webView = webView()
+        webView.loadUrl(url)
+        assertEquals(url, shadowOf(webView).lastLoadedUrl)
+        UserSettings(activity).customBlockPageHtml =
+            "<html>Custom filter block</html>"
+        webView.postUrl(url, "name=value".toByteArray())
+        assertEquals(
+            "<html>Custom filter block</html>",
+            shadowOf(webView).lastLoadDataWithBaseURL.data,
+        )
+        assertEquals(url, shadowOf(webView).lastLoadDataWithBaseURL.baseUrl)
+        assertEquals(url, shadowOf(webView).lastLoadedUrl)
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun nativeNavigationUsesFrameMetadataAndLegacyRequestsAreIntercepted() {
+        documentRules("||blocked.example^\$document\n@@||blocked.example/safe\$doc")
+        val webView = webView()
+        val client = webView.webViewClient
+        assertTrue(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest("https://blocked.example/", redirect = true),
+            )
+        )
+        assertBlockedDocument(webView, "https://blocked.example/")
+        assertFalse(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest("https://blocked.example/safe", redirect = true),
+            )
+        )
+        assertFalse(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest("https://blocked.example/frame", mainFrame = false),
+            )
+        )
+        assertFalse(
+            client.shouldOverrideUrlLoading(
+                webView,
+                "https://blocked.example/legacy",
+            )
+        )
+        val legacy = "https://blocked.example/legacy"
+        assertEquals(
+            403,
+            client
+                .shouldInterceptRequest(
+                    webView,
+                    documentRequest(legacy),
+                )!!
+                .statusCode,
+        )
+        assertNull(
+            client.shouldInterceptRequest(
+                webView,
+                documentRequest(legacy, mainFrame = false),
+            )
+        )
+    }
+
+    @Test
+    fun nativeMainFrameInterceptionCoversPostReloadsAndKeepsSubframesSeparate() {
+        documentRules("||forms.example^\$document,method=POST")
+        val webView = webView()
+        val client = webView.webViewClient
+        val url = "https://forms.example/submit"
+        webView.loadUrl(url)
+        val reloads = shadowOf(webView).reloadInvocations
+        webView.reload()
+        assertEquals(reloads + 1, shadowOf(webView).reloadInvocations)
+        val response =
+            client.shouldInterceptRequest(
+                webView,
+                documentRequest(url, method = "POST"),
+            )!!
+        assertEquals(403, response.statusCode)
+        assertEquals("no-store", response.responseHeaders["Cache-Control"])
+        assertTrue(
+            response.data
+                .bufferedReader()
+                .use { it.readText() }
+                .contains("URL matches a content blocking filter")
+        )
+        assertNull(client.shouldInterceptRequest(webView, documentRequest(url)))
+        assertNull(
+            client.shouldInterceptRequest(
+                webView,
+                documentRequest(url, mainFrame = false, method = "POST"),
+            )
+        )
+    }
+
+    @Test
+    fun nativeDocumentBlockingRespectsSilentActionAndGlobalDisable() {
+        documentRules("||blocked.example^\$document")
+        val webView = webView()
+        val client = webView.webViewClient
+        val before = shadowOf(webView).lastLoadDataWithBaseURL
+        UserSettings(activity).overrideUrlLoadingBlockAction =
+            OverrideUrlLoadingBlockActionOption.PREVENT_NAVIGATION
+        assertTrue(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest("https://blocked.example/"),
+            )
+        )
+        assertEquals(before, shadowOf(webView).lastLoadDataWithBaseURL)
+        ContentBlockingService.get(activity).setEnabled(false)
+        webView.loadUrl("https://blocked.example/")
+        assertEquals("https://blocked.example/", shadowOf(webView).lastLoadedUrl)
+        assertFalse(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest("https://blocked.example/next"),
+            )
+        )
+    }
+
+    @Test
+    fun externalPdfWrapperIsCheckedAgainstItsOriginalDocumentUrl() {
+        documentRules("||blocked.example/report.pdf\$doc")
+        val source = "https://blocked.example/report.pdf"
+        val wrapper =
+            "${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=${Uri.encode(source)}"
+        activityController.newIntent(Intent(Intent.ACTION_VIEW, Uri.parse(wrapper)))
+        frames()
+        assertBlockedDocument(webView(), source)
+        assertNull(webView().getTag(uk.nktnet.webviewkiosk.R.id.pdf_source_token))
+    }
+
+    @Test
+    fun parameterRemovalCleansAppLoadsAndRetainsHeadersExceptionsAndDisable() {
+        documentRules(
+            "*\$removeparam=track\n@@||site.example/safe\$removeparam=track"
+        )
+        val webView = webView()
+        val headers = mapOf("X-Test" to "kept")
+        webView.loadUrl("https://site.example/?track=1&keep=2#x", headers)
+        assertEquals(
+            "https://site.example/?keep=2#x",
+            shadowOf(webView).lastLoadedUrl,
+        )
+        assertEquals(headers, shadowOf(webView).lastAdditionalHttpHeaders)
+        webView.loadUrl("https://site.example/safe?track=1")
+        assertEquals(
+            "https://site.example/safe?track=1",
+            shadowOf(webView).lastLoadedUrl,
+        )
+        ContentBlockingService.get(activity).setEnabled(false)
+        webView.loadUrl("https://site.example/?track=1")
+        assertEquals(
+            "https://site.example/?track=1",
+            shadowOf(webView).lastLoadedUrl,
+        )
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun parameterRemovalReplaysOnlyKnownMainFrameGetCallbacks() {
+        documentRules("*\$removeparam=track")
+        val webView = webView()
+        val client = webView.webViewClient
+        val url = "https://site.example/?track=1&keep=2"
+        val headers = mapOf("X-Navigation" to "kept")
+        assertTrue(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest(url, redirect = true, headers = headers),
+            )
+        )
+        assertEquals("https://site.example/?keep=2", shadowOf(webView).lastLoadedUrl)
+        assertEquals(headers, shadowOf(webView).lastAdditionalHttpHeaders)
+        assertFalse(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest(url, mainFrame = false),
+            )
+        )
+        assertFalse(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest(url, method = "POST"),
+            )
+        )
+        assertFalse(client.shouldOverrideUrlLoading(webView, url))
+        assertNull(
+            client.shouldInterceptRequest(
+                webView,
+                documentRequest(url, method = "POST"),
+            )
+        )
+        assertEquals("https://site.example/?keep=2", shadowOf(webView).lastLoadedUrl)
+    }
+
+    @Test
+    fun parameterRemovalCannotBypassOriginalOrCleanedDocumentBlocks() {
+        documentRules(
+            "*\$removeparam=track\n" +
+                "||blocked.example/?track=\$doc\n" +
+                "|https://cleaned.example/|\$doc"
+        )
+        val webView = webView()
+        webView.loadUrl("https://blocked.example/?track=1")
+        assertBlockedDocument(webView, "https://blocked.example/?track=1")
+        webView.loadUrl("https://cleaned.example/?track=1")
+        assertBlockedDocument(webView, "https://cleaned.example/")
+        assertTrue(
+            webView.webViewClient.shouldOverrideUrlLoading(
+                webView,
+                documentRequest("https://blocked.example/?track=2"),
+            )
+        )
+        assertBlockedDocument(webView, "https://blocked.example/?track=2")
+    }
+
+    @Test
+    fun externalLoadsCleanParametersBeforePdfRoutingAndCheckOriginalUrlPolicy() {
+        documentRules("*\$removeparam=track")
+        // Only routing is exercised here: JavaScript stays disabled. The real
+        // source fetch and redirect URLs are covered by the HTTP server tests.
+        val assets = java.io.File(activity.filesDir, Constants.PDF_JS_ASSETS_DIR)
+        assets.mkdirs()
+        val version =
+            PdfJsManager::class
+                .java
+                .getDeclaredField("PDF_JS_VERSION")
+                .apply { isAccessible = true }
+                .get(null) as String
+        java.io.File(assets, ".version").writeText(version)
+        listOf("pdf.mjs", "pdf.worker.mjs").forEach {
+            java.io.File(assets, it).writeText("// Routing test fixture")
+        }
+        UserSettings(activity).supportPdfRendering = true
+        assertTrue(PdfJsManager.areAssetsReady(activity))
+        frames()
+        val url = "https://site.example/report.pdf?track=1&id=2"
+        activityController.newIntent(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        frames()
+        assertEquals(
+            "https://site.example/report.pdf?id=2",
+            Uri.parse(shadowOf(webView()).lastLoadDataWithBaseURL.baseUrl)
+                .getQueryParameter("wk_pdf_url"),
+        )
+        UserSettings(activity).websiteBlacklist = "track=blocked"
+        frames()
+        val blocked = "https://site.example/?track=blocked"
+        activityController.newIntent(Intent(Intent.ACTION_VIEW, Uri.parse(blocked)))
+        frames()
+        assertEquals(blocked, shadowOf(webView()).lastLoadDataWithBaseURL.baseUrl)
+        assertTrue(
+            shadowOf(webView())
+                .lastLoadDataWithBaseURL
+                .data
+                .contains("Access Blocked")
+        )
+    }
+
+    private fun documentRules(text: String) {
+        val store = FilterListStore(activity)
+        store.remove(store.list().map { it.id }.toSet())
+        store.importFrom("documents.txt", text.byteInputStream())
+        documentRulesInstalled = true
+        ContentBlockingService.get(activity).setEnabled(true)
+        reloadDocumentRules()
+        assertTrue(ContentBlockingService.get(activity).hasActiveRules)
+    }
+
+    private fun reloadDocumentRules() = runBlocking {
+        val service = ContentBlockingService.get(activity)
+        withTimeout(10_000) { service.awaitReload(service.reload()) }
+    }
+
+    private fun assertBlockedDocument(webView: WebView, url: String) {
+        val loaded = shadowOf(webView).lastLoadDataWithBaseURL
+        assertEquals(url, loaded.baseUrl)
+        assertEquals("text/html", loaded.mimeType)
+        assertTrue(loaded.data.contains("URL matches a content blocking filter"))
+    }
+
+    private fun documentRequest(
+        url: String,
+        mainFrame: Boolean = true,
+        method: String = "GET",
+        redirect: Boolean = false,
+        headers: Map<String, String> = emptyMap(),
+    ) =
+        object : WebResourceRequest {
+            override fun getUrl(): Uri = Uri.parse(url)
+
+            override fun isForMainFrame() = mainFrame
+
+            override fun isRedirect() = redirect
+
+            override fun hasGesture() = true
+
+            override fun getMethod() = method
+
+            override fun getRequestHeaders() = headers
+        }
 
     @Test
     fun acceptedExternalUrlRecreatesTheWebViewAndLoadsTheNewTarget() {

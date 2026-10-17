@@ -78,11 +78,9 @@ class ServiceWorkerBlockerTest {
     }
 
     @Test
-    fun unknownOpaqueAndInternalOriginsFailOpen() {
+    fun internalOriginsRemainOutsideFiltering() {
         for (headers in
             listOf(
-                emptyMap(),
-                mapOf("Origin" to "null"),
                 mapOf("Referer" to "file:///private.html"),
                 mapOf("Origin" to "https://appassets.androidplatform.net/"),
                 mapOf("Origin" to "https://appassets.androidplatform.net"),
@@ -90,6 +88,14 @@ class ServiceWorkerBlockerTest {
             assertNull(ServiceWorkerBlocker.intercept(request(headers), service))
         }
         assertNull(lastSource)
+    }
+
+    @Test
+    fun missingAndOpaqueInitiatorsArePassedAsUnknownRatherThanInvented() {
+        for (headers in listOf(emptyMap(), mapOf("Origin" to "null"))) {
+            assertNotNull(ServiceWorkerBlocker.intercept(request(headers), service))
+            assertEquals("", lastSource)
+        }
     }
 
     private fun request(headers: Map<String, String>) =

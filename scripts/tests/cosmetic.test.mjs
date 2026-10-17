@@ -85,6 +85,10 @@ function page({ protocol = "https:", hostname = "publisher.example", bridgeAvail
   return {
     messages, timers, observers, body, head, document,
     run: () => runInNewContext(script, context),
+    defusePageTimers() {
+      context.setTimeout = () => 0;
+      context.clearTimeout = () => {};
+    },
     flush,
     mutate,
     add(id, classes = []) {
@@ -123,6 +127,18 @@ test("CSS hides are deduplicated and invalid selectors cannot inject declaration
   p.flush();
   p.reply({ selectors: [".ad", ".ad", "@import url(https://evil.example)", ".ad{color:red}", ".ad:has-text(Ads)", "#sponsor"] });
   assert.deepEqual(p.styles()[0].sheet.cssRules, [".ad{display:none!important}", "#sponsor{display:none!important}"]);
+});
+
+test("media cosmetics stay in CSSOM and reject injected media statements", () => {
+  const p = page();
+  p.run(); p.flush();
+  const entry = { selector: ".ad", text: null, upward: 0, remove: false,
+    style: "display: none !important;", removeAttribute: null, removeClass: null,
+    upwardSelector: null, media: "(min-width: 800px)" };
+  p.reply({ procedures: [entry, entry, { ...entry, media: "all{}body{color:red}" }] });
+  assert.deepEqual(p.styles()[0].sheet.cssRules,
+    ["@media (min-width: 800px){.ad{display: none !important;}}"]);
+  assert.equal(p.timers.size, 0);
 });
 
 test("new classes and IDs are queried without resending already observed tokens", () => {
@@ -220,4 +236,15 @@ test("oversized and control-character tokens are skipped before the bridge", () 
   p.flush();
   assert.deepEqual(p.messages[0].ids, []);
   assert.deepEqual(p.messages[0].classes, ["good"]);
+});
+
+test("scriptlet timer hooks cannot defuse cosmetic updates", () => {
+  const p = page();
+  p.run();
+  p.flush();
+  p.reply({ selectors: [] });
+  p.defusePageTimers();
+  p.add("new-ad", ["advertisement"]);
+  p.flush();
+  assert.deepEqual(p.messages[1].classes, ["advertisement"]);
 });
