@@ -407,24 +407,34 @@ fun createCustomWebview(
                     }
 
                     override fun loadUrl(url: String) {
-                        if (!navigation.isActive() || blockDocument(url)) {
+                        if (!navigation.isActive()) {
                             return
                         }
-                        beginLoad(url)
+                        val target =
+                            WebViewBlocker.documentUrl(url, "GET", contentBlocker)
+                        if (blockDocument(target)) {
+                            return
+                        }
+                        beginLoad(target)
                         clearPdfNavigation()
-                        super.loadUrl(url)
+                        super.loadUrl(target)
                     }
 
                     override fun loadUrl(
                         url: String,
                         additionalHttpHeaders: Map<String, String>,
                     ) {
-                        if (!navigation.isActive() || blockDocument(url)) {
+                        if (!navigation.isActive()) {
                             return
                         }
-                        beginLoad(url)
+                        val target =
+                            WebViewBlocker.documentUrl(url, "GET", contentBlocker)
+                        if (blockDocument(target)) {
+                            return
+                        }
+                        beginLoad(target)
                         clearPdfNavigation()
-                        super.loadUrl(url, additionalHttpHeaders)
+                        super.loadUrl(target, additionalHttpHeaders)
                     }
 
                     override fun postUrl(url: String, postData: ByteArray) {
@@ -820,6 +830,13 @@ fun createCustomWebview(
                                                     contentBlocker,
                                                 )
                                             },
+                                            documentUrl = {
+                                                WebViewBlocker.documentUrl(
+                                                    it,
+                                                    "GET",
+                                                    contentBlocker,
+                                                )
+                                            },
                                             onAuthenticationRequired = {
                                                 token,
                                                 _,
@@ -995,6 +1012,7 @@ fun createCustomWebview(
                                         null
                                     },
                                     request.method,
+                                    request.requestHeaders.orEmpty(),
                                 )
                             }
 
@@ -1018,6 +1036,7 @@ fun createCustomWebview(
                                 isMainFrame: Boolean,
                                 isRedirect: Boolean? = null,
                                 method: String? = null,
+                                requestHeaders: Map<String, String> = emptyMap(),
                             ): Boolean {
                                 if (!navigation.isActive()) {
                                     return true
@@ -1025,13 +1044,35 @@ fun createCustomWebview(
                                 if (requestUrl.isNullOrEmpty()) {
                                     return false
                                 }
-                                val navigationUrl =
+                                val resolvedUrl =
                                     resolveBlockPageUrl(
                                         requestUrl,
                                         config.blacklistRegexes,
                                         config.whitelistRegexes,
                                         userSettings,
                                     ) ?: return true
+                                val originalPolicy =
+                                    getBlockInfo(
+                                            resolvedUrl,
+                                            config.blacklistRegexes,
+                                            config.whitelistRegexes,
+                                            userSettings,
+                                        )
+                                        .second
+                                val navigationUrl =
+                                    if (
+                                        isMainFrame &&
+                                            method != null &&
+                                            originalPolicy == null
+                                    ) {
+                                        WebViewBlocker.documentUrl(
+                                            resolvedUrl,
+                                            method,
+                                            contentBlocker,
+                                        )
+                                    } else {
+                                        resolvedUrl
+                                    }
                                 if (isMainFrame) {
                                     systemSettings.urlBeingHandled = navigationUrl
                                     if (
@@ -1052,7 +1093,8 @@ fun createCustomWebview(
                                         userSettings = userSettings,
                                     )
                                 val blockCause =
-                                    policyBlockCause
+                                    originalPolicy
+                                        ?: policyBlockCause
                                         ?: if (
                                             isMainFrame &&
                                                 method != null &&
@@ -1117,7 +1159,7 @@ fun createCustomWebview(
                                 }
                                 if (navigationUrl != requestUrl) {
                                     if (isMainFrame) {
-                                        loadUrl(navigationUrl)
+                                        loadUrl(navigationUrl, requestHeaders)
                                     }
                                     return true
                                 }

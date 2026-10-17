@@ -105,6 +105,13 @@ interface NetworkFilterEngine {
 
     fun hasCosmeticRules(): Boolean = false
 
+    fun removeQueryParameters(
+        url: String,
+        sourceUrl: String,
+        type: String,
+        method: String,
+    ): String = url
+
     fun cosmeticSelectors(
         url: String,
         classes: List<String>,

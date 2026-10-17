@@ -51,6 +51,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
+import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager.RemoteMessage.Source
 import uk.nktnet.webviewkiosk.utils.WEBVIEW_RECREATION_REQUEST_KEY
@@ -311,6 +312,133 @@ class MainActivityWebViewRefreshTest {
         assertNull(webView().getTag(uk.nktnet.webviewkiosk.R.id.pdf_source_token))
     }
 
+    @Test
+    fun parameterRemovalCleansAppLoadsAndRetainsHeadersExceptionsAndDisable() {
+        documentRules(
+            "*\$removeparam=track\n@@||site.example/safe\$removeparam=track"
+        )
+        val webView = webView()
+        val headers = mapOf("X-Test" to "kept")
+        webView.loadUrl("https://site.example/?track=1&keep=2#x", headers)
+        assertEquals(
+            "https://site.example/?keep=2#x",
+            shadowOf(webView).lastLoadedUrl,
+        )
+        assertEquals(headers, shadowOf(webView).lastAdditionalHttpHeaders)
+        webView.loadUrl("https://site.example/safe?track=1")
+        assertEquals(
+            "https://site.example/safe?track=1",
+            shadowOf(webView).lastLoadedUrl,
+        )
+        ContentBlockingService.get(activity).setEnabled(false)
+        webView.loadUrl("https://site.example/?track=1")
+        assertEquals(
+            "https://site.example/?track=1",
+            shadowOf(webView).lastLoadedUrl,
+        )
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun parameterRemovalReplaysOnlyKnownMainFrameGetCallbacks() {
+        documentRules("*\$removeparam=track")
+        val webView = webView()
+        val client = webView.webViewClient
+        val url = "https://site.example/?track=1&keep=2"
+        val headers = mapOf("X-Navigation" to "kept")
+        assertTrue(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest(url, redirect = true, headers = headers),
+            )
+        )
+        assertEquals("https://site.example/?keep=2", shadowOf(webView).lastLoadedUrl)
+        assertEquals(headers, shadowOf(webView).lastAdditionalHttpHeaders)
+        assertFalse(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest(url, mainFrame = false),
+            )
+        )
+        assertFalse(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest(url, method = "POST"),
+            )
+        )
+        assertFalse(client.shouldOverrideUrlLoading(webView, url))
+        assertNull(
+            client.shouldInterceptRequest(
+                webView,
+                documentRequest(url, method = "POST"),
+            )
+        )
+        assertEquals("https://site.example/?keep=2", shadowOf(webView).lastLoadedUrl)
+    }
+
+    @Test
+    fun parameterRemovalCannotBypassOriginalOrCleanedDocumentBlocks() {
+        documentRules(
+            "*\$removeparam=track\n" +
+                "||blocked.example/?track=\$doc\n" +
+                "|https://cleaned.example/|\$doc"
+        )
+        val webView = webView()
+        webView.loadUrl("https://blocked.example/?track=1")
+        assertBlockedDocument(webView, "https://blocked.example/?track=1")
+        webView.loadUrl("https://cleaned.example/?track=1")
+        assertBlockedDocument(webView, "https://cleaned.example/")
+        assertTrue(
+            webView.webViewClient.shouldOverrideUrlLoading(
+                webView,
+                documentRequest("https://blocked.example/?track=2"),
+            )
+        )
+        assertBlockedDocument(webView, "https://blocked.example/?track=2")
+    }
+
+    @Test
+    fun externalLoadsCleanParametersBeforePdfRoutingAndCheckOriginalUrlPolicy() {
+        documentRules("*\$removeparam=track")
+        // Only routing is exercised here: JavaScript stays disabled. The real
+        // source fetch and redirect URLs are covered by the HTTP server tests.
+        val assets = java.io.File(activity.filesDir, Constants.PDF_JS_ASSETS_DIR)
+        assets.mkdirs()
+        val version =
+            PdfJsManager::class
+                .java
+                .getDeclaredField("PDF_JS_VERSION")
+                .apply { isAccessible = true }
+                .get(null) as String
+        java.io.File(assets, ".version").writeText(version)
+        listOf("pdf.mjs", "pdf.worker.mjs").forEach {
+            java.io.File(assets, it).writeText("// Routing test fixture")
+        }
+        UserSettings(activity).supportPdfRendering = true
+        assertTrue(PdfJsManager.areAssetsReady(activity))
+        frames()
+        val url = "https://site.example/report.pdf?track=1&id=2"
+        activityController.newIntent(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        frames()
+        assertEquals(
+            "https://site.example/report.pdf?id=2",
+            Uri.parse(shadowOf(webView()).lastLoadDataWithBaseURL.baseUrl)
+                .getQueryParameter("wk_pdf_url"),
+        )
+        UserSettings(activity).websiteBlacklist = "track=blocked"
+        frames()
+        val blocked = "https://site.example/?track=blocked"
+        activityController.newIntent(Intent(Intent.ACTION_VIEW, Uri.parse(blocked)))
+        frames()
+        assertEquals(blocked, shadowOf(webView()).lastLoadDataWithBaseURL.baseUrl)
+        assertTrue(
+            shadowOf(webView())
+                .lastLoadDataWithBaseURL
+                .data
+                .contains("Access Blocked")
+        )
+    }
+
     private fun documentRules(text: String) {
         val store = FilterListStore(activity)
         store.remove(store.list().map { it.id }.toSet())
@@ -338,6 +466,7 @@ class MainActivityWebViewRefreshTest {
         mainFrame: Boolean = true,
         method: String = "GET",
         redirect: Boolean = false,
+        headers: Map<String, String> = emptyMap(),
     ) =
         object : WebResourceRequest {
             override fun getUrl(): Uri = Uri.parse(url)
@@ -350,7 +479,7 @@ class MainActivityWebViewRefreshTest {
 
             override fun getMethod() = method
 
-            override fun getRequestHeaders() = emptyMap<String, String>()
+            override fun getRequestHeaders() = headers
         }
 
     @Test

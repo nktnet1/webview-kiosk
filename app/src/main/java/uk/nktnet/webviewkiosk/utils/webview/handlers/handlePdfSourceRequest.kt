@@ -147,6 +147,7 @@ fun handlePdfSourceRequest(
     blacklistRegexes: List<Regex>,
     whitelistRegexes: List<Regex>,
     isDocumentBlocked: (String) -> Boolean,
+    documentUrl: (String) -> String = { it },
     onAuthenticationRequired:
         (token: String, url: String, request: HttpAuthRequest) -> Unit =
         { _, _, request ->
@@ -232,6 +233,7 @@ fun handlePdfSourceRequest(
                     onClientCertificateRequired = onClientCertificateRequired,
                     onSslError = onSslError,
                     isDocumentBlocked = isDocumentBlocked,
+                    documentUrl = documentUrl,
                 )
             else -> errorResponse(400, "Unsupported PDF URL")
         }
@@ -277,6 +279,7 @@ private fun remotePdfResponse(
     onClientCertificateRequired: (String, String, ClientCertRequest) -> Unit,
     onSslError: (String, String, SslErrorRequest) -> Unit,
     isDocumentBlocked: (String) -> Boolean,
+    documentUrl: (String) -> String,
 ): WebResourceResponse {
     var currentUrl = sourceUrl
     var redirectCount = 0
@@ -300,6 +303,25 @@ private fun remotePdfResponse(
                 isDocumentBlocked(currentUrl)
         ) {
             throw PdfSourceBlockedException("Blocked redirect target: $currentUrl")
+        }
+
+        val cleanedUrl = documentUrl(currentUrl)
+        if (cleanedUrl != currentUrl) {
+            val (cleanedScheme, cleanedCause) =
+                getBlockInfo(
+                    cleanedUrl,
+                    blacklistRegexes,
+                    whitelistRegexes,
+                    userSettings,
+                )
+            if (
+                cleanedScheme != SchemeType.WEB ||
+                    cleanedCause != null ||
+                    isDocumentBlocked(cleanedUrl)
+            ) {
+                throw PdfSourceBlockedException("Blocked cleaned URL: $cleanedUrl")
+            }
+            currentUrl = cleanedUrl
         }
 
         val connection = URL(currentUrl).openConnection() as HttpURLConnection

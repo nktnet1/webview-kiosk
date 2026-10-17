@@ -130,6 +130,79 @@ internal class MatchBudget {
     }
 }
 
+/** Shared bounded JavaScript-compatible RE2 compiler for network modifiers. */
+internal fun compileFilterRegex(text: String, matchCase: Boolean): Pattern {
+    require(text.length <= 2048)
+    // Bound compilation before RE2/J expands counted repeats into states.
+    var escaped = false
+    var inClass = false
+    var depth = 0
+    var groups = 0
+    var repeatCost = 0
+    text.forEachIndexed { index, char ->
+        if (escaped) {
+            require(char !in "pPAzQE") { "Non-JavaScript regex escape" }
+            escaped = false
+        } else if (char == '\\') {
+            escaped = true
+        } else if (char == '[') {
+            inClass = true
+        } else if (char == ']') {
+            inClass = false
+        } else if (!inClass) {
+            if (char == '(') {
+                require(++depth <= 32 && ++groups <= 64)
+            }
+            if (char == ')') {
+                require(--depth >= 0)
+            }
+            if (char == '{') {
+                val end = text.indexOf('}', index)
+                val bounds =
+                    if (end > index) {
+                        text.substring(index + 1, end)
+                    } else {
+                        ""
+                    }
+                if (
+                    bounds.isNotEmpty() && bounds.all { it.isDigit() || it == ',' }
+                ) {
+                    require(text.getOrNull(index - 1) !in listOf(')', '}'))
+                    val counts =
+                        bounds
+                            .split(',')
+                            .filter { it.isNotEmpty() }
+                            .map { it.toIntOrNull() ?: Int.MAX_VALUE }
+                    require(counts.all { it <= 256 })
+                    repeatCost += counts.maxOrNull() ?: 0
+                    require(repeatCost <= 8192)
+                }
+            }
+        }
+    }
+    val pattern =
+        try {
+            Pattern.compile(
+                text,
+                if (matchCase) {
+                    0
+                } else {
+                    Pattern.CASE_INSENSITIVE
+                },
+            )
+        } catch (error: PatternSyntaxException) {
+            throw IllegalArgumentException(
+                "Unsupported regular expression",
+                error,
+            )
+        }
+    return pattern.also {
+        require(it.programSize() <= 2048) {
+            "Regex program exceeds the size limit"
+        }
+    }
+}
+
 internal data class UrlPattern(
     val text: String,
     val domainAnchor: Boolean,
@@ -141,77 +214,8 @@ internal data class UrlPattern(
 ) {
     private val compiledRegex =
         if (regex) {
-            require(text.length <= 2048)
             require(!domainAnchor && !startAnchor && !endAnchor && hostIndex == null)
-            // Bound compilation before RE2/J expands counted repeats into states.
-            var escaped = false
-            var inClass = false
-            var depth = 0
-            var groups = 0
-            var repeatCost = 0
-            text.forEachIndexed { index, char ->
-                if (escaped) {
-                    require(char !in "pPAzQE") { "Non-JavaScript regex escape" }
-                    escaped = false
-                } else if (char == '\\') {
-                    escaped = true
-                } else if (char == '[') {
-                    inClass = true
-                } else if (char == ']') {
-                    inClass = false
-                } else if (!inClass) {
-                    if (char == '(') {
-                        require(++depth <= 32 && ++groups <= 64)
-                    }
-                    if (char == ')') {
-                        require(--depth >= 0)
-                    }
-                    if (char == '{') {
-                        val end = text.indexOf('}', index)
-                        val bounds =
-                            if (end > index) {
-                                text.substring(index + 1, end)
-                            } else {
-                                ""
-                            }
-                        if (
-                            bounds.isNotEmpty() &&
-                                bounds.all { it.isDigit() || it == ',' }
-                        ) {
-                            require(text.getOrNull(index - 1) !in listOf(')', '}'))
-                            val counts =
-                                bounds
-                                    .split(',')
-                                    .filter { it.isNotEmpty() }
-                                    .map { it.toIntOrNull() ?: Int.MAX_VALUE }
-                            require(counts.all { it <= 256 })
-                            repeatCost += counts.maxOrNull() ?: 0
-                            require(repeatCost <= 8192)
-                        }
-                    }
-                }
-            }
-            val pattern =
-                try {
-                    Pattern.compile(
-                        text,
-                        if (matchCase) {
-                            0
-                        } else {
-                            Pattern.CASE_INSENSITIVE
-                        },
-                    )
-                } catch (error: PatternSyntaxException) {
-                    throw IllegalArgumentException(
-                        "Unsupported regular expression",
-                        error,
-                    )
-                }
-            pattern.also {
-                require(it.programSize() <= 2048) {
-                    "Regex program exceeds the size limit"
-                }
-            }
+            compileFilterRegex(text, matchCase)
         } else {
             null
         }

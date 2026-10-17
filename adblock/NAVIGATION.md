@@ -1,4 +1,4 @@
-# Document filtering - v1.0.20
+# Document filtering - v1.0.21
 
 Main-frame HTTP(S) navigations now reach the document matcher. `$document` and
 its `$doc` alias support hostname/path rules, exceptions, methods, domain scopes,
@@ -31,10 +31,10 @@ documents return that HTML as HTTP 403 with `Cache-Control: no-store` and
 `X-Content-Type-Options: nosniff`; interception cannot retain the previous page
 after a native POST has begun. Subresource response behavior is unchanged.
 
-Cache schema 10 invalidates old records once for the matching/alias changes.
+Cache schema 10 invalidated old records once for the matching/alias changes.
 It retains aggregate/per-list caching, checksums and recovery; runtime indexes
-are still rebuilt. This update does not implement persisted indexes or
-`$removeparam`.
+are still rebuilt. Schema 11 adds `$removeparam` records; see
+[query removal](QUERYPARAMS.md). Persisted runtime indexes remain unimplemented.
 
 ## Verification and platform boundary
 

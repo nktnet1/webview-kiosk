@@ -69,6 +69,23 @@ internal object WebViewBlocker {
         responseFor(url, true, "", emptyMap(), method, service) !=
             BlockingResponse.ALLOW
 
+    /** Only known GET navigations can be replayed without losing a request body. */
+    fun documentUrl(
+        url: String,
+        method: String,
+        service: ContentBlockingService,
+    ): String {
+        if (
+            '?' !in url ||
+                !method.equals("GET", true) ||
+                !isFilterableUrl(url) ||
+                shouldBlockDocument(url, method, service)
+        ) {
+            return url
+        }
+        return service.removeQueryParameters(url, url, "document", method)
+    }
+
     private fun responseFor(
         url: String,
         isMainFrame: Boolean,

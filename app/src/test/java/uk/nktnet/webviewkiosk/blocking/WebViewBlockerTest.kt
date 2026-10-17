@@ -269,6 +269,31 @@ class WebViewBlockerTest {
     }
 
     @Test
+    fun queryRemovalOnlyRewritesGetDocumentsAndKeepsOriginalBlockDecisions() {
+        val blocker = realService("*\$removeparam=track\n||blocked.example^\$doc")
+        val url = "https://site.example/?track=1&keep=2"
+        assertEquals(
+            "https://site.example/?keep=2",
+            WebViewBlocker.documentUrl(url, "GET", blocker),
+        )
+        assertEquals(url, WebViewBlocker.documentUrl(url, "POST", blocker))
+        assertEquals(url, WebViewBlocker.documentUrl(url, "HEAD", blocker))
+        val blocked = "https://blocked.example/?track=1"
+        assertEquals(blocked, WebViewBlocker.documentUrl(blocked, "GET", blocker))
+        val internal = "https://appassets.androidplatform.net/?track=1"
+        assertEquals(internal, WebViewBlocker.documentUrl(internal, "GET", blocker))
+        assertNull(
+            WebViewBlocker.intercept(
+                request(url, "script"),
+                "https://site.example/",
+                blocker,
+            )
+        )
+        blocker.setEnabled(false)
+        assertEquals(url, WebViewBlocker.documentUrl(url, "GET", blocker))
+    }
+
+    @Test
     fun documentsUseTheirOwnContextAndActualMethodRegardlessOfHeaders() {
         val blocker =
             realService(

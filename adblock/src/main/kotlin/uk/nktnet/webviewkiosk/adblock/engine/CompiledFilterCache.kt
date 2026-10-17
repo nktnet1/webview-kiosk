@@ -142,6 +142,17 @@ internal class CompiledFilterCache(
                                     }
                                 }
                             require(response != BlockingResponse.ALLOW)
+                            val redirectOnly = input.readBoolean()
+                            val removeParam =
+                                if (input.readBoolean()) {
+                                    ParameterRemoval(strings.read())
+                                } else {
+                                    null
+                                }
+                            require(
+                                removeParam == null ||
+                                    response == null && !redirectOnly && hide == 0
+                            )
                             NetworkIdentity(
                                 pattern,
                                 conditions,
@@ -149,7 +160,8 @@ internal class CompiledFilterCache(
                                 important,
                                 hide,
                                 response,
-                                input.readBoolean(),
+                                redirectOnly,
+                                removeParam,
                             ) to disabled
                         }
                     val networks =
@@ -279,7 +291,8 @@ internal class CompiledFilterCache(
                         important,
                         hide,
                         redirect,
-                        redirectOnly) =
+                        redirectOnly,
+                        removeParam) =
                         rule
                     strings.write(pattern.text)
                     output.writeByte(
@@ -334,6 +347,8 @@ internal class CompiledFilterCache(
                         }
                     )
                     output.writeBoolean(redirectOnly)
+                    output.writeBoolean(removeParam != null)
+                    removeParam?.let { strings.write(it.text) }
                 }
                 output.writeInt(rules.cosmetics.size)
                 for ((selector, domains, exception, procedure) in rules.cosmetics) {
@@ -448,7 +463,7 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 10
+        private const val VERSION = 11
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 

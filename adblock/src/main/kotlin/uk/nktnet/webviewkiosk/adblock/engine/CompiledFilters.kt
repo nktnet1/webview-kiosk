@@ -260,8 +260,15 @@ private class NetworkIndex(rules: Collection<NetworkIdentity>) {
                     }
                 }
 
-                pattern.indexToken != null ->
-                    tokens.getOrPut(pattern.indexToken) { mutableListOf() }.add(rule)
+                pattern.indexToken != null || rule.removeParam?.indexToken != null ->
+                    tokens
+                        .getOrPut(
+                            pattern.indexToken
+                                ?: requireNotNull(rule.removeParam?.indexToken)
+                        ) {
+                            mutableListOf()
+                        }
+                        .add(rule)
 
                 else -> fallback += rule
             }
@@ -343,6 +350,7 @@ internal class CompiledFilters(
     private val requests: NetworkIndex
     private val redirectExceptions: NetworkIndex
     private val hideExceptions: NetworkIndex
+    private val parameterRules: NetworkIndex
     private val specific = HashMap<String, MutableList<CosmeticRule>>()
     private val generic = mutableListOf<CosmeticRule>()
     private val classes = HashMap<String, MutableList<CosmeticRule>>()
@@ -363,9 +371,11 @@ internal class CompiledFilters(
         val ordinary = mutableListOf<NetworkIdentity>()
         val hiding = mutableListOf<NetworkIdentity>()
         val redirecting = mutableListOf<NetworkIdentity>()
+        val parameters = mutableListOf<NetworkIdentity>()
         for (rule in networks) {
             val host = rule.pattern.plainHost
             when {
+                rule.removeParam != null -> parameters += rule
                 rule.hide != 0 -> hiding += rule
                 rule.exception && rule.redirectOnly -> redirecting += rule
 
@@ -385,6 +395,7 @@ internal class CompiledFilters(
         requests = NetworkIndex(ordinary)
         hideExceptions = NetworkIndex(hiding)
         redirectExceptions = NetworkIndex(redirecting)
+        parameterRules = NetworkIndex(parameters)
         for (rule in cosmetics) {
             if (rule.procedure != null) {
                 val domainIndex =
@@ -601,6 +612,101 @@ internal class CompiledFilters(
         } else {
             BlockingResponse.ALLOW
         }
+    }
+
+    /** Query modifiers never act as blocking rules or whitelist network blocks. */
+    fun removeQueryParameters(
+        url: String,
+        sourceUrl: String,
+        type: String,
+        method: String,
+    ): String {
+        if (url.length > 32768) {
+            return url
+        }
+        val hash =
+            url.indexOf('#').let {
+                if (it < 0) {
+                    url.length
+                } else {
+                    it
+                }
+            }
+        val query = url.indexOf('?').takeIf { it in 0 until hash } ?: return url
+        if (query + 1 == hash) {
+            return url
+        }
+        val target = httpAddress(url) ?: return url
+        val resourceType = ResourceTypes.request(type)
+        val source =
+            if (resourceType == ResourceTypes.request("document")) {
+                target
+            } else {
+                httpAddress(sourceUrl) ?: return url
+            }
+        val facts =
+            RequestFacts(target, source, resourceType, method.uppercase(Locale.ROOT))
+        val normal = linkedMapOf<String, ParameterRemoval>()
+        val important = linkedMapOf<String, ParameterRemoval>()
+        val exceptions = hashSetOf<String>()
+        parameterRules.any(facts) { rule ->
+            if (
+                facts.matches(rule.conditions) &&
+                    rule.pattern.matches(target, facts.url, facts.budget)
+            ) {
+                val modifier = requireNotNull(rule.removeParam)
+                when {
+                    rule.important -> important[modifier.text] = modifier
+                    rule.exception -> exceptions += modifier.text
+                    else -> normal[modifier.text] = modifier
+                }
+            }
+            false
+        }
+        if ("" in exceptions) {
+            normal.clear()
+        } else {
+            exceptions.forEach(normal::remove)
+        }
+        val modifiers = normal + important
+        if (modifiers.isEmpty() || facts.budget.exhausted) {
+            return url
+        }
+        val parameters = url.substring(query + 1, hash).split('&')
+        if (parameters.size > 1024) {
+            return url
+        }
+        val remaining = ArrayList<String>(parameters.size)
+        for (part in parameters) {
+            val name = part.substringBefore('=')
+            val value = part.substringAfter('=', "")
+            var removed = false
+            for (modifier in modifiers.values) {
+                val matched = modifier.matches(name, value, facts.budget)
+                if (facts.budget.exhausted) {
+                    return url
+                }
+                if (matched) {
+                    removed = true
+                    break
+                }
+            }
+            if (!removed) {
+                remaining += part
+            }
+        }
+        if (remaining.size == parameters.size) {
+            return url
+        }
+        // Keep the spelling, order, duplicates and values of retained parameters.
+        // Re-encoding a signed URL can change its meaning even after one removal.
+        return url.substring(0, query) +
+            (if (remaining.isEmpty()) {
+                ""
+            } else {
+                "?" + remaining.joinToString("&")
+            }) +
+            url.substring(hash)
     }
 
     fun shouldBlock(

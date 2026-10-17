@@ -314,6 +314,24 @@ internal class ContentBlockingService(
         }
     }
 
+    fun removeQueryParameters(
+        url: String,
+        sourceUrl: String,
+        type: String,
+        method: String,
+    ): String {
+        if (!ready) {
+            return url
+        }
+        return try {
+            engine.removeQueryParameters(url, sourceUrl, type, method)
+        } catch (error: LinkageError) {
+            ready = false
+            reportError(generation.get(), error)
+            url
+        }
+    }
+
     fun cosmeticSelectors(
         url: String,
         classes: List<String>,

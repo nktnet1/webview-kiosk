@@ -103,6 +103,13 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
 
     override fun hasCosmeticRules(): Boolean = compiled.hasCosmetics
 
+    override fun removeQueryParameters(
+        url: String,
+        sourceUrl: String,
+        type: String,
+        method: String,
+    ): String = compiled.removeQueryParameters(url, sourceUrl, type, method)
+
     override fun cosmeticSelectors(
         url: String,
         classes: List<String>,

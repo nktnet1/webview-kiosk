@@ -87,6 +87,7 @@ internal data class NetworkIdentity(
     val hide: Int,
     val redirect: BlockingResponse? = null,
     val redirectOnly: Boolean = false,
+    val removeParam: ParameterRemoval? = null,
 )
 
 internal data class NetworkRule(
@@ -937,7 +938,7 @@ internal object FilterParser {
             } else {
                 line
             }
-        val closingSlash = body.lastIndexOf('/')
+        val closingSlash = regexEnd(body)
         val regex =
             body.startsWith('/') &&
                 closingSlash > 0 &&
@@ -951,7 +952,7 @@ internal object FilterParser {
                     closingSlash + 1
                 }
             } else {
-                body.lastIndexOf('$')
+                body.indexOf('$')
             }
         // Options-only filters (including @@$generichide,domain=...) match
         // every URL, while their options still restrict when they apply.
@@ -965,7 +966,7 @@ internal object FilterParser {
             }
         val options =
             if (dollar >= 0) {
-                body.substring(dollar + 1).split(',')
+                body.substring(dollar + 1).split(Regex("(?<!\\\\),"))
             } else {
                 emptyList()
             }
@@ -982,6 +983,7 @@ internal object FilterParser {
         var hide = 0
         var redirect: BlockingResponse? = null
         var redirectOnly = false
+        var removeParam: ParameterRemoval? = null
         // Check unknown options before interpreting any remaining restriction.
         for (option in options) {
             val name =
@@ -1010,6 +1012,9 @@ internal object FilterParser {
                             "ghide",
                             "elemhide",
                             "ehide",
+                            "removeparam",
+                            "queryprune",
+                            "_",
                         )
             ) {
                 throw Unsupported()
@@ -1033,6 +1038,25 @@ internal object FilterParser {
                 continue
             }
             when (name) {
+                "_" -> {
+                    if (option != "_") {
+                        throw Unsupported()
+                    }
+                }
+
+                "removeparam",
+                "queryprune" -> {
+                    if (negated || removeParam != null) {
+                        throw Unsupported()
+                    }
+                    removeParam =
+                        try {
+                            ParameterRemoval(value.replace("\\,", ",").trim())
+                        } catch (_: IllegalArgumentException) {
+                            throw Unsupported()
+                        }
+                }
+
                 "domain",
                 "from" -> {
                     if (negated || value.isEmpty()) {
@@ -1218,6 +1242,9 @@ internal object FilterParser {
                 }
             }
         }
+        if (removeParam != null && (redirect != null || redirectOnly || hide != 0)) {
+            throw Unsupported()
+        }
         val conditions =
             Conditions(
                 scope,
@@ -1238,10 +1265,35 @@ internal object FilterParser {
                     hide,
                     redirect,
                     redirectOnly,
+                    removeParam,
                 ),
                 badfilter,
             )
         )
+    }
+
+    /** Find the network regex terminator without consuming a modifier's regex. */
+    private fun regexEnd(body: String): Int {
+        if (!body.startsWith('/')) {
+            return -1
+        }
+        var escaped = false
+        var inClass = false
+        for (index in 1 until body.length) {
+            val char = body[index]
+            if (escaped) {
+                escaped = false
+            } else if (char == '\\') {
+                escaped = true
+            } else if (char == '[') {
+                inClass = true
+            } else if (char == ']') {
+                inClass = false
+            } else if (char == '/' && !inClass) {
+                return index
+            }
+        }
+        return -1
     }
 
     private fun pattern(raw: String, matchCase: Boolean): UrlPattern {

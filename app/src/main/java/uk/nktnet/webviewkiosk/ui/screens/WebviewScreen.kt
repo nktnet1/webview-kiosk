@@ -391,13 +391,27 @@ fun WebviewScreen(navController: NavController) {
         if (!isCurrentWebView()) {
             return
         }
-        val url =
+        val resolvedUrl =
             resolveBlockPageUrl(
                 newUrl,
                 blacklistRegexes,
                 whitelistRegexes,
                 userSettings,
             ) ?: return
+        val originalPolicy =
+            getBlockInfo(
+                    resolvedUrl,
+                    blacklistRegexes,
+                    whitelistRegexes,
+                    userSettings,
+                )
+                .second
+        val url =
+            if (originalPolicy == null) {
+                WebViewBlocker.documentUrl(resolvedUrl, "GET", contentBlocker)
+            } else {
+                resolvedUrl
+            }
         systemSettings.urlBeingHandled = url
         val (schemeType, policyBlockCause) =
             getBlockInfo(
@@ -407,7 +421,8 @@ fun WebviewScreen(navController: NavController) {
                 userSettings = userSettings,
             )
         val blockCause =
-            policyBlockCause
+            originalPolicy
+                ?: policyBlockCause
                 ?: if (
                     WebViewBlocker.shouldBlockDocument(url, "GET", contentBlocker)
                 ) {
