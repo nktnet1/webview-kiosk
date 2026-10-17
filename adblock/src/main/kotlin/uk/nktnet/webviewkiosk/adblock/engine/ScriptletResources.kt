@@ -31,6 +31,17 @@ internal object ScriptletResources {
             "prebid-ads" to "prebid-ads.js",
             "sensors-analytics" to "sensors-analytics.js",
         )
+    // Upstream marks these resources redirect-only; they are not +js entry points.
+    val redirectAliases =
+        mapOf(
+            "google-analytics_cx_api" to "google-analytics_cx_api.js",
+            "google-analytics.com/cx/api" to "google-analytics_cx_api.js",
+            "google-analytics_inpage_linkid" to "google-analytics_inpage_linkid.js",
+            "google-analytics.com/inpage_linkid" to
+                "google-analytics_inpage_linkid.js",
+            "scorecardresearch_beacon" to "scorecardresearch_beacon.js",
+            "scorecardresearch.com/beacon" to "scorecardresearch_beacon.js",
+        )
     val files = aliases.values.toSet()
 
     fun factories(names: Set<String>): String =

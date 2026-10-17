@@ -67,7 +67,12 @@ enum class ScriptletType {
     TRUSTED_OVERRIDE_ELEMENT_METHOD,
     TRUSTED_CREATE_HTML,
     PREVENT_CLIPBOARD_WRITE,
-    MPEGDASH_PRUNE;
+    MPEGDASH_PRUNE,
+    JSON_EDIT,
+    JSON_EDIT_FETCH,
+    JSON_EDIT_XHR,
+    JSONL_EDIT_FETCH,
+    JSONL_EDIT_XHR;
 
     val requiresTrust: Boolean
         get() = name.startsWith("TRUSTED_") || this == PREVENT_CLIPBOARD_WRITE

@@ -7,7 +7,7 @@
 (function(env) {
     'use strict';
     const { selected, wrap, apply, define, descriptor, matcher, nativeThen,
-        NativeRequest, NativeResponse, jsonPruner } = env;
+        NativeRequest, NativeResponse, jsonPruner, jsonEditor } = env;
     const parse = JSON.parse;
     const stringify = JSON.stringify;
     const NativeURL = self.URL;
@@ -26,7 +26,6 @@
     const timeout = self.setTimeout.bind(self);
     const clear = self.clearTimeout.bind(self);
     const MAX_BODY = 1024 * 1024;
-    const MAX_RULES = 32;
     const requestFields = raw => raw && raw !== '*' ? raw.split(' ').map(part => {
         const colon = part.indexOf(':');
         const name = part.slice(0, colon);
@@ -102,15 +101,26 @@
         return new NativeSerializer().serializeToString(doc);
     }
     const responseTypes = new Set(['JSON_PRUNE_FETCH', 'JSON_PRUNE_XHR', 'XML_PRUNE',
-        'MPEGDASH_PRUNE',
+        'MPEGDASH_PRUNE', 'JSON_EDIT_FETCH', 'JSON_EDIT_XHR', 'JSONL_EDIT_FETCH', 'JSONL_EDIT_XHR',
         'M3U_PRUNE', 'TRUSTED_REPLACE_FETCH', 'TRUSTED_REPLACE_XHR']);
-    const edits = selected.filter(rule => responseTypes.has(rule[0])).slice(0, MAX_RULES)
+    const edits = selected.filter(rule => responseTypes.has(rule[0]))
         .map(([type, args]) => {
             const json = type.startsWith('JSON_PRUNE_');
             const replace = type.startsWith('TRUSTED_REPLACE_');
+            const editing = type.startsWith('JSON_EDIT_') || type.startsWith('JSONL_EDIT_');
+            const lines = type.startsWith('JSONL_EDIT_');
+            const editor = editing ? jsonEditor(args) : null;
+            let extract = null, extractionSupported = true;
+            if (lines && args[4]) {
+                try { extract = new RegExp(args[4], 'd'); }
+                catch { extractionSupported = false; }
+            }
             const mpd = type === 'MPEGDASH_PRUNE';
-            const fields = requestFields(json ? args[3] : replace ? args[2] : mpd ? args[1] : '');
-            const url = matcher(json || replace || mpd ? '' : args[type === 'XML_PRUNE' ? 2 : 1]);
+            const predicates = editing ? args[2] : json ? args[3]
+                : replace ? args[2] : mpd ? args[1] : '';
+            const fields = requestFields(predicates);
+            const url = matcher(editing || json || replace || mpd ? ''
+                : args[type === 'XML_PRUNE' ? 2 : 1]);
             const prune = json ? jsonPruner([args]) : null;
             const stack = json && args[5] ? matcher(args[5], true) : null;
             const end = args[0].lastIndexOf('/');
@@ -120,6 +130,32 @@
             const segment = type === 'M3U_PRUNE' ? matcher(args[0]) : null;
             return { type, args, fields, url, stack,
                 transform(text) {
+                    if (editing) {
+                        if (!extractionSupported) { return text; }
+                        const work = { remaining: 16384 };
+                        const edit = text => {
+                            const value = apply(parse, JSON, [text]);
+                            return editor(value, work) ? apply(stringify, JSON, [value]) : text;
+                        };
+                        if (!lines) { return edit(text); }
+                        const parts = text.split(/(\r?\n)/);
+                        if (parts.length > 32769) { return text; }
+                        for (let i = 0; i < parts.length; i += 2) {
+                            try {
+                                if (!extract) { parts[i] = edit(parts[i]); continue; }
+                                const match = extract.exec(parts[i]);
+                                const range = match?.indices?.[1];
+                                if (!range) { continue; }
+                                const before = parts[i].slice(range[0], range[1]);
+                                const after = edit(before);
+                                if (before !== after) {
+                                    parts[i] = parts[i].slice(0, range[0]) + after +
+                                        parts[i].slice(range[1]);
+                                }
+                            } catch {}
+                        }
+                        return parts.join('');
+                    }
                     if (json) {
                         const value = apply(parse, JSON, [text]);
                         const before = apply(stringify, JSON, [value]);
@@ -249,7 +285,7 @@
         const proto = NativeXHR.prototype;
         const states = new WeakMap();
         const preventers = selected.filter(rule =>
-            ['PREVENT_XHR', 'TRUSTED_PREVENT_XHR'].includes(rule[0])).slice(0, MAX_RULES)
+            ['PREVENT_XHR', 'TRUSTED_PREVENT_XHR'].includes(rule[0]))
             .map(([type, args]) => ({ fields: requestFields(args[0]),
                 body: textBody(args[1]), trusted: type === 'TRUSTED_PREVENT_XHR' }));
         function nativeDescriptor(name) {
@@ -443,7 +479,7 @@
                     try {
                         const text = apply(stringify, JSON, [value]);
                         const after = transform(text, state.entries.filter(edit =>
-                            edit.type === 'JSON_PRUNE_XHR'));
+                            ['JSON_PRUNE_XHR', 'JSON_EDIT_XHR'].includes(edit.type)));
                         if (after !== text) { result = apply(parse, JSON, [after]); }
                     } catch {}
                 } else if (value?.nodeType === 9 && NativeSerializer && NativeParser) {
@@ -464,6 +500,8 @@
     const both = () => { fetchResponses(); xhrResponses(); };
     return new Map([
         ['PREVENT_XHR', xhrResponses], ['TRUSTED_PREVENT_XHR', xhrResponses],
+        ['JSON_EDIT_XHR', xhrResponses], ['JSONL_EDIT_XHR', xhrResponses],
+        ['JSON_EDIT_FETCH', fetchResponses], ['JSONL_EDIT_FETCH', fetchResponses],
         ['JSON_PRUNE_XHR', xhrResponses], ['TRUSTED_REPLACE_XHR', xhrResponses],
         ['JSON_PRUNE_FETCH', fetchResponses], ['TRUSTED_REPLACE_FETCH', fetchResponses],
         ['XML_PRUNE', both], ['M3U_PRUNE', both],

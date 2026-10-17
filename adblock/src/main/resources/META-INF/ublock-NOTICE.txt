@@ -47,3 +47,20 @@ https://github.com/gorhill/uBlock/tree/dfca51bea2b8605353547f605e9cffbb6dfa0789/
 
 Network regex support uses RE2/J 1.8 (https://github.com/google/re2j).
 Its complete BSD notices are in META-INF/licenses/re2j-BSD.txt.
+
+The v1.0.25 JSON editing subset follows src/js/jsonpath.js and
+src/js/resources/json-edit.js, retrieved from upstream on 2026-10-17.
+It compiles queries to a bounded data AST, preserves upstream's v1/v2 filter
+semantics, and excludes executable expressions, assignments, and unimplemented DSLs.
+The additional unchanged redirect resources were retrieved from
+https://github.com/gorhill/uBlock/tree/master/src/web_accessible_resources
+on 2026-10-17. SHA-256 of the bundled bytes:
+  google-analytics_cx_api.js: b1bdb8c30c6744be3c68bba5de49df7a2f04d3d8b295f0a26ab1ade5af738139
+  google-analytics_inpage_linkid.js:
+    816b8366769981f63ebda4aed7796d51edaf81f219951a1ac1f16220e9f26fac
+  scorecardresearch_beacon.js: c177360b3723b924a168fc72ed728f924fe72e40cfc0c1d3fb5237849c590946
+  noop-vast2.xml: a8fb181a797b4e48bb5d239ab5030f33ed65ebf339e38a5131ce966331226cef
+  noop-vast3.xml: 71a904ba726ae38a8aa08425bae824e9850452b5c41a182bdc526a139ba3a9bc
+  noop-vast4.xml: d06c733ba42b81cd66c7fcaabc75b51c59292cdbccdcfb6a88bf2b57d262047b
+  noop-vmap1.xml: fcc40f36d86c8f7146d4b2f0c1273cc46282c2c236303dabc172dfacfdf86508
+  3x2.png: c3fdb994f265ca41374d5aeeafefe0e0fe79b74508c7f09d26f6767971317eed

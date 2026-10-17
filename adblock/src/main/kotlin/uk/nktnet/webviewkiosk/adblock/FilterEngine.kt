@@ -37,6 +37,17 @@ enum class BlockingResponse(
     POPADS_DUMMY("popads-dummy.js", "application/javascript"),
     PREBID("prebid-ads.js", "application/javascript"),
     SENSORS_ANALYTICS("sensors-analytics.js", "application/javascript"),
+    GOOGLE_ANALYTICS_CX("google-analytics_cx_api.js", "application/javascript"),
+    GOOGLE_ANALYTICS_LINK(
+        "google-analytics_inpage_linkid.js",
+        "application/javascript",
+    ),
+    SCORECARD_BEACON("scorecardresearch_beacon.js", "application/javascript"),
+    EMPTY_VAST2("noop-vast2.xml", "text/xml"),
+    EMPTY_VAST3("noop-vast3.xml", "text/xml"),
+    EMPTY_VAST4("noop-vast4.xml", "text/xml"),
+    EMPTY_VMAP("noop-vmap1.xml", "text/xml"),
+    TRANSPARENT_3X2_PNG("3x2.png", "image/png"),
 }
 
 enum class RuleLoadStage(val description: String) {
@@ -91,6 +102,7 @@ interface NetworkFilterEngine {
         method: String,
     ): Boolean
 
+    /** An empty source URL denotes an unknown initiator, never an inferred party. */
     fun responseFor(
         url: String,
         sourceUrl: String,
@@ -123,6 +135,11 @@ interface NetworkFilterEngine {
     fun scriptletInjection(): ScriptletInjection? = null
 
     fun scriptlets(url: String): List<ScriptletInstruction> = emptyList()
+
+    fun scriptlets(
+        url: String,
+        ancestorUrls: List<String>,
+    ): List<ScriptletInstruction> = scriptlets(url)
 
     fun unsupportedRuleCount(): Int = 0
 }

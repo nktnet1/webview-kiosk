@@ -51,7 +51,7 @@ class KotlinFilterEngineTest {
         val engine = engine("*")
         assertFalse(blocked(engine, "not a URL"))
         assertFalse(blocked(engine, "file:///private.html"))
-        assertFalse(blocked(engine, "https://ads.example/a", ""))
+        assertTrue(blocked(engine, "https://ads.example/a", ""))
         assertFalse(blocked(engine, "https://ads.example/a", "null"))
     }
 

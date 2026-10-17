@@ -1,4 +1,4 @@
-# Scriptlet compatibility - v1.0.17
+# Scriptlet compatibility - v1.0.25
 
 The engine compiles validated `##+js(...)` data into fixed local JavaScript.
 Ordinary imports cannot enable trusted operations. No downloaded list supplies
@@ -7,7 +7,7 @@ can alter executable page content; only approved preset downloads can enable the
 Other trusted replacements are strings or bounded JSON.
 
 The pinned upstream catalogue has 129 canonical names. This version implements
-82 names: 81 tested subsets and one conditional Navigation API operation. See the
+87 names: 86 tested subsets and one conditional Navigation API operation. See the
 [complete catalogue](SCRIPTLET-CATALOG.md) for aliases and remaining exclusions.
 Support for a name does not imply support for all its upstream argument forms.
 
@@ -33,7 +33,7 @@ Unknown arguments discard the whole instruction. There is no approximate fallbac
 | ✅ | `json-prune` | Own paths, guards, `[]`/`*`; JSON.parse and Response.json |
 | ✅ | `no-fetch-if` | URL/method predicates and safe empty canned responses |
 | ✅ | Local/session storage setters | Key plus safe value or exact/regex `$remove$` |
-| ✅ | Cookie setters/reload/removal | Safe values, default/root/none path; no extra options |
+| ✅ | Cookie setters/reload/removal | Safe values, validated path/reload flags, and trusted variants documented below |
 | ✅ | `set-attr` | Safe attribute, empty/boolean/integer/copy value; after load |
 | ✅ | `ra`, `rc` | Attribute/class tokens, optional selector, asap/stay/complete |
 | ✅ | `rmnt` | Node name and text pattern; parsing phase only, no replace options |
@@ -59,7 +59,8 @@ Unknown arguments discard the whole instruction. There is no approximate fallbac
 | ✅ | `m3u-prune` | HLS EXTINF/URI segment pairs and following discontinuity |
 | ✅ | `overlay-buster` | Shared observer, bounded sweep and 30-second deadline |
 | ✅ | `mpegdash-prune` | XHR MPD Period durations/starts; fully timed manifests only |
-| ❌ | Other editing DSLs | JSON edit, JSONL and XPath forms remain unimplemented |
+| ✅ | JSON/JSONL response editors | Bounded JSONPath child/recursive selectors, indexes, unions, filters, Fetch/XHR predicates and JSONL capture extraction |
+| ❌ | Other editing DSLs | Request-body editors, assignments, JSONPath functions/regex selectors and XPath remain unimplemented |
 | ❌ | Debug/close-window | Deliberate debugger exclusion and no native window lifecycle |
 
 The safe constant set is empty string, undefined/null, booleans, empty arrays or
@@ -77,31 +78,67 @@ once per selected rule. Function-source matching caches at most 512 entries/256 
 individual strings are limited to 64 KiB. Oversized or unusual native arguments pass
 through. Timer multiplier defaults to 0.05 and is clamped to 0.001–50, as upstream.
 
+## JSON editing subset
+
+`json-edit` hooks `JSON.parse`; `json-edit-fetch-response` and
+`json-edit-xhr-response` use the shared response adapters. JSONL variants edit each
+JSON record independently and retain malformed lines, separators, and surrounding
+text. Optional `propsToMatch` predicates support URL/method matching. JSONL
+`jsonExtract` requires a safe anchored regex with one capture group and native
+regex capture indices. `json-edit` also accepts its `matches` text predicate.
+
+Accepted JSONPath forms include `.name`, `..name`, `[*]`, quoted property names,
+positive/negative array indexes, unions, and existence/primitive-comparison filters.
+Examples: `..ads`, `$.items[*].advert`, `$.items[?@.kind=="ad"]`, and
+`v2:$.items[?!@.content]`. Legacy and `v2:` object-filter semantics differ upstream;
+the interpreter preserves that distinction. Parenthesized filter expressions,
+assignments, functions, regex selectors, slices, and query chaining remain skipped.
+Unsupported queries reject the whole instruction, rather than dropping constraints.
+
+The compiler stores a data AST; cached ASTs must match recompilation of their query.
+No query is executed as JavaScript. Traversal uses own data descriptors, a depth of
+64, at most 4096 selected edits, and a shared work budget. Each query finishes
+traversing before mutating. Array-member deletion splices entries rather than
+leaving holes. Oversized or exhausted work retains that query's input.
+
 ## Domains, ordering and security
 
-Included ordinary hostnames and subdomains, domain exclusions, canonical exact
-scriptlet exceptions, and blank `#@#+js()` exceptions are supported. Global injection,
-entity (`site.*`), regex-domain, and IPv6-domain forms remain skipped. Normal CSS
-exceptions do not silently cancel scriptlet rules. Conditional directives and expanded
-includes retain list ordering. Aliases/default arguments normalize before deduplication.
-Conflicting terminal property hooks use the first instruction; compatible checks share
-accessors. Non-configurable/read-only properties fail open. Missing ancestors are hooked
-without manufacturing objects; replacement owners are handled within a 512-slot budget.
-Path-scoped cosmetic rules and descendant-frame scopes (`>>`) are also unimplemented.
-Recognized extended scopes skip the whole rule, including exceptions, without rejecting
-the subscription or broadening its hostname. Genuinely malformed hostnames still fail
-import validation. These scopes are implementation gaps, not WebView API restrictions.
+Ordinary hostname/subdomain and public-suffix entity scopes (`site.*`) are supported,
+including mixtures, exclusions, exact instruction exceptions, and blank `#@#+js()`
+exceptions. Bounded hostname regexes and hostname/entity path prefixes are also
+supported. Regex URL scopes follow upstream's split at the first escaped slash:
+match the hostname suffix and path prefix separately, without schemes or ports.
+Path matching includes the URL's query and fragment and remains case-sensitive.
 
-Compiled snapshots use schema 9, so older schemas are recompiled. Cached instructions undergo
-validation again, including fixed resource keys. Filters cannot choose a resource path.
-Only shims and response/advanced adapters needed by the snapshot are bundled into injection. No JS bridge
-or privileged page-callable method is introduced.
+`host>>` and `entity.*>>` target descendant frames using the browser's actual
+`location.ancestorOrigins`, capped at 64 entries. They do not target the named
+parent itself. Missing/opaque ancestor metadata causes constrained rules to pass
+through. There is no parent-document probing, bridge, or page instrumentation.
+The engine's optional ancestor-URL argument provides the equivalent native context.
+Global positive injection without a hostname/entity/validated regex remains skipped.
+
+Routing stores sorted newline-delimited hostname/entity buckets and independent
+JSON rule records. A frame binary-searches applicable buckets and parses only their
+records. Entity suffix data is decoded only for matching entity labels. Regex scope
+matching still scans the bounded regex routing table; it cannot always use a direct
+hostname lookup. Exceptions are resolved before deduplication and the page safeguard.
+Normal CSS exceptions do not cancel scriptlet rules. First-rule ordering is preserved.
+
+Conflicting terminal property hooks use the first instruction; compatible checks
+share accessors. Non-configurable/read-only properties pass through. Missing owners
+are hooked without manufacturing objects, within a 4096-slot safeguard.
+
+Compiled snapshots use schema 15. Cached instructions, JSONPath programs, and extended
+scope patterns are validated again. Resource keys select bundled implementations.
+Only needed adapters and eligible shims are bundled; no privileged callable bridge
+is introduced. Redirect-only resources do not become `+js` entry points.
 
 ## Response and trusted-operation contracts
 
-Response operations accept the existing bounded pattern grammar. Limits are 32
-response edits and 32 XHR preventers per frame, 1 MiB per body, and 4 MiB of text
-work per body. Fetch inspection also has a two-second deadline. Exceeding a limit
+Response operations accept the existing bounded pattern grammar. All selected
+response edits and XHR preventers participate up to the shared 1024-instruction
+frame safeguard; the old separate 32-operation truncations are removed. Bodies
+remain limited to 1 MiB, with 4 MiB of aggregate text work per body. Fetch inspection also has a two-second deadline. Exceeding a limit
 retains the original response and untouched body. UTF-8 text is supported; other
 declared character sets, opaque responses, bodyless statuses, invalid data and
 missing APIs fail open. No interception happens for nonmatching calls.
@@ -228,9 +265,10 @@ inline script still requires real WebView timing verification.
 
 Captured native timers/listeners protect cosmetics and scriptlet housekeeping from
 other selected hooks. No wrapper is installed without a matching instruction. Shared
-function hooks use one proxy per owner/property. Maximum instructions are 128 per frame,
-8192 per compilation, eight argument fields and 2 MiB routing data. Most arguments
-remain limited to 512 characters; new trusted helpers accept up to 8192 characters
+function hooks use one proxy per owner/property. Maximum instructions are 1024 per frame,
+65,536 per compilation, and 16 MiB of UTF-8 routing data. Most operations have eight
+argument fields; trusted cookies retain their ten-field contract. Most arguments
+remain limited to 512 characters; JSON editors and trusted helpers accept up to 8192 characters
 within the 8192-character expression/line cap and their operation-specific limits.
 The CSS selector length/depth and storage/cookie enumeration budgets are also bounded.
 Native selector-query cost still depends on document size and selector complexity.

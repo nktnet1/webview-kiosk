@@ -1,17 +1,17 @@
-# Compiled cache - v1.0.24
+# Compiled cache - v1.0.25
 
 All four opportunities are technically possible, with different tradeoffs:
 
 | Opportunity | Result |
 | --- | --- |
-| Persist lookup indexes | Measured separately; indexes still rebuild. A portable bucket/ID format is feasible, but needs Android profiling to justify extra IO, size and validation. |
+| Persist lookup indexes | Implemented as a bounded network-bucket prototype. Production keeps rebuilding because host comparisons do not show a consistent gain; Android profiling is still needed. |
 | Invalidate only changed lists | Implemented using per-source compiled records beneath the aggregate snapshot. |
 | Avoid invalidating on every app release | Implemented. VERSION_CODE is no longer passed to the engine. |
 | Recoverable replacement | Implemented using a pending file, backup, file-descriptor sync, checked renames and recovery, without adding Android dependencies to the engine. |
 
 ## Representation and invalidation
 
-Schema 14 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
+Schema 15 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
 normalized network/cosmetic/scriptlet records, bounded counts and trailing CRC32.
 It does not use Java object serialization. Identity includes exact input text,
 list boundaries, ordering and trust bits. Cached scriptlet arguments are validated
@@ -30,7 +30,10 @@ argument contracts and permits their bounded ten-argument representation.
 Schema 14 recompiles source shards because incomplete hostname prefixes ending in
 hyphens are now valid. The scriptlet-rule limit rises from 8,192 to 16,384:
 the supplied uBlock Ads list with includes has 8,812 accepted scriptlet rules.
-The existing 2 MiB routing-data limit and 128 instructions per page remain.
+Schema 15 adds extended scriptlet targets, partial `$all` identity, revalidated
+JSONPath AST arguments, and an optional portable network-index section. It raises
+capacity safeguards to 2,000,000 combined entries, 65,536 scriptlet rules,
+1024 instructions per frame, and 16 MiB routing data. Older schemas recompile once.
 
 The warm path reads one aggregate snapshot and constructs the indexes. On a miss,
 per-source SHA-256-keyed records in `compiled-rules.bin.sources` allow only changed,
@@ -39,7 +42,7 @@ Reordering can reuse every source while rebuilding the merged rule order.
 
 Source records retain badfilter identities and pre-deduplication counts. Final
 merge applies cross-list badfilters, deduplicates all rule families, preserves
-first-rule ordering and checks 500,000 total rules / 8,192 scriptlet rules.
+first-rule ordering and checks 2,000,000 total rules / 65,536 scriptlet rules.
 Loading and parsing enforce the remaining combined rule budget before accepting
 additional records, including source entries removed by deduplication. Removing
 an overriding list restores the base source correctly. Exceptions are still global
@@ -79,14 +82,17 @@ A suitable format uses interned key tables, offsets and integer rule IDs for
 network, cosmetic and scriptlet buckets, separately from Kotlin runtime objects.
 It needs bounded decoding, equivalence tests and a schema bump.
 
-This remains a separate startup optimization; schema 14 does not persist indexes.
-The next cache implementation should save bucket keys, offsets and integer rule IDs
-for the four network indexes, plain-host sets, cosmetic maps and scriptlet routing.
-Restore those buckets into the existing lookup structures so request matching keeps
-its current algorithm. Rebuild regex programs and generate JavaScript from validated
-data and bundled runtimes; do not deserialize arbitrary Kotlin objects or cache
-filter-provided executable source. Keep per-source rule shards authoritative and
-cache only the merged snapshot's final indexes after cross-list precedence.
+The schema-15 prototype persists the four network indexes as interned bucket keys
+and primitive integer rule IDs. Reads bound counts, validate IDs and checksums,
+and restore buckets without reparsing filter text. Request matching retains its
+host/page/entity/token/fallback algorithm. No executable source or serialized Kotlin
+objects are stored. Normalized records and source shards remain authoritative.
+
+`CompiledFilterCache.write` can include an explicit `NetworkIndexSnapshot` for
+experiments. The app does not pass one: current comparisons do not establish a
+consistent total-load saving. Plain-host sets, cosmetics and scriptlet routes still
+rebuild; this is not a claim of complete persisted-index coverage. Retained bucket
+IDs use primitive arrays to avoid allocating boxed integers for active indexes.
 
 Enable persisted indexes only after Android measurements show lower combined
 read/validation/index time at both median and P95, with no request-lookup regression.
@@ -129,3 +135,19 @@ cross-source badfilter and scriptlet exceptions, corrupt shard repair, trust-key
 separation, old/truncated/corrupt aggregate files, interrupted replacement, backup
 recovery without a base, explicit write errors and size limits. Existing network
 fixture and cosmetic/scriptlet round-trip coverage remains active.
+
+## v1.0.25 prototype comparison
+
+`compareWholeWarmLoadsWithPersistedNetworkBucketsAndRebuiltBuckets` compares both
+complete paths using the same 41,000-rule fixture. It alternates execution order,
+warms up five times, and reports fifteen timed rounds. It measures binary read,
+validation, and index/injection construction together. Measurements omit source
+file reading/hashing, Android storage/scheduling, and WebView startup.
+
+The first boxed-ID prototype measured 62.73 ms rebuilding versus 68.92 ms restoring
+buckets, with 3,792,585 versus 3,912,681 bytes. The primitive-ID revision removes
+retained boxing. In an isolated JBR 21 run, the primitive-ID revision measured
+75.36 ms rebuilding versus 76.16 ms restoring, with 3,822,585 versus 3,942,681 bytes.
+That is no consistent warm-load improvement and adds 120,096 bytes. Production
+persistence remains disabled; Android median/P95 and allocation profiling is still
+required before activation.

@@ -27,7 +27,15 @@ class SubscriptionCompatibilityTest {
             val text = "||ads.example^\nsite.example##.advert\n$rule"
             val counts = inspectFilterList(text)
             assertEquals(rule, 0, counts.invalidRules)
-            assertEquals(rule, 1, counts.unsupportedRules)
+            assertEquals(
+                rule,
+                if (rule.startsWith("f51rm")) {
+                    0
+                } else {
+                    1
+                },
+                counts.unsupportedRules,
+            )
             val engine = KotlinFilterEngine()
             engine.validate(text)
             engine.replace(listOf(text))
@@ -52,7 +60,7 @@ class SubscriptionCompatibilityTest {
     }
 
     @Test
-    fun genuinelyMalformedDomainsAreStillRejectedAndAllIsNotPretendedToWork() {
+    fun genuinelyMalformedDomainsAreStillRejectedAndAllNetworkSubsetIsAccepted() {
         val engine = KotlinFilterEngine()
         listOf(
                 "site example##.advert",
@@ -66,7 +74,7 @@ class SubscriptionCompatibilityTest {
                 }
             }
         assertEquals(
-            1,
+            0,
             inspectFilterList("||malware.example^\$all").unsupportedRules,
         )
     }

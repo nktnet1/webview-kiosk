@@ -1,3 +1,4 @@
+import { routingPayload } from './scriptlet-routing.mjs';
 import { readFileSync } from 'node:fs';
 import { createContext, runInContext } from 'node:vm';
 
@@ -45,27 +46,7 @@ export function page(rules, { host = 'site.example', protocol = 'https:', before
     context.addEventListener = Target.prototype.addEventListener;
     context.removeEventListener = Target.prototype.removeEventListener;
     if (before) { runInContext(before, context); }
-    const config = { rules: [], hosts: [], entities: [], exceptions: [], suffixes };
-    const entities = new Map();
-    const hosts = new Map();
-    for (const [type, args, domain = 'site.example', excluded = [], exception = false] of rules) {
-        const index = config.rules.length;
-        config.rules.push([type, args, excluded.filter(name => !name.endsWith('.*')), exception,
-            excluded.filter(name => name.endsWith('.*')).map(name => name.slice(0, -2))]);
-        if (domain === '') { config.exceptions.push(index); }
-        else if (domain.endsWith('.*')) {
-            const entity = domain.slice(0, -2);
-            if (!entities.has(entity)) { entities.set(entity, []); }
-            entities.get(entity).push(index);
-        } else {
-            if (!hosts.has(domain)) { hosts.set(domain, []); }
-            hosts.get(domain).push(index);
-        }
-    }
-    config.hosts = Array.from(hosts.entries());
-    config.entities = Array.from(entities.entries());
-    const domains = ['|' + Array.from(hosts.keys()).join('|') + '|',
-        '|' + Array.from(entities.keys()).map(name => name.split('.').at(-1)).join('|') + '|'];
+    const [routes, records] = routingPayload(rules, suffixes);
     const names = [...new Set(rules.filter(rule => rule[0] === 'RESOURCE')
         .map(rule => rule[1][0]))];
     const factories = names.map(name => {
@@ -75,8 +56,8 @@ export function page(rules, { host = 'site.example', protocol = 'https:', before
             '../../adblock/src/main/resources/adblock/ubo/' + name, import.meta.url), 'utf8');
         return JSON.stringify(name) + ':function(setTimeout,clearTimeout){\n' + code + '\n}';
     }).join(',');
-    const source = `${runtime}(${JSON.stringify(domains)}, ` +
-        `${JSON.stringify(JSON.stringify(config))}, ${extension}, {${factories}}, ` +
+    const source = `${runtime}(${JSON.stringify(routes)}, ` +
+        `${JSON.stringify(records)}, ${extension}, {${factories}}, ` +
         `${network}, ${advanced});`;
     return {
         source, calls, context, document: context.document, Script,

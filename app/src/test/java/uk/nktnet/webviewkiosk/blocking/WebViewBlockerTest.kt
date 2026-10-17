@@ -53,7 +53,7 @@ class WebViewBlockerTest {
     }
 
     @Test
-    fun blocksHttpDocumentsAndOnlySubresourcesOnKnownWebPages() {
+    fun blocksHttpDocumentsAndContextFreeSubresourcesWithUnknownInitiators() {
         val target = "https://ads.example/pixel"
         val page = "https://publisher.example/index"
         assertTrue(
@@ -76,7 +76,7 @@ class WebViewBlockerTest {
                 service,
             )
         )
-        assertFalse(
+        assertTrue(
             WebViewBlocker.shouldBlock(target, false, "", emptyMap(), "GET", service)
         )
         assertFalse(
@@ -424,6 +424,94 @@ class WebViewBlockerTest {
             override fun getRequestHeaders(): Map<String, String> =
                 mapOf("Sec-Fetch-Dest" to type)
         }
+
+    @Test
+    fun subresourcesPreferNativeFrameInitiatorHeadersOverTheTopLevelPage() {
+        val blocker = realService("||ads.example^\$script,domain=frame.example")
+        assertTrue(
+            WebViewBlocker.shouldBlock(
+                "https://ads.example/a.js",
+                false,
+                "https://top.example/",
+                mapOf(
+                    "Referer" to "https://frame.example/article",
+                    "Sec-Fetch-Dest" to "script",
+                ),
+                "GET",
+                blocker,
+            )
+        )
+        assertFalse(
+            WebViewBlocker.shouldBlock(
+                "https://ads.example/a.js",
+                false,
+                "https://top.example/",
+                mapOf(
+                    "Referer" to "https://unrelated.example/",
+                    "Sec-Fetch-Dest" to "script",
+                ),
+                "GET",
+                blocker,
+            )
+        )
+        assertFalse(
+            WebViewBlocker.shouldBlock(
+                "https://ads.example/a.js",
+                false,
+                "https://top.example/",
+                mapOf("Sec-Fetch-Dest" to "script"),
+                "GET",
+                blocker,
+            )
+        )
+    }
+
+    @Test
+    fun explicitNativeDestinationsOverrideHeuristicMimeFallbacks() {
+        for (destination in listOf("worker", "sharedworker", "serviceworker")) {
+            assertEquals(
+                "script",
+                WebViewBlocker.resourceType(mapOf("SEC-FETCH-DEST" to destination)),
+            )
+        }
+        for (destination in listOf("embed", "object")) {
+            assertEquals(
+                "object",
+                WebViewBlocker.resourceType(mapOf("Sec-Fetch-Dest" to destination)),
+            )
+        }
+        assertEquals(
+            "other",
+            WebViewBlocker.resourceType(
+                mapOf(
+                    "Sec-Fetch-Dest" to "empty",
+                    "Accept" to "image/png",
+                )
+            ),
+        )
+        assertEquals(
+            "other",
+            WebViewBlocker.resourceType(
+                mapOf(
+                    "Sec-Fetch-Dest" to "empty",
+                    "Sec-Fetch-Mode" to "no-cors",
+                )
+            ),
+        )
+        assertEquals(
+            "other",
+            WebViewBlocker.resourceType(mapOf("X-Requested-With" to "app.package")),
+        )
+        assertEquals(
+            "xmlhttprequest",
+            WebViewBlocker.resourceType(
+                mapOf(
+                    "x-requested-with" to "XMLHttpRequest",
+                    "Sec-Fetch-Dest" to "empty",
+                )
+            ),
+        )
+    }
 
     @Test
     fun onlyUsesKnownResourceTypes() {

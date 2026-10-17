@@ -8,6 +8,7 @@ internal data class ScriptletRule(
     val instruction: ScriptletInstruction?,
     val domains: DomainScope,
     val exception: Boolean,
+    val targets: List<ScriptletTarget> = emptyList(),
 )
 
 /** A strict subset: unknown arguments discard the entire instruction. */
@@ -82,6 +83,7 @@ internal object ScriptletParser {
                 ?: AdditionalScriptlets.aliases[name]
                 ?: ResponseScriptlets.aliases[name]
                 ?: AdvancedScriptlets.aliases[name]
+                ?: JsonEditing.aliases[name]
                 ?: return null
         val args =
             if (name == "prevent-innerHTML") {
@@ -106,6 +108,7 @@ internal object ScriptletParser {
                 ?: AdditionalScriptlets.aliases[name]
                 ?: ResponseScriptlets.aliases[name]
                 ?: AdvancedScriptlets.aliases[name]
+                ?: JsonEditing.aliases[name]
         if (type?.requiresTrust == true && !trusted) {
             return FilterSkipReason.SCRIPTLET_TRUST
         }
@@ -129,13 +132,19 @@ internal object ScriptletParser {
             return null
         }
         val maxLength =
-            if (type in AdvancedScriptlets.aliases.values) {
+            if (
+                type in AdvancedScriptlets.aliases.values ||
+                    type in JsonEditing.types
+            ) {
                 8192
             } else {
                 512
             }
         if (arguments.any { it.length > maxLength || it.any(Char::isISOControl) }) {
             return null
+        }
+        if (type in JsonEditing.types) {
+            return JsonEditing.validated(type, arguments)
         }
         if (type in CookieScriptlets.types) {
             return CookieScriptlets.validated(type, arguments)

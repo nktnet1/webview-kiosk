@@ -162,7 +162,7 @@ class ScriptletTest {
                 inspectFilterList("site.example##$expression").unsupportedRules,
             )
         }
-        for (scope in listOf("", "~site.example", "/site[0-9]/", "[::1]")) {
+        for (scope in listOf("", "~site.example", "/(a+)+$/", "[::1]")) {
             assertEquals(
                 scope,
                 1,
@@ -226,12 +226,12 @@ class ScriptletTest {
         val engine = KotlinFilterEngine()
         engine.replace(
             listOf(
-                (0..140).joinToString("\n") {
+                (0..1040).joinToString("\n") {
                     "site.example##+js(set, p$it, false)"
                 }
             )
         )
-        assertEquals(128, engine.scriptlets("https://site.example").size)
+        assertEquals(1024, engine.scriptlets("https://site.example").size)
         assertEquals(
             setOf("*"),
             engine.scriptletInjection()!!.allowedOrigins,

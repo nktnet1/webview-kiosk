@@ -57,6 +57,7 @@ internal data class FilterListInfo(
     val invalidRules: Int,
     val scriptletRules: Int = 0,
     val skipReasons: Map<FilterSkipReason, Int> = emptyMap(),
+    val partialRules: Int = 0,
 ) {
     val skippedRules: Int
         get() = unsupportedRules + invalidRules
@@ -648,6 +649,7 @@ internal class FilterListStore(
             counts.invalidRules,
             counts.scriptletRules,
             counts.skipReasons,
+            counts.partialRules,
         )
     }
 

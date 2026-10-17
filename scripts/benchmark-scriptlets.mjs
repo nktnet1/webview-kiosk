@@ -1,3 +1,4 @@
+import { routingPayload } from './tests/scriptlet-routing.mjs';
 // Host V8 measurements only: not Android renderer, network, or page-load timings.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -78,9 +79,9 @@ function timerCost(rules) {
         const sandbox = context('site.example');
         new Script('setTimeout = function(){ return 1; };').runInContext(sandbox);
         if (rules.length) {
-            const data = { rules: rules.map(rule => [...rule, []]), entities: [], hosts: [['site.example', rules.map((_, index) => index)]],
-                exceptions: [] };
-            new Script(`${runtime}(['|site.example|','||'], ${JSON.stringify(JSON.stringify(data))});`)
+            const [routes, records] = routingPayload(rules.map(rule =>
+                [rule[0], rule[1], 'site.example']));
+            new Script(`${runtime}(${JSON.stringify(routes)}, ${JSON.stringify(records)});`)
                 .runInContext(sandbox);
         }
         const duration = timed(() => loop.runInContext(sandbox));

@@ -10,7 +10,7 @@ import uk.nktnet.webviewkiosk.adblock.ScriptletInstruction
 
 /** Validates rule text and builds the immutable indexes used by request threads. */
 internal object FilterCompiler {
-    internal const val MAX_RULES = 500_000
+    internal const val MAX_RULES = 2_000_000
 
     fun validate(text: String, trusted: Boolean = false) {
         var supported = 0
@@ -106,7 +106,7 @@ internal object FilterCompiler {
             skipped,
             scriptlets.toList(),
             disabled,
-            total,
+            totalRules = total,
         )
     }
 
@@ -145,6 +145,7 @@ internal data class CompiledRuleSet(
     val skippedRules: Int,
     val scriptlets: List<ScriptletRule> = emptyList(),
     val disabledNetworks: Collection<NetworkIdentity> = emptyList(),
+    val networkIndexes: NetworkIndexSnapshot? = null,
     val totalRules: Int =
         networks.size +
             cosmetics.size +
@@ -160,31 +161,48 @@ internal data class CompiledRuleSet(
                     it.conditions.targets.usesEntities
             } ||
                 cosmetics.any { it.domains.usesEntities } ||
-                scriptlets.any { it.domains.usesEntities }
+                scriptlets.any {
+                    it.domains.usesEntities ||
+                        it.targets.any { target -> target.entity }
+                }
         ) {
             // Load OkHttp's existing public-suffix data on the compilation worker.
             httpAddress("https://example.com/")!!.topPrivateDomain()
         }
-        return CompiledFilters(networks, cosmetics, skippedRules, scriptlets)
+        return CompiledFilters(
+            networks,
+            cosmetics,
+            skippedRules,
+            scriptlets,
+            networkIndexes,
+        )
     }
 }
 
 private class RequestFacts(
     val target: HttpUrl,
-    val source: HttpUrl,
+    val source: HttpUrl?,
     val type: Int,
     val method: String,
 ) {
     val url = target.toString()
     val targetHost = target.host.removeSuffix(".")
-    val sourceHost = source.host.removeSuffix(".")
+    val sourceHost = source?.host?.removeSuffix(".").orEmpty()
     val budget = MatchBudget()
     private var thirdParty: Boolean? = null
     private val targetDomain by lazy { target.topPrivateDomain() }
-    private val sourceDomain by lazy { source.topPrivateDomain() }
+    private val sourceDomain by lazy { source?.topPrivateDomain() }
     val sourceEntity: String? by lazy { entityName(sourceHost, sourceDomain) }
 
-    fun matches(conditions: Conditions): Boolean {
+    fun matches(conditions: Conditions, ignoreInitiator: Boolean = false): Boolean {
+        if (
+            source == null &&
+                !ignoreInitiator &&
+                (conditions.domains != DomainScope.ANY ||
+                    conditions.thirdParty != null)
+        ) {
+            return false
+        }
         if (conditions.types != 0 && conditions.types and type == 0) {
             return false
         }
@@ -193,7 +211,7 @@ private class RequestFacts(
         }
         // Only entity restrictions need the public suffix lookup; ordinary
         // host/domain rules stay on the cheap matching path.
-        if (conditions.domains != DomainScope.ANY) {
+        if (source != null && conditions.domains != DomainScope.ANY) {
             val domain =
                 if (conditions.domains.usesEntities) {
                     sourceDomain
@@ -221,7 +239,7 @@ private class RequestFacts(
         ) {
             return false
         }
-        if (conditions.thirdParty != null) {
+        if (source != null && conditions.thirdParty != null) {
             val party =
                 thirdParty
                     ?: ((targetDomain ?: targetHost) != (sourceDomain ?: sourceHost))
@@ -238,56 +256,26 @@ private class RequestFacts(
  * Each rule lives in one index family. Only truly unindexable patterns use the small
  * fallback.
  */
-private class NetworkIndex(rules: Collection<NetworkIdentity>) {
-    private val hosts = HashMap<String, MutableList<NetworkIdentity>>()
-    private val pages = HashMap<String, MutableList<NetworkIdentity>>()
-    private val pageEntities = HashMap<String, MutableList<NetworkIdentity>>()
-    private val tokens = HashMap<Int, MutableList<NetworkIdentity>>()
-    private val fallback = mutableListOf<NetworkIdentity>()
-
-    init {
-        for (rule in rules) {
-            val pattern = rule.pattern
-            when {
-                pattern.hostIndex != null ->
-                    hosts.getOrPut(pattern.hostIndex) { mutableListOf() }.add(rule)
-
-                rule.conditions.domains.included.isNotEmpty() ||
-                    rule.conditions.domains.includedEntities.isNotEmpty() -> {
-                    rule.conditions.domains.included.forEach { domain ->
-                        pages.getOrPut(domain) { mutableListOf() }.add(rule)
-                    }
-                    rule.conditions.domains.includedEntities.forEach { entity ->
-                        pageEntities.getOrPut(entity) { mutableListOf() }.add(rule)
-                    }
-                }
-
-                pattern.indexToken != null || rule.removeParam?.indexToken != null ->
-                    tokens
-                        .getOrPut(
-                            pattern.indexToken
-                                ?: requireNotNull(rule.removeParam?.indexToken)
-                        ) {
-                            mutableListOf()
-                        }
-                        .add(rule)
-
-                else -> fallback += rule
-            }
-        }
-        require(fallback.size <= 2048) {
-            "Too many URL patterns without a hostname, domain restriction, " +
-                "or four-character literal token (maximum 2048)"
-        }
-    }
+private class NetworkIndex(
+    private val rules: List<NetworkIdentity>,
+    restored: NetworkRouting? = null,
+) {
+    val routing =
+        restored?.takeIf { it.ruleCount == rules.size }
+            ?: NetworkRouting.build(rules)
+    private val hosts = routing.hosts
+    private val pages = routing.pages
+    private val pageEntities = routing.entities
+    private val tokens = routing.tokens
+    private val fallback = routing.fallback
 
     /**
      * Return early only when the caller has a conclusive answer, e.g. an important
      * block.
      */
     fun any(facts: RequestFacts, visitor: (NetworkIdentity) -> Boolean): Boolean {
-        fun check(rule: NetworkIdentity): Boolean =
-            !facts.budget.consume(16) || visitor(rule)
+        fun check(index: Int): Boolean =
+            !facts.budget.consume(16) || visitor(rules[index])
         if (hosts.isNotEmpty()) {
             hostSuffixes(facts.targetHost) { host ->
                 if (hosts[host]?.any(::check) == true) {
@@ -339,16 +327,27 @@ internal class CompiledFilters(
     cosmetics: Collection<CosmeticRule>,
     val skippedRules: Int,
     scriptletRules: List<ScriptletRule> = emptyList(),
+    networkIndexes: NetworkIndexSnapshot? = null,
 ) {
     private val scriptletIndex = ScriptletIndex(scriptletRules)
     val scriptletInjection: ScriptletInjection? = scriptletIndex.injection()
 
-    fun scriptlets(url: String): List<ScriptletInstruction> =
-        scriptletIndex.instructions(url)
+    fun scriptlets(
+        url: String,
+        ancestors: List<String> = emptyList(),
+    ): List<ScriptletInstruction> = scriptletIndex.instructions(url, ancestors)
 
     private val blockedHosts = HashSet<String>()
     private val allowedHosts = HashSet<String>()
     private val importantHosts = HashSet<String>()
+    private val unknownInitiatorExceptions = networks.filter {
+        it.exception &&
+            !it.redirectOnly &&
+            it.hide == 0 &&
+            it.removeParam == null &&
+            (it.conditions.domains != DomainScope.ANY ||
+                it.conditions.thirdParty != null)
+    }
     private val requests: NetworkIndex
     private val redirectExceptions: NetworkIndex
     private val hideExceptions: NetworkIndex
@@ -394,10 +393,10 @@ internal class CompiledFilters(
                 else -> ordinary += rule
             }
         }
-        requests = NetworkIndex(ordinary)
-        hideExceptions = NetworkIndex(hiding)
-        redirectExceptions = NetworkIndex(redirecting)
-        parameterRules = NetworkIndex(parameters)
+        requests = NetworkIndex(ordinary, networkIndexes?.requests)
+        hideExceptions = NetworkIndex(hiding, networkIndexes?.hiding)
+        redirectExceptions = NetworkIndex(redirecting, networkIndexes?.redirects)
+        parameterRules = NetworkIndex(parameters, networkIndexes?.parameters)
         for (rule in cosmetics) {
             if (rule.procedure != null) {
                 val domainIndex =
@@ -469,6 +468,15 @@ internal class CompiledFilters(
         }
     }
 
+    val networkIndexes: NetworkIndexSnapshot
+        get() =
+            NetworkIndexSnapshot(
+                requests.routing,
+                hideExceptions.routing,
+                redirectExceptions.routing,
+                parameterRules.routing,
+            )
+
     fun responseFor(
         url: String,
         sourceUrl: String,
@@ -479,7 +487,10 @@ internal class CompiledFilters(
         if (ResourceTypes.request(type) == ResourceTypes.request("document")) {
             return documentResponse(target, method)
         }
-        val source = httpAddress(sourceUrl) ?: return BlockingResponse.ALLOW
+        val source = httpAddress(sourceUrl)
+        if (source == null && sourceUrl.isNotEmpty()) {
+            return BlockingResponse.ALLOW
+        }
         var blocked = false
         var allowed = false
         var redirect: BlockingResponse? = null
@@ -503,9 +514,23 @@ internal class CompiledFilters(
                 ResourceTypes.request(type),
                 method.uppercase(Locale.ROOT),
             )
+        if (
+            source == null &&
+                unknownInitiatorExceptions.any { rule ->
+                    // A contextual exception may allow this request. Without an
+                    // initiator,
+                    // conservatively honour it if every available fact matches.
+                    !facts.budget.consume(16) ||
+                        rule.exception &&
+                            facts.matches(rule.conditions, ignoreInitiator = true) &&
+                            rule.pattern.matches(target, facts.url, facts.budget)
+                }
+        ) {
+            return BlockingResponse.ALLOW
+        }
         val redirectExcepted =
             redirectExceptions.any(facts) { rule ->
-                facts.matches(rule.conditions) &&
+                facts.matches(rule.conditions, ignoreInitiator = source == null) &&
                     rule.pattern.matches(target, facts.url, facts.budget)
             }
         val important =

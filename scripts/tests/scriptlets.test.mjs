@@ -261,10 +261,10 @@ test('only selected function hooks are installed and the per-document rule cap i
     assert.equal(p.calls.listeners.length, 0);
     assert.equal(p.run('open("/login")'), 'opened');
     assert.equal(p.calls.timers.length, 0);
-    const many = page(Array.from({ length: 140 }, (_, i) => ['SET', ['p' + i, 'false']]));
+    const many = page(Array.from({ length: 1040 }, (_, i) => ['SET', ['p' + i, 'false']]));
     many.install();
-    assert.equal(many.run('p127'), false);
-    assert.equal(many.run('typeof p128'), 'undefined');
+    assert.equal(many.run('p1023'), false);
+    assert.equal(many.run('typeof p1024'), 'undefined');
 });
 
 test('filter data cannot escape JSON serialization into source code', () => {
@@ -279,7 +279,9 @@ test('the host gate avoids loading instruction data on unrelated or private orig
         { host: 'appassets.androidplatform.net' }, { protocol: 'about:' },
     ]) {
         const p = page([], options);
-        p.run(`${runtime}(['|site.example|','||'], 'unread invalid JSON');`);
+        const routes = { hosts: 'site.example\t[0]\n', entities: '', ancestors: '',
+            ancestorEntities: '', regex: '[]', exceptions: [], limit: 1024 };
+        p.run(`${runtime}(${JSON.stringify(routes)}, 'unread invalid JSON');`);
         assert.equal(p.calls.listeners.length, 0);
     }
 });

@@ -11,6 +11,10 @@ import uk.nktnet.webviewkiosk.adblock.ScriptletType
 internal object ResponseScriptlets {
     val networkTypes =
         setOf(
+            ScriptletType.JSON_EDIT_FETCH,
+            ScriptletType.JSON_EDIT_XHR,
+            ScriptletType.JSONL_EDIT_FETCH,
+            ScriptletType.JSONL_EDIT_XHR,
             ScriptletType.PREVENT_XHR,
             ScriptletType.JSON_PRUNE_FETCH,
             ScriptletType.JSON_PRUNE_XHR,

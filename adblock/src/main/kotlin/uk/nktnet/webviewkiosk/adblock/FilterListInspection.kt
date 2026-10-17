@@ -11,10 +11,12 @@ data class FilterRuleCounts(
     val invalidRules: Int,
     val scriptletRules: Int = 0,
     val skipReasons: Map<FilterSkipReason, Int> = emptyMap(),
+    val partialRules: Int = 0,
 )
 
 /** Inspect text without compiling it or changing an engine's active snapshot. */
 fun inspectFilterList(text: String, trusted: Boolean = false): FilterRuleCounts {
+    var partial = 0
     var network = 0
     var cosmetic = 0
     var unsupported = 0
@@ -24,7 +26,12 @@ fun inspectFilterList(text: String, trusted: Boolean = false): FilterRuleCounts 
         java.util.EnumMap<FilterSkipReason, Int>(FilterSkipReason::class.java)
     FilterParser.visit(text, trusted) { _, rule ->
         when (rule) {
-            is ParsedFilter.Network -> network++
+            is ParsedFilter.Network -> {
+                network++
+                if (rule.rule.identity.partialAll) {
+                    partial++
+                }
+            }
             is ParsedFilter.Cosmetic -> cosmetic++
             is ParsedFilter.Scriptlet -> scriptlets++
             is ParsedFilter.Unsupported -> {
@@ -45,6 +52,7 @@ fun inspectFilterList(text: String, trusted: Boolean = false): FilterRuleCounts 
         invalid,
         scriptlets,
         reasons.toMap(),
+        partial,
     )
 }
 

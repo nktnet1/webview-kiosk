@@ -1209,6 +1209,19 @@ private fun FilterListInfoDialog(
                     )
                 }
                 details
+                    ?.takeIf { it.partialRules > 0 }
+                    ?.let { info ->
+                        InfoSection("Partially supported rules") {
+                            InfoStat("\$all", numbers.format(info.partialRules))
+                            Text(
+                                "Applies to intercepted network requests and page navigation. " +
+                                    "Popup and inline script/font filtering are unavailable.",
+                                modifier = Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                details
                     ?.skipReasons
                     ?.takeIf { it.isNotEmpty() }
                     ?.let { reasons ->

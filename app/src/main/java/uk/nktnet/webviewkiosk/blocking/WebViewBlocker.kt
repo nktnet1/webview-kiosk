@@ -9,9 +9,9 @@ import uk.nktnet.webviewkiosk.adblock.BlockingResponse
 import uk.nktnet.webviewkiosk.config.Constants
 
 /**
- * WebView has no reliable resource-type or initiator-frame API. Only match
- * subresources with a known top-level URL; unknown types are "other" and can
- * underblock typed rules. Main frames use the engine's document matcher instead.
+ * Native request headers supply resource/initiator facts when available. The current
+ * page is the initiator fallback; an empty source keeps context-free filtering only.
+ * Ambiguous types remain "other". Main frames match themselves.
  */
 internal object WebViewBlocker {
     private val empty = ByteArray(0)
@@ -19,10 +19,14 @@ internal object WebViewBlocker {
         BlockingResponse.entries
             .filter { it.resourcePath != null }
             .associateWith { response ->
-                WebViewBlocker::class
-                    .java
-                    .getResourceAsStream("/adblock/ubo/${response.resourcePath}")!!
-                    .use { it.readBytes() }
+                lazy {
+                    WebViewBlocker::class
+                        .java
+                        .getResourceAsStream(
+                            "/adblock/ubo/${response.resourcePath}"
+                        )!!
+                        .use { it.readBytes() }
+                }
             }
     }
     // Small verified transparent placeholders; allocated once, not per request.
@@ -100,12 +104,19 @@ internal object WebViewBlocker {
         if (isMainFrame) {
             return service.responseFor(url, url, "document", method)
         }
-        if (!isFilterableUrl(pageUrl)) {
+        val source =
+            sequenceOf("referer", "origin").firstNotNullOfOrNull { name ->
+                requestHeaders.entries
+                    .firstOrNull { it.key.equals(name, true) }
+                    ?.value
+                    ?.takeIf(::isFilterableUrl)
+            } ?: pageUrl
+        if (source.isNotEmpty() && !isFilterableUrl(source)) {
             return BlockingResponse.ALLOW
         }
         return service.responseFor(
             url,
-            pageUrl,
+            source,
             resourceType(requestHeaders),
             method,
         )
@@ -161,7 +172,7 @@ internal object WebViewBlocker {
                 }
         val bytes =
             if (response.resourcePath != null) {
-                resources.getValue(response)
+                resources.getValue(response).value
             } else {
                 when (response) {
                     BlockingResponse.TRANSPARENT_GIF -> transparentGif
@@ -199,11 +210,18 @@ internal object WebViewBlocker {
                     it.key.equals("sec-fetch-dest", ignoreCase = true)
                 }
                 ?.value
-                ?.lowercase()
+                ?.trim()
+                ?.lowercase(java.util.Locale.ROOT)
         return when (destination) {
             "image" -> "image"
 
-            "script" -> "script"
+            "script",
+            "worker",
+            "sharedworker",
+            "serviceworker" -> "script"
+
+            "object",
+            "embed" -> "object"
 
             "style" -> "stylesheet"
 
@@ -217,6 +235,19 @@ internal object WebViewBlocker {
             "frame" -> "subdocument"
 
             else -> {
+                if (
+                    headers.entries.any {
+                        it.key.equals("x-requested-with", true) &&
+                            it.value.equals("XMLHttpRequest", true)
+                    }
+                ) {
+                    return "xmlhttprequest"
+                }
+                // An explicit empty/unknown destination is authoritative. Fetch,
+                // XHR and beacons cannot reliably be separated from it alone.
+                if (destination != null) {
+                    return "other"
+                }
                 val accept =
                     headers.entries
                         .firstOrNull {

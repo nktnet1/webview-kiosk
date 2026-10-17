@@ -4,8 +4,8 @@ The supplied archive contains 99 parameterized scriptlets and 30 JavaScript reso
 129 canonical names, or 194 names including aliases. Its 54 helper functions are separate.
 Only 21 of the 30 resources have upstream inline-injection eligibility (`data: text`).
 
-This version implements 82 canonical names: 81 tested subsets plus
-`prevent-navigation`, which requires a native Navigation API. The other 47 remain skipped as `+js` entry points.
+This version implements 87 canonical names: 86 tested subsets plus
+`prevent-navigation`, which requires a native Navigation API. The other 42 remain skipped as `+js` entry points.
 The earlier supplied list used 39 names resolving to 38 canonical names. Absence from
 that list is not a reason for exclusion.
 All ✅ entries remain subject to the argument contracts in [SCRIPTLETS.md](SCRIPTLETS.md).
@@ -53,7 +53,7 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `proxy-apply-config.js` | ❌ configuration/debug |
 | `edit-outbound-object.js` | ❌ unimplemented editing DSL |
 | `trusted-edit-outbound-object.js` | ❌ operation not implemented; trust is enforced |
-| `json-edit.js` | ❌ unimplemented editing DSL |
+| `json-edit.js` | ✅ bounded JSONPath subset; see argument contract |
 | `trusted-json-edit.js` | ❌ operation not implemented; trust is enforced |
 | `edit-inbound-object.js` | ❌ unimplemented editing DSL |
 | `trusted-edit-inbound-object.js` | ❌ operation not implemented; trust is enforced |
@@ -65,18 +65,18 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `trusted-edit-object-on-setter.js` | ❌ operation not implemented; trust is enforced |
 | `edit-element-object.js` | ❌ unimplemented editing DSL |
 | `trusted-edit-element-object.js` | ❌ operation not implemented; trust is enforced |
-| `json-edit-xhr-response.js` | ❌ unimplemented editing DSL |
+| `json-edit-xhr-response.js` | ✅ bounded JSONPath subset; see argument contract |
 | `trusted-json-edit-xhr-response.js` | ❌ operation not implemented; trust is enforced |
 | `json-edit-xhr-request.js` | ❌ unimplemented editing DSL |
 | `trusted-json-edit-xhr-request.js` | ❌ operation not implemented; trust is enforced |
-| `json-edit-fetch-response.js` | ❌ unimplemented editing DSL |
+| `json-edit-fetch-response.js` | ✅ bounded JSONPath subset; see argument contract |
 | `trusted-json-edit-fetch-response.js` | ❌ operation not implemented; trust is enforced |
 | `trusted-edit-inbound-element.js` | ❌ operation not implemented; trust is enforced |
 | `json-edit-fetch-request.js` | ❌ unimplemented editing DSL |
 | `trusted-json-edit-fetch-request.js` | ❌ operation not implemented; trust is enforced |
-| `jsonl-edit-xhr-response.js` | ❌ unimplemented editing DSL |
+| `jsonl-edit-xhr-response.js` | ✅ bounded JSONPath subset; see argument contract |
 | `trusted-jsonl-edit-xhr-response.js` | ❌ operation not implemented; trust is enforced |
-| `jsonl-edit-fetch-response.js` | ❌ unimplemented editing DSL |
+| `jsonl-edit-fetch-response.js` | ✅ bounded JSONPath subset; see argument contract |
 | `trusted-jsonl-edit-fetch-response.js` | ❌ operation not implemented; trust is enforced |
 | `abort-on-stack-trace.js` | ✅ stack |
 | `trusted-prune-inbound-object.js` | ❌ operation not implemented; trust is enforced |
@@ -152,9 +152,9 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `fingerprint2.js` | ✅ fixed API shim |
 | `fingerprint3.js` | ✅ fixed API shim |
 | `google-analytics_analytics.js` | ✅ fixed API shim |
-| `google-analytics_cx_api.js` | ❌ redirect-only upstream resource |
+| `google-analytics_cx_api.js` | ↪️ bundled redirect-only resource; no `+js` eligibility |
 | `google-analytics_ga.js` | ✅ fixed API shim |
-| `google-analytics_inpage_linkid.js` | ❌ redirect-only upstream resource |
+| `google-analytics_inpage_linkid.js` | ↪️ bundled redirect-only resource; no `+js` eligibility |
 | `google-ima.js` | ❌ unverified media adapter |
 | `google-ima-dai.js` | ❌ operation not implemented; trust is enforced |
 | `googlesyndication_adsbygoogle.js` | ❌ unverified iframe adapter |
@@ -171,7 +171,7 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `popads.js` | ✅ fixed API shim |
 | `popads-dummy.js` | ✅ fixed API shim |
 | `prebid-ads.js` | ✅ fixed API shim |
-| `scorecardresearch_beacon.js` | ❌ redirect-only upstream resource |
+| `scorecardresearch_beacon.js` | ↪️ bundled redirect-only resource; no `+js` eligibility |
 | `sensors-analytics.js` | ✅ fixed API shim |
 
 ## Upstream aliases

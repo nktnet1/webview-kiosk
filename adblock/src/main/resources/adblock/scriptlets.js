@@ -23,92 +23,145 @@
 /* Modified for Webview Kiosk on 2026-10-17: bounded shared hooks and frame routing.
  * Source attribution: META-INF/ublock-NOTICE.txt. Keep this a function expression.
  */
-(function(domains, serialized, extension, resources, network, advanced) {
+(function(routes, records, extension, resources, network, advanced) {
     'use strict';
     if (location.protocol !== 'https:' && location.protocol !== 'http:') { return; }
-    const host = location.hostname.toLowerCase().replace(/\.$/, '');
+    const host = location.hostname.toLowerCase().replace(/\.$/, '').replace(/^\[|\]$/g, '');
     if (host === 'appassets.androidplatform.net' ||
         host === 'pdf-dummy.webviewkiosk.nktnet.uk') { return; }
-    const hostGate = domains[0];
-    const entityGate = domains[1];
-    let candidate = host;
-    let eligible = false;
-    while (candidate) {
-        if (hostGate.includes('|' + candidate + '|')) { eligible = true; break; }
-        const dot = candidate.indexOf('.');
-        if (dot === -1) { break; }
-        candidate = candidate.slice(dot + 1);
+    // Binary search immutable newline-delimited keys without building a per-frame map.
+    function lookup(rows, value) {
+        let low = 0, high = rows.length;
+        while (low < high) {
+            const mid = Math.floor((low + high) / 2);
+            const start = mid === 0 ? 0 : rows.lastIndexOf('\n', mid - 1) + 1;
+            const tab = rows.indexOf('\t', start);
+            const end = rows.indexOf('\n', start);
+            const key = rows.slice(start, tab);
+            if (key === value) { return JSON.parse(rows.slice(tab + 1, end)); }
+            if (key < value) { low = end + 1; } else { high = start; }
+        }
+        return [];
     }
-    if (!eligible && entityGate !== '||') {
-        const labels = host.split('.');
-        eligible = labels.slice(0, -1).some(label => entityGate.includes('|' + label + '|'));
-    }
-    if (!eligible) { return; }
-    const config = JSON.parse(serialized);
-    const domainMatches = (name) => host === name || host.endsWith('.' + name);
-    // Binary search newline-delimited ASCII rules; no per-frame PSL maps or DOM work.
     function contains(list, value) {
         let low = 0, high = list.length;
         while (low < high) {
             const mid = Math.floor((low + high) / 2);
             const start = mid === 0 ? 0 : list.lastIndexOf('\n', mid - 1) + 1;
-            const end = list.indexOf('\n', mid);
+            const end = list.indexOf('\n', start);
             const rule = list.slice(start, end);
             if (rule === value) { return true; }
             if (rule < value) { low = end + 1; } else { high = start; }
         }
         return false;
     }
-    function entityName() {
-        if (!config.suffixes || host.includes(':') || /^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+    let suffixes;
+    function entityName(host) {
+        if (!routes.suffixes || host.includes(':') || /^\d+\.\d+\.\d+\.\d+$/.test(host) ||
+            !host.split('.').slice(0, -1).some(label => contains(routes.entityLabels, label))) {
             return '';
         }
+        suffixes ||= JSON.parse(routes.suffixes);
         const labels = host.split('.');
         let suffixLength = 1;
         for (let i = 0; i < labels.length; i++) {
             const suffix = labels.slice(i).join('.');
-            if (contains(config.suffixes[1], suffix)) {
+            if (contains(suffixes[1], suffix)) {
                 suffixLength = labels.length - i - 1;
                 break;
             }
-            if (contains(config.suffixes[0], suffix) || i < labels.length - 1 &&
-                contains(config.suffixes[0], '*.' + labels.slice(i + 1).join('.'))) {
+            if (contains(suffixes[0], suffix) || i < labels.length - 1 &&
+                contains(suffixes[0], '*.' + labels.slice(i + 1).join('.'))) {
                 suffixLength = Math.max(suffixLength, labels.length - i);
             }
         }
         return labels.slice(0, labels.length - suffixLength).join('.');
     }
-    const entity = entityName();
-    const entityMatches = name => entity !== '' &&
-        (entity === name || entity.endsWith('.' + name));
-    const candidates = new Set(config.exceptions);
-    const hostIndex = new Map(config.hosts);
-    let suffix = host;
-    while (suffix) {
-        const bucket = hostIndex.get(suffix) || [];
-        for (const index of bucket) { candidates.add(index); }
-        const dot = suffix.indexOf('.');
-        if (dot === -1) { break; }
-        suffix = suffix.slice(dot + 1);
+    const candidates = new Set(routes.exceptions);
+    const collect = (table, name) => {
+        while (name) {
+            for (const offset of lookup(table, name)) { candidates.add(offset); }
+            const dot = name.indexOf('.');
+            if (dot === -1) { break; }
+            name = name.slice(dot + 1);
+        }
+    };
+    collect(routes.hosts, host);
+    const entity = entityName(host);
+    collect(routes.entities, entity);
+    const ancestors = [];
+    let ancestorsKnown = !routes.usesAncestors;
+    if (routes.usesAncestors) {
+        try {
+            const origins = location.ancestorOrigins;
+            ancestorsKnown = !!origins && origins.length <= 64;
+            if (ancestorsKnown) {
+                for (let i = 0; i < origins.length; i++) {
+                    const name = new URL(origins.item(i)).hostname.toLowerCase().replace(/\.$/, '');
+                    const entity = entityName(name);
+                    ancestors.push([name, entity]);
+                    collect(routes.ancestors, name);
+                    collect(routes.ancestorEntities, entity);
+                }
+            }
+        } catch { ancestorsKnown = false; }
     }
-    const entityIndex = new Map(config.entities);
-    suffix = entity;
-    while (suffix) {
-        for (const index of entityIndex.get(suffix) || []) { candidates.add(index); }
-        const dot = suffix.indexOf('.');
-        if (dot === -1) { break; }
-        suffix = suffix.slice(dot + 1);
+    const href = location.href;
+    const pathStart = typeof href === 'string'
+        ? href.indexOf('/', location.protocol.length + 2) : -1;
+    const path = pathStart < 0 ? '/' : href.slice(pathStart);
+    const regexes = new Map();
+    const regexMatch = (source, value) => {
+        if (value.length > 65536) { return false; }
+        let regex = regexes.get(source);
+        if (!regex) { regexes.set(source, regex = new RegExp(source)); }
+        return regex.test(value);
+    };
+    if (routes.regex !== '[]') {
+        for (const [hostname, pathname, offset] of JSON.parse(routes.regex)) {
+            if (regexMatch(hostname, host) && (pathname === null || regexMatch(pathname, path))) {
+                candidates.add(offset);
+            }
+        }
     }
+    if (!candidates.size) { return; }
+    const domainMatches = (name, domain = host) => domain === name || domain.endsWith('.' + name);
+    const entityMatches = name => entity !== '' && domainMatches(name, entity);
+    const targetMatches = target => {
+        const [hostname, pathname, regex, usesEntity, ancestor] = target;
+        const match = (domain, entity) => {
+            const name = usesEntity ? entity : domain;
+            return name !== '' &&
+                (regex ? regexMatch(hostname, name) : domainMatches(hostname, name)) &&
+                (pathname === null ||
+                    (regex ? regexMatch(pathname, path) : path.startsWith(pathname)));
+        };
+        return ancestor ? ancestors.some(([name, entity]) => match(name, entity))
+            : match(host, entity);
+    };
     const matching = Array.from(candidates).sort((a, b) => a - b)
-        .map(index => config.rules[index])
-        .filter(rule => !rule[2].some(domainMatches) && !rule[4].some(entityMatches));
+        .map(offset => JSON.parse(records.slice(offset, records.indexOf('\n', offset))))
+        .filter(rule => {
+            if (rule[2].some(name => domainMatches(name)) || rule[4].some(entityMatches)) {
+                return false;
+            }
+            const targets = rule[5];
+            if (!targets.length) { return true; }
+            if (!ancestorsKnown && targets.some(target => target[4])) { return false; }
+            if (targets.some(target => target[5] && targetMatches(target))) { return false; }
+            return rule[6].some(name => domainMatches(name)) || rule[7].some(entityMatches) ||
+                targets.every(target => target[5]) && !rule[6].length && !rule[7].length ||
+                targets.some(target => !target[5] && targetMatches(target));
+        });
     if (matching.some(rule => rule[3] && rule[0] === null)) { return; }
     const key = rule => JSON.stringify([rule[0], rule[1]]);
     const excepted = new Set(matching.filter(rule => rule[3]).map(key));
     const seen = new Set();
     const selected = matching.filter(rule => {
         const id = key(rule);
-        if (rule[3] || excepted.has(id) || seen.has(id) || seen.size >= 128) { return false; }
+        if (rule[3] || excepted.has(id) || seen.has(id) || seen.size >= routes.limit) {
+            return false;
+        }
         seen.add(id);
         return true;
     });
@@ -121,6 +174,7 @@
     const descriptor = Object.getOwnPropertyDescriptor;
     const ownKeys = Object.keys;
     const isArray = Array.isArray;
+    const arraySplice = Array.prototype.splice;
     const stringifyFunction = Function.prototype.toString;
     const stringIncludes = String.prototype.includes;
     const regexpTest = RegExp.prototype.test;
@@ -228,7 +282,7 @@
         if (entries.has(name)) { return entries.get(name); }
         const desc = descriptor(owner, name);
         if (desc && (!desc.configurable || desc.writable === false ||
-            desc.get && !desc.set && !acceptsConstant) || slotCount >= 512) { return null; }
+            desc.get && !desc.set && !acceptsConstant) || slotCount >= 4096) { return null; }
         let initial;
         try { initial = owner[name]; } catch (error) {
             // WebIDL getters may reject their prototype as a receiver. A constant
@@ -488,6 +542,145 @@
         }
         return prune;
     }
+    // The compiler supplies a JSON AST, never expressions to evaluate as JavaScript.
+    function jsonEditor(args) {
+        const [v2, steps] = nativeParse(args[1]);
+        const stringKeys = ownKeys;
+        function edit(value, work = { remaining: 16384 }) {
+            const root = { value };
+            const consume = () => { if (--work.remaining < 0) { throw null; } };
+            const ref = (owner, key) => {
+                consume();
+                const desc = descriptor(owner, key);
+                return { owner, key, exists: !!desc && 'value' in desc,
+                    value: desc && 'value' in desc ? desc.value : undefined };
+            };
+            const keys = owner => {
+                consume();
+                const values = stringKeys(owner);
+                if (values.length > work.remaining) { throw null; }
+                return isArray(owner) ? values.map(key => /^(?:0|[1-9]\d*)$/.test(key)
+                    ? Number(key) : key) : values;
+            };
+            const children = owner => typeof owner === 'object' && owner !== null
+                ? keys(owner).map(key => ref(owner, key)) : [];
+            const descendants = owner => {
+                const out = [], stack = [[owner, 0]], visited = new Set();
+                while (stack.length) {
+                    consume();
+                    const [value, depth] = stack.pop();
+                    if (typeof value !== 'object' || value === null) { continue; }
+                    if (depth > 64 || visited.has(value)) { throw null; }
+                    visited.add(value); out.push(value);
+                    for (const child of children(value).reverse()) {
+                        if (child.exists) { stack.push([child.value, depth + 1]); }
+                    }
+                }
+                return out;
+            };
+            const compare = (entry, predicate) => {
+                const [negated, , op, rhs] = predicate;
+                if (!op) { return entry.exists !== negated; }
+                if (!entry.exists) { return false; }
+                const value = entry.value;
+                let matched;
+                switch (op) {
+                    case '==': matched = value === rhs; break;
+                    case '!=': matched = value !== rhs; break;
+                    case '<': matched = value < rhs; break;
+                    case '<=': matched = value <= rhs; break;
+                    case '>': matched = value > rhs; break;
+                    case '>=': matched = value >= rhs; break;
+                    case '^=': matched = String(value).startsWith(rhs); break;
+                    case '$=': matched = String(value).endsWith(rhs); break;
+                    case '*=': matched = String(value).includes(rhs); break;
+                    default: return false;
+                }
+                return matched !== negated;
+            };
+            const evaluate = (program, input, predicate) => {
+                let entries = input;
+                program.forEach(([recursive, selectors, filter], stepIndex) => {
+                    const result = [];
+                    for (const entry of entries) {
+                        consume();
+                        const value = entry.value;
+                        if (typeof value !== 'object' || value === null) { continue; }
+                        if (filter !== null) {
+                            let candidates;
+                            if (!recursive && !v2 && !isArray(value)) {
+                                candidates = keys(value).length ? [entry] : [];
+                            } else {
+                                const owners = recursive ? descendants(value) : [value];
+                                candidates = owners.flatMap(children);
+                            }
+                            for (const candidate of candidates) {
+                                if (evaluate(filter[1], [candidate], filter).length) {
+                                    result.push(candidate);
+                                }
+                            }
+                        } else {
+                            for (const owner of recursive ? descendants(value) : [value]) {
+                                for (const selector of selectors) {
+                                    let names;
+                                    if (selector === '*') { names = keys(owner); }
+                                    else if (typeof selector === 'number') {
+                                        names = !isArray(owner) ? []
+                                            : [selector < 0 ? owner.length + selector : selector];
+                                    } else { names = [selector]; }
+                                    for (const name of names) {
+                                        const candidate = ref(owner, name);
+                                        if (stepIndex === program.length - 1 && predicate
+                                            ? compare(candidate, predicate) : candidate.exists) {
+                                            result.push(candidate);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (result.length > 4096) { throw null; }
+                    entries = result;
+                });
+                return entries;
+            };
+            try {
+                const edits = evaluate(steps, [ref(root, 'value')]);
+                const seen = new WeakMap(), pending = [];
+                for (const entry of edits) {
+                    const desc = descriptor(entry.owner, entry.key);
+                    if (!desc || !desc.configurable) { continue; }
+                    let names = seen.get(entry.owner);
+                    if (!names) { seen.set(entry.owner, names = new Set()); }
+                    if (names.has(entry.key)) { continue; }
+                    names.add(entry.key); pending.push(entry);
+                }
+                // Traversal completes before any mutation, including on budget exhaustion.
+                for (const { owner, key } of pending.reverse()) {
+                    if (isArray(owner) && typeof key === 'number') {
+                        apply(arraySplice, owner, [key, 1]);
+                    }
+                    else { delete owner[key]; }
+                }
+                return pending.length !== 0;
+            } catch { return false; }
+        }
+        return edit;
+    }
+    function installJsonEdit() {
+        const edits = groups.get('JSON_EDIT').map(args => ({
+            edit: jsonEditor(args), matches: args[3] ? matcher(args[3]) : null,
+        }));
+        wrap(JSON, 'parse', (target, receiver, args) => {
+            const value = apply(target, receiver, args);
+            if (typeof args[0] !== 'string' || args[0].length > 1024 * 1024) { return value; }
+            const work = { remaining: 65536 };
+            for (const entry of edits) {
+                if (!entry.matches || entry.matches(args[0])) { entry.edit(value, work); }
+            }
+            return value;
+        });
+    }
     function installJson() {
         const prune = jsonPruner(groups.get('JSON_PRUNE'));
         try {
@@ -553,12 +746,12 @@
         ['PREVENT_WINDOW_OPEN', installWindowOpen],
         ['PREVENT_ADD_EVENT_LISTENER', installListener],
         ['PREVENT_SET_TIMEOUT', installTimeout],
-        ['JSON_PRUNE', installJson],
+        ['JSON_PRUNE', installJson], ['JSON_EDIT', installJsonEdit],
         ['PREVENT_FETCH', installFetch], ['TRUSTED_PREVENT_FETCH', installFetch],
     ]);
     const environment = {
         groups, selected, wrap, apply, define, descriptor, matcher, source, nativeAdd, regexpTest,
-        trap, abort, resources: resources || {}, jsonPruner,
+        trap, abort, resources: resources || {}, jsonPruner, jsonEditor,
         nativeThen, resolved, rejected, NativeResponse, NativeRequest,
     };
     const extra = typeof extension === 'function' ? extension(environment) : new Map();
@@ -566,6 +759,7 @@
     const responses = typeof network === 'function' &&
         ['PREVENT_XHR', 'TRUSTED_PREVENT_XHR', 'JSON_PRUNE_FETCH', 'JSON_PRUNE_XHR',
             'XML_PRUNE', 'M3U_PRUNE', 'MPEGDASH_PRUNE',
+            'JSON_EDIT_FETCH', 'JSON_EDIT_XHR', 'JSONL_EDIT_FETCH', 'JSONL_EDIT_XHR',
             'TRUSTED_REPLACE_FETCH', 'TRUSTED_REPLACE_XHR']
             .some(type => groups.has(type)) ? network(environment) : new Map();
     for (const [type, installer] of [...extra, ...advancedHooks, ...responses]) {

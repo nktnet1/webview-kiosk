@@ -124,6 +124,11 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
     override fun scriptletInjection(): ScriptletInjection? =
         compiled.scriptletInjection
 
+    override fun scriptlets(
+        url: String,
+        ancestorUrls: List<String>,
+    ): List<ScriptletInstruction> = compiled.scriptlets(url, ancestorUrls)
+
     override fun scriptlets(url: String): List<ScriptletInstruction> =
         compiled.scriptlets(url)
 }

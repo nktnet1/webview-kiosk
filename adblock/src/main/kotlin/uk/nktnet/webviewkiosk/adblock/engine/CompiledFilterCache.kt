@@ -15,8 +15,8 @@ import uk.nktnet.webviewkiosk.adblock.ScriptletType
 /**
  * One disposable, versioned binary snapshot of normalized rules, never Java object
  * serialization. The source digest prevents stale activation; a checksum rejects
- * damaged cache data. Indexes are rebuilt from these records without parsing or
- * validating filter syntax again.
+ * damaged cache data. Production rebuilds indexes from these records. Experiments
+ * can also restore bounded network bucket IDs, without cached executable source.
  */
 internal class CompiledFilterCache(
     private val file: File,
@@ -162,6 +162,7 @@ internal class CompiledFilterCache(
                                 response,
                                 redirectOnly,
                                 removeParam,
+                                partialAll = input.readBoolean(),
                             ) to disabled
                         }
                     val networks =
@@ -207,10 +208,48 @@ internal class CompiledFilterCache(
                             val scope = strings.scope()
                             require(scope.included.none { ':' in it })
                             val exception = input.readBoolean()
+                            val targets =
+                                List(input.count(1024)) {
+                                    val host = strings.read()
+                                    val path =
+                                        if (input.readBoolean()) {
+                                            strings.read()
+                                        } else {
+                                            null
+                                        }
+                                    val regex = input.readBoolean()
+                                    val entity = input.readBoolean()
+                                    val ancestor = input.readBoolean()
+                                    val excluded = input.readBoolean()
+                                    require(!ancestor || path == null)
+                                    require(!regex || !entity && !ancestor)
+                                    if (regex) {
+                                        require(
+                                            ScriptletScopes.pattern(host) &&
+                                                (path == null ||
+                                                    ScriptletScopes.pattern(path))
+                                        )
+                                    } else {
+                                        require(
+                                            normalizedHost(host) == host &&
+                                                ':' !in host
+                                        )
+                                        require(path == null || path.startsWith('/'))
+                                    }
+                                    ScriptletTarget(
+                                        host,
+                                        path,
+                                        regex,
+                                        entity,
+                                        ancestor,
+                                        excluded,
+                                    )
+                                }
                             require(
                                 exception ||
                                     scope.included.isNotEmpty() ||
-                                    scope.includedEntities.isNotEmpty()
+                                    scope.includedEntities.isNotEmpty() ||
+                                    targets.any { !it.excluded }
                             )
                             val instruction =
                                 if (input.readBoolean()) {
@@ -241,7 +280,55 @@ internal class CompiledFilterCache(
                                     require(exception)
                                     null
                                 }
-                            ScriptletRule(instruction, scope, exception)
+                            ScriptletRule(instruction, scope, exception, targets)
+                        }
+                    val indexBytes = input.available()
+                    var remainingReferences =
+                        minOf(FilterCompiler.MAX_RULES * 8, indexBytes / 4)
+                    fun routing(): NetworkRouting {
+                        val count = input.count(networks.size)
+                        fun ids(): IntArray {
+                            val size = input.count(remainingReferences)
+                            remainingReferences -= size
+                            return IntArray(size) { input.count(count - 1) }
+                        }
+                        fun buckets(): Map<String, IntArray> {
+                            val size =
+                                input.count(minOf(count * 1024, indexBytes / 8))
+                            val result = HashMap<String, IntArray>()
+                            repeat(size) {
+                                require(result.put(strings.read(), ids()) == null)
+                            }
+                            return result
+                        }
+                        val hosts = buckets()
+                        val pages = buckets()
+                        val entities = buckets()
+                        val tokens = HashMap<Int, IntArray>()
+                        repeat(input.count(minOf(count, indexBytes / 8))) {
+                            require(tokens.put(input.readInt(), ids()) == null)
+                        }
+                        val fallback = ids()
+                        require(fallback.size <= 2048)
+                        return NetworkRouting(
+                            count,
+                            hosts,
+                            pages,
+                            entities,
+                            tokens,
+                            fallback,
+                        )
+                    }
+                    val indexes =
+                        if (input.readBoolean()) {
+                            NetworkIndexSnapshot(
+                                routing(),
+                                routing(),
+                                routing(),
+                                routing(),
+                            )
+                        } else {
+                            null
                         }
                     val actual = checksum.value
                     if (input.readLong() != actual || input.read() != -1) {
@@ -260,7 +347,8 @@ internal class CompiledFilterCache(
                         skipped,
                         scriptlets,
                         disabled,
-                        total,
+                        networkIndexes = indexes,
+                        totalRules = total,
                     )
                 }
         } catch (_: IOException) {
@@ -274,7 +362,11 @@ internal class CompiledFilterCache(
      * Cache failures never prevent the successfully compiled rules from becoming
      * active.
      */
-    fun write(key: ByteArray, rules: CompiledRuleSet) {
+    fun write(
+        key: ByteArray,
+        rules: CompiledRuleSet,
+        indexes: NetworkIndexSnapshot? = null,
+    ) {
         try {
             storage.write(MAX_BYTES) { fileOutput ->
                 val checksum = CRC32()
@@ -306,7 +398,8 @@ internal class CompiledFilterCache(
                         hide,
                         redirect,
                         redirectOnly,
-                        removeParam) =
+                        removeParam,
+                        partialAll) =
                         rule
                     strings.write(pattern.text)
                     output.writeByte(
@@ -363,6 +456,7 @@ internal class CompiledFilterCache(
                     output.writeBoolean(redirectOnly)
                     output.writeBoolean(removeParam != null)
                     removeParam?.let { strings.write(it.text) }
+                    output.writeBoolean(partialAll)
                 }
                 output.writeInt(rules.cosmetics.size)
                 for ((selector, domains, exception, procedure) in rules.cosmetics) {
@@ -384,15 +478,56 @@ internal class CompiledFilterCache(
                     }
                 }
                 output.writeInt(rules.scriptlets.size)
-                for ((instruction, domains, exception) in rules.scriptlets) {
+                for ((instruction, domains, exception, targets) in
+                    rules.scriptlets) {
                     strings.scope(domains)
                     output.writeBoolean(exception)
+                    output.writeInt(targets.size)
+                    for (target in targets) {
+                        strings.write(target.host)
+                        output.writeBoolean(target.path != null)
+                        target.path?.let(strings::write)
+                        output.writeBoolean(target.regex)
+                        output.writeBoolean(target.entity)
+                        output.writeBoolean(target.ancestor)
+                        output.writeBoolean(target.excluded)
+                    }
                     output.writeBoolean(instruction != null)
                     if (instruction != null) {
                         strings.write(instruction.type.name)
                         output.writeInt(instruction.arguments.size)
                         instruction.arguments.forEach(strings::write)
                     }
+                }
+                output.writeBoolean(indexes != null)
+                fun routing(value: NetworkRouting) {
+                    output.writeInt(value.ruleCount)
+                    fun ids(values: IntArray) {
+                        output.writeInt(values.size)
+                        values.forEach(output::writeInt)
+                    }
+                    fun buckets(values: Map<String, IntArray>) {
+                        output.writeInt(values.size)
+                        for ((key, entries) in values) {
+                            strings.write(key)
+                            ids(entries)
+                        }
+                    }
+                    buckets(value.hosts)
+                    buckets(value.pages)
+                    buckets(value.entities)
+                    output.writeInt(value.tokens.size)
+                    for ((key, entries) in value.tokens) {
+                        output.writeInt(key)
+                        ids(entries)
+                    }
+                    ids(value.fallback)
+                }
+                indexes?.let {
+                    routing(it.requests)
+                    routing(it.hiding)
+                    routing(it.redirects)
+                    routing(it.parameters)
                 }
                 output.writeLong(checksum.value)
                 output.flush()
@@ -477,7 +612,7 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 14
+        private const val VERSION = 15
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 

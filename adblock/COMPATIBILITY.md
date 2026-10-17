@@ -1,4 +1,57 @@
-# uAssets and subscription compatibility - v1.0.17
+# uAssets and subscription compatibility
+
+## v1.0.25 changes and remaining work
+
+The capacity safeguards rise to 2,000,000 combined rule entries, 65,536 scriptlet
+rules, 1024 instructions per frame, and 16 MiB routing data. These bound untrusted
+inputs rather than limiting compatibility to a typical subscription size. Parsing,
+regex, recursion, response-body, DOM-work, cache-size, and include-depth safeguards
+remain. Native network indexes use primitive ID arrays to avoid retained boxed IDs.
+
+`$all` now matches the intercepted network subset and complete root-document URLs.
+It remains **partial**: there is no popup/popunder or inline script/font enforcement.
+Inspection reports these rules separately in the list information dialog. Explicit
+unsupported modifiers still reject the whole rule; `$all` is not used to silently
+accept arbitrary popup, CSP, or inline modifiers.
+
+Extended scriptlet routing now handles bounded hostname/URL regexes, ordinary/entity
+path prefixes, exclusions, and actual descendant-frame origins. Entity scopes were
+already implemented before this patch. Regex routes require iteration; ordinary
+hostnames and entities use direct bucket lookups. Frames parse only relevant rule
+records rather than an entire subscription's arguments.
+
+JSON editing adds five documented scriptlets using the existing JSON/Fetch/XHR hooks,
+including JSONL records and safe capture extraction. Its JSONPath subset and rejected
+forms are specified in [SCRIPTLETS.md](SCRIPTLETS.md). It does not imply complete
+upstream DSL or request-body editing support. Eight redirect resources are added:
+three fixed API shims, VAST 2/3/4, VMAP 1, and a 3x2 PNG, loaded only when selected.
+The three new API resources retain upstream's redirect-only eligibility.
+
+Native classification recognizes worker script destinations, object/embed requests,
+and explicit XMLHttpRequest headers. An explicit empty/unknown destination is not
+reclassified from its Accept header. Empty Fetch destinations alone do not reliably
+distinguish Fetch, XHR, and beacon requests. Frame Referer/Origin metadata is preferred
+where supplied. Worker requests lacking initiators evaluate context-free rules;
+potential contextual exceptions conservatively allow the request. No unrelated tab
+URL is borrowed, and internal asset origins remain excluded.
+
+| Remaining work | Android WebView assessment |
+| --- | --- |
+| Production persisted indexes | Prototype available; disabled because the host warm-load comparison did not establish a benefit. Profile combined read/validation/build time and allocations on Android before enabling. |
+| Remaining scriptlet arguments and JSONPath operations | Recommended where a bounded parser and correct API hook suffice. Request-body streams and additional trusted mutations need separate lifecycle and provenance tests. |
+| Wider procedural cosmetics | Selective: prefer native CSS and targeted, incremental observers. Do not expand repeated document-wide scans merely to accept more syntax. |
+| Larger redirect shims, including IMA/DAI | Feasible, with upstream API/callback and media tests before accepting the resource. |
+| Popup/popunder and close-window | Conditional on native multi-window ownership; this app has no such lifecycle. |
+| WebSocket/beacon wrappers | Optional partial coverage. They cannot replace network-level interception or cover workers completely. |
+| Subresource removeparam | Avoid a replacement network stack solely for URL rewriting. Navigation removal remains supported. |
+| CSP and HTML response rewriting | Unsupported: ordinary interception does not expose original response headers/bodies for transparent editing. |
+
+Compatibility work is recommended when WebView can implement the rule correctly
+without disproportionate platform-specific workarounds. More enabled rules alone
+are not a reason to reject a feature. This patch adds no polling, DOM observer,
+response proxy, or JavaScript resource-type instrumentation.
+
+## Historical v1.0.17 subscription audit
 
 This audit compares v1.0.16 with this incremental update. A skipped rule is a
 parser/contract rejection, not a measured missed advert. Accepted rules still

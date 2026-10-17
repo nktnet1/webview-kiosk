@@ -62,6 +62,8 @@ internal object ResourceTypes {
             .takeIf { it >= 0 }
             ?.let { 1 shl it }
 
+    val all: Int = (1 shl names.size) - 1
+
     fun request(name: String): Int = known(name) ?: 1
 }
 
@@ -89,6 +91,7 @@ internal data class NetworkIdentity(
     val redirect: BlockingResponse? = null,
     val redirectOnly: Boolean = false,
     val removeParam: ParameterRemoval? = null,
+    val partialAll: Boolean = false,
 )
 
 internal data class NetworkRule(
@@ -526,27 +529,7 @@ internal object FilterParser {
         if (selector.isEmpty()) {
             throw Invalid("missing CSS selector")
         }
-        // uBO can scope extended filters to descendant frames (>>) or URL paths.
-        // Neither is an ordinary hostname. Skip the whole constrained rule rather
-        // than rejecting the subscription or broadening it to every matching host.
         val scopeText = line.substring(0, separator)
-        if (
-            scopeText.split(',').any { entry ->
-                val raw = entry.removePrefix("~")
-                raw.endsWith(">>") && normalizedHost(raw.dropLast(2)) != null ||
-                    '/' in raw &&
-                        !raw.startsWith('/') &&
-                        normalizedHost(raw.substringBefore('/')) != null
-            }
-        ) {
-            throw Unsupported(
-                if (selector.startsWith("+js(")) {
-                    FilterSkipReason.SCRIPTLET_SCOPE
-                } else {
-                    FilterSkipReason.PROCEDURAL
-                }
-            )
-        }
         if (selector.startsWith("+js(")) {
             if (
                 (!exception && delimiterLength != 2) ||
@@ -554,17 +537,28 @@ internal object FilterParser {
             ) {
                 throw Unsupported()
             }
+            val targets = mutableListOf<ScriptletTarget>()
             val scope =
                 try {
-                    domains(scopeText, ',')
+                    val ordinary =
+                        ScriptletScopes.entries(scopeText).filter { entry ->
+                            val target = ScriptletScopes.target(entry)
+                            if (target != null) {
+                                targets += target
+                            }
+                            target == null
+                        }
+                    domains(ordinary.joinToString(","), ',')
+                } catch (_: IllegalArgumentException) {
+                    throw Unsupported(FilterSkipReason.SCRIPTLET_SCOPE)
                 } catch (_: Unsupported) {
                     throw Unsupported(FilterSkipReason.SCRIPTLET_SCOPE)
                 }
             if (
                 !exception &&
                     scope.included.isEmpty() &&
-                    scope.includedEntities.isEmpty() ||
-                    scope.included.any { ':' in it }
+                    scope.includedEntities.isEmpty() &&
+                    targets.none { !it.excluded } || scope.included.any { ':' in it }
             ) {
                 throw Unsupported(FilterSkipReason.SCRIPTLET_SCOPE)
             }
@@ -582,8 +576,19 @@ internal object FilterParser {
                         )
                 }
             return ParsedFilter.Scriptlet(
-                ScriptletRule(instruction, scope, exception)
+                ScriptletRule(instruction, scope, exception, targets)
             )
+        }
+        if (
+            scopeText.split(',').any { entry ->
+                val raw = entry.removePrefix("~")
+                raw.endsWith(">>") && normalizedHost(raw.dropLast(2)) != null ||
+                    '/' in raw &&
+                        !raw.startsWith('/') &&
+                        normalizedHost(raw.substringBefore('/')) != null
+            }
+        ) {
+            throw Unsupported(FilterSkipReason.PROCEDURAL)
         }
         if (selector.startsWith("^")) {
             throw Unsupported(FilterSkipReason.HTML)
@@ -1038,6 +1043,7 @@ internal object FilterParser {
                 ResourceTypes.known(name) == null &&
                     name !in
                         setOf(
+                            "all",
                             "domain",
                             "from",
                             "to",
@@ -1084,6 +1090,15 @@ internal object FilterParser {
                 continue
             }
             when (name) {
+                "all" -> {
+                    if (negated || option.contains('=')) {
+                        throw Unsupported()
+                    }
+                    // Partial $all: intercepted network types and root documents.
+                    // Popup and inline CSP semantics require separate integration.
+                    types = types or ResourceTypes.all
+                }
+
                 "_" -> {
                     if (option != "_") {
                         throw Unsupported()
@@ -1178,8 +1193,11 @@ internal object FilterParser {
                                 BlockingResponse.TRANSPARENT_32X32_PNG
                             else -> {
                                 val file =
-                                    ScriptletResources.aliases[
-                                            resource.removeSuffix(".js")] ?: resource
+                                    ScriptletResources.redirectAliases[
+                                            resource.removeSuffix(".js")]
+                                        ?: ScriptletResources.aliases[
+                                                resource.removeSuffix(".js")]
+                                        ?: resource
                                 BlockingResponse.entries.firstOrNull {
                                     it.resourcePath == file
                                 } ?: throw Unsupported()
@@ -1312,6 +1330,7 @@ internal object FilterParser {
                     redirect,
                     redirectOnly,
                     removeParam,
+                    partialAll = "all" in optionNames,
                 ),
                 badfilter,
             )
