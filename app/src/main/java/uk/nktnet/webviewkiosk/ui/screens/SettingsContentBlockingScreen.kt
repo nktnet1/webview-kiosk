@@ -43,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -83,12 +84,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import java.io.IOException
-import java.text.DateFormat
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import sh.calvin.reorderable.ReorderableColumn
 import uk.nktnet.webviewkiosk.R
@@ -107,6 +111,7 @@ import uk.nktnet.webviewkiosk.blocking.feedback
 import uk.nktnet.webviewkiosk.blocking.filterListFailureMessage
 import uk.nktnet.webviewkiosk.blocking.toFilterListUrlOrNull
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
@@ -143,7 +148,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     val blockingEnabled by blocker.enabled.collectAsState()
     val blockingStatus by blocker.status.collectAsState()
     val snackbar = remember { SnackbarHostState() }
+    val mutationMutex = remember { Mutex() }
     var lists by remember { mutableStateOf(store.list()) }
+    var savingSwitchIds by remember { mutableStateOf(emptySet<String>()) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     val missingDefaults = SuggestedFilterLists.missingDefaults(lists)
     var pendingDefaults by remember {
@@ -180,17 +187,22 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     var addError by remember { mutableStateOf<String?>(null) }
 
     fun notify(message: String, retry: (() -> Unit)? = null) {
+        if (retry == null) {
+            snackbar.currentSnackbarData?.dismiss()
+            ToastManager.show(context, message)
+            return
+        }
         scope.launch {
             snackbar.currentSnackbarData?.dismiss()
             val result =
                 snackbar.showSnackbar(
                     message = message,
-                    actionLabel = retry?.let { "Retry" },
+                    actionLabel = "Retry",
                     withDismissAction = true,
                     duration = SnackbarDuration.Long,
                 )
             if (result == SnackbarResult.ActionPerformed) {
-                retry?.invoke()
+                retry()
             }
         }
     }
@@ -226,7 +238,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         editError = null
         scope.launch {
             try {
-                val savedLists =
+                val savedLists = mutationMutex.withLock {
                     withContext(Dispatchers.IO) {
                         block()
                         if (affectsRules) {
@@ -234,6 +246,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         }
                         store.list()
                     }
+                }
                 lists = savedLists
                 selectedIds = selectedIds.intersect(savedLists.map { it.id }.toSet())
                 onStored?.invoke()
@@ -258,10 +271,50 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         }
     }
 
+    fun toggleList(item: ImportedFilterList, enabled: Boolean) {
+        if (working || item.id in savingSwitchIds) {
+            return
+        }
+        savingSwitchIds += item.id
+        lists = lists.map {
+            if (it.id == item.id) {
+                it.copy(enabled = enabled)
+            } else {
+                it
+            }
+        }
+        scope.launch {
+            try {
+                mutationMutex.withLock {
+                    try {
+                        withContext(Dispatchers.IO) {
+                            store.setEnabled(item.id, enabled)
+                            blocker.markRulesChanged()
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        lists = lists.map {
+                            if (it.id == item.id) {
+                                it.copy(enabled = item.enabled)
+                            } else {
+                                it
+                            }
+                        }
+                        Log.w("ContentBlocking", "Cannot toggle filter list", e)
+                        notify(filterListFailureMessage(e))
+                    }
+                }
+            } finally {
+                savingSwitchIds -= item.id
+            }
+        }
+    }
+
     fun downloadDefaults(requested: List<SuggestedFilterList>) {
         var summary = FilterRefreshResult(0, 0, emptyList())
         update(
-            progressMessage = "Downloading and validating uBlock Origin defaults…",
+            progressMessage = "ÎDownloading and validating uBlock Origin defaults…",
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.ADD_DEFAULTS) {
                     downloadDefaults(requested)
@@ -742,7 +795,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                 ReorderableItem {
                                     FilterListRow(
                                         item = item,
-                                        busy = busy,
+                                        busy = busy || item.id in savingSwitchIds,
                                         managing = managing,
                                         selected = item.id in selectedIds,
                                         onSelectedChange = { selected ->
@@ -754,9 +807,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                                 }
                                         },
                                         onEnabledChange = { enabled ->
-                                            update {
-                                                store.setEnabled(item.id, enabled)
-                                            }
+                                            toggleList(item, enabled)
                                         },
                                         onRefresh = {
                                             update(
@@ -858,7 +909,16 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 hostState = snackbar,
                 modifier =
                     Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
-            )
+            ) { data ->
+                Snackbar(
+                    data,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    actionContentColor = MaterialTheme.colorScheme.primary,
+                    dismissActionContentColor =
+                        MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 
@@ -870,7 +930,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         val adding = pendingDefaults
         AlertDialog(
             onDismissRequest = { pendingDefaults = emptyList() },
-            title = { Text("Add default filter lists?") },
+            title = { Text("Add default lists") },
             text = {
                 Column(
                     modifier =
@@ -878,8 +938,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text("The following preset lists will be downloaded and added:")
-                    adding.forEach { preset -> Text(preset.name) }
+                    Text("The following lists will be added:")
+                    adding.forEach { preset -> FilterListBullet(preset.name) }
                 }
             },
             confirmButton = {
@@ -926,7 +986,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     removing.forEach { item ->
-                        Text(item.displayName())
+                        FilterListBullet(item.displayName())
                     }
                 }
             },
@@ -1112,6 +1172,14 @@ fun SettingsContentBlockingScreen(navController: NavController) {
 }
 
 @Composable
+private fun FilterListBullet(name: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(name, modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
 private fun EmptyFilterListsCard(enabled: Boolean, onAddDefault: () -> Unit) {
     OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -1180,6 +1248,17 @@ private fun FilterListInfoDialog(
             ) {
                 val details = info
                 val unavailable = failure != null
+                item.sourceUrl?.let { source ->
+                    InfoSection("Source URL") {
+                        SelectionContainer {
+                            Text(
+                                source,
+                                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                }
                 InfoSection("List details") {
                     InfoStat(
                         "Type",
@@ -1206,9 +1285,9 @@ private fun FilterListInfoDialog(
 
                             else ->
                                 remember(item.lastRefreshedAt) {
-                                    DateFormat.getDateTimeInstance(
-                                            DateFormat.SHORT,
-                                            DateFormat.SHORT,
+                                    SimpleDateFormat(
+                                            "d MMM yyyy, h:mm a",
+                                            Locale.getDefault(),
                                         )
                                         .format(Date(item.lastRefreshedAt))
                                 }
@@ -1277,17 +1356,6 @@ private fun FilterListInfoDialog(
                                 }
                         }
                     }
-                item.sourceUrl?.let { source ->
-                    InfoSection("Source URL") {
-                        SelectionContainer {
-                            Text(
-                                source,
-                                modifier = Modifier.fillMaxWidth().padding(12.dp),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                }
                 failure?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },

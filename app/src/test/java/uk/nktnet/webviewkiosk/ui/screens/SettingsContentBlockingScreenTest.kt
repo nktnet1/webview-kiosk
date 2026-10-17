@@ -7,7 +7,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.semantics.SemanticsActions
@@ -41,7 +40,6 @@ import uk.nktnet.webviewkiosk.blocking.FilterListStore
 import uk.nktnet.webviewkiosk.blocking.FilterListType
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterLists
 
-@OptIn(ExperimentalComposeUiApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], qualifiers = "w480dp-h1000dp")
 @LooperMode(LooperMode.Mode.PAUSED)
@@ -69,7 +67,7 @@ class SettingsContentBlockingScreenTest {
         listOf("First", "Second", "Other").forEach { name ->
             val skipped =
                 if (name == "First") {
-                    "\n||popup.example^\$popup\n||csp.example^\$csp=script-src 'none'"
+                    $$"\n||popup.example^$popup\n||csp.example^$csp=script-src 'none'"
                 } else {
                     ""
                 }
@@ -137,14 +135,16 @@ class SettingsContentBlockingScreenTest {
         renderScreen()
         click("Actions")
         click("Add Default")
-        assertTrue(hasText("Add default filter lists?"))
+        assertTrue(hasText("Add default lists"))
+        assertTrue(hasText("The following lists will be added:"))
+        assertTrue(hasText("•"))
         assertFalse(hasText(preset.name))
         SuggestedFilterLists.defaults.drop(1).forEach {
             assertTrue(hasText(it.name))
         }
         assertEquals(saved, store.list())
         click("Cancel")
-        assertFalse(hasText("Add default filter lists?"))
+        assertFalse(hasText("Add default lists"))
         assertEquals(saved, store.list())
     }
 
@@ -166,7 +166,7 @@ class SettingsContentBlockingScreenTest {
                 click("Actions")
             }
             click("Add Default")
-            assertTrue(hasText("Add default filter lists?"))
+            assertTrue(hasText("Add default lists"))
             SuggestedFilterLists.defaults.forEach { assertTrue(hasText(it.name)) }
             assertTrue(store.list().isEmpty())
             click("Cancel")
@@ -220,6 +220,7 @@ class SettingsContentBlockingScreenTest {
         click("Actions")
         click("Remove selected")
         assertTrue(hasText("Remove 2 filter lists?"))
+        assertTrue(hasText("•"))
         assertEquals(3, store.list().size)
         click("Cancel")
         assertEquals(3, store.list().size)
@@ -232,6 +233,47 @@ class SettingsContentBlockingScreenTest {
         assertEquals("Other", store.list().single().name)
         assertEquals(ToggleableState.Off, selectionState("Select Other"))
         assertTrue(disabled(textNode("Actions")))
+    }
+
+    @Test
+    fun togglingOneListDoesNotDisableTheOtherSwitches() {
+        clickDescription("Filter First")
+        assertFalse(disabled(descriptionNode("Filter Second")))
+        assertFalse(disabled(descriptionNode("Filter Other")))
+        awaitCondition {
+            !store.list().first().enabled &&
+                selectionState("Filter First") == ToggleableState.Off
+        }
+
+        clickDescription("Filter Second")
+        awaitCondition {
+            !store.list()[1].enabled &&
+                selectionState("Filter Second") == ToggleableState.Off
+        }
+        assertTrue(store.list()[2].enabled)
+    }
+
+    @Test
+    fun listInfoShowsSourceFirstAndExplicitAmPmForRefreshTime() {
+        val url = "https://example.org/rules.txt"
+        store.importFrom("Remote", "||ads.example^".byteInputStream(), url)
+        view.disposeComposition()
+        renderScreen()
+        clickDescription("Options for Remote")
+        click("Info")
+        awaitCondition { hasText("Source URL") && hasText(url) }
+
+        assertTrue(
+            textNode("Source URL").boundsInWindow.top <
+                textNode("List details").boundsInWindow.top
+        )
+        assertTrue(
+            nodes().any { node ->
+                node.config.getOrNull(SemanticsProperties.Text)?.any { text ->
+                    Regex("""\d{1,2}:\d{2} [AP]M""").containsMatchIn(text.text)
+                } == true
+            }
+        )
     }
 
     @Test

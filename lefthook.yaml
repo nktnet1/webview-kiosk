@@ -3,7 +3,7 @@ pre-commit:
   commands:
     kotlin-format:
       glob: "*.{kt,kts}"
-      run: sh gradlew checkFormatting
+      run: ./gradlew checkFormatting
     android-lint:
       glob: "*.{kt,kts,java,xml,toml,properties}"
       run: ./gradlew lint --warning-mode=all
