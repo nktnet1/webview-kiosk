@@ -57,10 +57,20 @@ enum class ScriptletType {
     TRUSTED_SET_COOKIE,
     TRUSTED_SET_COOKIE_RELOAD,
     TRUSTED_SET,
-    TRUSTED_SET_ATTRIBUTE;
+    TRUSTED_SET_ATTRIBUTE,
+    TRUSTED_REPLACE_NODE_TEXT,
+    TRUSTED_CLICK_ELEMENT,
+    TRUSTED_REPLACE_ARGUMENT,
+    TRUSTED_REPLACE_OUTBOUND_TEXT,
+    TRUSTED_SUPPRESS_NATIVE_METHOD,
+    TRUSTED_PREVENT_DOM_BYPASS,
+    TRUSTED_OVERRIDE_ELEMENT_METHOD,
+    TRUSTED_CREATE_HTML,
+    PREVENT_CLIPBOARD_WRITE,
+    MPEGDASH_PRUNE;
 
     val requiresTrust: Boolean
-        get() = name.startsWith("TRUSTED_")
+        get() = name.startsWith("TRUSTED_") || this == PREVENT_CLIPBOARD_WRITE
 }
 
 /** Arguments are validated during compilation and serialized as JSON data. */

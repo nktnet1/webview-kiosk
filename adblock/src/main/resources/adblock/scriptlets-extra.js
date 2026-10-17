@@ -139,7 +139,8 @@
     function storage(kind, args) {
         const store = self[kind];
         if (args[1] !== '$remove$') { store.setItem(args[0], args[1]); return; }
-        if (args[0].startsWith('/') && args[0].lastIndexOf('/') > 0) {
+        if (args[0].startsWith('/') && args[0].lastIndexOf('/') > 0 &&
+            /^[dgimsuvy]*$/.test(args[0].slice(args[0].lastIndexOf('/') + 1))) {
             if (store.length > 1024) { return; }
             const match = matcher(args[0]);
             const keys = Array.from({ length: store.length }, (_, i) => store.key(i));

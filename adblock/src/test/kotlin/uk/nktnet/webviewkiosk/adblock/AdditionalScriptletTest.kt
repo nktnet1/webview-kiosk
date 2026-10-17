@@ -158,7 +158,7 @@ class AdditionalScriptletTest {
                 "set-attr, iframe, srcdoc, true",
                 "ra, onclick, a, unexpected",
                 "ra, onclick, [",
-                "rc, advert, div:has(.ads)",
+                "rc, advert, div:has-text(ads)",
                 "rmnt, script, ads, condition, cookie",
                 "freeze-element-property, unknown",
                 "spoof-css, a, debug, true",

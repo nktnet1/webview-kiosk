@@ -15,7 +15,8 @@ internal data class DomainScope(
 
     fun matches(host: String, registeredDomain: String? = null): Boolean {
         fun entityMatches(name: String): Boolean =
-            registeredDomain?.startsWith("$name.") == true
+            entityName(host, registeredDomain)?.let { domainMatches(it, name) } ==
+                true
 
         return excluded.none { domainMatches(host, it) } &&
             excludedEntities.none(::entityMatches) &&
@@ -545,7 +546,9 @@ internal object FilterParser {
                 if (exception && selector == "+js()") {
                     null
                 } else {
-                    ScriptletParser.parse(selector, trusted) ?: throw Unsupported()
+                    // Disabling an instruction grants no script execution privilege.
+                    ScriptletParser.parse(selector, trusted || exception)
+                        ?: throw Unsupported()
                 }
             return ParsedFilter.Scriptlet(
                 ScriptletRule(instruction, scope, exception)
@@ -624,10 +627,10 @@ internal object FilterParser {
             }
             selector = selector.substring(0, upward.range.first)
         }
-        val textMatch = Regex(":has-text\\(([^()]*)\\)$").find(selector)
-        val text = textMatch?.groupValues?.get(1)
+        val textMatch = textCondition(selector)
+        val text = textMatch?.text
         if (textMatch != null) {
-            selector = selector.substring(0, textMatch.range.first)
+            selector = textMatch.selector
         }
         val actions =
             listOfNotNull(
@@ -649,11 +652,7 @@ internal object FilterParser {
                 (style != null && actions != 1) ||
                 (removeAttribute != null && actions != 1) ||
                 (removeClass != null && actions != 1) ||
-                text != null &&
-                    (text.isEmpty() ||
-                        text.length > 128 ||
-                        text.startsWith('/') ||
-                        text.startsWith('"')) ||
+                text != null && (text.isEmpty() || text.length > 128) ||
                 !safeSelector(selector, 256) ||
                 procedural.any(selector::contains) ||
                 (remove && (upwardCount != 0 || upwardSelector != null))
@@ -669,7 +668,128 @@ internal object FilterParser {
             removeAttribute = removeAttribute,
             removeClass = removeClass,
             upwardSelector = upwardSelector,
+            textSelector = textMatch?.child,
+            textPattern = textMatch?.pattern == true,
         )
+    }
+
+    private data class TextCondition(
+        val selector: String,
+        val text: String,
+        val child: String?,
+        val pattern: Boolean,
+    )
+
+    /**
+     * One text predicate, optionally inside one :has(); never evaluate filter code.
+     */
+    private fun textCondition(raw: String): TextCondition? {
+        val start = raw.indexOf(":has-text(")
+        if (start < 0) {
+            return null
+        }
+        val close = closingParenthesis(raw, start + 9)
+        if (close < 0 || raw.indexOf(":has-text(", start + 1) >= 0) {
+            throw Unsupported()
+        }
+        var text = raw.substring(start + 10, close)
+        if (text.firstOrNull() in listOf('"', '\'')) {
+            if (text.length < 2 || text.last() != text.first()) {
+                throw Unsupported()
+            }
+            text = text.substring(1, text.lastIndex)
+        }
+        val pattern = text.startsWith('/') && text.lastIndexOf('/') > 0
+        if (
+            text.isEmpty() ||
+                text.length > 128 ||
+                pattern && !ScriptletParser.pattern(text) ||
+                !pattern && text.any { it in "()" }
+        ) {
+            throw Unsupported()
+        }
+        fun suffix(value: String): String {
+            if (value.isNotBlank() && value.first() !in ".#[:") {
+                throw Unsupported()
+            }
+            return value.trimEnd()
+        }
+        val outer = raw.lastIndexOf(":has(", start)
+        if (outer < 0) {
+            return TextCondition(
+                raw.substring(0, start) + suffix(raw.substring(close + 1)),
+                text,
+                null,
+                pattern,
+            )
+        }
+        val outerClose = closingParenthesis(raw, outer + 4)
+        if (outerClose <= close || raw.substring(0, outer).contains(":has(")) {
+            throw Unsupported()
+        }
+        var child =
+            raw.substring(outer + 5, start) +
+                suffix(raw.substring(close + 1, outerClose))
+        child = child.trim()
+        if (child.startsWith('+') || child.startsWith('~')) {
+            throw Unsupported()
+        }
+        if (child.startsWith('>')) {
+            child = ":scope $child"
+        }
+        if (!safeSelector(child, 256) || procedural.any(child::contains)) {
+            throw Unsupported()
+        }
+        return TextCondition(
+            raw.substring(0, outer) + suffix(raw.substring(outerClose + 1)),
+            text,
+            child,
+            pattern,
+        )
+    }
+
+    private fun closingParenthesis(raw: String, open: Int): Int {
+        var depth = 0
+        var brackets = 0
+        var quote: Char? = null
+        var escaped = false
+        for (index in open until raw.length) {
+            val char = raw[index]
+            if (escaped) {
+                escaped = false
+                continue
+            }
+            if (char == '\\') {
+                escaped = true
+                continue
+            }
+            if (quote != null) {
+                if (char == quote) {
+                    quote = null
+                }
+                continue
+            }
+            if (char in "\"'" && brackets == 0) {
+                quote = char
+                continue
+            }
+            if (char == '[') {
+                brackets++
+            }
+            if (char == ']') {
+                brackets--
+            }
+            if (brackets != 0) {
+                continue
+            }
+            if (char == '(') {
+                depth++
+            }
+            if (char == ')' && --depth == 0) {
+                return index
+            }
+        }
+        return -1
     }
 
     private val IDENTIFIER = Regex("[a-zA-Z_][a-zA-Z0-9_-]{0,63}")
@@ -707,13 +827,39 @@ internal object FilterParser {
             "background-image",
             "color",
             "visibility",
+            "transform",
         )
 
-    private fun safeSelector(value: String, maxLength: Int): Boolean =
-        value.isNotBlank() &&
-            value != "*" &&
-            value.length <= maxLength &&
-            value.none { it.isISOControl() || it in "{};<" }
+    private fun safeSelector(value: String, maxLength: Int): Boolean {
+        if (value.isBlank() || value == "*" || value.length > maxLength) {
+            return false
+        }
+        var quote: Char? = null
+        var escaped = false
+        for (char in value) {
+            if (char.isISOControl()) {
+                return false
+            }
+            if (escaped) {
+                escaped = false
+                continue
+            }
+            if (char == '\\') {
+                escaped = true
+                continue
+            }
+            if (quote != null) {
+                if (char == quote) {
+                    quote = null
+                }
+            } else if (char in "\"'") {
+                quote = char
+            } else if (char in "{};<") {
+                return false
+            }
+        }
+        return quote == null && !escaped
+    }
 
     private fun safeStyle(value: String): String {
         if (
@@ -769,7 +915,7 @@ internal object FilterParser {
                 }
             val domain =
                 normalizedHost(name) ?: throw Invalid("invalid domain restriction")
-            if (entity && ('.' in domain || ':' in domain)) {
+            if (entity && ':' in domain) {
                 throw Unsupported()
             }
             when {
@@ -791,16 +937,21 @@ internal object FilterParser {
                 line
             }
         val closingSlash = body.lastIndexOf('/')
-        if (
+        val regex =
             body.startsWith('/') &&
                 closingSlash > 0 &&
                 (closingSlash == body.lastIndex ||
                     body.getOrNull(closingSlash + 1) == '$')
-        ) {
-            throw Unsupported() // Full regex rules are intentionally outside this
-            // subset.
-        }
-        val dollar = body.lastIndexOf('$')
+        val dollar =
+            if (regex) {
+                if (closingSlash == body.lastIndex) {
+                    -1
+                } else {
+                    closingSlash + 1
+                }
+            } else {
+                body.lastIndexOf('$')
+            }
         // Options-only filters (including @@$generichide,domain=...) match
         // every URL, while their options still restrict when they apply.
         val rawPattern =
@@ -844,6 +995,7 @@ internal object FilterParser {
                             "denyallow",
                             "redirect",
                             "redirect-rule",
+                            "rewrite",
                             "empty",
                             "third-party",
                             "3p",
@@ -893,7 +1045,17 @@ internal object FilterParser {
 
                 "redirect",
                 "redirect-rule",
+                "rewrite",
                 "empty" -> {
+                    if (
+                        exception &&
+                            name == "redirect-rule" &&
+                            !negated &&
+                            value.isEmpty()
+                    ) {
+                        redirectOnly = true
+                        continue
+                    }
                     if (
                         exception ||
                             negated ||
@@ -902,20 +1064,23 @@ internal object FilterParser {
                     ) {
                         throw Unsupported()
                     }
-                    val resource = value.substringBeforeLast(':', value)
-                    if (
-                        resource != value &&
-                            value.substringAfterLast(':').toIntOrNull() == null
-                    ) {
-                        throw Unsupported()
-                    }
+                    val resource =
+                        if (value.substringAfterLast(':').toIntOrNull() != null) {
+                            value.substringBeforeLast(':')
+                        } else {
+                            value
+                        }
                     redirectOnly = name == "redirect-rule"
                     redirect =
                         when {
                             name == "empty" || resource == "empty" ->
                                 BlockingResponse.EMPTY_TEXT
-                            resource in setOf("noopjs", "noop.js") ->
-                                BlockingResponse.EMPTY_SCRIPT
+                            resource in
+                                setOf(
+                                    "noopjs",
+                                    "noop.js",
+                                    "abp-resource:blank-js",
+                                ) -> BlockingResponse.EMPTY_SCRIPT
                             resource in setOf("noopcss", "noop.css") ->
                                 BlockingResponse.EMPTY_STYLESHEET
                             resource in setOf("noophtml", "noop.html") ->
@@ -927,7 +1092,27 @@ internal object FilterParser {
                             resource == "2x2.png" ->
                                 BlockingResponse.TRANSPARENT_2X2_PNG
                             resource == "1x1.png" -> BlockingResponse.TRANSPARENT_PNG
-                            else -> throw Unsupported()
+                            resource in setOf("noopjson", "noop.json") ->
+                                BlockingResponse.EMPTY_JSON
+                            resource in setOf("noopmp3-0.1s", "noop-0.1s.mp3") ->
+                                BlockingResponse.SILENT_MP3
+                            resource in
+                                setOf(
+                                    "noopmp4",
+                                    "noopmp4-1s",
+                                    "noop-1s.mp4",
+                                    "abp-resource:blank-mp4",
+                                ) -> BlockingResponse.SILENT_MP4
+                            resource == "32x32.png" ->
+                                BlockingResponse.TRANSPARENT_32X32_PNG
+                            else -> {
+                                val file =
+                                    ScriptletResources.aliases[
+                                            resource.removeSuffix(".js")] ?: resource
+                                BlockingResponse.entries.firstOrNull {
+                                    it.resourcePath == file
+                                } ?: throw Unsupported()
+                            }
                         }
                 }
 
@@ -1090,11 +1275,40 @@ internal object FilterParser {
         if (text.isEmpty()) {
             throw Invalid("missing URL pattern")
         }
-        if (text.contains('|') || text.contains('\\')) {
+        if (raw.startsWith('/') && raw.endsWith('/') && raw.length > 1) {
+            return try {
+                UrlPattern(
+                    raw.substring(1, raw.lastIndex),
+                    false,
+                    false,
+                    false,
+                    matchCase,
+                    null,
+                    regex = true,
+                )
+            } catch (_: IllegalArgumentException) {
+                throw Unsupported()
+            }
+        }
+        if (text.contains('\\')) {
             throw Unsupported()
         }
         var hostIndex: String? = null
-        if (domainAnchor) {
+        val hostPattern =
+            text
+                .substringBefore('/')
+                .substringBefore('^')
+                .substringBefore(':')
+                .substringBefore('?')
+        if (domainAnchor && '*' in hostPattern) {
+            val prefix = hostPattern.substringBefore('*')
+            if (
+                prefix.isNotEmpty() &&
+                    normalizedHost(prefix + "x", allowPrefix = true) == null
+            ) {
+                throw Unsupported()
+            }
+        } else if (domainAnchor) {
             val end =
                 if (text.startsWith('[')) {
                     text.indexOf(']').takeIf { it > 0 }?.plus(1)

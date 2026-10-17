@@ -7,6 +7,8 @@ const extension = readFileSync(new URL(
     '../../adblock/src/main/resources/adblock/scriptlets-extra.js', import.meta.url), 'utf8');
 const network = readFileSync(new URL(
     '../../adblock/src/main/resources/adblock/scriptlets-network.js', import.meta.url), 'utf8');
+const advanced = readFileSync(new URL(
+    '../../adblock/src/main/resources/adblock/scriptlets-advanced.js', import.meta.url), 'utf8');
 export function page(rules, { host = 'site.example', protocol = 'https:', before = '',
     globals = {} } = {}) {
     const calls = { open: [], timers: [], intervals: [], frames: new Map(), listeners: [],
@@ -66,7 +68,8 @@ export function page(rules, { host = 'site.example', protocol = 'https:', before
         return JSON.stringify(name) + ':function(setTimeout,clearTimeout){\n' + code + '\n}';
     }).join(',');
     const source = `${runtime}(${JSON.stringify(domains)}, ` +
-        `${JSON.stringify(JSON.stringify(config))}, ${extension}, {${factories}}, ${network});`;
+        `${JSON.stringify(JSON.stringify(config))}, ${extension}, {${factories}}, ` +
+        `${network}, ${advanced});`;
     return {
         source, calls, context, document: context.document, Script,
         run: code => runInContext(code, context),

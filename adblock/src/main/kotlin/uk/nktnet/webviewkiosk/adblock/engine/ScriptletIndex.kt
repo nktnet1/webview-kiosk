@@ -126,7 +126,21 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
                     } else {
                         ""
                     }
-                ",$extraRuntime,${ScriptletResources.factories(resources)}$network"
+                val advanced =
+                    if (
+                        rules.any {
+                            it.instruction?.type in AdvancedScriptlets.aliases.values
+                        }
+                    ) {
+                        if (network.isEmpty()) {
+                            ",null,$advancedRuntime"
+                        } else {
+                            ",$advancedRuntime"
+                        }
+                    } else {
+                        ""
+                    }
+                ",$extraRuntime,${ScriptletResources.factories(resources)}$network$advanced"
             } else {
                 ""
             }
@@ -164,6 +178,14 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
             ScriptletIndex::class
                 .java
                 .getResourceAsStream("/adblock/scriptlets-network.js")!!
+                .bufferedReader()
+                .use { it.readText() }
+        }
+
+        private val advancedRuntime by lazy {
+            ScriptletIndex::class
+                .java
+                .getResourceAsStream("/adblock/scriptlets-advanced.js")!!
                 .bufferedReader()
                 .use { it.readText() }
         }

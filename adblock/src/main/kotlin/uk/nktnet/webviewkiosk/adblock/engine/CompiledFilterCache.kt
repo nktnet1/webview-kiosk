@@ -86,7 +86,7 @@ internal class CompiledFilterCache(
                             val disabled = input.readBoolean()
                             val text = strings.read()
                             val flags = input.readUnsignedByte()
-                            require(flags and 0xf0 == 0)
+                            require(flags and 0xe0 == 0)
                             val host = strings.read().ifEmpty { null }
                             val pattern =
                                 UrlPattern(
@@ -96,6 +96,7 @@ internal class CompiledFilterCache(
                                     flags and 4 != 0,
                                     flags and 8 != 0,
                                     host,
+                                    flags and 16 != 0,
                                 )
                             val domains = strings.scope()
                             val targets = strings.scope()
@@ -171,6 +172,8 @@ internal class CompiledFilterCache(
                                         strings.read().ifEmpty { null },
                                         strings.read().ifEmpty { null },
                                         strings.read().ifEmpty { null },
+                                        strings.read().ifEmpty { null },
+                                        input.readBoolean(),
                                     )
                                 } else {
                                     null
@@ -205,7 +208,7 @@ internal class CompiledFilterCache(
                                         ScriptletParser.validated(
                                             type,
                                             args,
-                                            allowTrusted,
+                                            allowTrusted || exception,
                                         )
                                     )
                                 } else {
@@ -299,6 +302,11 @@ internal class CompiledFilterCache(
                                 8
                             } else {
                                 0
+                            }) or
+                            (if (pattern.regex) {
+                                16
+                            } else {
+                                0
                             })
                     )
                     strings.write(pattern.hostIndex.orEmpty())
@@ -342,6 +350,8 @@ internal class CompiledFilterCache(
                         strings.write(procedure.removeAttribute.orEmpty())
                         strings.write(procedure.removeClass.orEmpty())
                         strings.write(procedure.upwardSelector.orEmpty())
+                        strings.write(procedure.textSelector.orEmpty())
+                        output.writeBoolean(procedure.textPattern)
                     }
                 }
                 output.writeInt(rules.scriptlets.size)
@@ -438,7 +448,7 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 8
+        private const val VERSION = 9
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 

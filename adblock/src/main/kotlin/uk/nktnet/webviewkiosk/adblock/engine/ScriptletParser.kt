@@ -80,6 +80,7 @@ internal object ScriptletParser {
             aliases[name]
                 ?: AdditionalScriptlets.aliases[name]
                 ?: ResponseScriptlets.aliases[name]
+                ?: AdvancedScriptlets.aliases[name]
                 ?: return null
         val args =
             if (name == "prevent-innerHTML") {
@@ -103,8 +104,17 @@ internal object ScriptletParser {
         if (type.requiresTrust && !trusted) {
             return null
         }
-        if (arguments.any { it.length > 512 || it.any(Char::isISOControl) }) {
+        val maxLength =
+            if (type in AdvancedScriptlets.aliases.values) {
+                8192
+            } else {
+                512
+            }
+        if (arguments.any { it.length > maxLength || it.any(Char::isISOControl) }) {
             return null
+        }
+        if (type in AdvancedScriptlets.aliases.values) {
+            return AdvancedScriptlets.validated(type, arguments)
         }
         if (type in ResponseScriptlets.aliases.values) {
             return ResponseScriptlets.validated(type, arguments)
@@ -189,7 +199,7 @@ internal object ScriptletParser {
         if (
             !expression.startsWith("+js(") ||
                 !expression.endsWith(')') ||
-                expression.length > 4096
+                expression.length > 8192
         ) {
             return null
         }
@@ -227,7 +237,7 @@ internal object ScriptletParser {
                     value.append(char)
                 }
             }
-            if (!closed || value.length > 512 || value.any(Char::isISOControl)) {
+            if (!closed || value.length > 8192 || value.any(Char::isISOControl)) {
                 return null
             }
             if (quote != null) {
@@ -338,6 +348,10 @@ internal object ScriptletParser {
         }
         val end = raw.lastIndexOf('/')
         val flags = raw.substring(end + 1)
+        // Paths such as /i/api/1.1/flow/viewer.json are literal predicates.
+        if (flags.any { it !in "dgimsuvy" }) {
+            return true
+        }
         if (flags.any { it !in "ims" } || flags.toSet().size != flags.length) {
             return false
         }

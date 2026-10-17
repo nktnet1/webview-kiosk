@@ -15,6 +15,16 @@ import uk.nktnet.webviewkiosk.config.Constants
  */
 internal object WebViewBlocker {
     private val empty = ByteArray(0)
+    private val resources by lazy {
+        BlockingResponse.entries
+            .filter { it.resourcePath != null }
+            .associateWith { response ->
+                WebViewBlocker::class
+                    .java
+                    .getResourceAsStream("/adblock/ubo/${response.resourcePath}")!!
+                    .use { it.readBytes() }
+            }
+    }
     // Small verified transparent placeholders; allocated once, not per request.
     private val transparentGif =
         Base64.decode(
@@ -85,27 +95,35 @@ internal object WebViewBlocker {
                 service,
             )
         val type =
-            when (response) {
-                BlockingResponse.ALLOW -> return null
-                BlockingResponse.EMPTY_SCRIPT -> "application/javascript"
-                BlockingResponse.EMPTY_STYLESHEET -> "text/css"
-                BlockingResponse.EMPTY_HTML -> "text/html"
-                BlockingResponse.EMPTY_TEXT,
-                BlockingResponse.BLOCK -> "text/plain"
-                BlockingResponse.TRANSPARENT_GIF -> "image/gif"
-                BlockingResponse.TRANSPARENT_PNG,
-                BlockingResponse.TRANSPARENT_2X2_PNG -> "image/png"
-            }
+            response.mimeType
+                ?: when (response) {
+                    BlockingResponse.ALLOW -> return null
+                    BlockingResponse.EMPTY_SCRIPT -> "application/javascript"
+                    BlockingResponse.EMPTY_STYLESHEET -> "text/css"
+                    BlockingResponse.EMPTY_HTML -> "text/html"
+                    BlockingResponse.EMPTY_TEXT,
+                    BlockingResponse.BLOCK -> "text/plain"
+                    BlockingResponse.TRANSPARENT_GIF -> "image/gif"
+                    BlockingResponse.TRANSPARENT_PNG,
+                    BlockingResponse.TRANSPARENT_2X2_PNG -> "image/png"
+                    else -> error("Missing bundled response MIME type")
+                }
         val bytes =
-            when (response) {
-                BlockingResponse.TRANSPARENT_GIF -> transparentGif
-                BlockingResponse.TRANSPARENT_PNG -> transparentPng
-                BlockingResponse.TRANSPARENT_2X2_PNG -> transparent2x2Png
-                else -> empty
+            if (response.resourcePath != null) {
+                resources.getValue(response)
+            } else {
+                when (response) {
+                    BlockingResponse.TRANSPARENT_GIF -> transparentGif
+                    BlockingResponse.TRANSPARENT_PNG -> transparentPng
+                    BlockingResponse.TRANSPARENT_2X2_PNG -> transparent2x2Png
+                    else -> empty
+                }
             }
         val encoding =
             when {
-                type.startsWith("image/") -> null
+                type.startsWith("image/") ||
+                    type.startsWith("audio/") ||
+                    type.startsWith("video/") -> null
                 else -> "UTF-8"
             }
         return WebResourceResponse(type, encoding, ByteArrayInputStream(bytes))

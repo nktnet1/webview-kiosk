@@ -300,6 +300,7 @@ internal object AdditionalScriptlets {
                         "not",
                         "is",
                         "where",
+                        "has",
                         "nth-child",
                         "nth-of-type",
                     )

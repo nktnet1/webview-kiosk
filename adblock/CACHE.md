@@ -1,4 +1,4 @@
-# Compiled cache - v1.0.16
+# Compiled cache - v1.0.17
 
 All four opportunities are technically possible, with different tradeoffs:
 
@@ -11,14 +11,16 @@ All four opportunities are technically possible, with different tradeoffs:
 
 ## Representation and invalidation
 
-Schema 8 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
+Schema 9 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
 normalized network/cosmetic/scriptlet records, bounded counts and trailing CRC32.
 It does not use Java object serialization. Identity includes exact input text,
 list boundaries, ordering and trust bits. Cached scriptlet arguments are validated
 again. The optional engine `cacheVersion` remains an explicit compatibility salt,
 with a stable production default. Parsing, matching, scriptlet-contract and binary
 changes require bumping `CompiledFilterCache.VERSION`; app-only releases do not.
-Older schemas recompile once.
+Schema 9 adds a regex discriminator and child-text cosmetic predicate fields.
+RE2/J programs are rebuilt and bounded when records are restored. Older schemas
+recompile once.
 
 The warm path reads one aggregate snapshot and constructs the indexes. On a miss,
 per-source SHA-256-keyed records in `compiled-rules.bin.sources` allow only changed,
@@ -72,7 +74,7 @@ construction independently. The deterministic fixture has 20,000 plain hosts,
 10,000 conditional network rules, 10,000 cosmetics and 1,000 scriptlets. Each run
 reports medians of seven rounds after three warmups on JBR 21.0.11.
 
-The completed host run produced these medians:
+The completed v1.0.16 host run produced these medians (historical measurements):
 
 | Stage | Host median, ms |
 | --- | ---: |

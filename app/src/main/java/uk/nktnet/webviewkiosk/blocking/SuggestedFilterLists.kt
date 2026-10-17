@@ -103,9 +103,15 @@ internal object SuggestedFilterLists {
             ),
         )
 
-    val trustedUrls = ublock.map { it.url }.toSet()
+    private val optionalUblock =
+        listOf(
+            ublock("Annoyances - Cookies", "Cookie notices", "annoyances-cookies"),
+            ublock("Annoyances - Others", "Other annoyances", "annoyances-others"),
+        )
 
-    val all = ublock + others
+    val trustedUrls = (ublock + optionalUblock).map { it.url }.toSet()
+
+    val all = ublock + optionalUblock + others
 
     // The nine globally enabled subscriptions in upstream assets/assets.json.
     // Regional and optional annoyance lists depend on user preference.

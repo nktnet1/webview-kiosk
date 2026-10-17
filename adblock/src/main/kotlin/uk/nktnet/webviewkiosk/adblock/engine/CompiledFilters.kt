@@ -180,7 +180,7 @@ private class RequestFacts(
     private var thirdParty: Boolean? = null
     private val targetDomain by lazy { target.topPrivateDomain() }
     private val sourceDomain by lazy { source.topPrivateDomain() }
-    val sourceEntity: String? by lazy { sourceDomain?.substringBefore('.') }
+    val sourceEntity: String? by lazy { entityName(sourceHost, sourceDomain) }
 
     fun matches(conditions: Conditions): Boolean {
         if (conditions.types != 0 && conditions.types and type == 0) {
@@ -295,8 +295,10 @@ private class NetworkIndex(rules: Collection<NetworkIdentity>) {
         }
         if (pageEntities.isNotEmpty()) {
             facts.sourceEntity?.let { entity ->
-                if (pageEntities[entity]?.any(::check) == true) {
-                    return true
+                hostSuffixes(entity) { key ->
+                    if (pageEntities[key]?.any(::check) == true) {
+                        return true
+                    }
                 }
             }
         }
@@ -339,6 +341,7 @@ internal class CompiledFilters(
     private val allowedHosts = HashSet<String>()
     private val importantHosts = HashSet<String>()
     private val requests: NetworkIndex
+    private val redirectExceptions: NetworkIndex
     private val hideExceptions: NetworkIndex
     private val specific = HashMap<String, MutableList<CosmeticRule>>()
     private val generic = mutableListOf<CosmeticRule>()
@@ -359,10 +362,12 @@ internal class CompiledFilters(
     init {
         val ordinary = mutableListOf<NetworkIdentity>()
         val hiding = mutableListOf<NetworkIdentity>()
+        val redirecting = mutableListOf<NetworkIdentity>()
         for (rule in networks) {
             val host = rule.pattern.plainHost
             when {
                 rule.hide != 0 -> hiding += rule
+                rule.exception && rule.redirectOnly -> redirecting += rule
 
                 host != null &&
                     rule.conditions == Conditions.ANY &&
@@ -379,6 +384,7 @@ internal class CompiledFilters(
         }
         requests = NetworkIndex(ordinary)
         hideExceptions = NetworkIndex(hiding)
+        redirectExceptions = NetworkIndex(redirecting)
         for (rule in cosmetics) {
             if (rule.procedure != null) {
                 val domainIndex =
@@ -481,6 +487,11 @@ internal class CompiledFilters(
                 ResourceTypes.request(type),
                 method.uppercase(Locale.ROOT),
             )
+        val redirectExcepted =
+            redirectExceptions.any(facts) { rule ->
+                facts.matches(rule.conditions) &&
+                    rule.pattern.matches(target, facts.url, facts.budget)
+            }
         val important =
             requests.any(facts) { rule ->
                 (rule.important ||
@@ -510,8 +521,18 @@ internal class CompiledFilters(
             return BlockingResponse.ALLOW
         }
         return when {
-            important -> importantRedirect ?: BlockingResponse.BLOCK
-            blocked && !allowed -> redirect ?: redirectRule ?: BlockingResponse.BLOCK
+            important ->
+                if (redirectExcepted) {
+                    BlockingResponse.BLOCK
+                } else {
+                    importantRedirect ?: BlockingResponse.BLOCK
+                }
+            blocked && !allowed ->
+                if (redirectExcepted) {
+                    BlockingResponse.BLOCK
+                } else {
+                    redirect ?: redirectRule ?: BlockingResponse.BLOCK
+                }
             else -> BlockingResponse.ALLOW
         }
     }
@@ -543,7 +564,7 @@ internal class CompiledFilters(
             } else {
                 null
             }
-        val entity = registeredDomain?.substringBefore('.')
+        val entity = entityName(host, registeredDomain)
         val facts =
             RequestFacts(address, address, ResourceTypes.request("document"), "GET")
         var hide = 0
@@ -569,7 +590,9 @@ internal class CompiledFilters(
         hostSuffixes(host) { domain ->
             specificExceptions[domain]?.forEach(::except)
         }
-        entity?.let { entityExceptions[it]?.forEach(::except) }
+        entity?.let { value ->
+            hostSuffixes(value) { entityExceptions[it]?.forEach(::except) }
+        }
         val result = LinkedHashSet<String>()
         var bytes = 0
         fun add(rule: CosmeticRule) {
@@ -589,7 +612,9 @@ internal class CompiledFilters(
             result += rule.selector
         }
         hostSuffixes(host) { domain -> specific[domain]?.forEach(::add) }
-        entity?.let { entitySpecific[it]?.forEach(::add) }
+        entity?.let { value ->
+            hostSuffixes(value) { entitySpecific[it]?.forEach(::add) }
+        }
         if (hide == 0) {
             generic.forEach(::add)
             pageClasses.take(256).forEach { token -> classes[token]?.forEach(::add) }
@@ -617,7 +642,7 @@ internal class CompiledFilters(
             } else {
                 null
             }
-        val entity = domain?.substringBefore('.')
+        val entity = entityName(host, domain)
         val facts =
             RequestFacts(address, address, ResourceTypes.request("document"), "GET")
         var hide = false
@@ -651,13 +676,15 @@ internal class CompiledFilters(
             }
             gather(procedures, key, candidates::add)
         }
-        entity?.let { key ->
-            gather(entityProcedureExceptions, key) {
-                if (it.domains.matches(host, domain)) {
-                    exceptions += it.selector
+        entity?.let { value ->
+            hostSuffixes(value) { key ->
+                gather(entityProcedureExceptions, key) {
+                    if (it.domains.matches(host, domain)) {
+                        exceptions += it.selector
+                    }
                 }
+                gather(entityProcedures, key, candidates::add)
             }
-            gather(entityProcedures, key, candidates::add)
         }
         return candidates
             .asSequence()

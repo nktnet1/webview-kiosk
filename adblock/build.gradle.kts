@@ -18,6 +18,7 @@ kotlin {
 
 dependencies {
     implementation(libs.okhttp)
+    implementation(libs.re2j)
     implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit)
 }

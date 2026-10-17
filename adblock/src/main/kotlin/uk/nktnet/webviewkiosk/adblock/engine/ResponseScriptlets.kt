@@ -19,6 +19,7 @@ internal object ResponseScriptlets {
             ScriptletType.TRUSTED_REPLACE_FETCH,
             ScriptletType.TRUSTED_REPLACE_XHR,
             ScriptletType.TRUSTED_PREVENT_XHR,
+            ScriptletType.MPEGDASH_PRUNE,
         )
     val aliases =
         mapOf(
@@ -28,6 +29,7 @@ internal object ResponseScriptlets {
             "json-prune-xhr-response" to ScriptletType.JSON_PRUNE_XHR,
             "xml-prune" to ScriptletType.XML_PRUNE,
             "m3u-prune" to ScriptletType.M3U_PRUNE,
+            "mpegdash-prune" to ScriptletType.MPEGDASH_PRUNE,
             "trusted-replace-fetch-response" to ScriptletType.TRUSTED_REPLACE_FETCH,
             "trusted-rpfr" to ScriptletType.TRUSTED_REPLACE_FETCH,
             "trusted-replace-xhr-response" to ScriptletType.TRUSTED_REPLACE_XHR,
@@ -105,6 +107,12 @@ internal object ResponseScriptlets {
                         (arg(1).isEmpty() ||
                             AdditionalScriptlets.selector(arg(1))) &&
                         ScriptletParser.pattern(arg(2))
+                }
+                ScriptletType.MPEGDASH_PRUNE -> {
+                    arity = 2
+                    args.size in 1..2 &&
+                        AdditionalScriptlets.selector(arg(0)) &&
+                        (arg(1).isEmpty() || ScriptletParser.requestMatch(arg(1)))
                 }
                 ScriptletType.M3U_PRUNE -> {
                     arity = 2
@@ -195,7 +203,7 @@ internal object ResponseScriptlets {
                 )
     }
 
-    private fun trustedConstant(raw: String): Boolean {
+    internal fun trustedConstant(raw: String): Boolean {
         if (ScriptletParser.constant(raw)) {
             return true
         }

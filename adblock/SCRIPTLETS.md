@@ -1,12 +1,13 @@
-# Scriptlet compatibility - v1.0.16
+# Scriptlet compatibility - v1.0.17
 
 The engine compiles validated `##+js(...)` data into fixed local JavaScript.
 Ordinary imports cannot enable trusted operations. No downloaded list supplies
-replacement functions, remote scriptlet modules or unrestricted expressions to
-evaluate. Trusted replacements are strings; trusted constants use bounded JSON.
+replacement functions or remote implementation modules. Trusted node-text/HTML rules
+can alter executable page content; only approved preset downloads can enable them.
+Other trusted replacements are strings or bounded JSON.
 
 The pinned upstream catalogue has 129 canonical names. This version implements
-72 names: 71 tested subsets and one conditional Navigation API operation. See the
+82 names: 81 tested subsets and one conditional Navigation API operation. See the
 [complete catalogue](SCRIPTLET-CATALOG.md) for aliases and remaining exclusions.
 Support for a name does not imply support for all its upstream argument forms.
 
@@ -53,11 +54,12 @@ Unknown arguments discard the whole instruction. There is no approximate fallbac
 | ⚠️ | `prevent-navigation` | Requires native Navigation API and cancelable automatic events |
 | ✅ | `no-xhr-if` / `prevent-xhr` | URL/method predicates, canned responses and native instances |
 | ✅ | JSON Fetch/XHR pruning | Own paths, guards, URL/method and optional stack predicates |
-| ✅ | Ten trusted operations | Approved download provenance and contracts below |
+| ✅ | Eighteen trusted operations and clipboard protection | Approved download provenance and contracts below |
 | ✅ | `xml-prune` | CSS element selector, guard selector and URL pattern |
 | ✅ | `m3u-prune` | HLS EXTINF/URI segment pairs and following discontinuity |
 | ✅ | `overlay-buster` | Shared observer, bounded sweep and 30-second deadline |
-| ❌ | Other object/media editing DSLs | JSON edit, JSONL, XPath and MPEG-DASH DSLs remain unimplemented |
+| ✅ | `mpegdash-prune` | XHR MPD Period durations/starts; fully timed manifests only |
+| ❌ | Other editing DSLs | JSON edit, JSONL and XPath forms remain unimplemented |
 | ❌ | Debug/close-window | Deliberate debugger exclusion and no native window lifecycle |
 
 The safe constant set is empty string, undefined/null, booleans, empty arrays or
@@ -69,7 +71,8 @@ CSS spoofing permits display, visibility, opacity, position, dimensions, offsets
 four private rectangle fields. No arbitrary CSS declarations are installed.
 
 Patterns use the existing bounded literal/regex subset. Lookarounds, backreferences,
-repeated groups, unsafe repeats and global/sticky flags are skipped. Matchers compile
+repeated groups, unsafe repeats and sticky flags are skipped. Global flags are
+accepted only by the new trusted text replacement helpers. Matchers compile
 once per selected rule. Function-source matching caches at most 512 entries/256 KiB;
 individual strings are limited to 64 KiB. Oversized or unusual native arguments pass
 through. Timer multiplier defaults to 0.05 and is clamped to 0.001–50, as upstream.
@@ -89,9 +92,9 @@ Recognized extended scopes skip the whole rule, including exceptions, without re
 the subscription or broadening its hostname. Genuinely malformed hostnames still fail
 import validation. These scopes are implementation gaps, not WebView API restrictions.
 
-Compiled snapshots use schema 8, so older schemas are recompiled. Cached instructions undergo
+Compiled snapshots use schema 9, so older schemas are recompiled. Cached instructions undergo
 validation again, including fixed resource keys. Filters cannot choose a resource path.
-Only shims and the response adapter needed by the snapshot are bundled into injection. No JS bridge
+Only shims and response/advanced adapters needed by the snapshot are bundled into injection. No JS bridge
 or privileged page-callable method is introduced.
 
 ## Response and trusted-operation contracts
@@ -128,8 +131,9 @@ DOCTYPE/entity inputs pass through. HLS supports EXTINF followed immediately by
 a matching segment URI, optionally followed by a discontinuity tag. Multiline
 regex and wildcard-string forms are rejected; other playlist tags are retained.
 
-Only successful downloads of the five immutable uBlock presets carry trusted
-provenance. Includes and redirects retain the existing same-origin restrictions.
+Only successful downloads of the five core uBlock presets and the two optional
+uBlock annoyance presets carry trusted provenance. Optional lists are excluded
+from the nine-list default set. Includes and redirects retain the existing same-origin restrictions.
 A matching URL, list name, old preset record, directive or custom import cannot
 grant trust. Existing presets gain trust only after a successful refresh.
 EasyList and other presets remain untrusted. Trust is persisted with saved bytes
@@ -157,6 +161,37 @@ ancestors and removes at most eight viewport-covering fixed/high-z-index element
 per sweep. It restores scrolling and stops after 30 seconds using one protected
 deadline timer, without recurring polling. It remains an explicit heuristic:
 matching intentional full-screen UI can be removed, as with upstream.
+
+## Additional uAssets contracts in v1.0.17
+
+[COMPATIBILITY.md](COMPATIBILITY.md) records the supplied-list audit and remaining gaps.
+
+| Operation | Accepted subset |
+| --- | --- |
+| `trusted-rpnt` and aliases | Node name/pattern, replacement pattern/string, literal replacement; at most two option pairs from `condition`/`includes`, `excludes`, `sedCount` 1–1024 and `quitAfter` 0–30000 |
+| `trusted-click-element` | At most 16 CSS/delay steps, optional `;`/`|` separator, open shadow roots via `>>>`, cookie/localStorage assertions, delay/timeout at most 30 s; XPath and visibility directives skipped |
+| `trusted-replace-argument` | Existing dotted method, index ±31 or `this`, safe/JSON constant, `add:number` or `repl:/pattern/replacement/flags`, optional condition |
+| `trusted-replace-outbound-text` | Existing method, pattern, replacement, optional condition/base64 encoding; native nonstrings/errors preserved |
+| `trusted-suppress-native-method` | Existing method, up to 16 primitive/pattern signature slots or `*`, optional prevent/abort and stack pattern; unknown slots and debug forms skipped |
+| `trusted-prevent-dom-bypass` | Existing insertion method plus explicit target API; delegates only anonymous/same-document same-origin child contexts; wholesale window replacement skipped |
+| `trusted-override-element-method` | Existing method, optional native selector, empty/constant/throw disposition |
+| `trusted-create-html` | Top-frame parent CSS selector, HTML, optional removal duration, up to four targets and loading/interactive/complete run phase |
+| `prevent-clipboard-write` | Requires trusted provenance despite its name; pattern and optional `excludeMatches`; missing clipboard APIs pass through; alert markup skipped |
+| `mpegdash-prune` | XHR URL/method predicate and CSS Period selector; fully specified start/duration attributes, at most 128 Periods, zero selected durations and recalculate starts/total; XPath/live/incomplete manifests pass through |
+
+Trusted text replacements retain `$1`, `$&`, `$$` and prefix/suffix substitution.
+Bodies and expanded results are capped at 64 KiB, with at most 1024 replacements;
+oversized output fails open before constructing a large result. Node work uses
+4096 visits and 4 MiB text work per batch. At most 32 advanced DOM rules share one
+observer, with at most 128 observed roots and a 30 s lifetime. Click steps run once
+without polling. Advanced DOM work stops on pagehide. It does not emulate user
+activation or bypass clipboard permissions, CSP or Trusted Types. HTML parsing
+retains native script inertness and policy checks. Existing APIs are hooked;
+late-created custom method chains are not added by these helpers.
+
+A custom untrusted exception may disable a trusted instruction, since exceptions
+execute no code. Cache restoration preserves that distinction. An untrusted
+positive rule still cannot enable an operation through its short alias or cache.
 
 ## WebView integration and limits
 
@@ -194,7 +229,9 @@ inline script still requires real WebView timing verification.
 Captured native timers/listeners protect cosmetics and scriptlet housekeeping from
 other selected hooks. No wrapper is installed without a matching instruction. Shared
 function hooks use one proxy per owner/property. Maximum instructions are 128 per frame,
-8192 per compilation, eight argument fields, 512 characters each, and 2 MiB routing data.
+8192 per compilation, eight argument fields and 2 MiB routing data. Most arguments
+remain limited to 512 characters; new trusted helpers accept up to 8192 characters
+within the 8192-character expression/line cap and their operation-specific limits.
 The CSS selector length/depth and storage/cookie enumeration budgets are also bounded.
 Native selector-query cost still depends on document size and selector complexity.
 
@@ -281,7 +318,7 @@ Playwright must be available. Offline checks never install a browser.
 
 ## Historical measurements through v1.0.15
 
-The following data describes the previous baseline, not v1.0.16.
+The following data describes the historical baseline through v1.0.15.
 
 ### Exact-input measurements
 

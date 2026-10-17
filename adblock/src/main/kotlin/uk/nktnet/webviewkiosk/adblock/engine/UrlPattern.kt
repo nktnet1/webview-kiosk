@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.adblock.engine
 
+import com.google.re2j.Pattern
+import com.google.re2j.PatternSyntaxException
 import java.util.Locale
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -78,6 +80,12 @@ internal fun normalizedHost(value: String, allowPrefix: Boolean = false): String
 internal fun domainMatches(host: String, domain: String): Boolean =
     host == domain || (!host.contains(':') && host.endsWith(".$domain"))
 
+/** Strip the effective public suffix, retaining all subdomain labels. */
+internal fun entityName(host: String, registeredDomain: String?): String? =
+    registeredDomain?.let {
+        host.removeSuffix(".${it.substringAfter('.')}")
+    }
+
 internal inline fun hostSuffixes(host: String, visit: (String) -> Unit) {
     visit(host)
     if (host.contains(':')) {
@@ -129,14 +137,92 @@ internal data class UrlPattern(
     val endAnchor: Boolean,
     val matchCase: Boolean,
     val hostIndex: String?,
+    val regex: Boolean = false,
 ) {
+    private val compiledRegex =
+        if (regex) {
+            require(text.length <= 2048)
+            require(!domainAnchor && !startAnchor && !endAnchor && hostIndex == null)
+            // Bound compilation before RE2/J expands counted repeats into states.
+            var escaped = false
+            var inClass = false
+            var depth = 0
+            var groups = 0
+            var repeatCost = 0
+            text.forEachIndexed { index, char ->
+                if (escaped) {
+                    require(char !in "pPAzQE") { "Non-JavaScript regex escape" }
+                    escaped = false
+                } else if (char == '\\') {
+                    escaped = true
+                } else if (char == '[') {
+                    inClass = true
+                } else if (char == ']') {
+                    inClass = false
+                } else if (!inClass) {
+                    if (char == '(') {
+                        require(++depth <= 32 && ++groups <= 64)
+                    }
+                    if (char == ')') {
+                        require(--depth >= 0)
+                    }
+                    if (char == '{') {
+                        val end = text.indexOf('}', index)
+                        val bounds =
+                            if (end > index) {
+                                text.substring(index + 1, end)
+                            } else {
+                                ""
+                            }
+                        if (
+                            bounds.isNotEmpty() &&
+                                bounds.all { it.isDigit() || it == ',' }
+                        ) {
+                            require(text.getOrNull(index - 1) !in listOf(')', '}'))
+                            val counts =
+                                bounds
+                                    .split(',')
+                                    .filter { it.isNotEmpty() }
+                                    .map { it.toIntOrNull() ?: Int.MAX_VALUE }
+                            require(counts.all { it <= 256 })
+                            repeatCost += counts.maxOrNull() ?: 0
+                            require(repeatCost <= 8192)
+                        }
+                    }
+                }
+            }
+            val pattern =
+                try {
+                    Pattern.compile(
+                        text,
+                        if (matchCase) {
+                            0
+                        } else {
+                            Pattern.CASE_INSENSITIVE
+                        },
+                    )
+                } catch (error: PatternSyntaxException) {
+                    throw IllegalArgumentException(
+                        "Unsupported regular expression",
+                        error,
+                    )
+                }
+            pattern.also {
+                require(it.programSize() <= 2048) {
+                    "Regex program exceeds the size limit"
+                }
+            }
+        } else {
+            null
+        }
+
     val plainHost: String?
         get() = hostIndex?.takeIf { domainAnchor && text == "$it^" && !endAnchor }
 
     // Host-anchored filters use the hostname index. Other patterns get a literal
     // substring index, not a word index: "advert" must also match "myadvert.js".
     val indexToken: Int? =
-        if (hostIndex != null) {
+        if (hostIndex != null || regex) {
             null
         } else {
             run {
@@ -165,7 +251,34 @@ internal data class UrlPattern(
             }
         }
 
-    fun matches(address: HttpUrl, url: String, budget: MatchBudget): Boolean {
+    fun matches(
+        address: HttpUrl,
+        canonicalUrl: String,
+        budget: MatchBudget,
+    ): Boolean {
+        // OkHttp escapes literal path pipes. Match their equivalent spelling only
+        // for glob filters which explicitly contain that literal character.
+        val url =
+            if (!regex && '|' in text && canonicalUrl.contains("%7c", true)) {
+                if (!budget.consume(canonicalUrl.length)) {
+                    return false
+                }
+                canonicalUrl.replace("%7c", "|", ignoreCase = true)
+            } else {
+                canonicalUrl
+            }
+        compiledRegex?.let { pattern ->
+            // RE2/J has no backtracking. Also cap aggregate automaton work per
+            // request.
+            if (
+                !budget.consume(
+                    (url.length + 1) * maxOf(1, pattern.programSize() / 4)
+                )
+            ) {
+                return false
+            }
+            return pattern.matcher(url).find()
+        }
         if (!domainAnchor) {
             return glob(url, 0, !startAnchor, budget)
         }

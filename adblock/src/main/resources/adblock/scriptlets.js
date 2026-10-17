@@ -23,7 +23,7 @@
 /* Modified for Webview Kiosk on 2026-10-16: bounded shared hooks and frame routing.
  * Source attribution: META-INF/ublock-NOTICE.txt. Keep this a function expression.
  */
-(function(domains, serialized, extension, resources, network) {
+(function(domains, serialized, extension, resources, network, advanced) {
     'use strict';
     if (location.protocol !== 'https:' && location.protocol !== 'http:') { return; }
     const host = location.hostname.toLowerCase().replace(/\.$/, '');
@@ -73,6 +73,8 @@
     const ownKeys = Object.keys;
     const isArray = Array.isArray;
     const stringifyFunction = Function.prototype.toString;
+    const stringIncludes = String.prototype.includes;
+    const regexpTest = RegExp.prototype.test;
     const nativeAdd = EventTarget.prototype.addEventListener;
     const nativeThen = Promise.prototype.then;
     const nativeParse = JSON.parse;
@@ -105,30 +107,43 @@
         const inverted = negate && raw.startsWith('!');
         if (inverted) { raw = raw.slice(1); }
         const end = raw.lastIndexOf('/');
-        const regex = raw.startsWith('/') && end > 0
+        const regex = raw.startsWith('/') && end > 0 && /^[dgimsuvy]*$/.test(raw.slice(end + 1))
             ? new RegExp(raw.slice(1, end), raw.slice(end + 1)) : null;
         return value => {
             if (typeof value !== 'string' || value.length > 65536) { return false; }
-            const match = regex ? regex.test(value) : value.includes(raw);
+            const match = regex ? apply(regexpTest, regex, [value])
+                : apply(stringIncludes, value, [raw]);
             return inverted ? !match : match;
         };
     }
     // One proxy per native function even when several families share a hook.
     const wrappers = new WeakMap();
+    let installing = true;
     function wrap(owner, name, intercept) {
         if (!owner || typeof owner[name] !== 'function') { return; }
         let names = wrappers.get(owner);
         if (!names) { names = new Map(); wrappers.set(owner, names); }
         const prior = names.get(name);
-        if (prior && owner[name] === prior.proxy) { prior.handlers.push(intercept); return; }
+        if (prior && owner[name] === prior.proxy) {
+            prior.handlers.push({ intercept, active: false }); return;
+        }
         const original = owner[name];
         const desc = descriptor(owner, name);
         if (desc && !('value' in desc)) { return; }
-        const handlers = [intercept];
+        const handlers = [{ intercept, active: false }];
         function dispatch(index, receiver, args) {
-            if (index === 0) { return handlers[0](original, receiver, args); }
-            const next = function(...values) { return dispatch(index - 1, this, values); };
-            return handlers[index](next, receiver, args);
+            if (index < 0 || installing) { return apply(original, receiver, args); }
+            const handler = handlers[index];
+            // A hook can use the method it intercepts (for example String.includes).
+            if (handler.active) { return dispatch(index - 1, receiver, args); }
+            handler.active = true;
+            const next = function(...values) {
+                handler.active = false;
+                try { return dispatch(index - 1, this, values); }
+                finally { handler.active = true; }
+            };
+            try { return handler.intercept(next, receiver, args); }
+            finally { handler.active = false; }
         }
         const proxy = new Proxy(original, {
             apply(target, receiver, args) { return dispatch(handlers.length - 1, receiver, args); },
@@ -486,11 +501,15 @@
         nativeThen, resolved, rejected, NativeResponse, NativeRequest,
     };
     const extra = typeof extension === 'function' ? extension(environment) : new Map();
+    const advancedHooks = typeof advanced === 'function' ? advanced(environment) : new Map();
     const responses = typeof network === 'function' &&
         ['PREVENT_XHR', 'TRUSTED_PREVENT_XHR', 'JSON_PRUNE_FETCH', 'JSON_PRUNE_XHR',
-            'XML_PRUNE', 'M3U_PRUNE', 'TRUSTED_REPLACE_FETCH', 'TRUSTED_REPLACE_XHR']
+            'XML_PRUNE', 'M3U_PRUNE', 'MPEGDASH_PRUNE',
+            'TRUSTED_REPLACE_FETCH', 'TRUSTED_REPLACE_XHR']
             .some(type => groups.has(type)) ? network(environment) : new Map();
-    for (const [type, installer] of [...extra, ...responses]) { installers.set(type, installer); }
+    for (const [type, installer] of [...extra, ...advancedHooks, ...responses]) {
+        installers.set(type, installer);
+    }
     const installed = new Set();
     for (const [type, args] of selected) {
         const install = installers.get(type);
@@ -507,5 +526,6 @@
             try { install(); } catch {}
         }
     }
+    installing = false;
 
 })

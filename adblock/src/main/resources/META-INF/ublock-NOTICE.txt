@@ -10,18 +10,19 @@ Source: user-supplied uBlock-master.zip, commit
 Archive SHA-256:
   02eb8dbacc8ff09fd51524acd718998865c69a06041d3619def9d7204856311a
 
-adblock/scriptlets.js, scriptlets-extra.js and scriptlets-network.js adapt behavior
-and implementation
-patterns from src/js/resources at that commit: scriptlets.js, utils.js,
+adblock/scriptlets.js, scriptlets-extra.js, scriptlets-network.js and
+scriptlets-advanced.js adapt behavior
+and implementation patterns from src/js/resources at that commit: scriptlets.js, utils.js,
 set-constant.js, abort-current-script.js, prevent-addeventlistener.js,
 prevent-settimeout.js, json-prune.js, object-prune.js, prevent-fetch.js,
 stack-trace.js, cookie.js, localstorage.js, attribute.js, href-sanitizer.js,
 prevent-innerHTML.js, prevent-dialog.js, prevent-navigation.js, prevent-bab.js,
 noeval.js, spoof-css.js, prevent-xhr.js, and the XML/HLS/overlay implementations
-in scriptlets.js. Modification date: 2026-10-16. Local changes include
+in scriptlets.js, plus replace-argument.js, create-html.js,
+prevent-clipboard-write.js and vod.js. Modification date: 2026-10-17. Local changes include
 strict typed arguments, shared hooks, frame routing, protected timers, and
 bounded resource use, recoverable XHR lifecycle state, response limits, and
-trusted-source enforcement. This is a subset of the extension's behavior.
+trusted-source enforcement, bounded trusted DOM/method helpers and MPD timing. This is a subset of the extension's behavior.
 
 The timer boosters retain upstream's NanoFilters reference:
 Repository: https://github.com/NanoAdblocker/NanoFilters
@@ -35,7 +36,14 @@ adblock/ubo/ contains these fixed src/web_accessible_resources shims:
   nofab.js, popads.js, popads-dummy.js, prebid-ads.js, sensors-analytics.js.
 Original source notices are retained. google-analytics_ga.js was reformatted on
 2026-10-16 to meet the project's 100-column limit; behavior is unchanged.
-Other shim source bytes are unchanged. No remote executable code is loaded.
+Other shim source bytes are unchanged. amazon_apstag.js and chartbeat.js,
+noop.json, noop-0.1s.mp3, noop-1s.mp4 and 32x32.png are additionally bundled for
+network redirects; their upstream source bytes/notices are retained.
+Implementation modules are bundled. Trusted node-text/HTML parameters can alter
+executable page content under the provenance policy documented in SCRIPTLETS.md.
 
 Upstream source:
 https://github.com/gorhill/uBlock/tree/dfca51bea2b8605353547f605e9cffbb6dfa0789/src
+
+Network regex support uses RE2/J 1.8 (https://github.com/google/re2j).
+Its complete BSD notices are in META-INF/licenses/re2j-BSD.txt.

@@ -173,7 +173,7 @@ class KotlinFilterEngineTest {
                 emptyList(),
             ),
         )
-        assertEquals(1, engine.unsupportedRuleCount())
+        assertEquals(0, engine.unsupportedRuleCount())
         // Hosts parsing still validates real address tokens and preserves aliases.
         assertThrows(IllegalArgumentException::class.java) {
             engine.validate("2001:db8:::1 ads.example")
@@ -708,7 +708,7 @@ class KotlinFilterEngineTest {
                     "site.example##.ad:style(color:red)"
             )
         val actions = engine.cosmeticProcedures("https://site.example/")
-        assertEquals(4, actions.size)
+        assertEquals(5, actions.size)
         assertTrue(
             actions.any {
                 it.selector == ".sponsor" && it.text == "Advertisement" && !it.remove
@@ -716,9 +716,9 @@ class KotlinFilterEngineTest {
         )
         assertTrue(actions.any { it.selector == ".ad-banner" && it.remove })
         assertTrue(actions.any { it.selector == ".ad-label" && it.upward == 2 })
-        assertEquals(3, engine.cosmeticProcedures("https://sub.site.example/").size)
+        assertEquals(4, engine.cosmeticProcedures("https://sub.site.example/").size)
         assertTrue(engine.cosmeticProcedures("https://other.example/").isEmpty())
-        assertEquals(2, engine.unsupportedRuleCount())
+        assertEquals(1, engine.unsupportedRuleCount())
     }
 
     @Test
@@ -862,7 +862,7 @@ class KotlinFilterEngineTest {
             listOf(
                 "site.example##+js(set, foo, bar)",
                 "||ads.example^\$future-option",
-                "/ads[0-9]+/",
+                "/(?=ads)ads/",
             )) {
             assertTrue(
                 assertThrows(IllegalArgumentException::class.java) {

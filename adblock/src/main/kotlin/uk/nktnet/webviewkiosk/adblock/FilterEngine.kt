@@ -1,7 +1,10 @@
 package uk.nktnet.webviewkiosk.adblock
 
 /** Only a bounded set of local surrogate resources is supported. */
-enum class BlockingResponse {
+enum class BlockingResponse(
+    val resourcePath: String? = null,
+    val mimeType: String? = null,
+) {
     ALLOW,
     BLOCK,
     EMPTY_SCRIPT,
@@ -11,6 +14,29 @@ enum class BlockingResponse {
     TRANSPARENT_GIF,
     TRANSPARENT_PNG,
     TRANSPARENT_2X2_PNG,
+    EMPTY_JSON("noop.json", "application/json"),
+    SILENT_MP3("noop-0.1s.mp3", "audio/mpeg"),
+    SILENT_MP4("noop-1s.mp4", "video/mp4"),
+    TRANSPARENT_32X32_PNG("32x32.png", "image/png"),
+    AMAZON_ADS("amazon_ads.js", "application/javascript"),
+    AMAZON_APSTAG("amazon_apstag.js", "application/javascript"),
+    ADTHRIVE("adthrive_abd.js", "application/javascript"),
+    CHARTBEAT("chartbeat.js", "application/javascript"),
+    INSTREAM_AD_STATUS(
+        "doubleclick_instream_ad_status.js",
+        "application/javascript",
+    ),
+    FINGERPRINT2("fingerprint2.js", "application/javascript"),
+    FINGERPRINT3("fingerprint3.js", "application/javascript"),
+    GOOGLE_ANALYTICS("google-analytics_analytics.js", "application/javascript"),
+    GOOGLE_ANALYTICS_GA("google-analytics_ga.js", "application/javascript"),
+    GOOGLE_TAG_SERVICES("googletagservices_gpt.js", "application/javascript"),
+    NITROPAY("nitropay_ads.js", "application/javascript"),
+    NOFAB("nofab.js", "application/javascript"),
+    POPADS("popads.js", "application/javascript"),
+    POPADS_DUMMY("popads-dummy.js", "application/javascript"),
+    PREBID("prebid-ads.js", "application/javascript"),
+    SENSORS_ANALYTICS("sensors-analytics.js", "application/javascript"),
 }
 
 enum class RuleLoadStage(val description: String) {
@@ -33,6 +59,8 @@ data class CosmeticProcedure(
     val removeAttribute: String? = null,
     val removeClass: String? = null,
     val upwardSelector: String? = null,
+    val textSelector: String? = null,
+    val textPattern: Boolean = false,
 )
 
 /** Trust is assigned by the subscription loader, never by text inside a list. */

@@ -65,18 +65,57 @@
         }
         return removed.size ? lines.filter((line, i) => !removed.has(i)).join('\n') : text;
     }
+    function dash(text, selector) {
+        if (!NativeParser || !NativeSerializer || /<!DOCTYPE|<!ENTITY/i.test(text)) { return text; }
+        const doc = new NativeParser().parseFromString(text, 'text/xml');
+        if (doc.querySelector('parsererror') || doc.documentElement?.localName !== 'MPD' ||
+            doc.querySelectorAll('*').length > 4096) { return text; }
+        const selected = Array.from(doc.querySelectorAll(selector));
+        const periods = Array.from(doc.documentElement.children)
+            .filter(node => node.localName === 'Period');
+        if (!selected.length || selected.length > 128 || periods.length > 128 ||
+            selected.some(node => !periods.includes(node))) { return text; }
+        const seconds = raw => {
+            const match = /^PT(?:(\d+)D)?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/.exec(raw);
+            if (!match || !match.slice(1).some(Boolean)) { return null; }
+            const value = Number(match[1] || 0) * 86400 + Number(match[2] || 0) * 3600 +
+                Number(match[3] || 0) * 60 + Number(match[4] || 0);
+            return Number.isFinite(value) && value <= 864000 ? value : null;
+        };
+        const durations = periods.map(period => seconds(period.getAttribute('duration') || ''));
+        if (durations.some(value => value === null) || periods.some(period =>
+            seconds(period.getAttribute('start') || '') === null)) { return text; }
+        let cursor = 0;
+        periods.forEach((period, index) => {
+            const before = period.getAttribute('start');
+            const after = 'PT' + cursor + 'S';
+            period.setAttribute('start', after);
+            if (period.hasAttribute('id')) {
+                period.setAttribute('id', period.getAttribute('id').replace(before, after));
+            }
+            if (selected.includes(period)) { period.setAttribute('duration', 'PT0S'); }
+            else { cursor += durations[index]; }
+        });
+        if (doc.documentElement.hasAttribute('mediaPresentationDuration')) {
+            doc.documentElement.setAttribute('mediaPresentationDuration', 'PT' + cursor + 'S');
+        }
+        return new NativeSerializer().serializeToString(doc);
+    }
     const responseTypes = new Set(['JSON_PRUNE_FETCH', 'JSON_PRUNE_XHR', 'XML_PRUNE',
+        'MPEGDASH_PRUNE',
         'M3U_PRUNE', 'TRUSTED_REPLACE_FETCH', 'TRUSTED_REPLACE_XHR']);
     const edits = selected.filter(rule => responseTypes.has(rule[0])).slice(0, MAX_RULES)
         .map(([type, args]) => {
             const json = type.startsWith('JSON_PRUNE_');
             const replace = type.startsWith('TRUSTED_REPLACE_');
-            const fields = requestFields(json ? args[3] : replace ? args[2] : '');
-            const url = matcher(json || replace ? '' : args[type === 'XML_PRUNE' ? 2 : 1]);
+            const mpd = type === 'MPEGDASH_PRUNE';
+            const fields = requestFields(json ? args[3] : replace ? args[2] : mpd ? args[1] : '');
+            const url = matcher(json || replace || mpd ? '' : args[type === 'XML_PRUNE' ? 2 : 1]);
             const prune = json ? jsonPruner([args]) : null;
             const stack = json && args[5] ? matcher(args[5], true) : null;
             const end = args[0].lastIndexOf('/');
-            const pattern = replace && args[0].startsWith('/') && end > 0
+            const pattern = replace && args[0].startsWith('/') && end > 0 &&
+                /^[dgimsuvy]*$/.test(args[0].slice(end + 1))
                 ? new RegExp(args[0].slice(1, end), args[0].slice(end + 1)) : args[0];
             const segment = type === 'M3U_PRUNE' ? matcher(args[0]) : null;
             return { type, args, fields, url, stack,
@@ -89,10 +128,12 @@
                     }
                     if (replace) { return text.replace(pattern, args[1]); }
                     if (type === 'XML_PRUNE') { return xml(text, args); }
+                    if (mpd) { return dash(text, args[0]); }
                     return playlist(text, segment);
                 } };
         });
     const applicable = (kind, details, stack) => edits.filter(edit =>
+        (edit.type !== 'MPEGDASH_PRUNE' || kind === 'xhr') &&
         (!edit.type.endsWith('_FETCH') || kind === 'fetch') &&
         (!edit.type.endsWith('_XHR') || kind === 'xhr') &&
         matches(edit.fields, details) && edit.url(details.url) &&
@@ -409,7 +450,7 @@
                     try {
                         const text = new NativeSerializer().serializeToString(value);
                         const after = transform(text, state.entries.filter(edit =>
-                            edit.type === 'XML_PRUNE'));
+                            ['XML_PRUNE', 'MPEGDASH_PRUNE'].includes(edit.type)));
                         if (after !== text) {
                             result = new NativeParser().parseFromString(after, 'text/xml');
                         }
@@ -426,5 +467,6 @@
         ['JSON_PRUNE_XHR', xhrResponses], ['TRUSTED_REPLACE_XHR', xhrResponses],
         ['JSON_PRUNE_FETCH', fetchResponses], ['TRUSTED_REPLACE_FETCH', fetchResponses],
         ['XML_PRUNE', both], ['M3U_PRUNE', both],
+        ['MPEGDASH_PRUNE', xhrResponses],
     ]);
 })

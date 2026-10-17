@@ -26,6 +26,7 @@ class ResponseScriptletTest {
             ScriptletType.JSON_PRUNE_XHR to "json-prune-xhr-response, ads",
             ScriptletType.XML_PRUNE to "xml-prune, Ad, MPD, /manifest",
             ScriptletType.M3U_PRUNE to "m3u-prune, /advert/, .m3u8",
+            ScriptletType.MPEGDASH_PRUNE to "mpegdash-prune, Period.advert, /dash",
             ScriptletType.TRUSTED_REPLACE_FETCH to
                 "trusted-replace-fetch-response, /advert/, removed, method:GET",
             ScriptletType.TRUSTED_REPLACE_XHR to
@@ -84,6 +85,14 @@ class ResponseScriptletTest {
         assertEquals(1, untrusted.unsupportedRuleCount())
         assertEquals(0, inspectFilterList(text).scriptletRules)
         assertEquals(1, inspectFilterList(text, trusted = true).scriptletRules)
+    }
+
+    @Test
+    fun slashContainingLiteralRequestPathsAreNotMistakenForRegexFlags() {
+        assertNotNull(
+            ScriptletParser.parse("+js(no-xhr-if, /i/api/1.1/flow/viewer.json)")
+        )
+        assertNotNull(ScriptletParser.parse("+js(no-fetch-if, /api/player/config)"))
     }
 
     @Test

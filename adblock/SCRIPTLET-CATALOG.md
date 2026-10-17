@@ -4,14 +4,14 @@ The supplied archive contains 99 parameterized scriptlets and 30 JavaScript reso
 129 canonical names, or 194 names including aliases. Its 54 helper functions are separate.
 Only 21 of the 30 resources have upstream inline-injection eligibility (`data: text`).
 
-This version implements 72 canonical names: 71 tested subsets plus
-`prevent-navigation`, which requires a native Navigation API. The other 57 remain skipped.
+This version implements 82 canonical names: 81 tested subsets plus
+`prevent-navigation`, which requires a native Navigation API. The other 47 remain skipped as `+js` entry points.
 The earlier supplied list used 39 names resolving to 38 canonical names. Absence from
 that list is not a reason for exclusion.
 All ✅ entries remain subject to the argument contracts in [SCRIPTLETS.md](SCRIPTLETS.md).
 API availability, matching documents, and documented resource limits also apply.
 
-✅ Executable documented subset. ⚠️ Conditional feature. ❌ Skipped with reason.
+✅ Executable documented subset. ⚠️ Conditional feature. ↪️ Redirect resource. ❌ Skipped with reason.
 
 ## What the skipped entries mean
 
@@ -21,7 +21,7 @@ Supported entries also reject unimplemented argument forms rather than approxima
 
 | Reason | Examples | What would be needed |
 | --- | --- | --- |
-| Implementation | Other JSON/object editing, JSONL and MPEG-DASH DSLs | Complete bounded parsers and behavior tests |
+| Implementation | Other JSON/object editing and JSONL DSLs | Complete bounded parsers and behavior tests |
 | Implementation | Other trusted operations | Provenance is enforced; each operation still needs a tested implementation |
 | Native integration | `close-window` | A native window lifecycle and a defined kiosk close policy |
 | Deliberate exclusion | Debug helpers | Debugger hooks are not installed in the production blocker |
@@ -29,7 +29,7 @@ Supported entries also reject unimplemented argument forms rather than approxima
 | Provider capability | `prevent-navigation` | Native Navigation API |
 
 Fresh approved uBlock preset downloads now carry trusted provenance. A custom list,
-matching source URL or directive does not gain trust. Ten trusted operations have
+matching source URL or directive does not gain trust. Eighteen `trusted-*` operations and clipboard protection have
 explicit tested contracts; the others remain skipped. Several redirect-only files
 in the archive are resources, not upstream `+js` entry points.
 
@@ -48,7 +48,7 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `set-attr.js` | ✅ attributes |
 | `trusted-set-attr.js` | ✅ trusted safe attribute / literal value |
 | `remove-attr.js` | ✅ attributes |
-| `trusted-create-html.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-create-html.js` | ✅ trusted bounded HTML; top frame only |
 | `href-sanitizer.js` | ✅ links |
 | `proxy-apply-config.js` | ❌ configuration/debug |
 | `edit-outbound-object.js` | ❌ unimplemented editing DSL |
@@ -88,7 +88,7 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `noeval-if.js` | ✅ eval |
 | `prevent-addEventListener.js` | ✅ listeners |
 | `prevent-bab.js` | ✅ BAB |
-| `prevent-clipboard-write.js` | ❌ operation not implemented; trust is enforced |
+| `prevent-clipboard-write.js` | ✅ requires trust; match/exclude; no alert UI |
 | `prevent-dialog.js` | ✅ dialog |
 | `prevent-fetch.js` | ✅ fetch |
 | `trusted-prevent-fetch.js` | ✅ trusted literal response |
@@ -100,11 +100,11 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `prevent-requestAnimationFrame.js` | ✅ animation |
 | `set-constant.js` | ✅ constants |
 | `trusted-set-constant.js` | ✅ trusted bounded JSON constant |
-| `trusted-replace-argument.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-replace-argument.js` | ✅ trusted bounded argument/receiver replacement |
 | `spoof-css.js` | ✅ style |
 | `prevent-xhr.js` | ✅ bounded native XHR emulation |
 | `trusted-prevent-xhr.js` | ✅ trusted literal response |
-| `mpegdash-prune.js` | ❌ unverified stream/parser contract |
+| `mpegdash-prune.js` | ✅ bounded fully timed XHR MPD Periods |
 | `set-cookie.js` | ✅ cookies |
 | `set-cookie-reload.js` | ✅ cookies |
 | `trusted-set-cookie.js` | ✅ trusted literal cookie |
@@ -135,19 +135,19 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `prevent-canvas.js` | ✅ canvas |
 | `multiup.js` | ✅ multiup |
 | `break-on-call.js` | ❌ debugger |
-| `trusted-replace-node-text.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-replace-node-text.js` | ✅ trusted bounded node-text replacement |
 | `trusted-replace-fetch-response.js` | ✅ trusted bounded response text |
 | `trusted-replace-xhr-response.js` | ✅ trusted bounded response text |
-| `trusted-click-element.js` | ❌ operation not implemented; trust is enforced |
-| `trusted-replace-outbound-text.js` | ❌ operation not implemented; trust is enforced |
-| `trusted-suppress-native-method.js` | ❌ operation not implemented; trust is enforced |
-| `trusted-prevent-dom-bypass.js` | ❌ operation not implemented; trust is enforced |
-| `trusted-override-element-method.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-click-element.js` | ✅ trusted bounded CSS/shadow-root steps |
+| `trusted-replace-outbound-text.js` | ✅ trusted bounded returned text/base64 |
+| `trusted-suppress-native-method.js` | ✅ trusted primitive signatures and stack predicate |
+| `trusted-prevent-dom-bypass.js` | ✅ selected APIs in anonymous same-origin frames |
+| `trusted-override-element-method.js` | ✅ trusted selector and constant/throw disposition |
 | `amazon_ads.js` | ✅ fixed API shim |
-| `amazon_apstag.js` | ❌ redirect-only upstream resource |
+| `amazon_apstag.js` | ↪️ bundled `$redirect`; upstream has no `+js` entry |
 | `ampproject_v0.js` | ❌ redirect-only upstream resource |
 | `adthrive_abd.js` | ✅ fixed API shim |
-| `chartbeat.js` | ❌ redirect-only upstream resource |
+| `chartbeat.js` | ↪️ bundled `$redirect`; upstream has no `+js` entry |
 | `doubleclick_instream_ad_status.js` | ✅ fixed API shim |
 | `fingerprint2.js` | ✅ fixed API shim |
 | `fingerprint3.js` | ✅ fixed API shim |

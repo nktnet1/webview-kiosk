@@ -6,7 +6,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
+import uk.nktnet.webviewkiosk.adblock.engine.FilterParser
+import uk.nktnet.webviewkiosk.adblock.engine.ParsedFilter
 
 class SubscriptionCompatibilityTest {
     @Test
@@ -148,5 +151,37 @@ class SubscriptionCompatibilityTest {
                         .joinToString("") { "%02x".format(it) }
                 println("DEFAULT_LIST $name sha256=$hash counts=$counts")
             }
+    }
+
+    @Test
+    fun auditEasylistAndEasyprivacy() {
+        val path = System.getenv("EASYLIST_DIR")
+        assumeTrue("Set EASYLIST_DIR to inspect subscriptions", path != null)
+        for (name in listOf("easylist", "easyprivacy")) {
+            val file = File(path!!, "$name.txt")
+            val text = file.readText()
+            val lines = text.lines()
+            val unsupported = mutableListOf<String>()
+            var invalid = 0
+            FilterParser.visit(text) { number, result ->
+                if (result == ParsedFilter.Unsupported) {
+                    unsupported += lines[number - 1]
+                }
+                if (result is ParsedFilter.Invalid) {
+                    invalid++
+                }
+            }
+            assertEquals(name, 0, invalid)
+            val sha =
+                MessageDigest.getInstance("SHA-256")
+                    .digest(file.readBytes())
+                    .joinToString("") { "%02x".format(it) }
+            println("SUBSCRIPTION $name sha256=$sha skipped=${unsupported.size}")
+            System.getenv("FILTER_AUDIT_OUTPUT_DIR")?.let { output ->
+                val directory = File(output).apply { mkdirs() }
+                File(directory, "$name-skipped.txt")
+                    .writeText(unsupported.joinToString("\n", postfix = "\n"))
+            }
+        }
     }
 }

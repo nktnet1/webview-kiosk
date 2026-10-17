@@ -19,6 +19,15 @@ function fetchPage(rules, factory) {
     p.install(); return { ...p, fetches: calls };
 }
 
+test('literal request paths with several slashes keep their full matching constraint', () => {
+    const p = xhrPage([['PREVENT_XHR', ['/i/api/1.1/flow/viewer.json', 'emptyObj']]]);
+    const xhr = new p.XHR();
+    xhr.open('GET', '/i/api/1.1/flow/viewer.json'); xhr.send(); p.flush();
+    assert.equal(xhr.responseText, '{}'); assert.equal(p.sends.length, 0);
+    xhr.open('GET', '/i/api/1.1/flow/content.json'); xhr.send();
+    assert.equal(p.sends.length, 1);
+});
+
 test('XHR prevention preserves event order, headers and brands without sending', () => {
     const p = xhrPage([['PREVENT_XHR', ['url:/ads method:GET', 'emptyObj']]]);
     const xhr = new p.XHR(); const events = [];

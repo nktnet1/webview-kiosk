@@ -15,6 +15,7 @@ kotlinSerializationPlugin = "2.4.21"
 kotlinxSerializationJson = "1.11.0"
 okhttp = "5.5.0"
 reorderable = "3.1.0"
+re2j = "1.8"
 robolectric = "4.17"
 swiperefreshlayout = "1.2.0"
 spotless = "8.10.4"
@@ -58,6 +59,7 @@ hivemq-mqtt-client = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "
 hivemq-mqtt-client-websocket = { module = "com.hivemq:hivemq-mqtt-client-websocket", version.ref = "hivemqMqttClient" }
 hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
 junit = { module = "junit:junit", version.ref = "junit" }
+re2j = { module = "com.google.re2j:re2j", version.ref = "re2j" }
 # Used indirectly by scripts/resolve-android-test-assets.init.gradle.
 #noinspection UnusedVersionCatalogEntry
 ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }

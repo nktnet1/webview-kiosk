@@ -12,6 +12,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import uk.nktnet.webviewkiosk.adblock.BlockingResponse
 import uk.nktnet.webviewkiosk.adblock.FilterListValidator
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
@@ -182,6 +183,52 @@ class WebViewBlockerTest {
                 blocker,
             )
         )
+    }
+
+    @Test
+    fun bundledRedirectResourcesRetainMimeTypesBinaryBytesAndJsonBody() {
+        val resources = BlockingResponse.entries.filter { it.resourcePath != null }
+        val context = RuntimeEnvironment.getApplication()
+        val store = FilterListStore(context)
+        val text =
+            resources
+                .mapIndexed { index, response ->
+                    "||r$index.example^\$redirect=${response.resourcePath}"
+                }
+                .joinToString("\n")
+        store.importFrom("resources.txt", text.byteInputStream())
+        val blocker =
+            ContentBlockingService(
+                    store,
+                    KotlinFilterEngine(),
+                    Executor { it.run() },
+                )
+                .also { it.start() }
+        resources.forEachIndexed { index, expected ->
+            val mime = requireNotNull(expected.mimeType)
+            val response =
+                WebViewBlocker.intercept(
+                    request(
+                        "https://r$index.example/resource",
+                        "script",
+                    ),
+                    "https://publisher.example/",
+                    blocker,
+                )!!
+            assertEquals(expected.mimeType, response.mimeType)
+            val bytes = response.data.readBytes()
+            assertTrue(bytes.isNotEmpty())
+            if (
+                mime.startsWith("audio/") ||
+                    mime.startsWith("video/") ||
+                    mime.startsWith("image/")
+            ) {
+                assertNull(response.encoding)
+            }
+            if (expected == BlockingResponse.EMPTY_JSON) {
+                assertEquals("{}", bytes.toString(Charsets.UTF_8).trim())
+            }
+        }
     }
 
     @Test

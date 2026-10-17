@@ -65,6 +65,24 @@ class SuggestedFilterListDownloaderTest {
         )
 
     @Test
+    fun annoyancePresetsAreTrustedOnlyAfterDownloadAndStayOutOfDefaults() {
+        val suggestion =
+            SuggestedFilterLists.all.first {
+                it.name == "uBlock Annoyances - Cookies"
+            }
+        assertEquals(9, SuggestedFilterLists.defaults.size)
+        assertFalse(suggestion in SuggestedFilterLists.defaults)
+        val text = "site.example##+js(trusted-click-element, #reject)"
+        val imported =
+            downloader(content = text, suggestion = suggestion)
+                .download(
+                    suggestion,
+                    FilterListStore(RuntimeEnvironment.getApplication()),
+                )
+        assertTrue(imported.trusted)
+    }
+
+    @Test
     fun onlyFreshApprovedPresetDownloadsCarryTrustedProvenance() {
         val text =
             "||ads.example^\n" +
@@ -219,6 +237,8 @@ class SuggestedFilterListDownloaderTest {
                 "uBlock Badware",
                 "uBlock Quick fixes",
                 "uBlock Unbreak",
+                "uBlock Annoyances - Cookies",
+                "uBlock Annoyances - Others",
                 "EasyList",
                 "EasyPrivacy",
                 "Online Malicious URL Blocklist",
@@ -293,7 +313,14 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun defaultsMatchUpstreamAndPreserveExistingStateAndOrder() {
-        assertEquals(SuggestedFilterLists.all.take(9), SuggestedFilterLists.defaults)
+        assertEquals(
+            SuggestedFilterLists.all
+                .filterNot {
+                    it.name.startsWith("uBlock Annoyances")
+                }
+                .take(9),
+            SuggestedFilterLists.defaults,
+        )
         val existing =
             store.importFrom(
                 "My EasyList",
@@ -381,6 +408,7 @@ class SuggestedFilterListDownloaderTest {
             assertEquals(FilterListType.PRESET, imported.type)
             assertTrue(imported.enabled)
             assertTrue(store.containsPreset(suggestion.url))
+            store.remove(imported.id)
         }
     }
 
