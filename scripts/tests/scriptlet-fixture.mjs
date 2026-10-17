@@ -47,7 +47,8 @@ export function page(rules, { host = 'site.example', protocol = 'https:', before
     context.removeEventListener = Target.prototype.removeEventListener;
     if (before) { runInContext(before, context); }
     const [routes, records, instructions] = routingPayload(rules, suffixes);
-    const names = [...new Set(rules.filter(rule => rule[0] === 'RESOURCE')
+    const names = [...new Set(rules.filter(rule =>
+        ['RESOURCE', 'TRUSTED_RESOURCE'].includes(rule[0]))
         .map(rule => rule[1][0]))];
     const factories = names.map(name => {
         // Tests load the same fixed local sources as Kotlin, never filter-provided JS.

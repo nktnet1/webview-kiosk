@@ -14,6 +14,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import uk.nktnet.webviewkiosk.adblock.BlockingResponse
 import uk.nktnet.webviewkiosk.adblock.FilterListValidator
+import uk.nktnet.webviewkiosk.adblock.FilterSource
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
 
@@ -199,13 +200,16 @@ class WebViewBlockerTest {
                 }
                 .joinToString("\n")
         store.importFrom("resources.txt", text.byteInputStream())
+        val engine = KotlinFilterEngine()
         val blocker =
             ContentBlockingService(
                     store,
-                    KotlinFilterEngine(),
+                    engine,
                     Executor { it.run() },
                 )
                 .also { it.start() }
+        // Exercise response bytes independently of the loader's provenance tests.
+        engine.replaceSources(listOf(FilterSource(text, trusted = true))) {}
         resources.forEachIndexed { index, expected ->
             val mime = requireNotNull(expected.mimeType)
             val response =

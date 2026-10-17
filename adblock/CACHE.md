@@ -1,4 +1,4 @@
-# Compiled cache - v1.0.26
+# Compiled cache - v1.0.28
 
 Production now saves and restores the four native network lookup indexes. The
 v1.0.25 prototype already supplied the portable format; this patch enables it and
@@ -8,7 +8,7 @@ startup speedup is claimed.
 
 ## Representation and validation
 
-Schema 16 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
+Schema 17 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
 normalized network/cosmetic/scriptlet records, optional network buckets and trailing
 CRC32. Buckets contain primitive integer rule IDs, not serialized Kotlin objects or
 executable JavaScript. The four families are ordinary requests, cosmetic-disable
@@ -41,6 +41,12 @@ of their source query. The optional engine `cacheVersion` is an explicit compati
 salt with a stable production default; ordinary app releases do not invalidate it.
 Parsing, matching, scriptlet-contract and binary changes bump
 `CompiledFilterCache.VERSION`.
+
+Schema 17 adds procedural data programs and the new editing/resource contracts.
+Cosmetic procedures are recompiled from their selectors on restore, and every
+editing AST is checked against its query and trust requirements. No executable
+JavaScript is read from the cache. Cosmetic maps, plain-host sets and scriptlet
+routing source still rebuild from normalized records off the UI thread.
 
 Schema 15 introduced extended scriptlet scopes, partial `$all` identities, JSONPath
 ASTs and optional network indexes. Schema 16 invalidates previous argument contracts

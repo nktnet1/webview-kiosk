@@ -50,6 +50,15 @@ enum class BlockingResponse(
     TRANSPARENT_3X2_PNG("3x2.png", "image/png"),
     GOOGLE_IMA("google-ima.js", "application/javascript"),
     PIANO_ANALYTICS("piano-analytics.js", "application/javascript"),
+    AMP("ampproject_v0.js", "application/javascript"),
+    OUTBRAIN("outbrain-widget.js", "application/javascript"),
+    HD_MAIN("hd-main.js", "application/javascript"),
+    NOBAB2("nobab2.js", "application/javascript"),
+    ADSBYGOOGLE("googlesyndication_adsbygoogle.js", "application/javascript"),
+    GOOGLE_IMA_DAI("google-ima-dai.js", "application/javascript"),
+    SILENT_HALF_SECOND_MP3("noop-0.5s.mp3", "audio/mpeg"),
+    NOEVAL("noeval.js", "application/javascript"),
+    NOEVAL_SILENT("noeval-silent.js", "application/javascript"),
 }
 
 enum class RuleLoadStage(val description: String) {
@@ -75,6 +84,7 @@ data class CosmeticProcedure(
     val textSelector: String? = null,
     val textPattern: Boolean = false,
     val media: String? = null,
+    val operations: String? = null,
 )
 
 /** Trust is assigned by the subscription loader, never by text inside a list. */

@@ -7,7 +7,7 @@
 (function(env) {
     'use strict';
     const { groups, selected, wrap, apply, define, descriptor, matcher, source,
-        nativeAdd, trap, abort, resources, regexpTest } = env;
+        nativeAdd, trap, abort, resources, regexpTest, jsonEditor } = env;
     const encodeCookie = self.encodeURIComponent;
     const timeout = self.setTimeout.bind(self);
     const clearTimeout = self.clearTimeout.bind(self);
@@ -625,6 +625,91 @@
             stopped = false; observe(); schedule();
         });
     }
+    function elementEditing() {
+        if (!self.MutationObserver || !document.createTreeWalker) { return; }
+        const tasks = selected.filter(([type]) => type.endsWith('EDIT_ELEMENT_OBJECT'))
+            .map(([, args]) => ({ selector: args[0], edit: jsonEditor([args[1], args[2]]),
+                once: !Number(args[3]), until: Number(args[3]) ? now() + Number(args[3]) : Infinity,
+                done: false, seen: new WeakSet() }));
+        const work = [];
+        let pending, stopped = false;
+        const alive = task => !task.done && now() < task.until;
+        const schedule = () => {
+            if (!stopped && pending === undefined && work.length) {
+                pending = timeout(run, 16);
+            }
+        };
+        const queue = root => {
+            if (!root || ![1, 9].includes(root.nodeType) || !tasks.some(alive)) { return; }
+            if (!work.some(item => item.root.contains(root))) {
+                work.push({ root, walker: null }); schedule();
+            }
+        };
+        const visit = node => {
+            if (node.nodeType !== 1) { return; }
+            for (const task of tasks) {
+                if (!alive(task) || task.seen.has(node)) { continue; }
+                try {
+                    if (node.matches(task.selector)) {
+                        task.seen.add(node); task.edit(node);
+                    }
+                } catch { task.done = true; }
+            }
+        };
+        function run() {
+            pending = undefined;
+            if (stopped) { return; }
+            let budget = 400, deadline = now() + 8;
+            while (work.length && budget > 0 && now() < deadline) {
+                const item = work[0];
+                if (!item.walker) {
+                    visit(item.root); item.walker = document.createTreeWalker(item.root, 1);
+                    budget--;
+                }
+                let node;
+                while (budget > 0 && now() < deadline && (node = item.walker.nextNode())) {
+                    visit(node); budget--;
+                }
+                if (budget > 0 && now() < deadline) { work.shift(); }
+            }
+            if (!work.length && document.readyState !== 'loading') {
+                for (const task of tasks) { if (task.once) { task.done = true; } }
+            }
+            if (!tasks.some(alive)) { observer.disconnect(); work.length = 0; }
+            schedule();
+        }
+        const observer = new MutationObserver(records => {
+            for (const record of records) {
+                if (record.type === 'attributes') { queue(record.target); }
+                else { for (const node of record.addedNodes) { queue(node); } }
+            }
+        });
+        const observe = () => observer.observe(document, {
+            childList: true, subtree: true, attributes: true,
+        });
+        observe();
+        for (const task of tasks) {
+            if (!task.once) {
+                timeout(() => {
+                    task.done = true;
+                    if (!tasks.some(alive)) { observer.disconnect(); work.length = 0; }
+                }, Math.max(0, task.until - now()));
+            }
+        }
+        if (document.readyState !== 'loading' || tasks.some(task => !task.once)) {
+            queue(document);
+        }
+        listen(document, 'DOMContentLoaded', () => queue(document), { once: true });
+        listen(self, 'pagehide', () => {
+            stopped = true; observer.disconnect(); work.length = 0;
+            if (pending !== undefined) { clearTimeout(pending); pending = undefined; }
+        });
+        listen(self, 'pageshow', event => {
+            if (event.persisted && stopped && tasks.some(alive)) {
+                stopped = false; observe(); queue(document);
+            }
+        });
+    }
     let timeoutInstalled = false;
     let evalInstalled = false;
     const timeoutOnce = () => {
@@ -661,5 +746,8 @@
     for (const type of ['SET_ATTRIBUTE', 'TRUSTED_SET_ATTRIBUTE', 'REMOVE_ATTRIBUTE',
         'REMOVE_CLASS', 'REMOVE_NODE_TEXT',
         'PREVENT_DIALOG', 'HREF_SANITIZER', 'OVERLAY_BUSTER']) { installers.set(type, dom); }
+    installers.set('TRUSTED_RESOURCE', installers.get('RESOURCE'));
+    installers.set('EDIT_ELEMENT_OBJECT', elementEditing);
+    installers.set('TRUSTED_EDIT_ELEMENT_OBJECT', elementEditing);
     return installers;
 })

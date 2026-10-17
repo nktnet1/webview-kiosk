@@ -18,12 +18,34 @@ internal object JsonEditing {
             "json-edit-xhr-response" to ScriptletType.JSON_EDIT_XHR,
             "jsonl-edit-fetch-response" to ScriptletType.JSONL_EDIT_FETCH,
             "jsonl-edit-xhr-response" to ScriptletType.JSONL_EDIT_XHR,
+            "trusted-json-edit" to ScriptletType.TRUSTED_JSON_EDIT,
+            "trusted-json-edit-fetch-response" to
+                ScriptletType.TRUSTED_JSON_EDIT_FETCH,
+            "trusted-json-edit-xhr-response" to ScriptletType.TRUSTED_JSON_EDIT_XHR,
+            "trusted-jsonl-edit-fetch-response" to
+                ScriptletType.TRUSTED_JSONL_EDIT_FETCH,
+            "trusted-jsonl-edit-xhr-response" to
+                ScriptletType.TRUSTED_JSONL_EDIT_XHR,
+            "json-edit-fetch-request" to ScriptletType.JSON_EDIT_FETCH_REQUEST,
+            "json-edit-xhr-request" to ScriptletType.JSON_EDIT_XHR_REQUEST,
+            "trusted-json-edit-fetch-request" to
+                ScriptletType.TRUSTED_JSON_EDIT_FETCH_REQUEST,
+            "trusted-json-edit-xhr-request" to
+                ScriptletType.TRUSTED_JSON_EDIT_XHR_REQUEST,
         )
     val types = aliases.values.toSet()
+    val parseTypes = setOf(ScriptletType.JSON_EDIT, ScriptletType.TRUSTED_JSON_EDIT)
+    val lineTypes =
+        setOf(
+            ScriptletType.JSONL_EDIT_FETCH,
+            ScriptletType.JSONL_EDIT_XHR,
+            ScriptletType.TRUSTED_JSONL_EDIT_FETCH,
+            ScriptletType.TRUSTED_JSONL_EDIT_XHR,
+        )
 
     fun validated(type: ScriptletType, args: List<String>): ScriptletInstruction? {
         val query = args.firstOrNull() ?: return null
-        val program = compile(query) ?: return null
+        val program = compile(query, type.requiresTrust) ?: return null
         // Canonical cache representation is recompiled and compared on restore.
         if (args.size == 5 && args[1] == program) {
             return canonical(type, query, program, args[2], args[3], args[4])
@@ -37,9 +59,8 @@ internal object JsonEditing {
         }
         val allowed =
             when (type) {
-                ScriptletType.JSON_EDIT -> setOf("matches")
-                ScriptletType.JSONL_EDIT_FETCH,
-                ScriptletType.JSONL_EDIT_XHR -> setOf("propsToMatch", "jsonExtract")
+                in parseTypes -> setOf("matches")
+                in lineTypes -> setOf("propsToMatch", "jsonExtract")
                 else -> setOf("propsToMatch")
             }
         if (options.any { it[0] !in allowed }) {
@@ -67,19 +88,14 @@ internal object JsonEditing {
         if (
             props.isNotEmpty() && !ScriptletParser.requestMatch(props) ||
                 matches.isNotEmpty() && !ScriptletParser.pattern(matches) ||
-                type == ScriptletType.JSON_EDIT &&
-                    (props.isNotEmpty() || extract.isNotEmpty()) ||
-                type != ScriptletType.JSON_EDIT && matches.isNotEmpty()
+                type in parseTypes && (props.isNotEmpty() || extract.isNotEmpty()) ||
+                type !in parseTypes && matches.isNotEmpty()
         ) {
             return null
         }
         if (extract.isNotEmpty()) {
             if (
-                type !in
-                    setOf(
-                        ScriptletType.JSONL_EDIT_FETCH,
-                        ScriptletType.JSONL_EDIT_XHR,
-                    ) ||
+                type !in lineTypes ||
                     !extract.startsWith('^') ||
                     !ScriptletParser.pattern("/$extract/") ||
                     runCatching {
@@ -96,13 +112,16 @@ internal object JsonEditing {
         )
     }
 
-    fun compile(query: String): String? = runCatching {
+    fun compile(query: String, trusted: Boolean = false): String? = runCatching {
         require(query.length in 1..2048)
         val parser = Reader(query.removePrefix("v2:"))
         val guards = mutableListOf<JsonElement>()
         var path = parser.path(0)
-        require(path.isNotEmpty())
-        while (parser.position < parser.text.length) {
+        require(path.isNotEmpty() || parser.position > 0)
+        while (
+            parser.position < parser.text.length &&
+                parser.text[parser.position] in "{;"
+        ) {
             require(guards.size < 8)
             val bounds = parser.quantifier()
             require(parser.text.startsWith(";$", parser.position))
@@ -111,18 +130,104 @@ internal object JsonEditing {
                 JsonArray(listOf(JsonArray(path), bounds.first, bounds.second))
             )
             path = parser.path(0)
-            require(path.isNotEmpty())
+            require(path.isNotEmpty() || parser.position > 0)
+        }
+        var mutation: JsonElement = JsonNull
+        if (parser.position < parser.text.length) {
+            require(trusted)
+            val tail = parser.text.substring(parser.position)
+            val operator: String
+            val value: String
+            when {
+                tail.startsWith("+=") -> {
+                    operator = "+"
+                    value = tail.drop(2)
+                }
+                tail.startsWith("=repl(") && tail.endsWith(')') -> {
+                    operator = "repl"
+                    value = tail.substring(6, tail.lastIndex)
+                }
+                tail.startsWith("=call(") && tail.endsWith(')') -> {
+                    operator = "call"
+                    value = tail.substring(6, tail.lastIndex)
+                }
+                tail.startsWith('=') -> {
+                    operator = "="
+                    value = tail.drop(1)
+                }
+                else -> error("Unsupported JSONPath mutation")
+            }
+            val json = Json.parseToJsonElement(value)
+            require(boundedValue(json))
+            if (operator == "+") {
+                require(json is JsonObject)
+            }
+            if (operator == "call") {
+                require(json is JsonArray && json.size in 2..18)
+                val method = json[1] as? JsonPrimitive
+                require(
+                    method?.isString == true &&
+                        Regex("[A-Za-z_$][A-Za-z_0-9$]*").matches(method.content) &&
+                        method.content !in
+                            setOf("__proto__", "prototype", "constructor")
+                )
+            }
+            if (operator == "repl") {
+                require(json is JsonObject)
+                require(
+                    json.keys.all {
+                        it in setOf("regex", "pattern", "flags", "replacement")
+                    }
+                )
+                require(
+                    json["replacement"] is JsonPrimitive &&
+                        (json["replacement"] as JsonPrimitive).isString
+                )
+                val pattern = json["regex"] as? JsonPrimitive
+                val literal = json["pattern"] as? JsonPrimitive
+                val flags = (json["flags"] as? JsonPrimitive)?.content.orEmpty()
+                require(pattern?.isString == true || literal?.isString == true)
+                require(
+                    flags.all { it in "gims" } && flags.toSet().size == flags.length
+                )
+                require(
+                    pattern == null ||
+                        AdvancedScriptlets.replacementPattern(
+                            "/${pattern.content}/$flags"
+                        )
+                )
+            }
+            mutation = JsonArray(listOf(JsonPrimitive(operator), json))
         }
         JsonArray(
                 listOf(
                     JsonPrimitive(query.startsWith("v2:")),
                     JsonArray(path),
                     JsonArray(guards),
+                    mutation,
                 )
             )
             .toString()
     }
         .getOrNull()
+
+    private fun boundedValue(value: JsonElement, depth: Int = 0): Boolean =
+        depth <= 16 &&
+            when (value) {
+                is JsonObject ->
+                    value.all { (key, child) ->
+                        key !in setOf("__proto__", "prototype", "constructor") &&
+                            boundedValue(child, depth + 1)
+                    }
+                is JsonArray -> value.all { boundedValue(it, depth + 1) }
+                is JsonPrimitive ->
+                    value.isString ||
+                        value == JsonNull ||
+                        value.content in setOf("true", "false") ||
+                        Regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?")
+                            .matches(value.content) &&
+                            value.content.toDoubleOrNull()?.isFinite() == true
+            }
 
     private class Reader(val text: String) {
         var position = 0
@@ -264,9 +369,12 @@ internal object JsonEditing {
                         position++
                     }
                     val start = position
-                    require(text.getOrNull(position) != '$')
+                    val root = text.getOrNull(position) == '$'
                     val nested = path(depth + 1)
-                    require(nested.isNotEmpty() || text.getOrNull(start) == '@')
+                    require(
+                        nested.isNotEmpty() ||
+                            text.getOrNull(start) in listOf('@', '$')
+                    )
                     spaces()
                     val operator =
                         if (text.startsWith("=/", position)) {
@@ -307,6 +415,7 @@ internal object JsonEditing {
                                     text.substring(position, end).trim()
                                 )
                             require(value is JsonPrimitive)
+                            require(boundedValue(value))
                             position = end
                         }
                     }
@@ -319,6 +428,7 @@ internal object JsonEditing {
                                 JsonArray(nested),
                                 JsonPrimitive(operator),
                                 value,
+                                JsonPrimitive(root),
                             )
                         )
                 } else {

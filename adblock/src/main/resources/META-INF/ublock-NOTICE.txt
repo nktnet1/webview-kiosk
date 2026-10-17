@@ -82,3 +82,36 @@ Original Mozilla shim:
 https://searchfox.org/mozilla-central/rev/d317e93d9a59c9e4c06ada85fbff9f6a1ceaaad1/browser/extensions/webcompat/shims/google-ima.js
 The inline resource wrapper supplies captured animation frames and timers to keep
 local shim callbacks independent of selected page-timer scriptlets.
+
+The v1.0.28 additions follow the same pinned upstream commit above, retrieved on
+2026-10-17. JSON/object editing, trusted mutation, legacy pruning and XML XPath
+behavior adapt jsonpath.js, resources/json-edit.js and resources/object-prune.js.
+The new JS resource files were reformatted; AdsByGoogle additionally replaces its
+repeated full-document scan with bounded subtree work. Original notices are kept.
+The IMA DAI shim retains its AdGuard source, GPLv3 licence and pinned commit notice.
+The existing full GPLv3 text is bundled at META-INF/licenses/ublock-GPL-3.0.txt.
+SHA-256 of the additional bundled resource bytes:
+  ampproject_v0.js:
+    b279255cb2bbdbe5c70403b9825770768b4d5253a623d5150b76e209dd10d675
+  outbrain-widget.js:
+    90acb4602585c011e2eb1a1b6e4b50b48cc474dbba1e6cbbcf8d2b02be7124be
+  hd-main.js:
+    5eb91bfa38ee1ddefd6722b73a67dc079881e6fbe034c318557bb9f701cc8808
+  nobab2.js:
+    67f341aa6df8d2b3a44468034b3cc24aa8bcf4f7f3389bd682e72831a7ed599a
+  googlesyndication_adsbygoogle.js:
+    43beddf9e9408cc8da0ffd78346af6ef42c803093ebcd295a72eada191d3a315
+  google-ima-dai.js:
+    3ee835cda7b195737522bf6879f125a408258b6bbac7d0e235842dc15c823f48
+  noeval.js:
+    bf41cdcc6a81a53c432ce70493feadc5ac484043d0a33cdbf531058873bee7c3
+  noeval-silent.js:
+    9d23a1475b69ef939f389ad1eeeb7bdfb97aa2eed57a66eeed49667c3bdb7a6a
+  noop-0.5s.mp3:
+    74dceaeb010690bf7b68f20d89d3891c989d8d0bd9cd388a87096269fbe0915e
+
+Procedural argument semantics additionally follow static-filtering-parser.js and
+contentscript-extra.js at the pinned commit. The local Kotlin parser compiles a
+data-only subset; the WebView runner uses targeted observers, reversible effects
+and cached-subject invalidation. Optional native-browser differential tests use
+an externally supplied copy of that upstream runtime.

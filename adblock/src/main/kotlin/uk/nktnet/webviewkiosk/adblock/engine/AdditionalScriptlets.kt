@@ -241,7 +241,11 @@ internal object AdditionalScriptlets {
                             arg(1).startsWith('?') && attribute(arg(1).drop(1)))
                 }
                 ScriptletType.RESOURCE ->
-                    args.size == 1 && arg(0) in ScriptletResources.files
+                    args.size == 1 &&
+                        arg(0) in ScriptletResources.files &&
+                        arg(0) !in ScriptletResources.trustedFiles
+                ScriptletType.TRUSTED_RESOURCE ->
+                    args.size == 1 && arg(0) in ScriptletResources.trustedFiles
                 else -> false
             }
         if (!valid) {

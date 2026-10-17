@@ -1,6 +1,103 @@
 # uAssets and subscription compatibility
 
-## v1.0.26 roadmap assessment
+## v1.0.28 assessment
+
+This section supersedes the historical roadmaps below. Compatibility expands without
+adding enabled-list limits or a response-proxy network stack.
+
+The JSON editor now covers every named JSON/JSONL request/response and object-editing
+entry in the supplied catalogue, including their trusted counterparts. Trusted
+assignments, merges, replacements and method-call directives use a validated data
+AST. Method/property hooks follow late owners and replacements. Legacy trusted
+inbound/outbound pruning, array/object entry pruning and native XML XPath are added.
+These remain explicit argument subsets, not a claim of complete upstream parity;
+see [SCRIPTLETS.md](SCRIPTLETS.md).
+
+Procedural chains add nested text/has/not predicates, sibling/descendant selection,
+attribute, computed-style, text-length and path predicates, ancestors and actions.
+The observer processes changed subtrees and affected subjects in resumable batches.
+It does not run document-wide selector queries after every mutation. Pure CSS/media
+rules remain in CSSOM. Procedural hides track and restore the author's inline
+display, including important declarations; conditional styles use private attributes. Computed-style
+predicates read without this runner's effects, and stylesheet/path changes revisit
+cached subjects. Disconnected subjects release ancestor effects. Native CSS relationships can still require revisiting
+an affected subtree; this is distinct from scanning every rule over every document.
+
+Frame/worker initiators come from actual Referer/Origin headers or a reliable
+same-origin fetch-metadata fact. A top-page URL is no longer substituted for an
+unknown child-frame initiator. Window WebSocket/beacon calls use the calling frame's
+URL and the live native matcher through a boolean-only bridge. Allowed calls keep
+native objects, arguments and receiver validation. Suppressed sockets throw
+SecurityError before connecting; suppressed beacons return true. These are partial
+page API hooks, not transport-level interception.
+
+Nine additional redirect resources are bundled: AMP, Outbrain, HD main, BAB 4.2,
+AdsByGoogle, IMA DAI, both no-eval resources and the half-second silent MP3. Existing
+transparent-resource aliases are recognized. AdsByGoogle uses bounded subtree work
+instead of its upstream repeated document query. DAI retains upstream request/reset
+and event behavior, and requires approved source provenance both as a redirect and
+as an inline resource. Redirect-only resources retain their eligibility restrictions.
+
+### What remains unimplemented, and why
+
+- **Complete upstream argument/DSL parity:** The new named editors are implemented as validated
+  subsets. Arbitrary expressions, prototype traversal, accessor-defined JSON data, unsupported
+  JSONPath forms and debug/logging configurations remain rejected; interpreting them
+  approximately would change rule meaning or invoke site getters during data traversal.
+  `evaldata-prune` remains skipped because another general eval wrapper changes direct-eval
+  scope for calls unrelated to JSON pruning.
+
+- **Repeated element-object editing:** Each matching element is edited once during its lookup
+  window. Silent later JavaScript property assignments provide no DOM mutation signal;
+  repeatedly detecting them would require polling. Native method/getter/setter editors cover
+  known API/property paths.
+
+- **Wider procedural operators:** XPath cosmetics, template/shadow traversal and arbitrary DOM-
+  property predicates remain skipped. Their full forms need broader scans, access across
+  separate DOM roots or side-effectful property reads. Native/targeted procedures are
+  preferred. Closed shadow roots remain inaccessible.
+
+- **Missing iframe/service-worker facts:** WebView callbacks do not expose a reliable
+  frame/client ID or full initiator for every request. Missing metadata remains unknown;
+  contextual exceptions are conservative. No unrelated tab or last-seen frame is borrowed.
+
+- **Worker WebSocket/beacon interception:** Page-world JavaScript and the bridge do not run
+  inside workers. Creating a replacement worker loader/network layer solely for these requests
+  would be disproportionate. Providers without document-start support keep native filtering but
+  skip page API/scriptlet hooks.
+
+- **Streaming/non-string request bodies:** Request editing handles explicit string bodies in
+  Fetch/Request init and XHR.send. Existing Request streams, blobs, forms and buffers pass
+  through. Reading/rebuilding them would alter consumption, encoding, cancellation or streaming
+  behavior.
+
+- **Cosmetic/scriptlet index persistence:** Optional and left out. Normalized rules and
+  JSON/procedural programs are already cached; their lookup maps and routing source rebuild off
+  the UI thread. Another derived snapshot would duplicate data and require additional semantic
+  validation without adding filtering coverage. Network-index persistence stays enabled.
+
+- **Popup/popunder and close-window:** The app does not own a multiple-window/opener/close
+  lifecycle. Ordinary navigations cannot be reliably reclassified as popup requests.
+
+- **Full CSP modification and pre-parse HTML filtering (`##^`):** Native interception supplies
+  request data and optional replacement responses, not the original response headers/body.
+  Transparent support would require owning the response pipeline, with additional networking,
+  cookie, cache and streaming behavior.
+
+- **`click2load.html`:** Requires an unblock widget and a trusted frame reload policy, rather
+  than merely returning an HTML placeholder. No such lifecycle is introduced.
+
+Verification covers Kotlin/cache/provenance behavior, Android content-blocking and
+WebView integration, Node API fixtures and native Chromium DOM/Fetch/XHR/media
+lifecycles. Chromium and Robolectric do not establish parity with every physical
+Android WebView provider. No subscription corpus coverage percentage is claimed.
+
+The final checks passed formatting, Android lint, 135 engine tests (six optional
+corpus/benchmark tests skipped), 368 targeted Android/WebView tests, 198 Node/native
+Chromium tests, and 50 Python tests.
+
+
+## Historical v1.0.26 roadmap assessment
 
 Production persists all four native network bucket families, validates their
 complete membership and rebuilds/repairs invalid ones. Activation does not depend

@@ -20,6 +20,12 @@ internal object ScriptletResources {
             "google-analytics.com/ga" to "google-analytics_ga.js",
             "google-ima" to "google-ima.js",
             "google-ima3" to "google-ima.js",
+            "google-ima-dai" to "google-ima-dai.js",
+            "google-ima3-dai" to "google-ima-dai.js",
+            "googlesyndication_adsbygoogle" to "googlesyndication_adsbygoogle.js",
+            "googlesyndication.com/adsbygoogle" to
+                "googlesyndication_adsbygoogle.js",
+            "googlesyndication-adsbygoogle" to "googlesyndication_adsbygoogle.js",
             "googletagservices_gpt" to "googletagservices_gpt.js",
             "googletagservices.com/gpt" to "googletagservices_gpt.js",
             "googletagservices-gpt" to "googletagservices_gpt.js",
@@ -37,6 +43,11 @@ internal object ScriptletResources {
     val redirectAliases =
         mapOf(
             "piano-analytics" to "piano-analytics.js",
+            "ampproject_v0" to "ampproject_v0.js",
+            "ampproject.org/v0" to "ampproject_v0.js",
+            "outbrain-widget" to "outbrain-widget.js",
+            "widgets.outbrain.com/outbrain" to "outbrain-widget.js",
+            "silent-noeval" to "noeval-silent.js",
             "google-analytics_cx_api" to "google-analytics_cx_api.js",
             "google-analytics.com/cx/api" to "google-analytics_cx_api.js",
             "google-analytics_inpage_linkid" to "google-analytics_inpage_linkid.js",
@@ -46,6 +57,7 @@ internal object ScriptletResources {
             "scorecardresearch.com/beacon" to "scorecardresearch_beacon.js",
         )
     val files = aliases.values.toSet()
+    val trustedFiles = setOf("google-ima-dai.js")
 
     fun factories(names: Set<String>): String =
         names.joinToString(",", "{", "}") { name ->

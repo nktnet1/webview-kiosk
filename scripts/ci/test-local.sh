@@ -65,9 +65,7 @@ checks() {
     require_tool node
     printf 'Local tests: checking CI scripts, test assets, cosmetics and scriptlets\n'
     python3 -m unittest discover -s scripts/tests -p 'test_*.py'
-    node --test scripts/tests/cosmetic.test.mjs scripts/tests/scriptlets.test.mjs \
-      scripts/tests/additional-scriptlets.test.mjs scripts/tests/response-scriptlets.test.mjs \
-      scripts/tests/advanced-scriptlets.test.mjs
+    node --test scripts/tests/*.test.mjs
 }
 
 jvm() {

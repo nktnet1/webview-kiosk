@@ -54,31 +54,10 @@ internal object ServiceWorkerBlocker {
         request: WebResourceRequest,
         service: ContentBlockingService,
     ): WebResourceResponse? {
-        val headers = request.requestHeaders.orEmpty()
         // Never borrow an unrelated tab's URL or guess the worker's
         // first/third-party context.
         // An empty source asks the engine to consider context-free rules only.
         // Contextual exceptions conservatively allow when their other facts match.
-        if (
-            headers.entries.any { (name, value) ->
-                name.lowercase(java.util.Locale.ROOT) in
-                    setOf("referer", "origin") &&
-                    value != "null" &&
-                    value.isNotBlank() &&
-                    !WebViewBlocker.isFilterableUrl(value)
-            }
-        ) {
-            return null
-        }
-        val source =
-            sequenceOf("referer", "origin")
-                .firstNotNullOfOrNull { name ->
-                    headers.entries
-                        .firstOrNull { it.key.equals(name, ignoreCase = true) }
-                        ?.value
-                        ?.takeIf(WebViewBlocker::isFilterableUrl)
-                }
-                .orEmpty()
-        return WebViewBlocker.intercept(request, source, service)
+        return WebViewBlocker.intercept(request, "", service)
     }
 }

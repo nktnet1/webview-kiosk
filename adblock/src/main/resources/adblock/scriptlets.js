@@ -184,6 +184,7 @@
     const nativeAdd = EventTarget.prototype.addEventListener;
     const nativeThen = Promise.prototype.then;
     const nativeParse = JSON.parse;
+    const nativeStringify = JSON.stringify;
     const resolved = Promise.resolve.bind(Promise);
     const rejected = Promise.reject.bind(Promise);
     const NativeResponse = self.Response;
@@ -293,7 +294,8 @@
             if (!acceptsConstant || !desc?.get) { throw error; }
         }
         if (acceptsConstant && !acceptsConstant(initial)) { return null; }
-        const state = { value: initial, mode: '', readers: [], children: [], constant: null };
+        const state = { value: initial, mode: '', readers: [], children: [], constant: null,
+            readTransforms: [], writeTransforms: [] };
         define(owner, name, {
             configurable: true,
             enumerable: desc ? desc.enumerable : true,
@@ -302,7 +304,9 @@
                 for (const check of state.readers) { check(); }
                 if (state.mode === 'ABORT_WRITE') { return undefined; }
                 if (state.constant && !state.constant.released) { return state.constant.value; }
-                return desc && desc.get ? apply(desc.get, this, []) : state.value;
+                let value = desc && desc.get ? apply(desc.get, this, []) : state.value;
+                for (const transform of state.readTransforms) { value = transform(value); }
+                return value;
             },
             set(value) {
                 if (state.mode === 'ABORT_WRITE') { abort(); }
@@ -315,6 +319,7 @@
                     // uBO relinquishes constants on a type-changing write.
                     state.constant.released = true;
                 }
+                for (const transform of state.writeTransforms) { value = transform(value); }
                 if (desc && desc.set) { apply(desc.set, this, [value]); }
                 else if (!desc || !desc.get && desc.writable !== false) { state.value = value; }
                 const actual = desc && desc.get ? apply(desc.get, this, []) : state.value;
@@ -551,8 +556,8 @@
             prune: args[0].split(' ').map(path => path.split('.')),
             needles: args[1] ? args[1].split(' ').map(path => path.split('.')) : [],
         }));
-        function prune(value) {
-            if (!object(value)) { return value; }
+        function prune(value, check = false) {
+            if (!object(value)) { return check ? false : value; }
             for (const test of tests) {
                 let budget = 4096;
                 const edits = [];
@@ -560,8 +565,14 @@
                     if (--budget < 0) { throw null; }
                     if (!object(owner)) { return false; }
                     const part = parts[0];
-                    const keys = part === '*' || part === '[]' && isArray(owner)
-                        ? ownKeys(owner) : part === '[]' ? [] : [part];
+                    const deleting = part === '[-]' || part === '{-}';
+                    const array = part === '[]' || part === '[-]';
+                    let keys = part === '*' || part === '{}' || part === '{-}' ||
+                        array && isArray(owner) ? ownKeys(owner) : array ? [] : [part];
+                    if (part === '[-]') {
+                        keys = keys.filter(key => /^(?:0|[1-9]\d*)$/.test(key) &&
+                            Number(key) < owner.length);
+                    }
                     let found = false;
                     for (const name of keys) {
                         if (--budget < 0) { throw null; }
@@ -569,24 +580,47 @@
                         if (!desc || !('value' in desc)) { continue; }
                         if (parts.length === 1) {
                             found = true;
-                            if (remove && desc.configurable) { edits.push([owner, name]); }
-                        } else if (walk(desc.value, parts.slice(1), remove)) { found = true; }
+                            if (remove && desc.configurable) { edits.push([owner, name, false]); }
+                        } else if (walk(desc.value, parts.slice(1), remove && !deleting)) {
+                            found = true;
+                            if (remove && deleting && desc.configurable) {
+                                edits.push([owner, name, part === '[-]']);
+                            }
+                        }
                     }
                     return found;
                 };
                 try {
                     if (!test.needles.every(path => walk(value, path, false))) { continue; }
+                    if (check) { return true; }
                     for (const path of test.prune) { walk(value, path, true); }
-                    for (const [owner, name] of edits) { delete owner[name]; }
+                    const removed = new WeakMap();
+                    const pending = edits.filter(([owner, name]) => {
+                        let names = removed.get(owner);
+                        if (!names) { names = new Set(); removed.set(owner, names); }
+                        if (names.has(name)) { return false; }
+                        names.add(name); return true;
+                    });
+                    const arrays = new Map();
+                    for (const [owner, name, splice] of pending) {
+                        if (!splice) { delete owner[name]; continue; }
+                        if (!arrays.has(owner)) { arrays.set(owner, []); }
+                        arrays.get(owner).push(Number(name));
+                    }
+                    for (const [owner, indices] of arrays) {
+                        for (const index of indices.sort((a, b) => b - a)) {
+                            apply(arraySplice, owner, [index, 1]);
+                        }
+                    }
                 } catch { /* Budget exhaustion makes this instruction a no-op. */ }
             }
-            return value;
+            return check ? false : value;
         }
         return prune;
     }
     // The compiler supplies a JSON AST, never expressions to evaluate as JavaScript.
     function jsonEditor(args) {
-        const [v2, steps, guards = []] = nativeParse(args[1]);
+        const [v2, steps, guards = [], mutation = null] = nativeParse(args[1]);
         const stringKeys = ownKeys;
         const regexes = new Map();
         const prepare = node => {
@@ -674,7 +708,8 @@
                                 candidates = owners.flatMap(children);
                             }
                             for (const candidate of candidates) {
-                                if (evaluate(filter[1], [candidate], filter).length) {
+                                const input = filter[4] ? [ref(root, 'value')] : [candidate];
+                                if (evaluate(filter[1], input, filter).length) {
                                     result.push(candidate);
                                 }
                             }
@@ -710,13 +745,18 @@
                 const input = [ref(root, 'value')];
                 for (const [path, minimum, maximum] of guards) {
                     const count = evaluate(path, input).length;
-                    if (count < minimum || count > maximum) { return false; }
+                    if (count < minimum || count > maximum) { return null; }
                 }
                 const edits = evaluate(steps, input);
                 const seen = new WeakMap(), pending = [];
                 for (const entry of edits) {
                     const desc = descriptor(entry.owner, entry.key);
-                    if (!desc || !desc.configurable) { continue; }
+                    if (['__proto__', 'prototype', 'constructor'].includes(String(entry.key))) {
+                        continue;
+                    }
+                    if (mutation ? mutation[0] !== 'call' &&
+                        desc && (!('value' in desc) || !desc.writable)
+                        : !desc || !desc.configurable) { continue; }
                     let names = seen.get(entry.owner);
                     if (!names) { seen.set(entry.owner, names = new Set()); }
                     if (names.has(entry.key)) { continue; }
@@ -724,29 +764,158 @@
                 }
                 // Traversal completes before any mutation, including on budget exhaustion.
                 for (const { owner, key } of pending.reverse()) {
-                    if (isArray(owner) && typeof key === 'number') {
+                    if (mutation) {
+                        const [operator, raw] = mutation;
+                        if (operator === 'call') {
+                            const values = raw.map(value => value === '${obj}' ? owner
+                                : value === '${key}' ? key : value === '${val}'
+                                    ? descriptor(owner, key)?.value : value);
+                            const receiver = values[0] ?? self;
+                            const method = receiver[values[1]];
+                            if (typeof method === 'function') {
+                                apply(method, receiver, values.slice(2));
+                            }
+                            continue;
+                        }
+                        let value = typeof raw === 'string'
+                            ? raw.replace('${now}', String(Date.now())) : raw;
+                        if (operator === '+') {
+                            const target = descriptor(owner, key)?.value;
+                            if (!target || typeof target !== 'object' || isArray(target)) {
+                                continue;
+                            }
+                            for (const name of stringKeys(raw)) {
+                                const before = descriptor(target, name);
+                                if (before && (!('value' in before) || !before.writable)) {
+                                    continue;
+                                }
+                                define(target, name, { value: raw[name], writable: true,
+                                    enumerable: true, configurable: true });
+                            }
+                            continue;
+                        }
+                        if (operator === 'repl') {
+                            const before = descriptor(owner, key)?.value;
+                            if (typeof before !== 'string' || before.length > 65536 ||
+                                before.length * raw.replacement.length > 1024 * 1024) { continue; }
+                            const pattern = raw.regex !== undefined
+                                ? new RegExp(raw.regex, raw.flags)
+                                : new RegExp(raw.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+                            value = before.replace(pattern, raw.replacement);
+                            if (value.length > 65536) { continue; }
+                        }
+                        const before = descriptor(owner, key);
+                        define(owner, key, before ? { ...before, value } : {
+                            value, writable: true, configurable: true, enumerable: true,
+                        });
+                    } else if (isArray(owner) && typeof key === 'number') {
                         apply(arraySplice, owner, [key, 1]);
                     }
                     else { delete owner[key]; }
                 }
-                return pending.length !== 0;
-            } catch { return false; }
+                return pending.length ? { value: root.value ?? null } : null;
+            } catch { return null; }
         }
         return edit;
     }
     function installJsonEdit() {
-        const edits = groups.get('JSON_EDIT').map(args => ({
+        const edits = selected.filter(([type]) =>
+            ['JSON_EDIT', 'TRUSTED_JSON_EDIT'].includes(type)).map(([, args]) => ({
             edit: jsonEditor(args), matches: args[3] ? matcher(args[3]) : null,
         }));
         wrap(JSON, 'parse', (target, receiver, args) => {
-            const value = apply(target, receiver, args);
+            let value = apply(target, receiver, args);
             if (typeof args[0] !== 'string' || args[0].length > 1024 * 1024) { return value; }
             const work = { remaining: 65536 };
             for (const entry of edits) {
-                if (!entry.matches || entry.matches(args[0])) { entry.edit(value, work); }
+                if (!entry.matches || entry.matches(args[0])) {
+                    const result = entry.edit(value, work);
+                    if (result) { value = result.value; }
+                }
             }
             return value;
         });
+    }
+    function installObjectEditing() {
+        for (const [type, args] of selected) {
+            const element = type === 'TRUSTED_EDIT_INBOUND_ELEMENT';
+            const pruning = type.includes('PRUNE_') && type.includes('_OBJECT');
+            if ((!type.includes('EDIT_') || !type.includes('_OBJECT')) && !element && !pruning ||
+                type.endsWith('EDIT_ELEMENT_OBJECT')) { continue; }
+            const kind = type.replace('TRUSTED_', '').replace('PRUNE_', 'EDIT_');
+            const prune = pruning ? jsonPruner([[args[2], kind === 'EDIT_INBOUND_OBJECT'
+                ? (args[2] + ' ' + args[3]).trim() : args[3]]]) : null;
+            const edit = pruning ? value => ({ value: prune(value) })
+                : jsonEditor([element ? args[3] : args[2], args[4]]);
+            const stack = pruning && args[5] ? matcher(args[5], true) : null;
+            const StackError = self.Error;
+            const nativeMatches = self.Element?.prototype.matches;
+            trap(self, args[0].split('.'), state => {
+                const mutate = value => { edit(value); return value; };
+                if (kind === 'EDIT_OBJECT_ON_GETTER') {
+                    state.readTransforms.push(mutate); return;
+                }
+                if (kind === 'EDIT_OBJECT_ON_SETTER') {
+                    mutate(state.value); state.writeTransforms.push(mutate); return;
+                }
+                const proxies = new WeakMap();
+                state.readTransforms.push(value => {
+                    if (typeof value !== 'function') { return value; }
+                    if (proxies.has(value)) { return proxies.get(value); }
+                    let active = false;
+                    const proxy = new Proxy(value, { apply(target, receiver, values) {
+                        if (active) { return apply(target, receiver, values); }
+                        active = true;
+                        try {
+                            if (stack && !stack(new StackError().stack || '')) {
+                                return apply(target, receiver, values);
+                            }
+                            if (element) {
+                                const position = Number(args[1]);
+                                const index = position < 0 ? values.length + position : position;
+                                const node = args[1] === 'this' ? receiver : values[index];
+                                if (self.Element && node instanceof self.Element &&
+                                    apply(nativeMatches, node, [args[2]])) { edit(node); }
+                            }
+                            if (kind === 'EDIT_INBOUND_OBJECT') {
+                                const position = Number(args[1]) - (pruning ? 1 : 0);
+                                const index = position < 0 ? values.length + position : position;
+                                if (index >= 0 && index < values.length) {
+                                    if (pruning && !prune(values[index], true)) {
+                                        return apply(target, receiver, values);
+                                    }
+                                    if (pruning && args[4] !== '1') { edit(values[index]); }
+                                    else {
+                                    try {
+                                        const text = nativeStringify(values[index]);
+                                        if (typeof text === 'string' &&
+                                            text.length <= 1024 * 1024) {
+                                            const copy = nativeParse(text);
+                                            const result = edit(copy);
+                                            if (result) { values[index] = result.value; }
+                                        }
+                                    } catch {}
+                                    }
+                                }
+                            }
+                            if (kind === 'EDIT_THIS_OBJECT' && args[3] !== 'after') {
+                                edit(receiver);
+                            }
+                            let result = apply(target, receiver, values);
+                            if (kind === 'EDIT_THIS_OBJECT' && args[3] === 'after') {
+                                edit(receiver);
+                            }
+                            if (kind === 'EDIT_OUTBOUND_OBJECT') {
+                                const edited = edit(result);
+                                if (edited) { result = edited.value; }
+                            }
+                            return result;
+                        } finally { active = false; }
+                    } });
+                    proxies.set(value, proxy); return proxy;
+                });
+            });
+        }
     }
     function installJson() {
         const prune = jsonPruner(groups.get('JSON_PRUNE'));
@@ -814,8 +983,16 @@
         ['PREVENT_ADD_EVENT_LISTENER', installListener],
         ['PREVENT_SET_TIMEOUT', installTimeout],
         ['JSON_PRUNE', installJson], ['JSON_EDIT', installJsonEdit],
+        ['TRUSTED_JSON_EDIT', installJsonEdit],
         ['PREVENT_FETCH', installFetch], ['TRUSTED_PREVENT_FETCH', installFetch],
     ]);
+    for (const [type] of selected) {
+        if (type.includes('EDIT_') && type.includes('_OBJECT') ||
+            type === 'TRUSTED_EDIT_INBOUND_ELEMENT' || type.includes('PRUNE_') &&
+            type.includes('_OBJECT')) {
+            installers.set(type, installObjectEditing);
+        }
+    }
     const environment = {
         groups, selected, wrap, apply, define, descriptor, matcher, source, nativeAdd, regexpTest,
         trap, abort, resources: resources || {}, jsonPruner, jsonEditor,
@@ -834,7 +1011,8 @@
     for (const [type, args] of selected) {
         const install = installers.get(type);
         if (!install) { installProperty(type, args); }
-        else if (type === 'RESOURCE' || type === 'SET_LOCAL_STORAGE' ||
+        else if (type === 'RESOURCE' || type === 'TRUSTED_RESOURCE' ||
+            type === 'SET_LOCAL_STORAGE' ||
             type === 'SET_SESSION_STORAGE' || type === 'SET_COOKIE' ||
             type === 'SET_COOKIE_RELOAD' || type === 'REMOVE_COOKIE' ||
             type === 'CALL_NOTHROW' || type === 'ABORT_STACK_TRACE' ||

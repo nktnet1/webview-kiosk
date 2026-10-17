@@ -184,8 +184,8 @@ private class RequestFacts(
     val source: HttpUrl?,
     val type: Int,
     val method: String,
+    val url: String = target.toString(),
 ) {
-    val url = target.toString()
     val targetHost = target.host.removeSuffix(".")
     val sourceHost = source?.host?.removeSuffix(".").orEmpty()
     val budget = MatchBudget()
@@ -490,7 +490,17 @@ internal class CompiledFilters(
         type: String,
         method: String,
     ): BlockingResponse {
-        val target = httpAddress(url) ?: return BlockingResponse.ALLOW
+        val socket =
+            type == "websocket" &&
+                (url.startsWith("ws://", true) || url.startsWith("wss://", true))
+        val target =
+            httpAddress(
+                if (socket) {
+                    "http" + url.substring(2)
+                } else {
+                    url
+                }
+            ) ?: return BlockingResponse.ALLOW
         if (ResourceTypes.request(type) == ResourceTypes.request("document")) {
             return documentResponse(target, method)
         }
@@ -520,6 +530,11 @@ internal class CompiledFilters(
                 source,
                 ResourceTypes.request(type),
                 method.uppercase(Locale.ROOT),
+                if (socket) {
+                    "ws" + target.toString().substring(4)
+                } else {
+                    target.toString()
+                },
             )
         if (
             source == null &&

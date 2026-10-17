@@ -155,12 +155,26 @@ class AdditionalScriptletTest {
 
     @Test
     fun staticResourcesAreWhitelistedAndSelectedByDataOnly() {
-        assertEquals(15, ScriptletResources.files.size)
+        assertEquals(17, ScriptletResources.files.size)
         ScriptletResources.aliases.forEach { (alias, file) ->
-            val instruction = ScriptletParser.parse("+js($alias)")!!
-            assertEquals(ScriptletType.RESOURCE, instruction.type)
+            val trusted = file in ScriptletResources.trustedFiles
+            if (trusted) {
+                assertNull(ScriptletParser.parse("+js($alias)"))
+            }
+            val instruction = ScriptletParser.parse("+js($alias)", trusted)!!
+            assertEquals(
+                if (trusted) {
+                    ScriptletType.TRUSTED_RESOURCE
+                } else {
+                    ScriptletType.RESOURCE
+                },
+                instruction.type,
+            )
             assertEquals(listOf(file), instruction.arguments)
-            assertEquals(instruction, ScriptletParser.parse("+js($alias.js)"))
+            assertEquals(
+                instruction,
+                ScriptletParser.parse("+js($alias.js)", trusted),
+            )
             assertNull(ScriptletParser.parse("+js($alias, arbitrary)"))
         }
         assertNull(

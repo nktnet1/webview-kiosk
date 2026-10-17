@@ -499,7 +499,7 @@ internal object FilterParser {
                 listOf("#$#", "#@$#", "#%#", "#@%#").any(line::contains) ->
                     throw Unsupported()
 
-                else -> parseNetwork(line)
+                else -> parseNetwork(line, trusted)
             }
         } catch (error: Unsupported) {
             ParsedFilter.Unsupported(
@@ -601,7 +601,7 @@ internal object FilterParser {
         val action =
             if (procedural.any(selector::contains)) {
                 try {
-                    parseProcedure(selector, scope)
+                    procedure(selector, scope)
                 } catch (_: Unsupported) {
                     throw Unsupported(FilterSkipReason.PROCEDURAL)
                 }
@@ -614,6 +614,20 @@ internal object FilterParser {
     }
 
     /** Do not turn uBO procedural syntax into invalid CSS or executable JS. */
+    internal fun procedure(
+        expression: String,
+        scope: DomainScope,
+    ): CosmeticProcedure {
+        return try {
+            parseProcedure(expression, scope)
+        } catch (_: Unsupported) {
+            if (scope.included.isEmpty() && scope.includedEntities.isEmpty()) {
+                throw Unsupported()
+            }
+            ProceduralCosmetics.parse(expression, ::safeStyle) ?: throw Unsupported()
+        }
+    }
+
     private fun parseProcedure(
         expression: String,
         scope: DomainScope,
@@ -761,12 +775,18 @@ internal object FilterParser {
         }
         var text = raw.substring(start + 10, close)
         if (text.firstOrNull() in listOf('"', '\'')) {
+            if ('\\' in text) {
+                throw Unsupported()
+            }
             if (text.length < 2 || text.last() != text.first()) {
                 throw Unsupported()
             }
             text = text.substring(1, text.lastIndex)
         }
-        val pattern = text.startsWith('/') && text.lastIndexOf('/') > 0
+        val pattern =
+            text.startsWith('/') &&
+                text.lastIndexOf('/') > 0 &&
+                text.substringAfterLast('/').all { it in "im" }
         if (
             text.isEmpty() ||
                 text.length > 128 ||
@@ -776,7 +796,7 @@ internal object FilterParser {
             throw Unsupported()
         }
         fun suffix(value: String): String {
-            if (value.isNotBlank() && value.first() !in ".#[:") {
+            if (value.isNotBlank() && value.first() != ':') {
                 throw Unsupported()
             }
             return value.trimEnd()
@@ -996,7 +1016,7 @@ internal object FilterParser {
         return DomainScope(included, excluded, includedEntities, excludedEntities)
     }
 
-    private fun parseNetwork(line: String): ParsedFilter {
+    private fun parseNetwork(line: String, trusted: Boolean): ParsedFilter {
         val exception = line.startsWith("@@")
         val body =
             if (exception) {
@@ -1199,14 +1219,21 @@ internal object FilterParser {
                             resource in setOf("nooptext", "noop.txt") ->
                                 BlockingResponse.EMPTY_TEXT
                             resource == "noopframe" -> BlockingResponse.EMPTY_HTML
-                            resource == "1x1.gif" -> BlockingResponse.TRANSPARENT_GIF
-                            resource == "2x2.png" ->
+                            resource in setOf("1x1.gif", "1x1-transparent.gif") ->
+                                BlockingResponse.TRANSPARENT_GIF
+                            resource in setOf("2x2.png", "2x2-transparent.png") ->
                                 BlockingResponse.TRANSPARENT_2X2_PNG
                             resource == "1x1.png" -> BlockingResponse.TRANSPARENT_PNG
                             resource in setOf("noopjson", "noop.json") ->
                                 BlockingResponse.EMPTY_JSON
-                            resource in setOf("noopmp3-0.1s", "noop-0.1s.mp3") ->
-                                BlockingResponse.SILENT_MP3
+                            resource in
+                                setOf(
+                                    "noopmp3-0.1s",
+                                    "noop-0.1s.mp3",
+                                    "abp-resource:blank-mp3",
+                                ) -> BlockingResponse.SILENT_MP3
+                            resource == "noop-0.5s.mp3" ->
+                                BlockingResponse.SILENT_HALF_SECOND_MP3
                             resource in
                                 setOf(
                                     "noopmp4",
@@ -1214,8 +1241,11 @@ internal object FilterParser {
                                     "noop-1s.mp4",
                                     "abp-resource:blank-mp4",
                                 ) -> BlockingResponse.SILENT_MP4
-                            resource == "32x32.png" ->
+                            resource in
+                                setOf("32x32.png", "32x32-transparent.png") ->
                                 BlockingResponse.TRANSPARENT_32X32_PNG
+                            resource in setOf("3x2.png", "3x2-transparent.png") ->
+                                BlockingResponse.TRANSPARENT_3X2_PNG
                             else -> {
                                 val file =
                                     ScriptletResources.redirectAliases[
@@ -1223,6 +1253,14 @@ internal object FilterParser {
                                         ?: ScriptletResources.aliases[
                                                 resource.removeSuffix(".js")]
                                         ?: resource
+                                if (
+                                    file in ScriptletResources.trustedFiles &&
+                                        !trusted
+                                ) {
+                                    throw Unsupported(
+                                        FilterSkipReason.SCRIPTLET_TRUST
+                                    )
+                                }
                                 BlockingResponse.entries.firstOrNull {
                                     it.resourcePath == file
                                 } ?: throw Unsupported()

@@ -1,8 +1,13 @@
 // Mirrors the portable wire format; integration tests also execute Kotlin exports.
 const core = new Set(['SET', 'ABORT_READ', 'ABORT_WRITE', 'PREVENT_WINDOW_OPEN',
+    'TRUSTED_PRUNE_INBOUND_OBJECT', 'TRUSTED_PRUNE_OUTBOUND_OBJECT',
     'PREVENT_ADD_EVENT_LISTENER', 'ABORT_CURRENT_SCRIPT', 'JSON_PRUNE', 'JSON_EDIT',
+    'TRUSTED_JSON_EDIT',
     'PREVENT_FETCH', 'TRUSTED_PREVENT_FETCH', 'TRUSTED_SET']);
-const network = new Set(['PREVENT_XHR', 'TRUSTED_PREVENT_XHR', 'JSON_PRUNE_FETCH', 'JSON_PRUNE_XHR',
+const network = new Set(['TRUSTED_JSON_EDIT_FETCH', 'TRUSTED_JSON_EDIT_XHR',
+    'TRUSTED_JSONL_EDIT_FETCH', 'TRUSTED_JSONL_EDIT_XHR', 'JSON_EDIT_FETCH_REQUEST',
+    'JSON_EDIT_XHR_REQUEST', 'TRUSTED_JSON_EDIT_FETCH_REQUEST', 'TRUSTED_JSON_EDIT_XHR_REQUEST',
+    'PREVENT_XHR', 'TRUSTED_PREVENT_XHR', 'JSON_PRUNE_FETCH', 'JSON_PRUNE_XHR',
     'JSON_EDIT_FETCH', 'JSON_EDIT_XHR', 'JSONL_EDIT_FETCH', 'JSONL_EDIT_XHR', 'XML_PRUNE',
     'M3U_PRUNE', 'MPEGDASH_PRUNE', 'TRUSTED_REPLACE_FETCH', 'TRUSTED_REPLACE_XHR']);
 const advanced = new Set(['TRUSTED_REPLACE_ARGUMENT', 'TRUSTED_REPLACE_OUTBOUND_TEXT',
@@ -41,7 +46,10 @@ export function routingPayload(rules, suffixes) {
         const instruction = JSON.stringify([type, args]);
         if (type !== null && !offsets.has(instruction)) {
             offsets.set(instruction, instructions.length);
-            const module = core.has(type) ? 0 : network.has(type) ? 2 : advanced.has(type) ? 3 : 1;
+            const object = type.includes('EDIT_') && type.includes('_OBJECT') &&
+                !type.endsWith('EDIT_ELEMENT_OBJECT') || type === 'TRUSTED_EDIT_INBOUND_ELEMENT';
+            const module = core.has(type) || object ? 0 : network.has(type) ? 2 :
+                advanced.has(type) ? 3 : 1;
             instructions += JSON.stringify([type, args, module]) + '\n';
         }
         const offset = records.length;

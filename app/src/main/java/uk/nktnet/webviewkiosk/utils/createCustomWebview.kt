@@ -52,6 +52,7 @@ import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.ServiceWorkerBlocker
 import uk.nktnet.webviewkiosk.blocking.WebViewBlocker
 import uk.nktnet.webviewkiosk.blocking.WebViewCosmetics
+import uk.nktnet.webviewkiosk.blocking.WebViewRequests
 import uk.nktnet.webviewkiosk.blocking.WebViewScriptlets
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -341,6 +342,7 @@ fun createCustomWebview(
         val currentPageUrl = AtomicReference("")
         var cosmetics: WebViewCosmetics? = null
         var scriptlets: WebViewScriptlets? = null
+        var requests: WebViewRequests? = null
 
         fun beginLoad(url: String) {
             scriptlets?.refresh()
@@ -563,6 +565,7 @@ fun createCustomWebview(
                     }
 
                     cosmetics = WebViewCosmetics.attach(this, contentBlocker, scope)
+                    requests = WebViewRequests.attach(this, contentBlocker)
                     scriptlets =
                         WebViewScriptlets.attach(this, contentBlocker, scope)
 
@@ -1732,6 +1735,7 @@ fun createCustomWebview(
             dialogs.dispose()
             cosmetics?.dispose()
             scriptlets?.dispose()
+            requests?.dispose()
             blobInterface?.dispose()
         }
     }

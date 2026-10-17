@@ -76,7 +76,7 @@ class CosmeticCompatibilityTest {
     }
 
     @Test
-    fun unsupportedTextChainsAndUnsafePatternsRemainWholeRuleSkips() {
+    fun textChainsAreSupportedAndUnsafePatternsRemainWholeRuleSkips() {
         val engine = KotlinFilterEngine()
         engine.replace(
             listOf(
@@ -85,6 +85,7 @@ class CosmeticCompatibilityTest {
                     "site.example#?#.card:has-text(Ads):has-text(Other)"
             )
         )
-        assertEquals(3, engine.unsupportedRuleCount())
+        assertEquals(1, engine.unsupportedRuleCount())
+        assertEquals(2, engine.cosmeticProcedures("https://site.example/").size)
     }
 }

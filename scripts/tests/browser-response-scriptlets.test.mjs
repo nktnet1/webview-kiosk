@@ -212,7 +212,7 @@ test('Chromium cosmetic text conditions inspect matching children without hiding
                 import.meta.url);
             await page.addScriptTag({ content: readFileSync(source, 'utf8') });
             await page.waitForFunction(() =>
-                document.querySelector('#advert').style.display === 'none');
+                getComputedStyle(document.querySelector('#advert')).display === 'none');
             const display = await page.evaluate(() =>
                 document.querySelector('#content').style.display);
             assert.equal(display, '');

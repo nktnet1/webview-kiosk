@@ -19,7 +19,7 @@ class FilterListInspectionTest {
                     "@@||popup.example^\$popunder",
                     "||ad.example^\$csp=script-src 'none'",
                     "site.example##^script:has-text(tracker)",
-                    "site.example##.heading:has-text(Ad) + ul",
+                    "site.example##.heading:xpath(//span)",
                     "/(a+)+$/##+js(set, marker, false)",
                     "site.example##+js(unimplemented-json-editor, ..ads)",
                     "site.example##+js(aost, marker, /(?=ad)/)",

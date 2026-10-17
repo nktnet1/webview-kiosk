@@ -188,11 +188,21 @@ internal class CompiledFilterCache(
                                         strings.read().ifEmpty { null },
                                         input.readBoolean(),
                                         strings.read().ifEmpty { null },
+                                        strings.read().ifEmpty { null },
                                     )
                                 } else {
                                     null
                                 }
                             CosmeticRule(selector, domains, exception, procedure)
+                                .also { rule ->
+                                    require(
+                                        rule.procedure == null ||
+                                            FilterParser.procedure(
+                                                selector,
+                                                domains,
+                                            ) == rule.procedure
+                                    )
+                                }
                         }
                     val scriptlets =
                         List(
@@ -477,6 +487,7 @@ internal class CompiledFilterCache(
                         strings.write(procedure.textSelector.orEmpty())
                         output.writeBoolean(procedure.textPattern)
                         strings.write(procedure.media.orEmpty())
+                        strings.write(procedure.operations.orEmpty())
                     }
                 }
                 output.writeInt(rules.scriptlets.size)
@@ -614,7 +625,7 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 16
+        private const val VERSION = 17
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 

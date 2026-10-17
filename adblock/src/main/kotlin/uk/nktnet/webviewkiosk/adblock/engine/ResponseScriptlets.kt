@@ -15,6 +15,14 @@ internal object ResponseScriptlets {
             ScriptletType.JSON_EDIT_XHR,
             ScriptletType.JSONL_EDIT_FETCH,
             ScriptletType.JSONL_EDIT_XHR,
+            ScriptletType.TRUSTED_JSON_EDIT_FETCH,
+            ScriptletType.TRUSTED_JSON_EDIT_XHR,
+            ScriptletType.TRUSTED_JSONL_EDIT_FETCH,
+            ScriptletType.TRUSTED_JSONL_EDIT_XHR,
+            ScriptletType.JSON_EDIT_FETCH_REQUEST,
+            ScriptletType.JSON_EDIT_XHR_REQUEST,
+            ScriptletType.TRUSTED_JSON_EDIT_FETCH_REQUEST,
+            ScriptletType.TRUSTED_JSON_EDIT_XHR_REQUEST,
             ScriptletType.PREVENT_XHR,
             ScriptletType.JSON_PRUNE_FETCH,
             ScriptletType.JSON_PRUNE_XHR,
@@ -106,8 +114,13 @@ internal object ResponseScriptlets {
                 ScriptletType.XML_PRUNE -> {
                     arity = 3
                     args.size in 1..3 &&
-                        !arg(0).startsWith("xpath(") &&
-                        AdditionalScriptlets.selector(arg(0)) &&
+                        (if (arg(0).startsWith("xpath(")) {
+                            arg(0).endsWith(')') &&
+                                arg(0).length in 8..256 &&
+                                arg(0).count { it == '(' } <= 8
+                        } else {
+                            AdditionalScriptlets.selector(arg(0))
+                        }) &&
                         (arg(1).isEmpty() ||
                             AdditionalScriptlets.selector(arg(1))) &&
                         ScriptletParser.pattern(arg(2))

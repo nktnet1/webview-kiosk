@@ -236,7 +236,10 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
         val modules = instructionOffsets.keys.map { module(it.type) }.toSet()
         val resources =
             instructionOffsets.keys
-                .filter { it.type == ScriptletType.RESOURCE }
+                .filter {
+                    it.type in
+                        setOf(ScriptletType.RESOURCE, ScriptletType.TRUSTED_RESOURCE)
+                }
                 .map { it.arguments.first() }
                 .toSet()
         val libraries =
@@ -273,6 +276,9 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
         private fun module(type: ScriptletType): Int =
             when (type) {
                 in ResponseScriptlets.networkTypes -> 2
+                in ObjectEditing.elementTypes -> 1
+                in ObjectEditing.types -> 0
+                in ObjectPruning.types -> 0
                 in AdvancedScriptlets.aliases.values -> 3
                 ScriptletType.SET,
                 ScriptletType.ABORT_READ,
@@ -282,6 +288,7 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
                 ScriptletType.ABORT_CURRENT_SCRIPT,
                 ScriptletType.JSON_PRUNE,
                 ScriptletType.JSON_EDIT,
+                ScriptletType.TRUSTED_JSON_EDIT,
                 ScriptletType.PREVENT_FETCH,
                 ScriptletType.TRUSTED_PREVENT_FETCH,
                 ScriptletType.TRUSTED_SET -> 0

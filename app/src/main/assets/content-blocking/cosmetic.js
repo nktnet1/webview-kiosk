@@ -19,7 +19,25 @@
   var selectors = new Set();
   var installedSelectors = new Set();
   var procedures = new Map();
-  var procedureCursor = 0;
+  var candidates = new Map();
+  var relations = new Set();
+  var relationTasks = new Map();
+  var siblingRelations = false;
+  var descendantRefresh = false;
+  var styleSubjects = new Set();
+  var pathSubjects = new Set();
+  var invalidations = new Map();
+  var invalidateAgain = new Set();
+  var historyInstalled = false;
+  var observingProcedures = false;
+  var hideTags = new Set();
+  var inlineBackups = new Map();
+  var ownStyles = new WeakMap();
+  var regexes = new Map();
+  var attribute = "data-wk-cosmetic-" + Math.random().toString(36).slice(2);
+  var effects = new Map();
+  var suspended = false;
+  var nativeStyle = window.getComputedStyle && window.getComputedStyle.bind(window);
   var procedurePending = false;
   var domProcedureCount = 0;
   var selectorProbe = document.createElement("div");
@@ -32,15 +50,18 @@
   var stopped = false;
 
   function schedule(delay) {
-    if (stopped || timer !== null) return;
+    if (stopped || suspended || timer !== null) return;
     timer = scheduleTimeout(flush, delay === undefined ? 50 : delay);
   }
 
   function queue(root) {
     if (!root || root === style || (root.nodeType !== 1 && root.nodeType !== 9)) return;
-    if (work.some(function (item) { return item.root.contains(root); })) return;
+    if (work.some(function (item) { return !item.walker && item.root.contains(root); })) return;
     work = work.filter(function (item) { return !root.contains(item.root); });
-    if (work.length >= 64) work = [{ root: document, walker: null }];
+    if (work.length >= 64 && root.isConnected !== false) {
+      work = work.filter(function (item) { return item.root.isConnected === false; });
+      work.push({ root: document, walker: null });
+    }
     else work.push({ root: root, walker: null });
     schedule();
   }
@@ -54,6 +75,8 @@
 
   function collect(element) {
     if (element.nodeType !== 1 || element === style) return;
+    if (domProcedureCount && !candidates.has(element)) candidates.set(element, 0);
+    if (element.isConnected === false) return;
     remember(element.id, seenIds, ids);
     if (element.classList) element.classList.forEach(function (name) {
       remember(name, seenClasses, classes);
@@ -105,65 +128,299 @@
       insert(selector, "display:none!important");
     });
     procedures.forEach(function (rule) {
-      if (rule.style !== null) { insert(rule.selector, rule.style, rule.media); }
+      if (rule.style !== null) insert(rule.selector, rule.style, rule.media);
+      else if (rule._tag) insert("[" + attribute + '~="' + rule._tag + '"]', rule._declarations);
     });
   }
 
-  // Strictly declarative rules: filter text never becomes executable JavaScript.
-  // Bound selector evaluation even on pages with very large/dynamic DOMs.
+  function testPattern(pattern, value, exact) {
+    if (typeof value !== "string" || value.length > 65536) return false;
+    if (pattern[0] === "/" && pattern.lastIndexOf("/") > 0 &&
+        /^[im]*$/.test(pattern.slice(pattern.lastIndexOf("/") + 1))) {
+      var end = pattern.lastIndexOf("/");
+      var re = regexes.get(pattern);
+      if (!re) {
+        re = new RegExp(pattern.slice(1, end), pattern.slice(end + 1));
+        regexes.set(pattern, re);
+      }
+      return regexTest(re, value);
+    }
+    return exact ? value === pattern : value.indexOf(pattern) !== -1;
+  }
+
+  function relative(element, selector, suffix) {
+    selector = selector.trim();
+    if (/^[+~]/.test(selector) || suffix && selector[0] === ':') {
+      var parent = element.parentElement;
+      if (!parent) return [];
+      var index = Array.prototype.indexOf.call(parent.children, element) + 1;
+      return parent.querySelectorAll(":scope > :nth-child(" + index + ")" + selector);
+    }
+    return element.querySelectorAll(selector[0] === ">" ? ":scope " + selector : selector);
+  }
+
+  function evaluate(program, input, budget) {
+    var values = input;
+    program.steps.forEach(function (step) {
+      var next = new Set();
+      values.forEach(function (element) {
+        if (--budget.remaining < 0) throw new Error("Cosmetic work budget");
+        var operation = step[0], argument = step[1];
+        if (operation === "css") {
+          Array.from(relative(element, argument, true)).forEach(function (node) {
+            next.add(node);
+          });
+        } else if (operation === "upward") {
+          var count = /^[0-9]+$/.test(argument) ? Number(argument) : null;
+          if (count === null) element = element.parentElement &&
+            element.parentElement.closest(argument);
+          else for (var i = 0; element && i < count; i++) element = element.parentElement;
+          if (element) next.add(element);
+        } else if (operation === "has" || operation === "has-not" || operation === "not") {
+          var nested = argument.selector === "" || operation === "not" ? [element] :
+            Array.from(relative(element, argument.selector));
+          if (nested.length > 1024) throw new Error("Cosmetic candidate budget");
+          var matched = evaluate(argument, nested, budget).length !== 0;
+          if (matched === (operation === "has")) next.add(element);
+        } else if (operation === "text") {
+          if (testPattern(argument, element.textContent, false)) next.add(element);
+        } else if (operation === "length") {
+          var text = element.textContent;
+          if (typeof text === "string" && text.length >= Number(argument)) next.add(element);
+        } else if (operation === "attr") {
+          if (Array.from(element.attributes).some(function (entry) {
+            return testPattern(argument, entry.name, true) &&
+              (!step[2] || testPattern(step[2], entry.value, true));
+          })) next.add(element);
+        } else if (operation === "style") {
+          if (nativeStyle && testPattern(step[2],
+              authorStyle(element, step[3], argument), true)) {
+            next.add(element);
+          }
+        } else if (operation === "path") {
+          var path = location.pathname + location.search;
+          if (testPattern(argument, path, false)) next.add(element);
+        } else if (operation === "watch") next.add(element);
+      });
+      if (next.size > 1024) throw new Error("Cosmetic candidate budget");
+      values = Array.from(next);
+    });
+    return values;
+  }
+
+  function authorStyle(element, pseudo, property) {
+    var saved = [];
+    // Read author styles without feedback from this runner's reversible effects.
+    // Only affected elements/ancestors change, and private attributes are ignored
+    // by the observer. No document-wide stylesheet toggling is needed.
+    for (var node = element; node; node = node.parentElement) {
+      if (node.hasAttribute(attribute)) {
+        saved.push([node, node.getAttribute(attribute)]);
+        node.removeAttribute(attribute);
+      }
+      var backup = inlineBackups.get(node);
+      if (backup) restoreDisplay(node, backup);
+    }
+    try { return nativeStyle(element, pseudo || null).getPropertyValue(property); }
+    finally {
+      saved.forEach(function (item) { item[0].setAttribute(attribute, item[1]); });
+      for (var current = element; current; current = current.parentElement) {
+        if (inlineBackups.has(current)) {
+          current.style.setProperty("display", "none", "important");
+          ownStyles.set(current, current.getAttribute("style"));
+        }
+      }
+    }
+  }
+
+  function invalidate(subjects) {
+    if (invalidations.has(subjects)) invalidateAgain.add(subjects);
+    else invalidations.set(subjects, subjects.values());
+    if (subjects.size) schedule();
+  }
+
+  function effect(element, tag, delta) {
+    var tags = effects.get(element) || new Map();
+    var count = (tags.get(tag) || 0) + delta;
+    if (count > 0) tags.set(tag, count);
+    else tags.delete(tag);
+    var hidden = Array.from(tags.keys()).some(function (name) { return hideTags.has(name); });
+    var backup = inlineBackups.get(element);
+    if (hidden && element.style) {
+      if (!backup) inlineBackups.set(element, {
+        value: element.style.getPropertyValue("display"),
+        priority: element.style.getPropertyPriority("display"),
+        hadStyle: element.hasAttribute("style")
+      });
+      element.style.setProperty("display", "none", "important");
+      ownStyles.set(element, element.getAttribute("style"));
+    } else if (backup) {
+      restoreDisplay(element, backup);
+      ownStyles.set(element, element.getAttribute("style"));
+      inlineBackups.delete(element);
+    }
+    if (tags.size) {
+      effects.set(element, tags);
+      element.setAttribute(attribute, Array.from(tags.keys()).join(" "));
+    } else {
+      effects.delete(element);
+      element.removeAttribute(attribute);
+    }
+  }
+
+  function restoreDisplay(element, backup) {
+    if (backup.value) element.style.setProperty("display", backup.value, backup.priority);
+    else element.style.removeProperty("display");
+    if (!backup.hadStyle && !element.style.length) element.removeAttribute("style");
+  }
+
+  function applyRule(rule, seed) {
+    var before = rule._hits.get(seed) || new Set();
+    var after = new Set();
+    if (!seed.isConnected) { styleSubjects.delete(seed); pathSubjects.delete(seed); }
+    if (seed.isConnected && seed.matches(rule.selector)) {
+      if (rule._style) styleSubjects.add(seed);
+      if (rule._path) pathSubjects.add(seed);
+      var budget = { remaining: 4000 };
+      after = new Set(evaluate(rule._program, [seed], budget).filter(function (node) {
+        return node && node.isConnected && node !== document.documentElement;
+      }));
+    }
+    if (rule._tag) {
+      before.forEach(function (element) {
+        if (!after.has(element)) effect(element, rule._tag, -1);
+      });
+      after.forEach(function (element) {
+        if (!before.has(element)) effect(element, rule._tag, 1);
+      });
+      if (after.size) rule._hits.set(seed, after);
+      else rule._hits.delete(seed);
+    } else after.forEach(function (element) {
+      var action = rule._program.action;
+      if (action[0] === "remove") element.remove();
+      else if (action[0] === "remove-attr" && element.hasAttribute(action[1])) {
+        element.removeAttribute(action[1]);
+      } else if (action[0] === "remove-class" && element.classList.contains(action[1])) {
+        element.classList.remove(action[1]);
+      }
+    });
+  }
+
+  // Scan each new/changed subtree once. Text and child changes revisit ancestors
+  // and sibling subjects without scanning their unchanged descendants.
   function applyProcedures() {
     procedurePending = false;
     if (!domProcedureCount || !document.documentElement) return;
-    var rules = Array.from(procedures.values());
-    var budget = 2000;
-    var deadline = Date.now() + 8;
-    var processed = 0;
-    for (; processed < rules.length && budget > 0; processed++) {
-      if (Date.now() >= deadline) break;
-      var rule = rules[(procedureCursor + processed) % rules.length];
-      if (rule.style !== null) continue; // CSSOM applies these without DOM scans.
-      try {
-        selectorProbe.matches(rule.selector);
-        var matches = document.querySelectorAll(rule.selector);
-        for (var i = 0; i < matches.length && i < 256 && budget > 0; i++) {
-          budget--;
-          var element = matches[i];
-          if (rule.text !== null) {
-            var textNodes = rule.textSelector
-              ? element.querySelectorAll(rule.textSelector) : [element];
-            var textMatched = false;
-            for (var child = 0; child < textNodes.length && child < 64 && budget > 0; child++) {
-              if (Date.now() >= deadline) break;
-              budget--;
-              var text = textNodes[child].textContent;
-              if (typeof text !== "string" || text.length > 65536) continue;
-              var matched = rule._textRegex
-                ? regexTest(rule._textRegex, text) : text.indexOf(rule.text) >= 0;
-              if (matched) {
-                textMatched = true;
-                break;
-              }
-            }
-            if (!textMatched) continue;
-          }
-          for (var depth = 0; depth < rule.upward && element; depth++) {
-            element = element.parentElement;
-          }
-          if (rule.upwardSelector && element) {
-            element = element.parentElement && element.parentElement.closest(rule.upwardSelector);
-          }
-          if (!element || element === document.documentElement) continue;
-          if (rule.removeAttribute) element.removeAttribute(rule.removeAttribute);
-          else if (rule.removeClass) element.classList.remove(rule.removeClass);
-          else if (rule.remove) element.remove();
-          else element.style.setProperty("display", "none", "important");
-        }
-      } catch (_) {
-        // A selector unsupported by this WebView cannot affect other rules.
+    var contextBudget = 200, contextDeadline = Date.now() + 4;
+    for (var invalidation of invalidations) {
+      var cursor = invalidation[1], item;
+      while (contextBudget-- > 0 && Date.now() < contextDeadline) {
+        item = cursor.next();
+        if (item.done) break;
+        if (item.value.isConnected) candidates.set(item.value, 0);
+        else invalidation[0].delete(item.value);
+      }
+      if (!item || !item.done) break;
+      invalidations.delete(invalidation[0]);
+      if (invalidateAgain.delete(invalidation[0])) {
+        invalidations.set(invalidation[0], invalidation[0].values());
+        break;
       }
     }
-    procedureCursor = (procedureCursor + processed) % rules.length;
-    procedurePending = processed < rules.length;
+    while (relations.size && contextBudget-- > 0 && Date.now() < contextDeadline) {
+      var node = relations.values().next().value;
+      relations.delete(node);
+      if (!node) continue;
+      candidates.set(node, 0);
+      if (node.parentElement) {
+        relations.add(node.parentElement);
+        if (siblingRelations && !relationTasks.has(node.parentElement)) {
+          relationTasks.set(node.parentElement, node.parentElement.firstElementChild);
+        }
+      }
+    }
+    for (var task of relationTasks) {
+      var sibling = task[1];
+      while (sibling && contextBudget-- > 0 && Date.now() < contextDeadline) {
+        if (!candidates.has(sibling)) candidates.set(sibling, 0);
+        sibling = sibling.nextElementSibling;
+      }
+      if (sibling) { relationTasks.set(task[0], sibling); break; }
+      relationTasks.delete(task[0]);
+    }
+    var rules = Array.from(procedures.values()).filter(function (rule) {
+      return rule.style === null;
+    });
+    var remaining = 400, deadline = Date.now() + 8;
+    for (var entry of candidates) {
+      var element = entry[0], index = entry[1];
+      while (index < rules.length && remaining-- > 0 && Date.now() < deadline) {
+        try { applyRule(rules[index], element); } catch (_) {}
+        index++;
+      }
+      if (index === rules.length) candidates.delete(element);
+      else { candidates.set(element, index); break; }
+    }
+    procedurePending = candidates.size !== 0 || relations.size !== 0 ||
+      relationTasks.size !== 0 || invalidations.size !== 0;
+  }
+
+  function prepareProcedure(entry) {
+    var program;
+    if (entry.operations) program = JSON.parse(entry.operations);
+    else {
+      var steps = [];
+      if (entry.text !== null) {
+        if (entry.textSelector) steps.push(["has", {
+          selector: entry.textSelector, steps: [["text", entry.text]]
+        }]);
+        else steps.push(["text", entry.text]);
+      }
+      if (entry.upward) steps.push(["upward", String(entry.upward)]);
+      if (entry.upwardSelector) steps.push(["upward", entry.upwardSelector]);
+      program = { selector: entry.selector, steps: steps,
+        action: entry.remove ? ["remove", ""] : entry.removeAttribute
+          ? ["remove-attr", entry.removeAttribute] : entry.removeClass
+            ? ["remove-class", entry.removeClass] : ["hide", ""] };
+    }
+    function hasOperation(current, name) {
+      return current.steps.some(function (step) {
+        return step[0] === name || step[1] && typeof step[1] === "object" &&
+          hasOperation(step[1], name);
+      });
+    }
+    function siblings(current) {
+      return /[+~]|:nth-|:first-|:last-|:only-/.test(current.selector) ||
+        current.steps.some(function (step) {
+          return step[0] === "css" && /[+~]|:nth-|:first-|:last-|:only-/.test(step[1]) ||
+            step[1] && typeof step[1] === "object" && siblings(step[1]);
+        });
+    }
+    siblingRelations = siblingRelations || siblings(program);
+    descendantRefresh = descendantRefresh ||
+      /[ >+~]|:nth-|:first-|:last-|:only-/.test(entry.selector);
+    entry._program = program;
+    entry._style = hasOperation(program, "style");
+    entry._path = hasOperation(program, "path");
+    if (entry._path && !historyInstalled && window.history) {
+      historyInstalled = true;
+      ["pushState", "replaceState"].forEach(function (name) {
+        var native = window.history[name];
+        if (typeof native !== "function") return;
+        window.history[name] = new Proxy(native, { apply: function (target, receiver, args) {
+          var result = Reflect.apply(target, receiver, args);
+          invalidate(pathSubjects);
+          return result;
+        } });
+      });
+    }
+    entry._hits = new Map();
+    if (program.action[0] === "hide" || program.action[0] === "style-action") {
+      entry._tag = "r" + procedures.size;
+      if (program.action[0] === "hide") hideTags.add(entry._tag);
+      entry._declarations = program.action[0] === "hide"
+        ? "display:none!important" : program.action[1];
+    }
   }
 
   function take(values) {
@@ -181,6 +438,18 @@
     if (timer !== null) cancelTimeout(timer);
     timer = null;
     work = [];
+    candidates.clear();
+    relations.clear();
+    relationTasks.clear();
+    invalidations.clear();
+    invalidateAgain.clear();
+    styleSubjects.clear();
+    pathSubjects.clear();
+    effects.forEach(function (_, element) { element.removeAttribute(attribute); });
+    effects.clear();
+    inlineBackups.forEach(function (backup, element) { restoreDisplay(element, backup); });
+    inlineBackups.clear();
+    regexes.clear();
     classes.clear();
     ids.clear();
     if (style) style.remove();
@@ -247,7 +516,8 @@
           !(entry.removeClass === null || typeof entry.removeClass === "string") ||
           !(entry.upwardSelector === null ||
             (typeof entry.upwardSelector === "string" && entry.upwardSelector.length <= 128)) ||
-          procedures.size >= 128) return;
+          !(entry.operations == null || (typeof entry.operations === "string" &&
+            entry.operations.length <= 16384)) || procedures.size >= 128) return;
       var key = JSON.stringify(entry);
       if (!procedures.has(key)) {
         if (entry.textPattern) {
@@ -258,37 +528,101 @@
           }
           catch (_) { return; }
         }
+        if (entry.style === null) {
+          try { prepareProcedure(entry); } catch (_) { return; }
+          domProcedureCount++;
+          queue(document);
+        }
         procedures.set(key, entry);
-        if (entry.style === null) domProcedureCount++;
       }
     });
+    if (domProcedureCount && !observingProcedures) {
+      observingProcedures = true;
+      observe();
+    }
     applySelectors();
     applyProcedures();
     if (classes.size || ids.size || work.length || procedurePending) schedule();
   };
 
   var observer = new MutationObserver(function (records) {
-    if (stopped) return;
+    if (stopped || suspended) return;
     records.forEach(function (record) {
-      if (record.type === "attributes") queue(record.target);
-      else if (record.type === "characterData") queue(record.target.parentElement);
-      else record.addedNodes.forEach(queue);
+      if (record.type === "attributes") {
+        if (record.target === style || record.attributeName === attribute) return;
+        if (record.attributeName === "style") {
+          var currentStyle = record.target.getAttribute("style");
+          if (ownStyles.has(record.target) && ownStyles.get(record.target) === currentStyle) return;
+          ownStyles.delete(record.target);
+          var backup = inlineBackups.get(record.target);
+          if (backup && (record.target.style.getPropertyValue("display") !== "none" ||
+              record.target.style.getPropertyPriority("display") !== "important")) {
+            backup.value = record.target.style.getPropertyValue("display");
+            backup.priority = record.target.style.getPropertyPriority("display");
+            backup.hadStyle = record.target.hasAttribute("style");
+          }
+        }
+        if (styleSubjects.size) invalidate(styleSubjects);
+        collect(record.target);
+        if (domProcedureCount) {
+          candidates.set(record.target, 0);
+          relations.add(record.target);
+          if (descendantRefresh) queue(record.target);
+        }
+        if (classes.size || ids.size) schedule();
+      } else if (record.type === "characterData") {
+        if (domProcedureCount) relations.add(record.target.parentElement);
+        if (record.target.parentElement && record.target.parentElement.localName === "style") {
+          invalidate(styleSubjects);
+        }
+      } else {
+        if (record.target && record.target.localName === "style" && record.target !== style) {
+          invalidate(styleSubjects);
+        }
+        Array.from(record.addedNodes).concat(Array.from(record.removedNodes || []))
+          .forEach(function (node) {
+            if (node !== style && ["style", "link"].indexOf(node.localName) !== -1) {
+              invalidate(styleSubjects);
+            }
+          });
+        record.addedNodes.forEach(queue);
+        if (domProcedureCount) {
+          if (record.target) {
+            relations.add(record.target);
+            if (siblingRelations) queue(record.target);
+          }
+          (record.removedNodes || []).forEach(queue);
+        }
+      }
     });
-    if (style && !style.isConnected) schedule();
-    if (domProcedureCount) schedule(120);
+    if (style && !style.isConnected || domProcedureCount && relations.size) schedule();
   });
-  observer.observe(document, { childList: true, characterData: true, subtree: true,
-    attributes: true, attributeFilter: ["class", "id"] });
+  function observe() {
+    var options = { childList: true, characterData: true, subtree: true, attributes: true };
+    if (!domProcedureCount) options.attributeFilter = ["class", "id"];
+    observer.observe(document, options);
+  }
+  observe();
   window.addEventListener("pagehide", function () {
+    suspended = true;
     observer.disconnect();
     if (timer !== null) cancelTimeout(timer);
     timer = null;
   });
   window.addEventListener("pageshow", function () {
     if (stopped) return;
-    observer.observe(document, { childList: true, characterData: true, subtree: true,
-    attributes: true, attributeFilter: ["class", "id"] });
+    suspended = false;
+    observe();
     queue(document);
   });
+  window.addEventListener("resize", function () {
+    invalidate(styleSubjects);
+  });
+  window.addEventListener("popstate", function () {
+    invalidate(pathSubjects);
+  });
+  window.addEventListener("load", function (event) {
+    if (event.target && event.target.localName === "link") invalidate(styleSubjects);
+  }, true);
   queue(document);
 })();

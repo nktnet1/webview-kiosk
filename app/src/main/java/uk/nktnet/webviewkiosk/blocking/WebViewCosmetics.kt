@@ -209,6 +209,7 @@ private constructor(
                         )
                         .put("textPattern", procedure.textPattern)
                         .put("media", procedure.media ?: JSONObject.NULL)
+                        .put("operations", procedure.operations ?: JSONObject.NULL)
                         .put("upward", procedure.upward)
                         .put("remove", procedure.remove)
                         .put("style", procedure.style ?: JSONObject.NULL)

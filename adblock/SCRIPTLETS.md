@@ -1,4 +1,68 @@
-# Scriptlet compatibility - v1.0.26
+# Scriptlet compatibility - v1.0.28
+
+## v1.0.28 editing and request compatibility
+
+All names in the supplied JSON/JSONL editing suite now have typed entry points.
+`trusted-` variants require approved list provenance, including on cache restore.
+The ordinary versions can only delete data. Trusted queries additionally accept
+`=JSON`, `+=JSON-object`, `=repl(JSON-object)` and
+`=call([receiver, method, ...arguments])`. Replacements supply `regex` or `pattern`,
+optional `flags`, and `replacement`. Call directives accept data arguments and
+`${obj}`, `${key}` and `${val}` placeholders; a null receiver selects the page global.
+They do not compile JavaScript expressions. Prototype-related keys are rejected.
+JSON values are validated strictly, and traversal completes before mutations begin.
+Root deletion/replacement is supported. Assignments target resolved existing
+properties; object merges can add members. Existing per-operation safeguards remain.
+Root-based filter queries are added. Invalid bare bracket names/regexes stay rejected.
+
+`json-edit-fetch-request` and `json-edit-xhr-request`, and their trusted counterparts,
+edit explicit string request bodies. Fetch also hooks Request construction with an
+explicit data-property init body. Body/method accessors pass through to preserve
+native coercion; other inherited getters retain their original receiver.
+Request options, inherited init fields, headers, signals and
+native errors are retained; a derived init shadows only the edited body. Existing
+Request streams and other body types pass through without consuming them.
+Response/JSONL editors retain their existing propsToMatch/jsonExtract contracts.
+
+The object editors accept the upstream method/property chain and query:
+
+- `edit-outbound-object`: edit a synchronously returned object.
+- `edit-inbound-object`: chain, zero-based argument position, query; negative positions
+  count from the end. The selected argument is JSON-cloned before editing.
+- `edit-this-object`: chain, query, optional `after`; otherwise edit before the call.
+- `edit-object-on-getter` / `edit-object-on-setter`: chain and query. Native accessors
+  and object identity are preserved; late owners and assignments are observed.
+- `edit-element-object`: CSS selector, query, optional lookup window in milliseconds.
+  Existing/added matching elements are edited once each. Zero/default covers initial
+  parsing; a positive window observes late matches, with no polling. The shared data
+  interpreter traverses own data properties, not inherited DOM getters.
+- `trusted-edit-inbound-element`: method chain, zero-based position (or `this`), CSS
+  selector, query. Edit a matching native Element before forwarding the native call.
+
+Every object editor above has a trusted counterpart; the inbound-element name is
+trusted-only. Native method argument/outbound replacement hooks also follow late
+owners and function replacements. Their other argument contracts remain unchanged.
+
+`trusted-prune-inbound-object` uses a **one-based** positive argument position, prune
+paths, optional needle paths and optional `dontOverwrite, 1` / `stackToMatch, pattern`.
+It requires all prune/needle paths before acting. `dontOverwrite` clones the matching
+argument. `trusted-prune-outbound-object` accepts chain, prune paths and optional
+needle paths. Legacy pruning adds `{}` traversal, `[-]` array-entry removal and `{-}`
+object-entry removal. Array removals preserve retained order even across prune paths.
+
+`xml-prune` additionally accepts `xpath(expression)` for its first selector. Native
+XPath operates on the already bounded parsed XML document, including attribute-node
+removal. Root-document removal, malformed XML, external entities and oversized
+responses remain excluded.
+
+The new IMA DAI resource requires trust for both +js and network redirects. AdsByGoogle
+is available inline and by redirect; its observer visits changed subtrees in bounded
+batches. AMP, Outbrain, HD main and BAB 4.2 are redirect resources. BAB 4.2 needs the
+original requested script URL/currentScript context and is not an inline entry point.
+
+The contracts below retain their existing limits except where this section expands
+the editing, trusted-mutation, legacy-entry-pruning and XML-XPath subsets.
+Remaining WebView/DSL boundaries and their reasons are in [COMPATIBILITY.md](COMPATIBILITY.md).
 
 The engine compiles validated `##+js(...)` data into fixed local JavaScript.
 Ordinary imports cannot enable trusted operations. No downloaded list supplies
@@ -7,7 +71,7 @@ can alter executable page content; only approved preset downloads can enable the
 Other trusted replacements are strings or bounded JSON.
 
 The pinned upstream catalogue has 129 canonical names. This version implements
-88 names: 87 tested subsets and one conditional Navigation API operation. See the
+114 names: 113 tested subsets and one conditional Navigation API operation. See the
 [complete catalogue](SCRIPTLET-CATALOG.md) for aliases and remaining exclusions.
 Support for a name does not imply support for all its upstream argument forms.
 
@@ -50,17 +114,18 @@ Unknown arguments discard the whole instruction. There is no approximate fallbac
 | ✅ | `nobab` | Upstream BAB eval signatures and timeout signature |
 | ✅ | `alert-buster` | Defuses alert; confirm and prompt retain native behavior |
 | ✅ | `multiup` | Direct form button link navigation, HTTP(S) destinations only |
-| ✅ | Fifteen fixed API shims | No filter arguments; includes IMA lifecycle callbacks; see catalogue for exact names |
+| ✅ | Seventeen fixed API shims | No filter arguments; includes IMA lifecycle callbacks; see catalogue for exact names |
 | ⚠️ | `prevent-navigation` | Requires native Navigation API and cancelable automatic events |
 | ✅ | `no-xhr-if` / `prevent-xhr` | URL/method predicates, canned responses and native instances |
 | ✅ | JSON Fetch/XHR pruning | Own paths, guards, URL/method and optional stack predicates |
-| ✅ | Eighteen trusted operations and clipboard protection | Approved download provenance and contracts below |
-| ✅ | `xml-prune` | CSS element selector, guard selector and URL pattern |
+| ✅ | Trusted operations and clipboard protection | Approved download provenance and contracts below |
+| ✅ | `xml-prune` | CSS or native XPath selection, optional CSS guard and URL pattern |
 | ✅ | `m3u-prune` | HLS EXTINF/URI segment pairs and following discontinuity |
 | ✅ | `overlay-buster` | Shared observer, bounded sweep and 30-second deadline |
 | ✅ | `mpegdash-prune` | XHR MPD Period durations/starts; fully timed manifests only |
 | ✅ | JSON/JSONL response editors | Bounded JSONPath selectors, indexes, unions, filters, regexes, guarded query chains, Fetch/XHR predicates and JSONL capture extraction |
-| ❌ | Other editing DSLs | Request-body editors, assignments, JSONPath functions and XPath remain unimplemented |
+| ✅ | Request-body and object editors | String request bodies and method/property/element hooks; trusted data directives above |
+| ❌ | Remaining editing forms | Arbitrary expressions, slices and accessor-defined JSON data |
 | ❌ | Debug/close-window | Deliberate debugger exclusion and no native window lifecycle |
 
 The safe constant set is empty string, undefined/null, booleans, empty arrays or
@@ -106,8 +171,9 @@ the editing query, for example `v2:$.required;$..ads` or
 `v2:$.missing{0};$.items[*]{2,4};$..ads`. Guards never mutate their selections.
 Supported cardinalities are `{n}`, `{n,}`, `{,n}`, `{n,m}`, with a default of one
 or more and bounds up to 1,000,000. All guards share the editing traversal budget.
-Parenthesized/logical filter expressions, absolute-root filters, assignments,
-functions and slices remain skipped. Regexes retain the bounded safe grammar;
+Root-based filter queries are supported. Parenthesized/logical filter expressions
+and slices remain skipped. Trusted assignments and data directives follow the
+contracts above. Regexes retain the bounded safe grammar;
 selectors have no flags and regex comparisons permit only the optional `i` flag.
 Use dot notation for regex selectors; bracket regexes are skipped to agree with
 the pinned interpreter. Negated regex comparisons and
@@ -150,10 +216,10 @@ Conflicting terminal property hooks use the first instruction; compatible checks
 share accessors. Non-configurable/read-only properties pass through. Missing owners
 are hooked without manufacturing objects, within a 4096-slot safeguard.
 
-Compiled snapshots use schema 15. Cached instructions, JSONPath programs, and extended
+Compiled snapshots use schema 17. Cached instructions, JSONPath programs, and extended
 scope patterns are validated again. Resource keys select bundled implementations.
-Only needed adapters and eligible shims are bundled; no privileged callable bridge
-is introduced. Redirect-only resources do not become `+js` entry points.
+Only needed adapters and eligible shims are bundled. The separate request-policy
+bridge returns only a filtering decision and does not expose scriptlet execution. Redirect-only resources do not become `+js` entry points.
 
 ## Response and trusted-operation contracts
 
@@ -184,9 +250,9 @@ not every XHR IDL edge case.
 JSON response syntax is `paths [, guards [, propsToMatch, predicate
 [, stackToMatch, pattern]]]`. Options can appear in either order and normalize.
 Own-property handling, guards and work budgets match `json-prune`. Unknown
-options discard the whole instruction. XML supports CSS element selectors and
-optional guard/URL matching, not XPath or attribute nodes; malformed XML and
-DOCTYPE/entity inputs pass through. HLS supports EXTINF followed immediately by
+options discard the whole instruction. XML supports CSS element selectors or
+native XPath, including attribute nodes, and optional guard/URL matching. Malformed
+XML and DOCTYPE/entity inputs pass through. HLS supports EXTINF followed immediately by
 a matching segment URI, optionally followed by a discontinuity tag. Multiline
 regex and wildcard-string forms are rejected; other playlist tags are retained.
 

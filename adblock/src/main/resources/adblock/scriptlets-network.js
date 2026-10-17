@@ -45,10 +45,20 @@
         if (doc.getElementsByTagName('parsererror').length) { return text; }
         if (doc.getElementsByTagName('*').length > 4096) { return text; }
         if (args[1] && !doc.querySelector(args[1])) { return text; }
-        const nodes = doc.querySelectorAll(args[0]);
+        let nodes;
+        if (args[0].startsWith('xpath(')) {
+            if (typeof doc.evaluate !== 'function') { return text; }
+            const result = doc.evaluate(args[0].slice(6, -1), doc, null, 7, null);
+            if (result.snapshotLength > 1024) { return text; }
+            nodes = Array.from({ length: result.snapshotLength }, (_, i) => result.snapshotItem(i));
+        } else { nodes = doc.querySelectorAll(args[0]); }
         if (!nodes.length || nodes.length > 1024 ||
             Array.from(nodes).includes(doc.documentElement)) { return text; }
-        for (const node of nodes) { node.remove(); }
+        for (const node of nodes) {
+            if (node.nodeType === 2) { node.ownerElement?.removeAttributeNode(node); }
+            else if (typeof node.remove === 'function') { node.remove(); }
+            else if (node.parentNode) { node.parentNode.removeChild(node); }
+        }
         return new NativeSerializer().serializeToString(doc);
     }
     function playlist(text, match) {
@@ -102,9 +112,12 @@
     }
     const responseTypes = new Set(['JSON_PRUNE_FETCH', 'JSON_PRUNE_XHR', 'XML_PRUNE',
         'MPEGDASH_PRUNE', 'JSON_EDIT_FETCH', 'JSON_EDIT_XHR', 'JSONL_EDIT_FETCH', 'JSONL_EDIT_XHR',
+        'TRUSTED_JSON_EDIT_FETCH', 'TRUSTED_JSON_EDIT_XHR',
+        'TRUSTED_JSONL_EDIT_FETCH', 'TRUSTED_JSONL_EDIT_XHR',
         'M3U_PRUNE', 'TRUSTED_REPLACE_FETCH', 'TRUSTED_REPLACE_XHR']);
     const edits = selected.filter(rule => responseTypes.has(rule[0]))
-        .map(([type, args]) => {
+        .map(([rawType, args]) => {
+            const type = rawType.startsWith('TRUSTED_JSON') ? rawType.slice(8) : rawType;
             const json = type.startsWith('JSON_PRUNE_');
             const replace = type.startsWith('TRUSTED_REPLACE_');
             const editing = type.startsWith('JSON_EDIT_') || type.startsWith('JSONL_EDIT_');
@@ -135,7 +148,8 @@
                         const work = { remaining: 16384 };
                         const edit = text => {
                             const value = apply(parse, JSON, [text]);
-                            return editor(value, work) ? apply(stringify, JSON, [value]) : text;
+                            const result = editor(value, work);
+                            return result ? apply(stringify, JSON, [result.value]) : text;
                         };
                         if (!lines) { return edit(text); }
                         const parts = text.split(/(\r?\n)/);
@@ -198,6 +212,66 @@
             return typeof url === 'string' && typeof method === 'string'
                 ? { url, method } : null;
         } catch { return null; }
+    }
+    const requestEdits = selected.filter(([type]) =>
+        /^(?:TRUSTED_)?JSON_EDIT_(?:FETCH|XHR)_REQUEST$/.test(type))
+        .map(([type, args]) => ({ type, fields: requestFields(args[2]), edit: jsonEditor(args) }));
+    function requestBody(body, details, kind) {
+        if (!details || typeof body !== 'string' || body.length > MAX_BODY) { return body; }
+        const work = { remaining: 65536 };
+        for (const entry of requestEdits) {
+            if (!entry.type.endsWith('_' + kind + '_REQUEST') ||
+                !matches(entry.fields, details)) { continue; }
+            try {
+                const value = apply(parse, JSON, [body]);
+                if (!value || typeof value !== 'object') { continue; }
+                const result = entry.edit(value, work);
+                if (!result) { continue; }
+                const after = apply(stringify, JSON, [result.value]);
+                if (after.length <= MAX_BODY) { body = after; }
+            } catch {}
+        }
+        return body;
+    }
+    function fetchArguments(args) {
+        try {
+            const options = args[1];
+            if (!options || !['object', 'function'].includes(typeof options)) { return args; }
+            const field = name => {
+                let owner = options;
+                for (let depth = 0; owner && depth < 16; depth++) {
+                    const entry = descriptor(owner, name);
+                    if (entry) { return entry; }
+                    owner = Object.getPrototypeOf(owner);
+                }
+            };
+            const body = field('body'), method = field('method');
+            // Do not read accessors once here and again during native coercion.
+            if (!body || !('value' in body) || method && !('value' in method)) { return args; }
+            const before = body.value;
+            const after = requestBody(before, fetchDetails(args), 'FETCH');
+            if (after === before) { return args; }
+            const init = Object.create(options);
+            define(init, 'body', { value: after, enumerable: true, configurable: true });
+            return [args[0], new Proxy(init, { get(target, name, receiver) {
+                return descriptor(target, name) ? Reflect.get(target, name, receiver)
+                    : Reflect.get(options, name, options);
+            } })];
+        } catch { return args; }
+    }
+    let fetchRequestsInstalled = false;
+    function fetchRequests() {
+        if (fetchRequestsInstalled) { return; }
+        fetchRequestsInstalled = true;
+        wrap(self, 'fetch', (target, receiver, args) =>
+            apply(target, receiver, fetchArguments(args)));
+        if (NativeRequest) {
+            self.Request = new Proxy(self.Request, {
+                construct(target, args, derived) {
+                    return Reflect.construct(target, fetchArguments(args), derived);
+                },
+            });
+        }
     }
     async function readBounded(response) {
         if (!response.body || typeof response.body.getReader !== 'function' ||
@@ -316,7 +390,7 @@
                 sync: args[2] === false, entries: details
                     ? applicable('xhr', details, new NativeError().stack || '') : [],
                 prevent: details ? preventers.find(test => matches(test.fields, details)) : null,
-                url: details?.url || '', task: undefined };
+                url: details?.url || '', details, task: undefined };
             states.set(xhr, state);
             try { return apply(target, xhr, args); }
             catch (error) {
@@ -387,7 +461,10 @@
         }
         wrap(proto, 'send', (target, xhr, args) => {
             const state = states.get(xhr);
-            if (!state?.prevent) { return apply(target, xhr, args); }
+            if (!state?.prevent) {
+                const body = requestBody(args[0], state?.details, 'XHR');
+                return apply(target, xhr, args.length ? [body] : args);
+            }
             if (state.sent || state.synthetic && state.phase !== 1) { throw invalid(); }
             if (xhr.responseType === 'document' && !NativeParser ||
                 xhr.responseType === 'blob' && !NativeBlob ||
@@ -502,6 +579,12 @@
         ['PREVENT_XHR', xhrResponses], ['TRUSTED_PREVENT_XHR', xhrResponses],
         ['JSON_EDIT_XHR', xhrResponses], ['JSONL_EDIT_XHR', xhrResponses],
         ['JSON_EDIT_FETCH', fetchResponses], ['JSONL_EDIT_FETCH', fetchResponses],
+        ['TRUSTED_JSON_EDIT_XHR', xhrResponses], ['TRUSTED_JSONL_EDIT_XHR', xhrResponses],
+        ['TRUSTED_JSON_EDIT_FETCH', fetchResponses], ['TRUSTED_JSONL_EDIT_FETCH', fetchResponses],
+        ['JSON_EDIT_FETCH_REQUEST', fetchRequests],
+        ['TRUSTED_JSON_EDIT_FETCH_REQUEST', fetchRequests],
+        ['JSON_EDIT_XHR_REQUEST', xhrResponses],
+        ['TRUSTED_JSON_EDIT_XHR_REQUEST', xhrResponses],
         ['JSON_PRUNE_XHR', xhrResponses], ['TRUSTED_REPLACE_XHR', xhrResponses],
         ['JSON_PRUNE_FETCH', fetchResponses], ['TRUSTED_REPLACE_FETCH', fetchResponses],
         ['XML_PRUNE', both], ['M3U_PRUNE', both],

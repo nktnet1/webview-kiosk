@@ -66,7 +66,15 @@ internal object ScriptletParser {
         val name = fields.first().removeSuffix(".js")
         ScriptletResources.aliases[name]?.let { resource ->
             return if (fields.size == 1) {
-                validated(ScriptletType.RESOURCE, listOf(resource))
+                validated(
+                    if (resource in ScriptletResources.trustedFiles) {
+                        ScriptletType.TRUSTED_RESOURCE
+                    } else {
+                        ScriptletType.RESOURCE
+                    },
+                    listOf(resource),
+                    trusted,
+                )
             } else {
                 null
             }
@@ -84,6 +92,8 @@ internal object ScriptletParser {
                 ?: ResponseScriptlets.aliases[name]
                 ?: AdvancedScriptlets.aliases[name]
                 ?: JsonEditing.aliases[name]
+                ?: ObjectEditing.aliases[name]
+                ?: ObjectPruning.aliases[name]
                 ?: return null
         val args =
             if (name == "prevent-innerHTML") {
@@ -103,12 +113,20 @@ internal object ScriptletParser {
         val fields =
             arguments(expression) ?: return FilterSkipReason.SCRIPTLET_ARGUMENTS
         val name = fields.first().removeSuffix(".js")
+        if (
+            ScriptletResources.aliases[name] in ScriptletResources.trustedFiles &&
+                !trusted
+        ) {
+            return FilterSkipReason.SCRIPTLET_TRUST
+        }
         val type =
             aliases[name]
                 ?: AdditionalScriptlets.aliases[name]
                 ?: ResponseScriptlets.aliases[name]
                 ?: AdvancedScriptlets.aliases[name]
                 ?: JsonEditing.aliases[name]
+                ?: ObjectEditing.aliases[name]
+                ?: ObjectPruning.aliases[name]
         if (type?.requiresTrust == true && !trusted) {
             return FilterSkipReason.SCRIPTLET_TRUST
         }
@@ -134,7 +152,8 @@ internal object ScriptletParser {
         val maxLength =
             if (
                 type in AdvancedScriptlets.aliases.values ||
-                    type in JsonEditing.types
+                    type in JsonEditing.types ||
+                    type in ObjectEditing.types
             ) {
                 8192
             } else {
@@ -148,6 +167,12 @@ internal object ScriptletParser {
         }
         if (type in JsonEditing.types) {
             return JsonEditing.validated(type, arguments)
+        }
+        if (type in ObjectEditing.types) {
+            return ObjectEditing.validated(type, arguments)
+        }
+        if (type in ObjectPruning.types) {
+            return ObjectPruning.validated(type, arguments)
         }
         if (type in CookieScriptlets.types) {
             return CookieScriptlets.validated(type, arguments)
@@ -394,10 +419,11 @@ internal object ScriptletParser {
                     paths.all { path ->
                         val parts = path.split('.')
                         parts.size <= 24 &&
-                            parts.last() != "[]" &&
+                            parts.last() !in setOf("[]", "{}", "[-]", "{-}") &&
                             parts.all {
                                 it !in forbidden &&
-                                    (pathPart.matches(it) || it in setOf("[]", "*"))
+                                    (pathPart.matches(it) ||
+                                        it in setOf("[]", "{}", "*", "[-]", "{-}"))
                             }
                     }
             }

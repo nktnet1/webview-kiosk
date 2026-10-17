@@ -148,7 +148,7 @@ class ResponseScriptletTest {
                 "json-prune-fetch-response, ads, , propsToMatch, /api, propsToMatch, other",
                 "json-prune-fetch-response, ads, , unknown, value",
                 "json-prune-fetch-response, ads, , propsToMatch, mode:cors",
-                "xml-prune, xpath(//Ad)",
+                "xml-prune, xpath()",
                 "xml-prune, Ad, , ads, logdoc, 1",
                 "m3u-prune",
                 "m3u-prune, *ads*",

@@ -4,8 +4,8 @@ The supplied archive contains 99 parameterized scriptlets and 30 JavaScript reso
 129 canonical names, or 194 names including aliases. Its 54 helper functions are separate.
 Only 21 of the 30 resources have upstream inline-injection eligibility (`data: text`).
 
-This version implements 88 canonical names: 87 tested subsets plus
-`prevent-navigation`, which requires a native Navigation API. The other 41 remain skipped as `+js` entry points.
+This version implements 114 canonical names: 113 tested subsets plus
+`prevent-navigation`, which requires a native Navigation API. The other 15 remain skipped as `+js` entry points.
 The earlier supplied list used 39 names resolving to 38 canonical names. Absence from
 that list is not a reason for exclusion.
 All ✅ entries remain subject to the argument contracts in [SCRIPTLETS.md](SCRIPTLETS.md).
@@ -21,16 +21,16 @@ Supported entries also reject unimplemented argument forms rather than approxima
 
 | Reason | Examples | What would be needed |
 | --- | --- | --- |
-| Implementation | Other JSON/object editing and JSONL DSLs | Complete bounded parsers and behavior tests |
-| Implementation | Other trusted operations | Provenance is enforced; each operation still needs a tested implementation |
+| Argument subsets | Remaining JSONPath forms and accessor-based data | Correct bounded semantics without invoking site getters |
+| Eval semantics | `evaldata-prune` | A transparent direct-eval contract for unrelated calls |
 | Native integration | `close-window` | A native window lifecycle and a defined kiosk close policy |
 | Deliberate exclusion | Debug helpers | Debugger hooks are not installed in the production blocker |
 | Provider capability | Document start | `DOCUMENT_START_SCRIPT`; late injection cannot intercept earlier page scripts |
 | Provider capability | `prevent-navigation` | Native Navigation API |
 
 Fresh approved uBlock preset downloads now carry trusted provenance. A custom list,
-matching source URL or directive does not gain trust. Eighteen `trusted-*` operations and clipboard protection have
-explicit tested contracts; the others remain skipped. Several redirect-only files
+matching source URL or directive does not gain trust. Trusted editors, pruning, clipboard protection and IMA DAI have
+explicit tested contracts; unsupported argument forms remain skipped. Several redirect-only files
 in the archive are resources, not upstream `+js` entry points.
 
 The concrete WebView constraint for all property/function hooks is reliable page-world
@@ -51,40 +51,40 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `trusted-create-html.js` | ✅ trusted bounded HTML; top frame only |
 | `href-sanitizer.js` | ✅ links |
 | `proxy-apply-config.js` | ❌ configuration/debug |
-| `edit-outbound-object.js` | ❌ unimplemented editing DSL |
-| `trusted-edit-outbound-object.js` | ❌ operation not implemented; trust is enforced |
+| `edit-outbound-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `trusted-edit-outbound-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
 | `json-edit.js` | ✅ bounded JSONPath subset; see argument contract |
-| `trusted-json-edit.js` | ❌ operation not implemented; trust is enforced |
-| `edit-inbound-object.js` | ❌ unimplemented editing DSL |
-| `trusted-edit-inbound-object.js` | ❌ operation not implemented; trust is enforced |
-| `edit-this-object.js` | ❌ unimplemented editing DSL |
-| `trusted-edit-this-object.js` | ❌ operation not implemented; trust is enforced |
-| `edit-object-on-getter.js` | ❌ unimplemented editing DSL |
-| `trusted-edit-object-on-getter.js` | ❌ operation not implemented; trust is enforced |
-| `edit-object-on-setter.js` | ❌ unimplemented editing DSL |
-| `trusted-edit-object-on-setter.js` | ❌ operation not implemented; trust is enforced |
-| `edit-element-object.js` | ❌ unimplemented editing DSL |
-| `trusted-edit-element-object.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-json-edit.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `edit-inbound-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `trusted-edit-inbound-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `edit-this-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `trusted-edit-this-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `edit-object-on-getter.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `trusted-edit-object-on-getter.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `edit-object-on-setter.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `trusted-edit-object-on-setter.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `edit-element-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `trusted-edit-element-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
 | `json-edit-xhr-response.js` | ✅ bounded JSONPath subset; see argument contract |
-| `trusted-json-edit-xhr-response.js` | ❌ operation not implemented; trust is enforced |
-| `json-edit-xhr-request.js` | ❌ unimplemented editing DSL |
-| `trusted-json-edit-xhr-request.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-json-edit-xhr-response.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `json-edit-xhr-request.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `trusted-json-edit-xhr-request.js` | ✅ validated editing subset; see SCRIPTLETS.md |
 | `json-edit-fetch-response.js` | ✅ bounded JSONPath subset; see argument contract |
-| `trusted-json-edit-fetch-response.js` | ❌ operation not implemented; trust is enforced |
-| `trusted-edit-inbound-element.js` | ❌ operation not implemented; trust is enforced |
-| `json-edit-fetch-request.js` | ❌ unimplemented editing DSL |
-| `trusted-json-edit-fetch-request.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-json-edit-fetch-response.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `trusted-edit-inbound-element.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `json-edit-fetch-request.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `trusted-json-edit-fetch-request.js` | ✅ validated editing subset; see SCRIPTLETS.md |
 | `jsonl-edit-xhr-response.js` | ✅ bounded JSONPath subset; see argument contract |
-| `trusted-jsonl-edit-xhr-response.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-jsonl-edit-xhr-response.js` | ✅ validated editing subset; see SCRIPTLETS.md |
 | `jsonl-edit-fetch-response.js` | ✅ bounded JSONPath subset; see argument contract |
-| `trusted-jsonl-edit-fetch-response.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-jsonl-edit-fetch-response.js` | ✅ validated editing subset; see SCRIPTLETS.md |
 | `abort-on-stack-trace.js` | ✅ stack |
-| `trusted-prune-inbound-object.js` | ❌ operation not implemented; trust is enforced |
-| `trusted-prune-outbound-object.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-prune-inbound-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
+| `trusted-prune-outbound-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
 | `json-prune.js` | ✅ json |
 | `json-prune-fetch-response.js` | ✅ bounded response pruning |
 | `json-prune-xhr-response.js` | ✅ bounded response pruning |
-| `evaldata-prune.js` | ❌ unverified eval contract |
+| `evaldata-prune.js` | ❌ general eval interception changes direct-eval scope |
 | `noeval-if.js` | ✅ eval |
 | `prevent-addEventListener.js` | ✅ listeners |
 | `prevent-bab.js` | ✅ BAB |
@@ -145,7 +145,7 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `trusted-override-element-method.js` | ✅ trusted selector and constant/throw disposition |
 | `amazon_ads.js` | ✅ fixed API shim |
 | `amazon_apstag.js` | ↪️ bundled `$redirect`; upstream has no `+js` entry |
-| `ampproject_v0.js` | ❌ redirect-only upstream resource |
+| `ampproject_v0.js` | ↪️ bundled redirect; no equivalent inline context |
 | `adthrive_abd.js` | ✅ fixed API shim |
 | `chartbeat.js` | ↪️ bundled `$redirect`; upstream has no `+js` entry |
 | `doubleclick_instream_ad_status.js` | ✅ fixed API shim |
@@ -156,17 +156,17 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `google-analytics_ga.js` | ✅ fixed API shim |
 | `google-analytics_inpage_linkid.js` | ↪️ bundled redirect-only resource; no `+js` eligibility |
 | `google-ima.js` | ✅ fixed media API shim; event/callback lifecycle tested |
-| `google-ima-dai.js` | ❌ operation not implemented; trust is enforced |
-| `googlesyndication_adsbygoogle.js` | ❌ unverified iframe adapter |
+| `google-ima-dai.js` | ✅ trusted fixed stream API shim; redirect and inline |
+| `googlesyndication_adsbygoogle.js` | ✅ fixed iframe API shim; bounded subtree observer |
 | `googletagservices_gpt.js` | ✅ fixed API shim |
-| `hd-main.js` | ❌ redirect-only upstream resource |
+| `hd-main.js` | ↪️ bundled redirect; no equivalent inline context |
 | `nitropay_ads.js` | ✅ fixed API shim |
-| `nobab2.js` | ❌ currentScript redirect context |
+| `nobab2.js` | ↪️ bundled redirect; no equivalent inline context |
 | `noeval.js` | ✅ eval-all |
 | `noeval-silent.js` | ✅ eval-all |
 | `nofab.js` | ✅ fixed API shim |
 | `noop.js` | ❌ no blocking behavior |
-| `outbrain-widget.js` | ❌ redirect-only upstream resource |
+| `outbrain-widget.js` | ↪️ bundled redirect; no equivalent inline context |
 | `piano-analytics.js` | ↪️ bundled `$redirect`; upstream has no `+js` entry |
 | `popads.js` | ✅ fixed API shim |
 | `popads-dummy.js` | ✅ fixed API shim |

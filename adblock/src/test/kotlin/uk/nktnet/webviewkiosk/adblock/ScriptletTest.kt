@@ -140,7 +140,7 @@ class ScriptletTest {
                 "+js(nostif, /ad/g)",
                 "+js(nostif, /[a-/)",
                 "+js(acs, x, test, , extra)",
-                "+js(json-prune, items.[-].ad)",
+                "+js(json-prune, items.[-])",
                 "+js(json-prune, constructor.x)",
                 "+js(json-prune, items.[])",
                 "+js(json-prune, ads, , stackToMatch)",

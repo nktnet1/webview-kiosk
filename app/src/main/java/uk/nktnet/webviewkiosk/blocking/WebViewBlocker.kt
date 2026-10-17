@@ -10,8 +10,8 @@ import uk.nktnet.webviewkiosk.config.Constants
 
 /**
  * Native request headers supply resource/initiator facts when available. The current
- * page is the initiator fallback; an empty source keeps context-free filtering only.
- * Ambiguous types remain "other". Main frames match themselves.
+ * page cannot identify a child frame's initiator; an empty source keeps context-free
+ * filtering only. Ambiguous types remain "other". Main frames match themselves.
  */
 internal object WebViewBlocker {
     private val empty = ByteArray(0)
@@ -104,13 +104,7 @@ internal object WebViewBlocker {
         if (isMainFrame) {
             return service.responseFor(url, url, "document", method)
         }
-        val source =
-            sequenceOf("referer", "origin").firstNotNullOfOrNull { name ->
-                requestHeaders.entries
-                    .firstOrNull { it.key.equals(name, true) }
-                    ?.value
-                    ?.takeIf(::isFilterableUrl)
-            } ?: pageUrl
+        val source = initiator(url, pageUrl, requestHeaders)
         if (source.isNotEmpty() && !isFilterableUrl(source)) {
             return BlockingResponse.ALLOW
         }
@@ -120,6 +114,40 @@ internal object WebViewBlocker {
             resourceType(requestHeaders),
             method,
         )
+    }
+
+    internal fun initiator(
+        url: String,
+        pageUrl: String,
+        headers: Map<String, String>,
+    ): String {
+        fun header(name: String) =
+            headers.entries
+                .firstOrNull { it.key.equals(name, true) }
+                ?.value
+                .orEmpty()
+        val sources = listOf(header("referer"), header("origin"))
+        // Internal/file origins must remain exempt, including worker requests.
+        sources
+            .firstOrNull {
+                it.isNotBlank() && it != "null" && !isFilterableUrl(it)
+            }
+            ?.let {
+                return it
+            }
+        sources.firstOrNull(::isFilterableUrl)?.let {
+            return it
+        }
+        if (header("sec-fetch-site").equals("same-origin", true)) {
+            val target = url.toUri()
+            return "${target.scheme}://${target.encodedAuthority}/"
+        }
+        if (pageUrl.isNotEmpty() && !isFilterableUrl(pageUrl)) {
+            return pageUrl
+        }
+        // Neither the top frame nor a last-seen request proves which iframe made
+        // this request. Opaque origins and absent metadata remain unknown.
+        return ""
     }
 
     fun intercept(

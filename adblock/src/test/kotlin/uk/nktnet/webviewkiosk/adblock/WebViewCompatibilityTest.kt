@@ -232,7 +232,6 @@ class WebViewCompatibilityTest {
                 "$.x{1}",
                 "$.x{2,1};$.y",
                 "$.x;@.y",
-                "$.x[?$.y]",
                 "$.x[/^(a+)+$/]",
                 "v2:$.x[unquoted]",
                 "$.x[unquoted]",

@@ -6,7 +6,7 @@
  */
 (function(env) {
     'use strict';
-    const { selected, wrap, apply, descriptor, matcher, nativeAdd, resolved } = env;
+    const { selected, wrap, apply, descriptor, matcher, nativeAdd, resolved, trap } = env;
     const parse = JSON.parse;
     const timeout = self.setTimeout.bind(self);
     const clear = self.clearTimeout.bind(self);
@@ -56,10 +56,21 @@
         }
     }
     function hook(path, callback) {
-        const parts = path.split('.');
-        let owner = self;
-        for (const part of parts.slice(0, -1)) { owner = owner?.[part]; }
-        wrap(owner, parts.at(-1), callback);
+        trap(self, path.split('.'), state => {
+            const proxies = new WeakMap();
+            state.readTransforms.push(target => {
+                if (typeof target !== 'function') { return target; }
+                if (proxies.has(target)) { return proxies.get(target); }
+                let active = false;
+                const proxy = new Proxy(target, { apply(original, receiver, args) {
+                    if (active) { return apply(original, receiver, args); }
+                    active = true;
+                    try { return callback(original, receiver, args); }
+                    finally { active = false; }
+                } });
+                proxies.set(target, proxy); return proxy;
+            });
+        });
     }
     function replacer(pattern, replacement, all = false) {
         const end = pattern.lastIndexOf('/');
