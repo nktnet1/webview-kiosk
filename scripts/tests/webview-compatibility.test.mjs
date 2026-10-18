@@ -354,7 +354,6 @@ test('missing regex capture indices leave JSONL intact and keep other scriptlets
     assert.equal(xhr.responseText, 'data: {"ads":1,"keep":2}\n');
 });
 
-
 test('legacy and v2 object filters preserve upstream object-filter selection semantics', () => {
     const filter = [false, [], [false, [step(['ads'])], '', null]];
     for (const version2 of [false, true]) {

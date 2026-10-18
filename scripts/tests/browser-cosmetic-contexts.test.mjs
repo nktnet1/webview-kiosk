@@ -242,7 +242,6 @@ test("nested shadow/template rules resume after pagehide and release observers o
     } finally { await context.close(); }
   });
 
-
 test("inert template results never leak reversible effects into clones", options, async () => {
   // The compiler rejects these direct hide/style forms. Defend restored programs too.
   const { context, page } = await cosmeticPage([

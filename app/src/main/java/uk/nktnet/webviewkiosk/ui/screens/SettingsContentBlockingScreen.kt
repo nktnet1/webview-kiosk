@@ -321,7 +321,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     fun downloadDefaults(requested: List<SuggestedFilterList>) {
         var summary = FilterRefreshResult(0, 0, emptyList())
         update(
-            progressMessage = "ÎDownloading and validating uBlock Origin defaults…",
+            progressMessage = "Downloading uBlock Origin defaults…",
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.ADD_DEFAULTS) {
                     downloadDefaults(requested)
@@ -335,7 +335,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     fun refreshAll() {
         var summary = FilterRefreshResult(0, 0, emptyList())
         update(
-            progressMessage = "Downloading and validating filter lists…",
+            progressMessage = "Downloading filter lists…",
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.REFRESH) { refreshAll() }
             },
@@ -351,7 +351,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 lists.any {
                     it.id in ids && it.enabled && it.sourceUrl != null
                 },
-            progressMessage = "Downloading and validating selected filter lists…",
+            progressMessage = "Downloading selected filter lists…",
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.REFRESH) {
                     refreshSelected(ids)
@@ -821,7 +821,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                                 affectsRules = item.enabled,
                                                 successMessage = "List refreshed",
                                                 progressMessage =
-                                                    "Downloading and validating " +
+                                                    "Downloading " +
                                                         "${item.displayName()}…",
                                             ) {
                                                 downloader.refresh(item, store)
@@ -1156,7 +1156,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             onDownloadUrl = { url, name ->
                 update(
                     successMessage = "List added",
-                    progressMessage = "Downloading and validating the filter list…",
+                    progressMessage = "Downloading filter list…",
                     onStored = { showAddDialog = false },
                     onFailure = { addError = it },
                 ) {
@@ -1166,8 +1166,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             onDownloadPreset = { suggestion ->
                 update(
                     successMessage = "List added",
-                    progressMessage =
-                        "Downloading and validating ${suggestion.name}…",
+                    progressMessage = "Downloading ${suggestion.name}…",
                     onStored = { showAddDialog = false },
                     onFailure = { addError = it },
                 ) {

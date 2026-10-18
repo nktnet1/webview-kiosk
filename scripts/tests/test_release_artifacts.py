@@ -23,6 +23,18 @@ class ReleaseArtifactsTest(unittest.TestCase):
         self.assertIn("if-no-files-found: error", RELEASE)
         self.assertNotIn('mv app/build/outputs/apk/debug', RELEASE)
 
+    def test_release_apk_keeps_stock_filename_and_versioned_alias(self):
+        self.assertIn("name: Store release APK for publication", RELEASE)
+        self.assertIn("name: release-apk", RELEASE)
+        self.assertIn("path: app/build/outputs/apk/release/", RELEASE)
+        self.assertIn("name: Download built release APK", RELEASE)
+        self.assertIn(
+            'cp app/build/outputs/apk/release/app-release.apk \\\n'
+            '            "app/build/outputs/apk/release/WebviewKiosk_v$VERSION_NAME.apk"',
+            RELEASE,
+        )
+        self.assertNotIn("mv app/build/outputs/apk/release/", RELEASE)
+
     def test_draft_release_contains_both_apks(self):
         self.assertIn("name: Create Draft GitHub Release", RELEASE)
         self.assertIn("app/build/outputs/apk/release/*.apk", RELEASE)
