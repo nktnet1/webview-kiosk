@@ -4,6 +4,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import uk.nktnet.webviewkiosk.adblock.ScriptletInstruction
 import uk.nktnet.webviewkiosk.adblock.ScriptletType
 
@@ -58,6 +59,9 @@ internal object ResponseScriptlets {
         )
 
     fun validated(type: ScriptletType, args: List<String>): ScriptletInstruction? {
+        if (type == ScriptletType.TRUSTED_SET) {
+            return constant(args)
+        }
         fun arg(index: Int) = args.getOrElse(index) { "" }
         var arity = args.size
         val valid =
@@ -148,17 +152,25 @@ internal object ResponseScriptlets {
                     arity = 3
                     args.size in 2..3 &&
                         arg(0).isNotEmpty() &&
-                        ScriptletParser.pattern(arg(0)) &&
+                        AdvancedScriptlets.replacementPattern(arg(0)) &&
                         !arg(0).startsWith('!') &&
                         (arg(2).isEmpty() || ScriptletParser.requestMatch(arg(2)))
                 }
                 ScriptletType.TRUSTED_LOCAL_STORAGE,
                 ScriptletType.TRUSTED_SESSION_STORAGE ->
-                    args.size == 2 && arg(0).isNotEmpty() && !arg(1).contains('$')
-                ScriptletType.TRUSTED_SET ->
                     args.size == 2 &&
-                        ScriptletParser.property(arg(0)) &&
-                        trustedConstant(arg(1))
+                        arg(0).isNotEmpty() &&
+                        listOf(
+                                $$"$now$",
+                                $$"$currentDate$",
+                                $$"$currentISODate$",
+                                $$"$remove$",
+                            )
+                            .fold(arg(1)) { value, token ->
+                                value.replace(token, "")
+                            }
+                            .contains('$')
+                            .not()
                 ScriptletType.TRUSTED_SET_ATTRIBUTE -> {
                     arity = 3
                     args.size in 2..3 &&
@@ -168,20 +180,78 @@ internal object ResponseScriptlets {
                 else -> false
             }
         return if (valid) {
-            val normalized = args.toMutableList()
-            if (type == ScriptletType.TRUSTED_SET) {
-                normalized[1] =
-                    when (arg(1)) {
-                        "''" -> ""
-                        "emptyArr" -> "[]"
-                        "emptyObj" -> "{}"
-                        else -> arg(1)
-                    }
-            }
-            ScriptletInstruction(type, normalized + List(arity - args.size) { "" })
+            ScriptletInstruction(type, args + List(arity - args.size) { "" })
         } else {
             null
         }
+    }
+
+    private fun constant(args: List<String>): ScriptletInstruction? {
+        if (args.size !in setOf(2, 4, 6) || !ScriptletParser.property(args[0])) {
+            return null
+        }
+        val raw = args[1]
+        val value =
+            if (ScriptletParser.constant(raw)) {
+                when (raw) {
+                    "''" -> ""
+                    "emptyArr" -> "[]"
+                    "emptyObj" -> "{}"
+                    else -> raw
+                }
+            } else if (
+                raw.startsWith("json:") || raw.startsWith('{') && raw.endsWith('}')
+            ) {
+                if (!trustedConstant(raw)) {
+                    return null
+                }
+                raw
+            } else {
+                // The trusted variant accepts strings, never executable expressions.
+                "json:${JsonPrimitive(raw)}"
+            }
+        val pairs = args.drop(2).chunked(2)
+        if (pairs.map { it[0] }.distinct().size != pairs.size) {
+            return null
+        }
+        var stage = ""
+        var mode = ""
+        for ((key, item) in pairs) {
+            when (key) {
+                "runAt" ->
+                    stage =
+                        when (item) {
+                            "",
+                            "loading",
+                            "1" -> ""
+                            "interactive",
+                            "end",
+                            "2" -> "interactive"
+                            "complete",
+                            "idle",
+                            "3" -> "complete"
+                            else -> return null
+                        }
+                "as" -> {
+                    if (
+                        item !in
+                            setOf("function", "callback", "resolved", "rejected")
+                    ) {
+                        return null
+                    }
+                    mode = item
+                }
+                else -> return null
+            }
+        }
+        val normalized = mutableListOf(args[0], value)
+        if (stage.isNotEmpty()) {
+            normalized += listOf("runAt", stage)
+        }
+        if (mode.isNotEmpty()) {
+            normalized += listOf("as", mode)
+        }
+        return ScriptletInstruction(ScriptletType.TRUSTED_SET, normalized)
     }
 
     private fun literalAttribute(raw: String): Boolean {
@@ -229,7 +299,12 @@ internal object ResponseScriptlets {
         fun bounded(element: JsonElement, depth: Int): Boolean =
             depth <= 16 &&
                 when (element) {
-                    is JsonObject -> element.values.all { bounded(it, depth + 1) }
+                    is JsonObject ->
+                        element.all { (name, value) ->
+                            name !in
+                                setOf("__proto__", "prototype", "constructor") &&
+                                bounded(value, depth + 1)
+                        }
                     is JsonArray -> element.all { bounded(it, depth + 1) }
                     else -> true
                 }

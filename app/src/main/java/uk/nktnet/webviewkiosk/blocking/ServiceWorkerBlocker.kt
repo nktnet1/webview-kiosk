@@ -58,6 +58,6 @@ internal object ServiceWorkerBlocker {
         // first/third-party context.
         // An empty source asks the engine to consider context-free rules only.
         // Contextual exceptions conservatively allow when their other facts match.
-        return WebViewBlocker.intercept(request, "", service)
+        return WebViewBlocker.intercept(request, service)
     }
 }

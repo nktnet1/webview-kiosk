@@ -20,6 +20,7 @@ function context(host) {
     class Target { addEventListener() {} }
     const sandbox = createContext({
         location: { protocol: 'https:', hostname: host, href: 'https://' + host + '/' },
+        origin: 'https://' + host,
         document: { currentScript: null, readyState: 'loading', querySelectorAll: () => [] },
         EventTarget: Target,
         Response: class extends Response {}, Request,

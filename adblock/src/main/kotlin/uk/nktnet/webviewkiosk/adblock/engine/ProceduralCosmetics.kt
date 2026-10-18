@@ -26,6 +26,9 @@ internal object ProceduralCosmetics {
             "matches-css-after",
             "matches-path",
             "watch-attr",
+            "xpath",
+            "shadow",
+            "content",
             "remove",
             "remove-attr",
             "remove-class",
@@ -82,10 +85,10 @@ internal object ProceduralCosmetics {
                     break
                 }
                 require(action == null && ++steps <= 32)
-                val close = close(raw, match.range.last)
+                val name = match.groupValues[1]
+                val close = close(raw, match.range.last, name != "xpath")
                 require(close >= 0)
                 val argument = raw.substring(match.range.last + 1, close).trim()
-                val name = match.groupValues[1]
                 val plainNot =
                     name == "not" &&
                         opening.findAll(argument).none {
@@ -187,6 +190,13 @@ internal object ProceduralCosmetics {
                             )
                         }
                         "matches-path" -> step("path", pattern(argument))
+                        "xpath" -> step("xpath", xpath(argument))
+                        "shadow",
+                        "content" -> {
+                            require(selector(argument))
+                            require(argument.first() !in ">+~")
+                            step(name, argument)
+                        }
                         "watch-attr" -> {
                             require(
                                 argument.split(',').all {
@@ -219,6 +229,16 @@ internal object ProceduralCosmetics {
             }
             require(base != null)
             require(depth > 0 || base.isNotEmpty())
+            if (
+                depth == 0 &&
+                    (action == null || action[0] == JsonPrimitive("style-action"))
+            ) {
+                // Inert template nodes are useful in predicates. Styling them
+                // would leak private effects into clones with no restoration data.
+                require(
+                    output.none { (it as JsonArray)[0] == JsonPrimitive("content") }
+                )
+            }
             return JsonObject(
                 mapOf(
                     "selector" to JsonPrimitive(base),
@@ -241,13 +261,10 @@ internal object ProceduralCosmetics {
                     it.groupValues[1] in operators ||
                         it.groupValues[1] in
                             setOf(
-                                "xpath",
                                 "others",
                                 "matches-media",
                                 "-abp-properties",
                                 "matches-prop",
-                                "shadow",
-                                "content",
                             )
                 }
 
@@ -284,7 +301,64 @@ internal object ProceduralCosmetics {
         private fun step(name: String, value: String) =
             JsonArray(listOf(JsonPrimitive(name), JsonPrimitive(value)))
 
-        private fun close(raw: String, start: Int): Int {
+        private fun xpath(value: String): String {
+            require(value.isNotEmpty())
+            var quote: Char? = null
+            val syntax = StringBuilder()
+            for (char in value) {
+                require(!char.isISOControl())
+                if (quote != null) {
+                    if (char == quote) {
+                        quote = null
+                        syntax.append('q')
+                    }
+                } else if (char in "\"'") {
+                    quote = char
+                } else {
+                    syntax.append(char)
+                }
+            }
+            require(quote == null)
+            // XPath is interpreted by the DOM, never JavaScript. Keep evaluation
+            // relative to a CSS-selected subject; reject document-wide operands.
+            val expression = syntax.toString()
+            var position = 0
+            var operand = true
+            while (position < expression.length) {
+                val char = expression[position++]
+                when {
+                    char.isWhitespace() -> Unit
+                    char == '/' -> {
+                        require(!operand)
+                        if (expression.getOrNull(position) == '/') {
+                            position++
+                        }
+                        operand = true
+                    }
+                    char.isLetter() || char == '_' -> {
+                        val start = position - 1
+                        while (
+                            position < expression.length &&
+                                (expression[position].isLetterOrDigit() ||
+                                    expression[position] in "_.-")
+                        ) {
+                            position++
+                        }
+                        val name = expression.substring(start, position)
+                        operand =
+                            !operand && name in setOf("and", "or", "div", "mod")
+                    }
+                    char == '*' -> operand = !operand
+                    char in "@:(,[|=<>!+-" -> operand = true
+                    else -> operand = false
+                }
+            }
+            require(!Regex("\\bid\\s*\\(").containsMatchIn(expression))
+            require(expression.none { it in "${'$'}{};\\" })
+            return value
+        }
+
+        private fun close(raw: String, start: Int, allowRegex: Boolean = true): Int {
             var nesting = 0
             var quote: Char? = null
             var regex = false
@@ -306,7 +380,8 @@ internal object ProceduralCosmetics {
                     continue
                 }
                 if (
-                    char == '/' &&
+                    allowRegex &&
+                        char == '/' &&
                         (regex ||
                             raw.substring(start + 1, index).trim().lastOrNull() in
                                 listOf(null, '=', ':'))

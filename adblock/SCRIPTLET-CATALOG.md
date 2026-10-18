@@ -11,6 +11,12 @@ that list is not a reason for exclusion.
 All ✅ entries remain subject to the argument contracts in [SCRIPTLETS.md](SCRIPTLETS.md).
 API availability, matching documents, and documented resource limits also apply.
 
+JSONPath entries also accept local slice and logical-expression extensions described
+in the argument contract. These extensions are not required by the pinned uBO subset.
+Trusted constants support literal/JSON values, readiness and fixed return wrappers;
+trusted storage supports the three documented date tokens. Accessor-defined data
+and arbitrary JavaScript evaluation remain excluded.
+
 ✅ Executable documented subset. ⚠️ Conditional feature. ↪️ Redirect resource. ❌ Skipped with reason.
 
 ## What the skipped entries mean

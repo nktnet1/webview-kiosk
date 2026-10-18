@@ -1,4 +1,49 @@
-# Scriptlet compatibility - v1.0.28
+# Scriptlet compatibility - v1.0.29
+
+## v1.0.29 JSONPath extensions and safe trusted arguments
+
+The local JSONPath compiler now accepts array slices, logical `&&`/`||`, grouped
+expressions, and nested filters. These are useful bounded extensions; current
+[uBO documentation](https://github.com/gorhill/uBlock/wiki/uBO-flavored-JSONPath)
+does not require slices or logical expressions for upstream compatibility.
+
+Slices follow [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535.html#section-2.3.4):
+`[start:end:step]` permits omitted and negative bounds, and negative steps reverse
+selection order. A zero step selects nothing. Mixed index/slice unions deduplicate
+edits and remove original array positions without shifting later targets.
+`&&` binds more tightly than `||`; parentheses and `!` provide explicit grouping.
+Existence tests match present `false`, `null`, and zero values. Negating a nested
+query tests the absence of its entire result. Comparisons keep the existing
+path-to-primitive-literal grammar; expressions and calls cannot be evaluated.
+Queries containing these extensions use RFC array/object filter semantics even
+without `v2:`. Previously supported queries retain their legacy/`v2:` mode.
+
+JSON traversal reads own data descriptors. Object-to-string/number coercion,
+prototype-related names, and accessor methods are excluded. Array compaction uses
+prepared own data moves without reading inherited indexes or constructor/species
+getters; arrays with accessor, non-enumerable, or non-writable shifts are retained. Trusted `call`
+directives can invoke own data methods or the captured native Element
+`setAttribute`/`removeAttribute` adapters, without searching page prototypes.
+Explicit `eval`, `Function`, `execScript`, and string-timer call directives are
+rejected. String timestamp substitutions use the captured native clock.
+
+Trusted constants add literal strings and unique `runAt`/`as` option pairs.
+`runAt` accepts `loading`/`1`, `interactive`/`end`/`2`, and `complete`/`idle`/`3`.
+`as` accepts `function`, `callback`, `resolved`, and `rejected`; these wrap the
+validated value using fixed local functions or native promises. They do not
+interpret function source. Trusted storage expands `$now$`, `$currentDate$`, and
+`$currentISODate$` from one captured timestamp. Trusted Fetch/XHR response text
+replacements additionally accept safe global (`g`) regexes.
+
+Document-start routing now reads the frame's actual `window.origin`. An inherited
+HTTP(S) origin in `about:blank`, `about:srcdoc`, or a blob document can match host
+rules. Its unavailable path never matches positive path constraints, and possible
+path exceptions remain effective. Missing and opaque origins do not inherit a
+hostname from the visible document URL. No parent probing or extra bridge is used.
+
+Regression coverage includes compiler/cache round trips, generated-dispatcher
+execution, negative/zero slices, logical precedence, nested absence tests, getter
+avoidance, trusted arguments, and inherited/opaque frame routing.
 
 ## v1.0.28 editing and request compatibility
 
@@ -125,7 +170,7 @@ Unknown arguments discard the whole instruction. There is no approximate fallbac
 | ✅     | `mpegdash-prune`                            | XHR MPD Period durations/starts; fully timed manifests only                                                                            |
 | ✅     | JSON/JSONL response editors                 | Bounded JSONPath selectors, indexes, unions, filters, regexes, guarded query chains, Fetch/XHR predicates and JSONL capture extraction |
 | ✅     | Request-body and object editors             | String request bodies and method/property/element hooks; trusted data directives above                                                 |
-| ❌     | Remaining editing forms                     | Arbitrary expressions, slices and accessor-defined JSON data                                                                           |
+| ❌ | Remaining editing forms | Arbitrary expressions and accessor-defined JSON data |
 | ❌     | Debug/close-window                          | Deliberate debugger exclusion and no native window lifecycle                                                                           |
 
 The safe constant set is empty string, undefined/null, booleans, empty arrays or
@@ -146,7 +191,7 @@ exactly, as upstream specifies. Empty event/callback logging-only calls stay ski
 
 Patterns use the existing bounded literal/regex subset. Lookarounds, backreferences,
 repeated groups, unsafe repeats and sticky flags are skipped. Global flags are
-accepted only by the new trusted text replacement helpers. Matchers compile
+accepted by trusted text replacement helpers and Fetch/XHR response replacement. Matchers compile
 once per selected rule. Function-source matching caches at most 512 entries/256 KiB;
 individual strings are limited to 64 KiB. Oversized or unusual native arguments pass
 through. Timer multiplier defaults to 0.05 and is clamped to 0.001–50, as upstream.
@@ -171,8 +216,8 @@ the editing query, for example `v2:$.required;$..ads` or
 `v2:$.missing{0};$.items[*]{2,4};$..ads`. Guards never mutate their selections.
 Supported cardinalities are `{n}`, `{n,}`, `{,n}`, `{n,m}`, with a default of one
 or more and bounds up to 1,000,000. All guards share the editing traversal budget.
-Root-based filter queries are supported. Parenthesized/logical filter expressions
-and slices remain skipped. Trusted assignments and data directives follow the
+Root-based and nested filter queries, parenthesized/logical expressions, and
+slices are supported as described above. Trusted assignments and data directives follow the
 contracts above. Regexes retain the bounded safe grammar;
 selectors have no flags and regex comparisons permit only the optional `i` flag.
 Use dot notation for regex selectors; bracket regexes are skipped to agree with
@@ -185,7 +230,7 @@ Unsupported queries reject the whole instruction, rather than dropping constrain
 The compiler stores a data AST; cached ASTs must match recompilation of their query.
 No query is executed as JavaScript. Traversal uses own data descriptors, a depth of
 64, at most 4096 selected edits, and a shared work budget. Each query finishes
-traversing before mutating. Numeric array-index deletion splices entries;
+traversing before mutating. Numeric array-index deletion compacts own data entries;
 regex-selected string keys preserve upstream sparse-array behavior. Oversized or
 exhausted work retains that query's input.
 
@@ -216,7 +261,7 @@ Conflicting terminal property hooks use the first instruction; compatible checks
 share accessors. Non-configurable/read-only properties pass through. Missing owners
 are hooked without manufacturing objects, within a 4096-slot safeguard.
 
-Compiled snapshots use schema 17. Cached instructions, JSONPath programs, and extended
+Compiled snapshots use schema 18. Cached instructions, JSONPath programs, and extended
 scope patterns are validated again. Resource keys select bundled implementations.
 Only needed adapters and eligible shims are bundled. The separate request-policy
 bridge returns only a filtering decision and does not expose scriptlet execution. Redirect-only resources do not become `+js` entry points.
@@ -268,10 +313,10 @@ prior bytes and trust. This is provenance policy, not signature verification.
 | Trusted operation                                                    | Supported subset                                                                                      |
 | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `trusted-prevent-fetch`, `trusted-prevent-xhr`                       | URL/method predicate and literal/empty body; WAR, generated-length and random-body directives skipped |
-| `trusted-replace-fetch-response`, `trusted-replace-xhr-response`     | Bounded literal/regex pattern, replacement string and optional URL/method predicate; no extras        |
-| `trusted-set-local-storage-item`, `trusted-set-session-storage-item` | Key and literal string; dynamic `$...$` tokens skipped                                                |
+| `trusted-replace-fetch-response`, `trusted-replace-xhr-response` | Safe regexes, including `g` |
+| `trusted-set-local-storage-item`, `trusted-set-session-storage-item` | Literals/date tokens |
 | `trusted-set-cookie`, `trusted-set-cookie-reload`                    | Name, literal string and root/none path; dynamic, expiry and domain extras skipped                    |
-| `trusted-set-constant` / `trusted-set`                               | Safe constant, `json:` JSON or object with `value`, depth at most 16; no extras                       |
+| `trusted-set-constant` / `trusted-set` | Data constants plus `runAt` and `as` options above |
 | `trusted-set-attr`                                                   | Safe selector, explicitly allowed attribute and literal value; all other attributes skipped           |
 
 Trusted constants remain locked across type changes. JSON parsing never evaluates
@@ -329,9 +374,10 @@ disposal replace or remove it; deferred compilation before WebView loading is pr
 AndroidX's allowed-origin grammar cannot express arbitrary HTTP(S) ports. Registration
 therefore uses the native wildcard, followed by a synchronous own-frame HTTP(S)/host
 gate before parsing rule data or installing hooks. Private app assets are excluded.
-Cross-origin frames match their own hostname, not their parent. about:blank, data and
-file frames are excluded. Unrelated pages install no hooks. The routing table uses
-literal host buckets, not prototype-keyed objects.
+Cross-origin frames match their own hostname. Inherited HTTP(S) origins in
+`about:blank`, `about:srcdoc` and blob documents can match hostname rules; opaque
+and non-HTTP(S) origins remain excluded. Unrelated pages install no hooks. The
+routing table uses literal host buckets, not prototype-keyed objects.
 
 Registration and removal have positive feature checks verified by Android lint.
 Providers lacking DOCUMENT_START_SCRIPT skip scriptlets and retain network/cosmetic

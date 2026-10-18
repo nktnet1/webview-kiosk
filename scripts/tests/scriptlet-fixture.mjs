@@ -28,8 +28,12 @@ export function page(rules, { host = 'site.example', protocol = 'https:', before
     }
     const document = Object.assign(new Target(), { currentScript: null, readyState: 'loading' });
     let frameId = 0;
+    const frameProtocol = globals.location?.protocol || protocol;
+    const frameHost = globals.location?.hostname || host;
+    const frameLocation = { hostname: frameHost, protocol: frameProtocol,
+        href: `${frameProtocol}//${frameHost}/path`, ...globals.location };
     const context = createContext({
-        location: { hostname: host, protocol, href: `${protocol}//${host}/path` },
+        origin: new URL(frameLocation.href).origin,
         document, EventTarget: Target, HTMLScriptElement: Script,
         Response: class extends Response {}, Request, DOMException, atob, URL, Headers,
         open(...args) { calls.open.push(args); return 'opened'; },
@@ -41,6 +45,7 @@ export function page(rules, { host = 'site.example', protocol = 'https:', before
         fetch(...args) { calls.fetch.push(args); return Promise.resolve('native response'); },
         stop() { calls.stopped++; },
         ...globals,
+        location: frameLocation,
     });
     runInContext('self = globalThis; window = self; top = self;', context);
     context.addEventListener = Target.prototype.addEventListener;

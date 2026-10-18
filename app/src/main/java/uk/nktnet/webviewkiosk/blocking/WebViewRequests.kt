@@ -29,7 +29,7 @@ private constructor(
                     type == null ||
                     url.length > 8192 ||
                     source.length > 8192 ||
-                    !WebViewBlocker.isFilterableUrl(source)
+                    (source.isNotEmpty() && !WebViewBlocker.isFilterableUrl(source))
             ) {
                 return false
             }

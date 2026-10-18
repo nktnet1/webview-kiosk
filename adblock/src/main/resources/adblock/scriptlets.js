@@ -25,8 +25,13 @@
  */
 (function(routes, records, instructions, extension, resources, network, advanced) {
     'use strict';
-    if (location.protocol !== 'https:' && location.protocol !== 'http:') { return; }
-    const host = location.hostname.toLowerCase().replace(/\.$/, '').replace(/^\[|\]$/g, '');
+    let origin, documentUrl;
+    try {
+        origin = new URL(self.origin);
+        documentUrl = new URL(location.href);
+    } catch { return; }
+    if (origin.protocol !== 'https:' && origin.protocol !== 'http:') { return; }
+    const host = origin.hostname.toLowerCase().replace(/\.$/, '').replace(/^\[|\]$/g, '');
     if (host === 'appassets.androidplatform.net' ||
         host === 'pdf-dummy.webviewkiosk.nktnet.uk') { return; }
     // Binary search immutable newline-delimited keys without building a per-frame map.
@@ -106,10 +111,10 @@
             }
         } catch { ancestorsKnown = false; }
     }
-    const href = location.href;
-    const pathStart = typeof href === 'string'
-        ? href.indexOf('/', location.protocol.length + 2) : -1;
-    const path = pathStart < 0 ? '/' : href.slice(pathStart);
+    // Inherited about:blank/srcdoc and blob frames expose a real origin, not a page path.
+    const path = documentUrl.origin === origin.origin &&
+        (documentUrl.protocol === 'https:' || documentUrl.protocol === 'http:')
+        ? documentUrl.pathname + documentUrl.search + documentUrl.hash : null;
     const regexes = new Map();
     const regexMatch = (source, value) => {
         if (value.length > 65536) { return false; }
@@ -119,7 +124,8 @@
     };
     if (routes.regex !== '[]') {
         for (const [hostname, pathname, offset] of JSON.parse(routes.regex)) {
-            if (regexMatch(hostname, host) && (pathname === null || regexMatch(pathname, path))) {
+            if (regexMatch(hostname, host) &&
+                (pathname === null || path === null || regexMatch(pathname, path))) {
                 candidates.add(offset);
             }
         }
@@ -127,14 +133,15 @@
     if (!candidates.size) { return; }
     const domainMatches = (name, domain = host) => domain === name || domain.endsWith('.' + name);
     const entityMatches = name => entity !== '' && domainMatches(name, entity);
-    const targetMatches = target => {
+    const targetMatches = (target, unknownPathMatches = false) => {
         const [hostname, pathname, regex, usesEntity, ancestor] = target;
         const match = (domain, entity) => {
             const name = usesEntity ? entity : domain;
             return name !== '' &&
                 (regex ? regexMatch(hostname, name) : domainMatches(hostname, name)) &&
                 (pathname === null ||
-                    (regex ? regexMatch(pathname, path) : path.startsWith(pathname)));
+                    (path === null ? unknownPathMatches
+                        : regex ? regexMatch(pathname, path) : path.startsWith(pathname)));
         };
         return ancestor ? ancestors.some(([name, entity]) => match(name, entity))
             : match(host, entity);
@@ -148,10 +155,10 @@
             const targets = rule[5];
             if (!targets.length) { return true; }
             if (!ancestorsKnown && targets.some(target => target[4])) { return false; }
-            if (targets.some(target => target[5] && targetMatches(target))) { return false; }
+            if (targets.some(target => target[5] && targetMatches(target, true))) { return false; }
             return rule[6].some(name => domainMatches(name)) || rule[7].some(entityMatches) ||
                 targets.every(target => target[5]) && !rule[6].length && !rule[7].length ||
-                targets.some(target => !target[5] && targetMatches(target));
+                targets.some(target => !target[5] && targetMatches(target, rule[3]));
         });
     if (matching.some(rule => rule[3] && rule[0] === -1)) { return; }
     const excepted = new Set(matching.filter(rule => rule[3]).map(rule => rule[0]));
@@ -176,6 +183,8 @@
     const define = Object.defineProperty;
     const descriptor = Object.getOwnPropertyDescriptor;
     const ownKeys = Object.keys;
+    const ownNames = Object.getOwnPropertyNames;
+    const extensible = Object.isExtensible;
     const isArray = Array.isArray;
     const arraySplice = Array.prototype.splice;
     const stringifyFunction = Function.prototype.toString;
@@ -185,11 +194,19 @@
     const nativeThen = Promise.prototype.then;
     const nativeParse = JSON.parse;
     const nativeStringify = JSON.stringify;
+    const nativeDateNow = Date.now.bind(Date);
     const resolved = Promise.resolve.bind(Promise);
     const rejected = Promise.reject.bind(Promise);
     const NativeResponse = self.Response;
     const NativeRequest = self.Request;
     const NativeError = ReferenceError;
+    const elementCalls = new Map();
+    if (self.Element) {
+        for (const name of ['removeAttribute', 'setAttribute']) {
+            const method = descriptor(self.Element.prototype, name)?.value;
+            if (typeof method === 'function') { elementCalls.set(name, method); }
+        }
+    }
     const installedScript = document.currentScript;
     const object = value => value !== null &&
         (typeof value === 'object' || typeof value === 'function');
@@ -396,7 +413,7 @@
     }
     // Iterate the original list order, so conflicting terminal property hooks use
     // the first instruction. Multiple ACS checks share a single accessor pair.
-    function installProperty(type, args) {
+    function installProperty(type, args, deferred = false) {
         if (!['SET', 'TRUSTED_SET', 'ABORT_READ', 'ABORT_WRITE',
             'ABORT_CURRENT_SCRIPT'].includes(type)) {
             return;
@@ -405,6 +422,21 @@
             const check = type === 'ABORT_CURRENT_SCRIPT' ? scriptCheck(args) : null;
             const isConstant = type === 'SET' || type === 'TRUSTED_SET';
             const trusted = type === 'TRUSTED_SET';
+            const options = new Map();
+            if (trusted) {
+                for (let index = 2; index + 1 < args.length; index += 2) {
+                    options.set(args[index], args[index + 1]);
+                }
+                const stage = options.get('runAt');
+                const waiting = stage === 'complete' && document.readyState !== 'complete' ||
+                    stage === 'interactive' && document.readyState === 'loading';
+                if (waiting && !deferred) {
+                    const event = stage === 'complete' ? 'load' : 'DOMContentLoaded';
+                    apply(nativeAdd, stage === 'complete' ? self : document,
+                        [event, () => installProperty(type, args, true), { once: true }]);
+                    return;
+                }
+            }
             let value;
             let acceptsConstant;
             if (isConstant) {
@@ -423,6 +455,16 @@
                             return reflectGet(target, prop, receiver);
                         },
                     });
+                }
+                const wrapped = value;
+                switch (options.get('as')) {
+                    case 'function': value = () => wrapped; break;
+                    case 'callback': value = () => () => wrapped; break;
+                    case 'resolved': value = resolved(wrapped); break;
+                    case 'rejected':
+                        value = rejected(wrapped);
+                        apply(nativeThen, value, [undefined, () => {}]);
+                        break;
                 }
                 acceptsConstant = prior => trusted || prior == null || value == null ||
                     typeof prior === typeof value;
@@ -620,7 +662,7 @@
     }
     // The compiler supplies a JSON AST, never expressions to evaluate as JavaScript.
     function jsonEditor(args) {
-        const [v2, steps, guards = [], mutation = null] = nativeParse(args[1]);
+        const [v2, steps, guards = [], mutation = null, extended = false] = nativeParse(args[1]);
         const stringKeys = ownKeys;
         const regexes = new Map();
         const prepare = node => {
@@ -639,6 +681,9 @@
             const consume = () => { if (--work.remaining < 0) { throw null; } };
             const ref = (owner, key) => {
                 consume();
+                if (['__proto__', 'prototype', 'constructor'].includes(String(key))) {
+                    return { owner, key, exists: false, value: undefined };
+                }
                 const desc = descriptor(owner, key);
                 return { owner, key, exists: !!desc && 'value' in desc,
                     value: desc && 'value' in desc ? desc.value : undefined };
@@ -648,8 +693,10 @@
                 const values = stringKeys(owner);
                 if (values.length > work.remaining) { throw null; }
                 work.remaining -= values.length;
-                return isArray(owner) ? values.map(key => /^(?:0|[1-9]\d*)$/.test(key)
-                    ? Number(key) : key) : values;
+                if (!isArray(owner)) { return values; }
+                const length = ref(owner, 'length').value;
+                return values.map(key => /^(?:0|[1-9]\d*)$/.test(key) && Number(key) < length
+                    ? Number(key) : key);
             };
             const children = owner => typeof owner === 'object' && owner !== null
                 ? keys(owner).map(key => ref(owner, key)) : [];
@@ -670,8 +717,16 @@
             const compare = (entry, predicate) => {
                 const [negated, , op, rhs] = predicate;
                 if (!op) { return entry.exists !== negated; }
-                if (!entry.exists) { return false; }
+                if (!entry.exists) { return extended && op === '!=' && !negated; }
                 const value = entry.value;
+                // Comparison must never run object coercion hooks or accessors.
+                const primitive = value === null ||
+                    ['string', 'number', 'boolean', 'undefined'].includes(typeof value);
+                if (!primitive && op !== '==' && op !== '!=') { return false; }
+                if (extended && ['<', '<=', '>', '>='].includes(op) &&
+                    !(typeof value === typeof rhs && ['string', 'number'].includes(typeof value))) {
+                    return ((op === '<=' || op === '>=') && value === rhs) !== negated;
+                }
                 let matched;
                 switch (op) {
                     case '==': matched = value === rhs; break;
@@ -687,6 +742,37 @@
                     default: return false;
                 }
                 return matched !== negated;
+            };
+            const matches = (filter, candidate) => {
+                consume();
+                switch (filter[0]) {
+                    case '&&': return filter.slice(1).every(part => matches(part, candidate));
+                    case '||': return filter.slice(1).some(part => matches(part, candidate));
+                    case '!': return !matches(filter[1], candidate);
+                    case '()': return matches(filter[1], candidate);
+                }
+                const input = filter[4] ? [ref(root, 'value')] : [candidate];
+                const values = evaluate(filter[1], input);
+                if (!filter[2]) { return (values.length !== 0) !== filter[0]; }
+                if (!values.length) { return extended && filter[2] === '!=' && !filter[0]; }
+                return values.some(entry => compare(entry, filter));
+            };
+            const slice = (owner, values) => {
+                if (!isArray(owner)) { return []; }
+                const length = ref(owner, 'length').value;
+                const [start, end, rawStep] = values;
+                const step = rawStep ?? 1;
+                if (!step) { return []; }
+                const bound = (value, fallback) => value === null ? fallback
+                    : Math.min(step > 0 ? length : length - 1,
+                        Math.max(step > 0 ? 0 : -1, value < 0 ? length + value : value));
+                const last = bound(end, step > 0 ? length : -1);
+                const names = [];
+                for (let index = bound(start, step > 0 ? 0 : length - 1);
+                    step > 0 ? index < last : index > last; index += step) {
+                    consume(); names.push(index);
+                }
+                return names;
             };
             const evaluate = (program, input, predicate) => {
                 if (!program.length && predicate) {
@@ -708,8 +794,7 @@
                                 candidates = owners.flatMap(children);
                             }
                             for (const candidate of candidates) {
-                                const input = filter[4] ? [ref(root, 'value')] : [candidate];
-                                if (evaluate(filter[1], input, filter).length) {
+                                if (candidate.exists && matches(filter, candidate)) {
                                     result.push(candidate);
                                 }
                             }
@@ -719,11 +804,14 @@
                                     let names;
                                     if (selector === '*') { names = keys(owner); }
                                     else if (typeof selector === 'number') {
-                                        names = !isArray(owner) ? []
-                                            : [selector < 0 ? owner.length + selector : selector];
+                                        const length = isArray(owner)
+                                            ? ref(owner, 'length').value : 0;
+                                        const index = selector < 0 ? length + selector : selector;
+                                        names = index >= 0 && index < length ? [index] : [];
                                     } else if (typeof selector === 'object') {
-                                        names = keys(owner).map(String)
-                                            .filter(name => testRegex(selector, name));
+                                        names = selector.slice ? slice(owner, selector.slice)
+                                            : keys(owner).map(String)
+                                                .filter(name => testRegex(selector, name));
                                     } else { names = [selector]; }
                                     for (const name of names) {
                                         const candidate = ref(owner, name);
@@ -748,7 +836,7 @@
                     if (count < minimum || count > maximum) { return null; }
                 }
                 const edits = evaluate(steps, input);
-                const seen = new WeakMap(), pending = [];
+                const seen = new WeakMap(), pending = [], arrays = new Map();
                 for (const entry of edits) {
                     const desc = descriptor(entry.owner, entry.key);
                     if (['__proto__', 'prototype', 'constructor'].includes(String(entry.key))) {
@@ -760,25 +848,67 @@
                     let names = seen.get(entry.owner);
                     if (!names) { seen.set(entry.owner, names = new Set()); }
                     if (names.has(entry.key)) { continue; }
-                    names.add(entry.key); pending.push(entry);
+                    names.add(entry.key);
+                    if (!mutation && isArray(entry.owner) && typeof entry.key === 'number') {
+                        let indexes = arrays.get(entry.owner);
+                        if (!indexes) { arrays.set(entry.owner, indexes = []); }
+                        indexes.push(entry.key);
+                    } else { pending.push(entry); }
+                }
+                const arrayEdits = [];
+                for (const [owner, indexes] of arrays) {
+                    // Native splice consults inherited accessors and constructor/species.
+                    // Prepare own-data shifts instead, before any selected object is edited.
+                    const length = ref(owner, 'length');
+                    if (!descriptor(owner, 'length').writable || !extensible(owner)) { continue; }
+                    const removed = new Set(indexes), names = ownNames(owner), values = [];
+                    if (names.length > work.remaining) { throw null; }
+                    work.remaining -= names.length;
+                    const first = Math.min(...indexes);
+                    let safe = true;
+                    for (const name of names) {
+                        if (!/^(?:0|[1-9]\d*)$/.test(name) || Number(name) < first ||
+                            Number(name) >= length.value) { continue; }
+                        const desc = descriptor(owner, name);
+                        if (!('value' in desc) || !desc.configurable ||
+                            !desc.writable || !desc.enumerable) {
+                            safe = false; break;
+                        }
+                        values.push([Number(name), desc.value]);
+                    }
+                    if (!safe) { continue; }
+                    indexes.sort((a, b) => a - b);
+                    values.sort((a, b) => a[0] - b[0]);
+                    const shifted = []; let offset = 0;
+                    for (const [key, value] of values) {
+                        while (offset < indexes.length && indexes[offset] < key) { offset++; }
+                        if (!removed.has(key)) { shifted.push([key - offset, value]); }
+                    }
+                    arrayEdits.push({ owner, values, shifted,
+                        length: length.value - indexes.length });
                 }
                 // Traversal completes before any mutation, including on budget exhaustion.
                 for (const { owner, key } of pending.reverse()) {
                     if (mutation) {
                         const [operator, raw] = mutation;
                         if (operator === 'call') {
+                            if (['eval', 'Function', 'execScript', 'setTimeout', 'setInterval',
+                                '__proto__', 'prototype', 'constructor'].includes(raw[1])) {
+                                continue;
+                            }
                             const values = raw.map(value => value === '${obj}' ? owner
                                 : value === '${key}' ? key : value === '${val}'
                                     ? descriptor(owner, key)?.value : value);
                             const receiver = values[0] ?? self;
-                            const method = receiver[values[1]];
+                            const own = descriptor(receiver, values[1]);
+                            const method = own ? own.value : elementCalls.get(values[1]);
                             if (typeof method === 'function') {
                                 apply(method, receiver, values.slice(2));
                             }
                             continue;
                         }
                         let value = typeof raw === 'string'
-                            ? raw.replace('${now}', String(Date.now())) : raw;
+                            ? raw.replace('${now}', String(nativeDateNow())) : raw;
                         if (operator === '+') {
                             const target = descriptor(owner, key)?.value;
                             if (!target || typeof target !== 'object' || isArray(target)) {
@@ -808,12 +938,17 @@
                         define(owner, key, before ? { ...before, value } : {
                             value, writable: true, configurable: true, enumerable: true,
                         });
-                    } else if (isArray(owner) && typeof key === 'number') {
-                        apply(arraySplice, owner, [key, 1]);
-                    }
-                    else { delete owner[key]; }
+                    } else { delete owner[key]; }
                 }
-                return pending.length ? { value: root.value ?? null } : null;
+                for (const { owner, values, shifted, length } of arrayEdits) {
+                    for (const [key] of values) { delete owner[key]; }
+                    for (const [key, value] of shifted) {
+                        define(owner, key, { value, writable: true,
+                            configurable: true, enumerable: true });
+                    }
+                    define(owner, 'length', { value: length });
+                }
+                return pending.length || arrayEdits.length ? { value: root.value ?? null } : null;
             } catch { return null; }
         }
         return edit;

@@ -222,11 +222,9 @@ class WebViewCompatibilityTest {
         assertEquals(engine.scriptletInjection(), restored.scriptletInjection())
         for (query in
             listOf(
-                "$.items[0:2]",
                 "$.x=1",
                 "$.x=call([])",
                 "$.x+=1",
-                "$.items[?(@.ad)]",
                 "$.__proto__",
                 "$.x[?@.value=/(a+)+$/]",
                 "$.x{1}",

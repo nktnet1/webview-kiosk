@@ -18,6 +18,8 @@ import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
 class ServiceWorkerBlockerTest {
     private lateinit var service: ContentBlockingService
     private var lastSource: String? = null
+    private var lastType: String? = null
+    private var lastMethod: String? = null
 
     @Before
     fun setup() {
@@ -43,6 +45,8 @@ class ServiceWorkerBlockerTest {
                     method: String,
                 ): Boolean {
                     lastSource = sourceUrl
+                    lastType = type
+                    lastMethod = method
                     return Uri.parse(url).host == "ads.example"
                 }
             }
@@ -92,13 +96,54 @@ class ServiceWorkerBlockerTest {
 
     @Test
     fun missingAndOpaqueInitiatorsArePassedAsUnknownRatherThanInvented() {
-        for (headers in listOf(emptyMap(), mapOf("Origin" to "null"))) {
+        for (headers in
+            listOf(
+                emptyMap(),
+                mapOf("Origin" to "null"),
+                mapOf("Referer" to "about:blank"),
+                mapOf("Referer" to "malformed"),
+                mapOf(
+                    "Origin" to "null",
+                    "Referer" to "https://previous.example/",
+                ),
+            )) {
             assertNotNull(ServiceWorkerBlocker.intercept(request(headers), service))
             assertEquals("", lastSource)
         }
     }
 
-    private fun request(headers: Map<String, String>) =
+    @Test
+    fun workerOriginAndNativeResourceMetadataOverrideReferrerGuesses() {
+        assertNotNull(
+            ServiceWorkerBlocker.intercept(
+                request(
+                    mapOf(
+                        "Origin" to "https://worker.example:8443",
+                        "Referer" to "https://appassets.androidplatform.net/local",
+                        "Sec-Fetch-Dest" to "empty",
+                        "X-Requested-With" to "XMLHttpRequest",
+                    ),
+                    "POST",
+                ),
+                service,
+            )
+        )
+        assertEquals("https://worker.example:8443", lastSource)
+        assertEquals("xmlhttprequest", lastType)
+        assertEquals("POST", lastMethod)
+        assertNotNull(
+            ServiceWorkerBlocker.intercept(
+                request(mapOf("Sec-Fetch-Site" to "same-origin")),
+                service,
+            )
+        )
+        assertEquals("https://ads.example/", lastSource)
+    }
+
+    private fun request(
+        headers: Map<String, String>,
+        method: String = "GET",
+    ) =
         object : WebResourceRequest {
             override fun getUrl(): Uri = Uri.parse("https://ads.example/a.js")
 
@@ -108,7 +153,7 @@ class ServiceWorkerBlockerTest {
 
             override fun hasGesture() = false
 
-            override fun getMethod() = "GET"
+            override fun getMethod() = method
 
             override fun getRequestHeaders() = headers
         }

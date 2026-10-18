@@ -5,6 +5,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import androidx.core.net.toUri
 import java.io.ByteArrayInputStream
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import uk.nktnet.webviewkiosk.adblock.BlockingResponse
 import uk.nktnet.webviewkiosk.config.Constants
 
@@ -51,7 +52,6 @@ internal object WebViewBlocker {
     fun shouldBlock(
         url: String,
         isMainFrame: Boolean,
-        pageUrl: String,
         requestHeaders: Map<String, String>,
         method: String,
         service: ContentBlockingService,
@@ -59,7 +59,6 @@ internal object WebViewBlocker {
         responseFor(
             url,
             isMainFrame,
-            pageUrl,
             requestHeaders,
             method,
             service,
@@ -70,8 +69,7 @@ internal object WebViewBlocker {
         method: String,
         service: ContentBlockingService,
     ): Boolean =
-        responseFor(url, true, "", emptyMap(), method, service) !=
-            BlockingResponse.ALLOW
+        responseFor(url, true, emptyMap(), method, service) != BlockingResponse.ALLOW
 
     /** Only known GET navigations can be replayed without losing a request body. */
     fun documentUrl(
@@ -93,7 +91,6 @@ internal object WebViewBlocker {
     private fun responseFor(
         url: String,
         isMainFrame: Boolean,
-        pageUrl: String,
         requestHeaders: Map<String, String>,
         method: String,
         service: ContentBlockingService,
@@ -104,7 +101,7 @@ internal object WebViewBlocker {
         if (isMainFrame) {
             return service.responseFor(url, url, "document", method)
         }
-        val source = initiator(url, pageUrl, requestHeaders)
+        val source = initiator(url, requestHeaders)
         if (source.isNotEmpty() && !isFilterableUrl(source)) {
             return BlockingResponse.ALLOW
         }
@@ -118,41 +115,59 @@ internal object WebViewBlocker {
 
     internal fun initiator(
         url: String,
-        pageUrl: String,
         headers: Map<String, String>,
     ): String {
         fun header(name: String) =
-            headers.entries
-                .firstOrNull { it.key.equals(name, true) }
-                ?.value
-                .orEmpty()
-        val sources = listOf(header("referer"), header("origin"))
-        // Internal/file origins must remain exempt, including worker requests.
-        sources
-            .firstOrNull {
-                it.isNotBlank() && it != "null" && !isFilterableUrl(it)
-            }
+            headers.entries.firstOrNull { it.key.equals(name, true) }?.value?.trim()
+        // A referrer can survive sandboxing or redirect origin tainting. A present
+        // Origin, even an opaque/null one, must not borrow that referrer's context.
+        header("origin")?.let {
+            return sourceUrl(it)
+        }
+        header("referer")
+            ?.takeIf { it.isNotEmpty() }
             ?.let {
-                return it
+                return sourceUrl(it)
             }
-        sources.firstOrNull(::isFilterableUrl)?.let {
-            return it
-        }
         if (header("sec-fetch-site").equals("same-origin", true)) {
-            val target = url.toUri()
-            return "${target.scheme}://${target.encodedAuthority}/"
-        }
-        if (pageUrl.isNotEmpty() && !isFilterableUrl(pageUrl)) {
-            return pageUrl
+            // This header proves the origin, including its scheme and port. The
+            // same-site/cross-site values do not identify an individual origin.
+            val target = url.toHttpUrlOrNull() ?: return ""
+            return target
+                .newBuilder()
+                .username("")
+                .password("")
+                .encodedPath("/")
+                .query(null)
+                .fragment(null)
+                .build()
+                .toString()
         }
         // Neither the top frame nor a last-seen request proves which iframe made
         // this request. Opaque origins and absent metadata remain unknown.
         return ""
     }
 
+    private fun sourceUrl(value: String): String {
+        if (value.isEmpty() || value.any { it.isWhitespace() || it == '\\' }) {
+            return ""
+        }
+        val source = value.toUri()
+        return when {
+            // Exempt only proven local origins. Opaque URLs and malformed header
+            // values mean unknown context, not an exemption from generic rules.
+            source.isHierarchical &&
+                (source.scheme.equals("file", true) ||
+                    source.scheme.equals("content", true)) -> value
+            source.isHierarchical &&
+                !source.encodedAuthority.isNullOrEmpty() &&
+                value.toHttpUrlOrNull() != null -> value
+            else -> ""
+        }
+    }
+
     fun intercept(
         request: WebResourceRequest,
-        pageUrl: String,
         service: ContentBlockingService,
         blockedDocumentHtml: (String) -> String = {
             "<!doctype html><title>Access Blocked</title>" +
@@ -163,7 +178,6 @@ internal object WebViewBlocker {
             responseFor(
                 request.url.toString(),
                 request.isForMainFrame,
-                pageUrl,
                 request.requestHeaders.orEmpty(),
                 request.method,
                 service,

@@ -204,7 +204,7 @@ test(
         await child.evaluate(() => navigator.sendBeacon("/blocked", "payload")),
         true,
       );
-      assert.equal(await child.evaluate(() => policyCalls[0][1]), base + "/frame");
+      assert.equal(await child.evaluate(() => policyCalls[0][1]), base);
     } finally {
       await context.close();
     }

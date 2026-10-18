@@ -59,6 +59,33 @@ test('entity-scoped GPC rules run synchronously in a child frame without reading
     assert.equal(p.run('Navigator.prototype.globalPrivacyControl'), false);
 });
 
+test('routing uses the actual origin and never borrows an opaque document URL', () => {
+    for (const origin of ['null', '', undefined]) {
+        const p = page([['SET', ['marker', 'false']]], { globals: { origin } });
+        p.install(); assert.equal(p.run('typeof marker'), 'undefined');
+    }
+    for (const href of ['about:blank', 'about:srcdoc', 'blob:https://site.example/id']) {
+        const p = page([
+            ['SET', ['marker', 'false']],
+            ['SET', ['pathMarker', 'false'], 'site.example/path'],
+        ], { globals: { origin: 'https://site.example', location: { href } } });
+        p.install();
+        assert.equal(p.run('marker'), false, href);
+        assert.equal(p.run('typeof pathMarker'), 'undefined', href);
+    }
+});
+
+test('inherited frames keep possible path exceptions without inventing a parent path', () => {
+    const p = page([
+        ['SET', ['marker', 'false']],
+        ['SET', ['marker', 'false'], 'site.example/safe', [], true],
+        ['SET', ['excluded', 'false'], 'site.example', ['site.example/safe']],
+    ], { globals: { origin: 'https://site.example', location: { href: 'about:blank' } } });
+    p.install();
+    assert.equal(p.run('typeof marker'), 'undefined');
+    assert.equal(p.run('typeof excluded'), 'undefined');
+});
+
 const output = process.env.SCRIPTLET_OUTPUT_DIR;
 test('Kotlin-produced dispatcher agrees with OkHttp across the resolved PSL', { skip: !output }, () => {
     const source = readFileSync(join(output, 'entity-injection.js'), 'utf8');

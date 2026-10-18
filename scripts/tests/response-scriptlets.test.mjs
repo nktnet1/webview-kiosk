@@ -247,3 +247,55 @@ test('trusted JSON constants replace values and stay locked across type-changing
     assert.equal(p.run('config.enabled'), true); assert.equal(p.run('literal'), 'custom string');
     assert.equal(p.run('typeof alert'), 'undefined');
 });
+
+test('trusted constant stages and wrappers use fixed data and one lifecycle listener', async () => {
+    const p = page([
+        ['TRUSTED_SET', ['callback', 'json:{"safe":true}',
+            'runAt', 'interactive', 'as', 'callback']],
+        ['TRUSTED_SET', ['pending', 'json:"literal"', 'runAt', 'complete', 'as', 'resolved']],
+        ['TRUSTED_SET', ['failure', 'json:"rejected value"', 'as', 'rejected']],
+        ['TRUSTED_SET', ['callable', 'json:"alert(1)"', 'as', 'function']],
+    ]);
+    p.install();
+    assert.equal(p.run('typeof callback'), 'undefined');
+    assert.equal(p.run('typeof pending'), 'undefined');
+    assert.equal(p.run('callable()'), 'alert(1)');
+    await assert.rejects(p.run('failure'), value => value === 'rejected value');
+    p.document.readyState = 'interactive';
+    p.emit('DOMContentLoaded', {}, p.document);
+    assert.equal(p.run('callback()().safe'), true);
+    assert.equal(p.run('typeof pending'), 'undefined');
+    p.document.readyState = 'complete'; p.emit('load');
+    assert.equal(await p.run('pending'), 'literal');
+    assert.equal(p.calls.listeners.length, 0);
+    assert.equal(p.calls.timers.length, 0);
+});
+
+test('trusted storage date tokens expand from one captured timestamp', () => {
+    const stores = { localStorage: new Map(), sessionStorage: new Map() };
+    for (const store of Object.values(stores)) {
+        store.setItem = store.set.bind(store); store.removeItem = store.delete.bind(store);
+    }
+    const p = page([
+        ['SET', ['Date', 'undefined']],
+        ['TRUSTED_LOCAL_STORAGE', ['time', '$now$|$currentISODate$|$currentDate$|$now$']],
+        ['TRUSTED_SESSION_STORAGE', ['time', '$currentISODate$']],
+    ], { globals: stores, before: `
+        const NativeDate = Date;
+        expectedDate = new NativeDate(1709210096000).toString();
+        Date = class extends NativeDate { constructor() { super(1709210096000); } };
+    ` });
+    p.install();
+    assert.equal(stores.localStorage.get('time'),
+        '1709210096000|2024-02-29T12:34:56.000Z|' + p.run('expectedDate') + '|1709210096000');
+    assert.equal(stores.sessionStorage.get('time'), '2024-02-29T12:34:56.000Z');
+});
+
+test('global trusted replacement regexes apply to every matching response occurrence', async () => {
+    const p = fetchPage([['TRUSTED_REPLACE_FETCH', ['/ad/gi', 'safe', '/api']]],
+        () => Promise.resolve(new Response('ad AD ad')));
+    assert.equal(await (await p.run('fetch("/api")')).text(), 'safe safe safe');
+    const q = xhrPage([['TRUSTED_REPLACE_XHR', ['/ad/g', 'safe', '/api']]]);
+    const xhr = new q.XHR(); xhr.open('GET', '/api'); xhr.send(); xhr.complete('ad ad');
+    assert.equal(xhr.responseText, 'safe safe');
+});

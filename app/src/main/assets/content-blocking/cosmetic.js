@@ -34,6 +34,18 @@
   var inlineBackups = new Map();
   var ownStyles = new WeakMap();
   var regexes = new Map();
+  var xpathExpressions = new Map();
+  var scopedObservers = new Map();
+  var boundaryOwners = new WeakMap();
+  var shadowOwners = new Map();
+  var ownStyleNodes = new WeakSet();
+  var restoreAttachShadow = null;
+  var nativeShadow = getter(window.Element, "shadowRoot");
+  var nativeContent = getter(window.HTMLTemplateElement, "content");
+  var nativeRoot = window.Node && window.Node.prototype.getRootNode;
+  var nativeFragmentQuery = window.DocumentFragment &&
+    window.DocumentFragment.prototype.querySelectorAll;
+  var nativeExpression = document.createExpression && document.createExpression.bind(document);
   var attribute = "data-wk-cosmetic-" + Math.random().toString(36).slice(2);
   var effects = new Map();
   var suspended = false;
@@ -55,7 +67,8 @@
   }
 
   function queue(root) {
-    if (!root || root === style || (root.nodeType !== 1 && root.nodeType !== 9)) return;
+    if (!root || ownStyleNodes.has(root) ||
+        (root.nodeType !== 1 && root.nodeType !== 9)) return;
     if (work.some(function (item) { return !item.walker && item.root.contains(root); })) return;
     work = work.filter(function (item) { return !root.contains(item.root); });
     if (work.length >= 64 && root.isConnected !== false) {
@@ -74,7 +87,7 @@
   }
 
   function collect(element) {
-    if (element.nodeType !== 1 || element === style) return;
+    if (element.nodeType !== 1 || ownStyleNodes.has(element)) return;
     if (domProcedureCount && !candidates.has(element)) candidates.set(element, 0);
     if (element.isConnected === false) return;
     remember(element.id, seenIds, ids);
@@ -106,6 +119,7 @@
     if (!parent || (!selectors.size && !procedures.size)) return;
     if (!style || !style.isConnected) {
       style = document.createElement("style");
+      ownStyleNodes.add(style);
       parent.appendChild(style);
       installedSelectors.clear();
     }
@@ -131,6 +145,166 @@
       if (rule.style !== null) insert(rule.selector, rule.style, rule.media);
       else if (rule._tag) insert("[" + attribute + '~="' + rule._tag + '"]', rule._declarations);
     });
+    scopedObservers.forEach(function (scope) {
+      if (scope.styled) applyScopedSelectors(scope);
+    });
+  }
+
+  function getter(type, name) {
+    var descriptor = type && Object.getOwnPropertyDescriptor(type.prototype, name);
+    return descriptor && descriptor.get;
+  }
+
+  function rootOf(node) {
+    return nativeRoot ? Reflect.apply(nativeRoot, node, []) : document;
+  }
+
+  function live(node) {
+    for (var depth = 0; node && depth < 32; depth++) {
+      if (node.isConnected) return true;
+      node = boundaryOwners.get(rootOf(node));
+    }
+    return false;
+  }
+
+  function ownMutation(record) {
+    if (ownStyleNodes.has(record.target) || record.attributeName === attribute) return true;
+    if (record.type === "attributes" && record.attributeName === "style" &&
+        trackDisplayMutation(record.target)) return true;
+    if (record.type !== "childList") return false;
+    var changed = Array.from(record.addedNodes).concat(Array.from(record.removedNodes));
+    return changed.length !== 0 && changed.every(function (node) {
+      return ownStyleNodes.has(node);
+    });
+  }
+
+  function trackDisplayMutation(element) {
+    var currentStyle = element.getAttribute("style");
+    if (ownStyles.has(element) && ownStyles.get(element) === currentStyle) return true;
+    ownStyles.delete(element);
+    var backup = inlineBackups.get(element);
+    if (backup && (element.style.getPropertyValue("display") !== "none" ||
+        element.style.getPropertyPriority("display") !== "important")) {
+      backup.value = element.style.getPropertyValue("display");
+      backup.priority = element.style.getPropertyPriority("display");
+      backup.hadStyle = element.hasAttribute("style");
+    }
+    return false;
+  }
+
+  function observerOptions() {
+    return { childList: true, characterData: true, subtree: true, attributes: true };
+  }
+
+  function applyScopedSelectors(scope) {
+    if (!scope.root.isConnected) return;
+    if (!scope.style || scope.style.parentNode !== scope.root) {
+      scope.style = document.createElement("style");
+      ownStyleNodes.add(scope.style);
+      scope.root.appendChild(scope.style);
+      scope.installed.clear();
+    }
+    var sheet = scope.style.sheet;
+    if (!sheet) return;
+    procedures.forEach(function (rule) {
+      if (!rule._tag || scope.installed.has(rule._tag)) return;
+      try {
+        sheet.insertRule("[" + attribute + '~="' + rule._tag + '"]{' +
+          rule._declarations + "}", sheet.cssRules.length);
+        scope.installed.add(rule._tag);
+      } catch (_) {}
+    });
+  }
+
+  function addDependency(map, node, seed, observed) {
+    var scope = map.get(node);
+    if (!scope) {
+      scope = { root: node, counts: new Map(), subjects: new Set(),
+        installed: new Set(), styled: false, style: null };
+      if (observed) {
+        scope.observer = new MutationObserver(function (records) {
+          if (stopped || suspended) return;
+          var changed = false;
+          records.forEach(function (record) {
+            if (!ownMutation(record)) changed = true;
+          });
+          if (changed || scope.style && scope.style.parentNode !== scope.root) {
+            invalidate(scope.subjects);
+          }
+        });
+        scope.observer.observe(node, observerOptions());
+      }
+      map.set(node, scope);
+    }
+    scope.counts.set(seed, (scope.counts.get(seed) || 0) + 1);
+    scope.subjects.add(seed);
+  }
+
+  function removeDependency(map, node, seed) {
+    var scope = map.get(node);
+    if (!scope) return;
+    var count = scope.counts.get(seed) - 1;
+    if (count > 0) { scope.counts.set(seed, count); return; }
+    scope.counts.delete(seed);
+    scope.subjects.delete(seed);
+    if (scope.subjects.size) return;
+    if (scope.observer) scope.observer.disconnect();
+    if (scope.style) scope.style.remove();
+    invalidations.delete(scope.subjects);
+    invalidateAgain.delete(scope.subjects);
+    map.delete(node);
+  }
+
+  function dependencies(rule, seed, budget) {
+    [[rule._scopes, budget.scopes, scopedObservers, true],
+      [rule._owners, budget.owners, shadowOwners, false]].forEach(function (entry) {
+      var before = entry[0].get(seed) || new Set(), after = entry[1];
+      before.forEach(function (node) {
+        if (!after.has(node)) removeDependency(entry[2], node, seed);
+      });
+      after.forEach(function (node) {
+        if (!before.has(node)) addDependency(entry[2], node, seed, entry[3]);
+      });
+      if (after.size) entry[0].set(seed, after);
+      else entry[0].delete(seed);
+    });
+  }
+
+  function installShadowHook() {
+    if (restoreAttachShadow || !nativeShadow || !window.Element) return;
+    var prototype = window.Element.prototype;
+    var descriptor = Object.getOwnPropertyDescriptor(prototype, "attachShadow");
+    if (!descriptor || typeof descriptor.value !== "function" ||
+        !descriptor.configurable && !descriptor.writable) return;
+    var hooked = new Proxy(descriptor.value, { apply: function (target, receiver, args) {
+      var result = Reflect.apply(target, receiver, args);
+      // Use the native getter, never the returned root: closed roots stay opaque.
+      if (!stopped && Reflect.apply(nativeShadow, receiver, [])) {
+        var scope = shadowOwners.get(receiver);
+        if (scope) invalidate(scope.subjects);
+      }
+      return result;
+    } });
+    Object.defineProperty(prototype, "attachShadow",
+      Object.assign({}, descriptor, { value: hooked }));
+    restoreAttachShadow = function () {
+      var current = Object.getOwnPropertyDescriptor(prototype, "attachShadow");
+      if (current && current.value === hooked) {
+        Object.defineProperty(prototype, "attachShadow", descriptor);
+      }
+    };
+  }
+
+  function xpathScope(element, expression) {
+    var syntax = expression.replace(/'[^']*'|"[^"]*"/g, "q").trim();
+    var scope = element;
+    while (syntax === ".." || syntax.indexOf("../") === 0) {
+      scope = scope.parentNode || scope;
+      syntax = syntax.slice(2).replace(/^\//, "");
+    }
+    if (/\.\.|(?:ancestor|parent|following|preceding)(?:-or-self|-sibling)?\s*::/.test(syntax) ||
+        syntax.indexOf("|") !== -1) return rootOf(element);
+    return scope;
   }
 
   function testPattern(pattern, value, exact) {
@@ -170,6 +344,26 @@
           Array.from(relative(element, argument, true)).forEach(function (node) {
             next.add(node);
           });
+        } else if (operation === "shadow" || operation === "content") {
+          var accessor = operation === "shadow" ? nativeShadow : nativeContent;
+          if (operation === "shadow") budget.owners.add(element);
+          var root;
+          try { root = accessor && Reflect.apply(accessor, element, []); } catch (_) {}
+          if (root && nativeFragmentQuery) {
+            boundaryOwners.set(root, element);
+            budget.scopes.add(root);
+            Array.from(Reflect.apply(nativeFragmentQuery, root, [argument]))
+              .forEach(function (node) { next.add(node); });
+          }
+        } else if (operation === "xpath") {
+          budget.scopes.add(xpathScope(element, argument));
+          var expression = xpathExpressions.get(argument);
+          var result = expression.evaluate(element, 7, null);
+          if (result.snapshotLength > 1024) throw new Error("Cosmetic candidate budget");
+          for (var n = 0; n < result.snapshotLength; n++) {
+            var node = result.snapshotItem(n);
+            if (node && node.nodeType === 1) next.add(node);
+          }
         } else if (operation === "upward") {
           var count = /^[0-9]+$/.test(argument) ? Number(argument) : null;
           if (count === null) element = element.parentElement &&
@@ -240,6 +434,11 @@
   }
 
   function effect(element, tag, delta) {
+    var scope = scopedObservers.get(rootOf(element));
+    if (scope && scope.root.nodeType === 11 && delta > 0) {
+      scope.styled = true;
+      applyScopedSelectors(scope);
+    }
     var tags = effects.get(element) || new Map();
     var count = (tags.get(tag) || 0) + delta;
     if (count > 0) tags.set(tag, count);
@@ -277,15 +476,19 @@
   function applyRule(rule, seed) {
     var before = rule._hits.get(seed) || new Set();
     var after = new Set();
-    if (!seed.isConnected) { styleSubjects.delete(seed); pathSubjects.delete(seed); }
-    if (seed.isConnected && seed.matches(rule.selector)) {
+    var budget = { remaining: 4000, scopes: new Set(), owners: new Set() };
+    if (!live(seed)) { styleSubjects.delete(seed); pathSubjects.delete(seed); }
+    if (live(seed) && seed.matches(rule.selector)) {
       if (rule._style) styleSubjects.add(seed);
       if (rule._path) pathSubjects.add(seed);
-      var budget = { remaining: 4000 };
       after = new Set(evaluate(rule._program, [seed], budget).filter(function (node) {
-        return node && node.isConnected && node !== document.documentElement;
+        // Inert contents can match predicates or explicit removal actions, but
+        // reversible styles must never be copied from templates into untracked clones.
+        return node && (rule._tag ? node.isConnected : live(node)) &&
+          node !== document.documentElement;
       }));
     }
+    dependencies(rule, seed, budget);
     if (rule._tag) {
       before.forEach(function (element) {
         if (!after.has(element)) effect(element, rule._tag, -1);
@@ -317,8 +520,7 @@
       while (contextBudget-- > 0 && Date.now() < contextDeadline) {
         item = cursor.next();
         if (item.done) break;
-        if (item.value.isConnected) candidates.set(item.value, 0);
-        else invalidation[0].delete(item.value);
+        candidates.set(item.value, 0);
       }
       if (!item || !item.done) break;
       invalidations.delete(invalidation[0]);
@@ -396,6 +598,21 @@
             step[1] && typeof step[1] === "object" && siblings(step[1]);
         });
     }
+    function prepareSteps(current) {
+      current.steps.forEach(function (step) {
+        if (step[0] === "xpath") {
+          if (!nativeExpression) throw new Error("XPath unavailable");
+          if (!xpathExpressions.has(step[1])) {
+            xpathExpressions.set(step[1], nativeExpression(step[1], null));
+          }
+        }
+        if (step[1] && typeof step[1] === "object") prepareSteps(step[1]);
+      });
+    }
+    prepareSteps(program);
+    if (hasOperation(program, "shadow")) installShadowHook();
+    entry._scopes = new Map();
+    entry._owners = new Map();
     siblingRelations = siblingRelations || siblings(program);
     descendantRefresh = descendantRefresh ||
       /[ >+~]|:nth-|:first-|:last-|:only-/.test(entry.selector);
@@ -435,6 +652,14 @@
   function stop() {
     stopped = true;
     observer.disconnect();
+    scopedObservers.forEach(function (scope) {
+      scope.observer.disconnect();
+      if (scope.style) scope.style.remove();
+    });
+    scopedObservers.clear();
+    shadowOwners.clear();
+    xpathExpressions.clear();
+    if (restoreAttachShadow) restoreAttachShadow();
     if (timer !== null) cancelTimeout(timer);
     timer = null;
     work = [];
@@ -551,16 +776,7 @@
       if (record.type === "attributes") {
         if (record.target === style || record.attributeName === attribute) return;
         if (record.attributeName === "style") {
-          var currentStyle = record.target.getAttribute("style");
-          if (ownStyles.has(record.target) && ownStyles.get(record.target) === currentStyle) return;
-          ownStyles.delete(record.target);
-          var backup = inlineBackups.get(record.target);
-          if (backup && (record.target.style.getPropertyValue("display") !== "none" ||
-              record.target.style.getPropertyPriority("display") !== "important")) {
-            backup.value = record.target.style.getPropertyValue("display");
-            backup.priority = record.target.style.getPropertyPriority("display");
-            backup.hadStyle = record.target.hasAttribute("style");
-          }
+          if (trackDisplayMutation(record.target)) return;
         }
         if (styleSubjects.size) invalidate(styleSubjects);
         collect(record.target);
@@ -598,7 +814,7 @@
     if (style && !style.isConnected || domProcedureCount && relations.size) schedule();
   });
   function observe() {
-    var options = { childList: true, characterData: true, subtree: true, attributes: true };
+    var options = observerOptions();
     if (!domProcedureCount) options.attributeFilter = ["class", "id"];
     observer.observe(document, options);
   }
@@ -606,6 +822,7 @@
   window.addEventListener("pagehide", function () {
     suspended = true;
     observer.disconnect();
+    scopedObservers.forEach(function (scope) { scope.observer.disconnect(); });
     if (timer !== null) cancelTimeout(timer);
     timer = null;
   });
@@ -613,6 +830,10 @@
     if (stopped) return;
     suspended = false;
     observe();
+    scopedObservers.forEach(function (scope) {
+      scope.observer.observe(scope.root, observerOptions());
+      invalidate(scope.subjects);
+    });
     queue(document);
   });
   window.addEventListener("resize", function () {

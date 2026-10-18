@@ -20,8 +20,10 @@
     const nativeRect = self.Element?.prototype.getBoundingClientRect;
     const now = Date.now.bind(Date);
     const cookieDate = groups.has('TRUSTED_SET_COOKIE') || groups.has('TRUSTED_SET_COOKIE_RELOAD')
+        || groups.has('TRUSTED_LOCAL_STORAGE') || groups.has('TRUSTED_SESSION_STORAGE')
         ? { Type: Date, time: Date.prototype.getTime, utc: Date.prototype.toUTCString,
-            iso: Date.prototype.toISOString, day: Date.prototype.getDate,
+            text: Date.prototype.toString, iso: Date.prototype.toISOString,
+            day: Date.prototype.getDate,
             setDay: Date.prototype.setDate, year: Date.prototype.getFullYear,
             setYear: Date.prototype.setFullYear, second: Date.prototype.getSeconds,
             setSecond: Date.prototype.setSeconds } : null;
@@ -143,9 +145,17 @@
             state.readers.push(check);
         });
     }
-    function storage(kind, args) {
+    function storage(kind, args, trusted = false) {
         const store = self[kind];
-        if (args[1] !== '$remove$') { store.setItem(args[0], args[1]); return; }
+        let value = args[1];
+        if (trusted && value !== '$remove$' && value.includes('$')) {
+            const date = new cookieDate.Type();
+            for (const [token, method] of [['$now$', cookieDate.time],
+                ['$currentDate$', cookieDate.text], ['$currentISODate$', cookieDate.iso]]) {
+                value = value.split(token).join(String(apply(method, date, [])));
+            }
+        }
+        if (value !== '$remove$') { store.setItem(args[0], value); return; }
         if (args[0].startsWith('/') && args[0].lastIndexOf('/') > 0 &&
             /^[dgimsuvy]*$/.test(args[0].slice(args[0].lastIndexOf('/') + 1))) {
             if (store.length > 1024) { return; }
@@ -726,8 +736,8 @@
         ['PREVENT_BAB', bab], ['ABORT_STACK_TRACE', stackAbort],
         ['SET_LOCAL_STORAGE', args => storage('localStorage', args)],
         ['SET_SESSION_STORAGE', args => storage('sessionStorage', args)],
-        ['TRUSTED_LOCAL_STORAGE', args => storage('localStorage', args)],
-        ['TRUSTED_SESSION_STORAGE', args => storage('sessionStorage', args)],
+        ['TRUSTED_LOCAL_STORAGE', args => storage('localStorage', args, true)],
+        ['TRUSTED_SESSION_STORAGE', args => storage('sessionStorage', args, true)],
         ['TRUSTED_SET_COOKIE', args => cookie(args, false, true)],
         ['TRUSTED_SET_COOKIE_RELOAD', args => cookie(args, true, true)],
         ['SET_COOKIE', args => cookie(args, false)],

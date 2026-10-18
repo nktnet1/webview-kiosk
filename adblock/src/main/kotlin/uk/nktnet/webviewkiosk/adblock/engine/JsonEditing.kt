@@ -169,7 +169,16 @@ internal object JsonEditing {
                     method?.isString == true &&
                         Regex("[A-Za-z_$][A-Za-z_0-9$]*").matches(method.content) &&
                         method.content !in
-                            setOf("__proto__", "prototype", "constructor")
+                            setOf(
+                                "__proto__",
+                                "prototype",
+                                "constructor",
+                                "eval",
+                                "Function",
+                                "execScript",
+                                "setTimeout",
+                                "setInterval",
+                            )
                 )
             }
             if (operator == "repl") {
@@ -201,10 +210,11 @@ internal object JsonEditing {
         }
         JsonArray(
                 listOf(
-                    JsonPrimitive(query.startsWith("v2:")),
+                    JsonPrimitive(query.startsWith("v2:") || parser.extensions),
                     JsonArray(path),
                     JsonArray(guards),
                     mutation,
+                    JsonPrimitive(parser.extensions),
                 )
             )
             .toString()
@@ -231,7 +241,11 @@ internal object JsonEditing {
 
     private class Reader(val text: String) {
         var position = 0
+        var extensions = false
+            private set
+
         private var steps = 0
+        private var expressions = 0
         private val names = Regex("[A-Za-z_][A-Za-z_0-9]*|\\*")
         private val integers = Regex("-?[0-9]{1,6}")
         private val forbidden = setOf("__proto__", "prototype", "constructor")
@@ -298,7 +312,10 @@ internal object JsonEditing {
             error("Unterminated JSONPath regex")
         }
 
-        private fun name(literal: Boolean = true): JsonElement {
+        private fun name(
+            literal: Boolean = true,
+            forbid: Boolean = true,
+        ): JsonElement {
             val quote = text.getOrNull(position)
             if (quote == '/') {
                 require(!literal)
@@ -319,7 +336,7 @@ internal object JsonEditing {
                     }
                 }
                 require(text.getOrNull(position++) == quote)
-                require(result.toString() !in forbidden)
+                require(!forbid || result.toString() !in forbidden)
                 return JsonPrimitive(result.toString())
             }
             val number =
@@ -339,8 +356,176 @@ internal object JsonEditing {
             return JsonPrimitive(match.value)
         }
 
+        private fun slicePart(): JsonElement {
+            val start = position
+            if (text.getOrNull(position) == '-') {
+                position++
+            }
+            while (text.getOrNull(position)?.isDigit() == true) {
+                position++
+            }
+            if (start == position) {
+                return JsonNull
+            }
+            val raw = text.substring(start, position)
+            require(Regex("0|-?[1-9][0-9]*").matches(raw))
+            val value = requireNotNull(raw.toLongOrNull())
+            require(value in -9_007_199_254_740_991L..9_007_199_254_740_991L)
+            spaces()
+            return JsonPrimitive(value)
+        }
+
+        private fun selector(): JsonElement {
+            val start = position
+            if (text.getOrNull(position)?.let { it in "-:0123456789" } == true) {
+                val first = slicePart()
+                if (text.getOrNull(position) == ':') {
+                    extensions = true
+                    position++
+                    spaces()
+                    val last = slicePart()
+                    val step =
+                        if (text.getOrNull(position) == ':') {
+                            position++
+                            spaces()
+                            slicePart()
+                        } else {
+                            JsonNull
+                        }
+                    return JsonObject(
+                        mapOf("slice" to JsonArray(listOf(first, last, step)))
+                    )
+                }
+                position = start
+            }
+            return name()
+        }
+
+        private fun primitive(): JsonElement {
+            val quote = text.getOrNull(position)
+            if (quote == '\'') {
+                return name(forbid = false)
+            }
+            val start = position
+            if (quote == '"') {
+                position++
+                var escaped = false
+                while (position < text.length) {
+                    val char = text[position++]
+                    if (escaped) {
+                        escaped = false
+                    } else if (char == '\\') {
+                        escaped = true
+                    } else if (char == '"') {
+                        break
+                    }
+                }
+            } else {
+                while (text.getOrNull(position)?.let { it !in " ]&|)" } == true) {
+                    position++
+                }
+            }
+            val value = Json.parseToJsonElement(text.substring(start, position))
+            require(value is JsonPrimitive && boundedValue(value))
+            return value
+        }
+
+        private fun expression(
+            depth: Int,
+            conjunction: Boolean = false,
+        ): JsonElement {
+            require(depth <= 8)
+            val operator =
+                if (conjunction) {
+                    "&&"
+                } else {
+                    "||"
+                }
+            val values = mutableListOf<JsonElement>()
+            do {
+                if (values.isNotEmpty()) {
+                    position += operator.length
+                }
+                spaces()
+                values +=
+                    if (conjunction) {
+                        predicate(depth)
+                    } else {
+                        expression(depth, true)
+                    }
+                spaces()
+            } while (text.startsWith(operator, position))
+            if (values.size == 1) {
+                return values[0]
+            }
+            extensions = true
+            return JsonArray(listOf(JsonPrimitive(operator)) + values)
+        }
+
+        private fun predicate(depth: Int): JsonElement {
+            require(depth <= 8 && ++expressions <= 64)
+            val negated = text.getOrNull(position) == '!'
+            if (negated) {
+                position++
+                spaces()
+            }
+            if (text.getOrNull(position) == '(') {
+                extensions = true
+                position++
+                val nested = expression(depth + 1)
+                require(text.getOrNull(position++) == ')')
+                return JsonArray(
+                    listOf(
+                        JsonPrimitive(
+                            if (negated) {
+                                "!"
+                            } else {
+                                "()"
+                            }
+                        ),
+                        nested,
+                    )
+                )
+            }
+            val start = position
+            val root = text.getOrNull(position) == '$'
+            val nested = path(depth + 1)
+            require(nested.isNotEmpty() || text.getOrNull(start) in listOf('@', '$'))
+            spaces()
+            val operator =
+                if (text.startsWith("=/", position)) {
+                    "re"
+                } else {
+                    listOf("==", "!=", "<=", ">=", "^=", "$=", "*=", "<", ">")
+                        .firstOrNull { text.startsWith(it, position) }
+                        .orEmpty()
+                }
+            val value =
+                if (operator == "re") {
+                    // Retain the legacy rejection of ambiguous negated regex syntax.
+                    require(!negated)
+                    position++
+                    regex(flagsAllowed = true)
+                } else if (operator.isNotEmpty()) {
+                    position += operator.length
+                    spaces()
+                    primitive()
+                } else {
+                    JsonNull
+                }
+            return JsonArray(
+                listOf(
+                    JsonPrimitive(negated),
+                    JsonArray(nested),
+                    JsonPrimitive(operator),
+                    value,
+                    JsonPrimitive(root),
+                )
+            )
+        }
+
         fun path(depth: Int): List<JsonElement> {
-            require(depth <= 4)
+            require(depth <= 8)
             if (text.getOrNull(position) in listOf('$', '@')) {
                 position++
             }
@@ -364,78 +549,14 @@ internal object JsonEditing {
                     selectors += name(literal = false)
                 } else if (text.startsWith("[?", position)) {
                     position += 2
-                    val negated = text.getOrNull(position) == '!'
-                    if (negated) {
-                        position++
-                    }
-                    val start = position
-                    val root = text.getOrNull(position) == '$'
-                    val nested = path(depth + 1)
-                    require(
-                        nested.isNotEmpty() ||
-                            text.getOrNull(start) in listOf('@', '$')
-                    )
-                    spaces()
-                    val operator =
-                        if (text.startsWith("=/", position)) {
-                            "re"
-                        } else {
-                            listOf(
-                                    "==",
-                                    "!=",
-                                    "<=",
-                                    ">=",
-                                    "^=",
-                                    "$=",
-                                    "*=",
-                                    "<",
-                                    ">",
-                                )
-                                .firstOrNull { text.startsWith(it, position) }
-                                .orEmpty()
-                        }
-                    var value: JsonElement = JsonNull
-                    if (operator == "re") {
-                        // Negated regex filters have inconsistent upstream
-                        // semantics.
-                        require(!negated)
-                        position++
-                        value = regex(flagsAllowed = true)
-                    } else if (operator.isNotEmpty()) {
-                        position += operator.length
-                        spaces()
-                        if (text.getOrNull(position) == '\'') {
-                            value = name()
-                        } else {
-                            val end = text.indexOf(']', position)
-                            require(end >= 0)
-                            require(text.getOrNull(position) !in listOf('[', '{'))
-                            value =
-                                Json.parseToJsonElement(
-                                    text.substring(position, end).trim()
-                                )
-                            require(value is JsonPrimitive)
-                            require(boundedValue(value))
-                            position = end
-                        }
-                    }
+                    filter = expression(depth)
                     spaces()
                     require(text.getOrNull(position++) == ']')
-                    filter =
-                        JsonArray(
-                            listOf(
-                                JsonPrimitive(negated),
-                                JsonArray(nested),
-                                JsonPrimitive(operator),
-                                value,
-                                JsonPrimitive(root),
-                            )
-                        )
                 } else {
                     position++
                     spaces()
                     do {
-                        selectors += name()
+                        selectors += selector()
                         require(selectors.size <= 16)
                         spaces()
                         val more = text.getOrNull(position) == ','

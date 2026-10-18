@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.adblock
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -87,5 +88,58 @@ class CosmeticCompatibilityTest {
         )
         assertEquals(1, engine.unsupportedRuleCount())
         assertEquals(2, engine.cosmeticProcedures("https://site.example/").size)
+    }
+
+    @Test
+    fun scopedXPathShadowAndTemplateChainsSurviveTheCache() {
+        val text =
+            "site.example##.card:xpath(.//span[@data-kind='ad'])\n" +
+                "site.example##.marker:xpath(../div[contains(text(), 'Sponsored')])\n" +
+                "site.example##.host:shadow(.ad):has-text(Sponsored)\n" +
+                "site.example##.card:has(template:content(.label):has-text(Sponsored))\n" +
+                "site.example##template:content(.ad):remove()\n" +
+                "site.example##.card:xpath(*/div[@count > 1 and contains(., '/sale')])"
+        val file = File(folder.root, "scoped.bin")
+        val original = KotlinFilterEngine(file)
+        original.replace(listOf(text))
+        assertEquals(0, original.unsupportedRuleCount())
+        val restored = KotlinFilterEngine(file)
+        restored.replace(listOf(text))
+        val procedures = restored.cosmeticProcedures("https://site.example/")
+        assertEquals(6, procedures.size)
+        assertEquals(
+            original.cosmeticProcedures("https://site.example/"),
+            procedures,
+        )
+        assertEquals(".card", procedures[0].selector)
+        assertTrue(procedures[0].operations!!.contains("xpath"))
+        assertTrue(procedures[2].operations!!.contains("shadow"))
+        assertTrue(procedures[3].operations!!.contains("content"))
+    }
+
+    @Test
+    fun documentWideXPathAndArbitraryPropertiesStayUnsupported() {
+        val engine = KotlinFilterEngine()
+        engine.replace(
+            listOf(
+                "site.example##:xpath(//div)\n" +
+                    "site.example##.card:xpath(//div)\n" +
+                    "site.example##.card:xpath(.//div | //aside)\n" +
+                    "site.example##.card:xpath(.//div[count(//aside) > 0])\n" +
+                    "site.example##.card:xpath(id('advert'))\n" +
+                    "site.example##.card:xpath(.//div[@ad * /root])\n" +
+                    "site.example##.card:xpath(.//div[@ad and /root])\n" +
+                    "site.example##.card:matches-prop(content.advert)\n" +
+                    "site.example##.host:shadow(.ad:has-text(Sponsored))\n" +
+                    "site.example##template:content(.ad):content()\n" +
+                    "site.example##template:content(.ad)\n" +
+                    "site.example##template:content(.ad):style(color: red)"
+            )
+        )
+        assertEquals(12, engine.unsupportedRuleCount())
+        assertEquals(
+            emptyList<CosmeticProcedure>(),
+            engine.cosmeticProcedures("https://site.example/"),
+        )
     }
 }

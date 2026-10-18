@@ -33,6 +33,7 @@ function page(host = "frame.example", policy = (url) => url.includes("blocked"))
     DOMException,
     WebSocket: Socket,
     navigator,
+    origin: "https://" + host,
     location: { protocol: "https:", hostname: host, href: "https://" + host + "/frame" },
     document: { baseURI: "https://api.example/base/" },
     wkRequestRules: {
@@ -71,7 +72,7 @@ test("WebSocket hooks retain native instances and suppress blocked connections",
   assert.equal(p.sockets.length, 1);
   assert.deepEqual(p.queries[0], [
     "wss://api.example/blocked",
-    "https://frame.example/frame",
+    "https://frame.example",
     "websocket",
   ]);
   assert.throws(() => p.run('WebSocket("/safe")'), { name: "TypeError" });
@@ -89,7 +90,7 @@ test("beacon hooks preserve return values, receivers, and suppression", () => {
   });
   assert.deepEqual(p.queries[0], [
     "https://api.example/blocked",
-    "https://frame.example/frame",
+    "https://frame.example",
     "ping",
   ]);
 });
@@ -105,4 +106,42 @@ test("internal documents and failed policy lookups retain native APIs", () => {
   unavailable.install();
   unavailable.run('new WebSocket("/blocked")');
   assert.equal(unavailable.sockets.length, 1);
+});
+
+test("inherited frame origins are captured without borrowing the document URL", () => {
+  for (const href of ["about:blank", "about:srcdoc", "blob:https://other.example/id"]) {
+    const p = page();
+    p.context.location = { protocol: href.split(":")[0] + ":", hostname: "", href };
+    p.install();
+    p.context.origin = "https://replaced.example";
+    assert.equal(p.run('navigator.sendBeacon("/blocked")'), true);
+    assert.equal(p.queries[0][1], "https://frame.example");
+  }
+});
+
+test("opaque frame origins query only context-free policy", () => {
+  for (const origin of ["null", undefined, "malformed"]) {
+    const p = page();
+    p.context.origin = origin;
+    p.install();
+    assert.equal(p.run('navigator.sendBeacon("/blocked")'), true);
+    assert.equal(p.queries[0][1], "");
+  }
+});
+
+test("local documents and inherited private origins keep native APIs", () => {
+  for (const protocol of ["file:", "content:"]) {
+    const p = page();
+    p.context.location.protocol = protocol;
+    p.context.origin = "null";
+    p.install();
+    assert.equal(p.context.WebSocket, p.Socket);
+    assert.equal(p.queries.length, 0);
+  }
+  const p = page();
+  p.context.location.href = "about:blank";
+  p.context.location.protocol = "about:";
+  p.context.origin = "https://appassets.androidplatform.net";
+  p.install();
+  assert.equal(p.context.WebSocket, p.Socket);
 });

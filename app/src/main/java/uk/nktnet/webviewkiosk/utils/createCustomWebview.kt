@@ -46,7 +46,6 @@ import androidx.webkit.WebViewClientCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import java.io.File
-import java.util.concurrent.atomic.AtomicReference
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.ServiceWorkerBlocker
@@ -337,9 +336,6 @@ fun createCustomWebview(
             }
         var hideFullscreen: () -> Unit = {}
         val navigation = WebViewNavigationSession(config.isActive)
-        // shouldInterceptRequest runs off the UI thread. Never read WebView.url
-        // there.
-        val currentPageUrl = AtomicReference("")
         var cosmetics: WebViewCosmetics? = null
         var scriptlets: WebViewScriptlets? = null
         var requests: WebViewRequests? = null
@@ -675,7 +671,6 @@ fun createCustomWebview(
                                 }
                                 url?.let {
                                     navigation.pageStarted(it)
-                                    currentPageUrl.set(it)
                                 }
                                 awaitingPdfPageStart = false
                                 config.setLastErrorUrl("")
@@ -981,7 +976,6 @@ fun createCustomWebview(
                                     // declined the request.
                                     WebViewBlocker.intercept(
                                             request,
-                                            currentPageUrl.get(),
                                             contentBlocker,
                                             blockedDocumentHtml = {
                                                 blockedPageHtml(

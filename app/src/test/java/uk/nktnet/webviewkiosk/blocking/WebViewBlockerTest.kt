@@ -56,12 +56,10 @@ class WebViewBlockerTest {
     @Test
     fun blocksHttpDocumentsAndContextFreeSubresourcesWithUnknownInitiators() {
         val target = "https://ads.example/pixel"
-        val page = "https://publisher.example/index"
         assertTrue(
             WebViewBlocker.shouldBlock(
                 target,
                 false,
-                page,
                 emptyMap(),
                 "GET",
                 service,
@@ -71,20 +69,15 @@ class WebViewBlockerTest {
             WebViewBlocker.shouldBlock(
                 target,
                 true,
-                page,
                 emptyMap(),
                 "GET",
                 service,
             )
         )
-        assertTrue(
-            WebViewBlocker.shouldBlock(target, false, "", emptyMap(), "GET", service)
-        )
         assertFalse(
             WebViewBlocker.shouldBlock(
                 "file:///sdcard/x.js",
                 false,
-                page,
                 emptyMap(),
                 "GET",
                 service,
@@ -94,7 +87,6 @@ class WebViewBlockerTest {
             WebViewBlocker.shouldBlock(
                 "https://appassets.androidplatform.net/web-content-files/a.js",
                 false,
-                page,
                 emptyMap(),
                 "GET",
                 service,
@@ -104,7 +96,6 @@ class WebViewBlockerTest {
             WebViewBlocker.shouldBlock(
                 "https://pdf-dummy.webviewkiosk.nktnet.uk/pdf.js",
                 false,
-                page,
                 emptyMap(),
                 "GET",
                 service,
@@ -114,7 +105,6 @@ class WebViewBlockerTest {
             WebViewBlocker.shouldBlock(
                 "blob:https://ads.example/123",
                 false,
-                page,
                 emptyMap(),
                 "GET",
                 service,
@@ -141,14 +131,12 @@ class WebViewBlockerTest {
                     Executor { it.run() },
                 )
                 .also { it.start() }
-        val source = "https://publisher.example/"
         val script =
             WebViewBlocker.intercept(
                 request(
                     "https://ads.example/blocked.js",
                     "script",
                 ),
-                source,
                 blocker,
             )
         assertEquals("application/javascript", script!!.mimeType)
@@ -160,7 +148,6 @@ class WebViewBlockerTest {
                         "https://styles.example/ad.css",
                         "style",
                     ),
-                    source,
                     blocker,
                 )!!
                 .mimeType,
@@ -171,7 +158,6 @@ class WebViewBlockerTest {
                     "https://ads.example/allowed.js",
                     "script",
                 ),
-                source,
                 blocker,
             )
         )
@@ -182,7 +168,6 @@ class WebViewBlockerTest {
                     "script",
                     mainFrame = true,
                 ),
-                source,
                 blocker,
             )
         )
@@ -218,7 +203,6 @@ class WebViewBlockerTest {
                         "https://r$index.example/resource",
                         "script",
                     ),
-                    "https://publisher.example/",
                     blocker,
                 )!!
             assertEquals(expected.mimeType, response.mimeType)
@@ -257,7 +241,6 @@ class WebViewBlockerTest {
         val gif =
             WebViewBlocker.intercept(
                 request("https://pixel.example/ad.gif", "image"),
-                "https://site.example/",
                 blocker,
             )!!
         assertEquals("image/gif", gif.mimeType)
@@ -265,7 +248,6 @@ class WebViewBlockerTest {
         val png =
             WebViewBlocker.intercept(
                 request("https://square.example/ad.png", "image"),
-                "https://site.example/",
                 blocker,
             )!!
         assertEquals("image/png", png.mimeType)
@@ -289,7 +271,6 @@ class WebViewBlockerTest {
         assertNull(
             WebViewBlocker.intercept(
                 request(url, "script"),
-                "https://site.example/",
                 blocker,
             )
         )
@@ -314,14 +295,12 @@ class WebViewBlockerTest {
         assertNull(
             WebViewBlocker.intercept(
                 request("https://forms.example/send", "document", true),
-                "",
                 blocker,
             )
         )
         val response =
             WebViewBlocker.intercept(
                 request("https://forms.example/send", "image", true, "POST"),
-                "about:blank",
                 blocker,
             )!!
         assertEquals(403, response.statusCode)
@@ -338,14 +317,12 @@ class WebViewBlockerTest {
         assertNull(
             WebViewBlocker.intercept(
                 request("https://forms.example/safe", "document", true, "POST"),
-                "",
                 blocker,
             )
         )
         assertNull(
             WebViewBlocker.intercept(
                 request("https://forms.example/send", "document", false, "POST"),
-                "https://forms.example/",
                 blocker,
             )
         )
@@ -355,7 +332,7 @@ class WebViewBlockerTest {
     fun interceptedDocumentsUseProvidedBlockPageAndRespectDisable() {
         val url = "https://ads.example/"
         val response =
-            WebViewBlocker.intercept(request(url, "document", true), "", service) {
+            WebViewBlocker.intercept(request(url, "document", true), service) {
                 assertEquals(url, it)
                 "<html>Custom block page</html>"
             }!!
@@ -365,9 +342,7 @@ class WebViewBlockerTest {
         )
         service.setEnabled(false)
         assertFalse(WebViewBlocker.shouldBlockDocument(url, "GET", service))
-        assertNull(
-            WebViewBlocker.intercept(request(url, "document", true), "", service)
-        )
+        assertNull(WebViewBlocker.intercept(request(url, "document", true), service))
     }
 
     @Test
@@ -430,13 +405,12 @@ class WebViewBlockerTest {
         }
 
     @Test
-    fun subresourcesPreferNativeFrameInitiatorHeadersOverTheTopLevelPage() {
+    fun subresourcesUseOnlyNativeFrameInitiatorHeaders() {
         val blocker = realService("||ads.example^\$script,domain=frame.example")
         assertTrue(
             WebViewBlocker.shouldBlock(
                 "https://ads.example/a.js",
                 false,
-                "https://top.example/",
                 mapOf(
                     "Referer" to "https://frame.example/article",
                     "Sec-Fetch-Dest" to "script",
@@ -449,7 +423,6 @@ class WebViewBlockerTest {
             WebViewBlocker.shouldBlock(
                 "https://ads.example/a.js",
                 false,
-                "https://top.example/",
                 mapOf(
                     "Referer" to "https://unrelated.example/",
                     "Sec-Fetch-Dest" to "script",
@@ -462,10 +435,112 @@ class WebViewBlockerTest {
             WebViewBlocker.shouldBlock(
                 "https://ads.example/a.js",
                 false,
-                "https://top.example/",
                 mapOf("Sec-Fetch-Dest" to "script"),
                 "GET",
                 blocker,
+            )
+        )
+    }
+
+    @Test
+    fun nativeOriginTakesPrecedenceOverReferrerForFrameRules() {
+        val blocker = realService("||ads.example^\$script,domain=frame.example")
+        fun blocked(origin: String, referrer: String) =
+            WebViewBlocker.shouldBlock(
+                "https://ads.example/a.js",
+                false,
+                mapOf(
+                    "oRiGiN" to origin,
+                    "Referer" to referrer,
+                    "Sec-Fetch-Dest" to "script",
+                ),
+                "GET",
+                blocker,
+            )
+        assertTrue(blocked("https://frame.example", "https://unrelated.example/"))
+        assertTrue(
+            blocked(
+                " https://frame.example ",
+                "https://appassets.androidplatform.net/",
+            )
+        )
+        assertFalse(blocked("https://unrelated.example", "https://frame.example/"))
+        assertFalse(blocked("null", "https://frame.example/"))
+        assertFalse(blocked("file:///local.html", "https://frame.example/"))
+    }
+
+    @Test
+    fun opaqueAndMalformedInitiatorsStillApplyContextFreeRules() {
+        val blocker = realService("||ads.example^\$script")
+        for (source in
+            listOf(
+                "null",
+                "",
+                "about:blank",
+                "data:text/html,test",
+                "blob:https://frame.example/id",
+                "not-an-origin",
+                "https://frame.example https://other.example",
+                "https:\\frame.example",
+                "file:opaque",
+            )) {
+            for (name in listOf("Origin", "Referer")) {
+                assertTrue(
+                    "$name: $source",
+                    WebViewBlocker.shouldBlock(
+                        "https://ads.example/a.js",
+                        false,
+                        mapOf(name to source, "Sec-Fetch-Dest" to "script"),
+                        "GET",
+                        blocker,
+                    ),
+                )
+            }
+        }
+        for (source in
+            listOf(
+                "file://",
+                "file:///local.html",
+                "content://documents/local.html",
+                "https://appassets.androidplatform.net",
+                "https://pdf-dummy.webviewkiosk.nktnet.uk",
+            )) {
+            assertFalse(
+                source,
+                WebViewBlocker.shouldBlock(
+                    "https://ads.example/a.js",
+                    false,
+                    mapOf("Origin" to source, "Sec-Fetch-Dest" to "script"),
+                    "GET",
+                    blocker,
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun unknownFrameOriginsKeepPotentialContextualExceptions() {
+        val blocker =
+            realService(
+                "||ads.example^\$script\n" +
+                    "@@||ads.example^\$script,domain=allowed.example"
+            )
+        fun blocked(headers: Map<String, String>) =
+            WebViewBlocker.shouldBlock(
+                "https://ads.example/a.js",
+                false,
+                headers + ("Sec-Fetch-Dest" to "script"),
+                "GET",
+                blocker,
+            )
+        assertTrue(blocked(mapOf("Origin" to "https://unrelated.example")))
+        assertFalse(blocked(emptyMap()))
+        assertFalse(
+            blocked(
+                mapOf(
+                    "Origin" to "null",
+                    "Referer" to "https://unrelated.example/",
+                )
             )
         )
     }

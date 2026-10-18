@@ -15,8 +15,9 @@ import uk.nktnet.webviewkiosk.adblock.ScriptletType
 /**
  * One disposable, versioned binary snapshot of normalized rules, never Java object
  * serialization. The source digest prevents stale activation; a checksum rejects
- * damaged cache data. Production restores validated network bucket IDs. Normalized
- * records rebuild missing/invalid buckets, without cached executable source.
+ * damaged cache data. Production restores validated network and page bucket IDs.
+ * Normalized records rebuild missing/invalid buckets, without cached executable
+ * source.
  */
 internal class CompiledFilterCache(
     private val file: File,
@@ -296,30 +297,30 @@ internal class CompiledFilterCache(
                     val indexBytes = input.available()
                     var remainingReferences =
                         minOf(FilterCompiler.MAX_RULES * 8, indexBytes / 4)
+                    fun ids(count: Int): IntArray {
+                        val size = input.count(remainingReferences)
+                        remainingReferences -= size
+                        return IntArray(size) { input.count(count - 1) }
+                    }
+                    fun buckets(count: Int): Map<String, IntArray> {
+                        val size =
+                            input.count(minOf(remainingReferences, indexBytes / 8))
+                        val result = HashMap<String, IntArray>()
+                        repeat(size) {
+                            require(result.put(strings.read(), ids(count)) == null)
+                        }
+                        return result
+                    }
                     fun routing(): NetworkRouting {
                         val count = input.count(networks.size)
-                        fun ids(): IntArray {
-                            val size = input.count(remainingReferences)
-                            remainingReferences -= size
-                            return IntArray(size) { input.count(count - 1) }
-                        }
-                        fun buckets(): Map<String, IntArray> {
-                            val size =
-                                input.count(minOf(count * 1024, indexBytes / 8))
-                            val result = HashMap<String, IntArray>()
-                            repeat(size) {
-                                require(result.put(strings.read(), ids()) == null)
-                            }
-                            return result
-                        }
-                        val hosts = buckets()
-                        val pages = buckets()
-                        val entities = buckets()
+                        val hosts = buckets(count)
+                        val pages = buckets(count)
+                        val entities = buckets(count)
                         val tokens = HashMap<Int, IntArray>()
                         repeat(input.count(minOf(count, indexBytes / 8))) {
-                            require(tokens.put(input.readInt(), ids()) == null)
+                            require(tokens.put(input.readInt(), ids(count)) == null)
                         }
-                        val fallback = ids()
+                        val fallback = ids(count)
                         require(fallback.size <= 2048)
                         return NetworkRouting(
                             count,
@@ -337,6 +338,29 @@ internal class CompiledFilterCache(
                                 routing(),
                                 routing(),
                                 routing(),
+                            )
+                        } else {
+                            null
+                        }
+                    fun pageRouting(maxCount: Int, tableCount: Int): RuleBuckets {
+                        val count = input.count(maxCount)
+                        require(input.count(tableCount) == tableCount)
+                        return RuleBuckets(
+                            count,
+                            List(tableCount) { buckets(count) },
+                        )
+                    }
+                    val pageIndexes =
+                        if (input.readBoolean()) {
+                            PageIndexSnapshot(
+                                pageRouting(
+                                    cosmetics.size,
+                                    CosmeticBucket.entries.size,
+                                ),
+                                pageRouting(
+                                    scriptlets.size,
+                                    ScriptletBucket.entries.size,
+                                ),
                             )
                         } else {
                             null
@@ -359,6 +383,7 @@ internal class CompiledFilterCache(
                         scriptlets,
                         disabled,
                         networkIndexes = indexes,
+                        pageIndexes = pageIndexes,
                         totalRules = total,
                     )
                 }
@@ -377,6 +402,7 @@ internal class CompiledFilterCache(
         key: ByteArray,
         rules: CompiledRuleSet,
         indexes: NetworkIndexSnapshot? = null,
+        pageIndexes: PageIndexSnapshot? = null,
     ) {
         try {
             storage.write(MAX_BYTES) { fileOutput ->
@@ -514,19 +540,19 @@ internal class CompiledFilterCache(
                     }
                 }
                 output.writeBoolean(indexes != null)
+                fun ids(values: IntArray) {
+                    output.writeInt(values.size)
+                    values.forEach(output::writeInt)
+                }
+                fun buckets(values: Map<String, IntArray>) {
+                    output.writeInt(values.size)
+                    for ((key, entries) in values) {
+                        strings.write(key)
+                        ids(entries)
+                    }
+                }
                 fun routing(value: NetworkRouting) {
                     output.writeInt(value.ruleCount)
-                    fun ids(values: IntArray) {
-                        output.writeInt(values.size)
-                        values.forEach(output::writeInt)
-                    }
-                    fun buckets(values: Map<String, IntArray>) {
-                        output.writeInt(values.size)
-                        for ((key, entries) in values) {
-                            strings.write(key)
-                            ids(entries)
-                        }
-                    }
                     buckets(value.hosts)
                     buckets(value.pages)
                     buckets(value.entities)
@@ -542,6 +568,16 @@ internal class CompiledFilterCache(
                     routing(it.hiding)
                     routing(it.redirects)
                     routing(it.parameters)
+                }
+                output.writeBoolean(pageIndexes != null)
+                fun pageRouting(value: RuleBuckets) {
+                    output.writeInt(value.ruleCount)
+                    output.writeInt(value.tables.size)
+                    value.tables.forEach(::buckets)
+                }
+                pageIndexes?.let {
+                    pageRouting(it.cosmetics)
+                    pageRouting(it.scriptlets)
                 }
                 output.writeLong(checksum.value)
                 output.flush()
@@ -626,7 +662,7 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 17
+        private const val VERSION = 18
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 

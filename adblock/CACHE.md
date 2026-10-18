@@ -1,37 +1,44 @@
-# Compiled cache - v1.0.28
+# Compiled cache - v1.0.29
 
-Production now saves and restores the four native network lookup indexes. The
-v1.0.25 prototype already supplied the portable format; this patch enables it and
-validates bucket membership before use. Activation does not depend on a benchmark.
-It avoids rebuilding those buckets without adding work inside WebView. No Android
-startup speedup is claimed.
+Production saves and directly restores network, cosmetic and scriptlet lookup
+indexes. The normalized rule records remain authoritative. Restoring a valid index
+reuses its primitive ID arrays instead of regrouping rules into new buckets.
 
 ## Representation and validation
 
-Schema 17 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
-normalized network/cosmetic/scriptlet records, optional network buckets and trailing
-CRC32. Buckets contain primitive integer rule IDs, not serialized Kotlin objects or
-executable JavaScript. The four families are ordinary requests, cosmetic-disable
-exceptions, redirect exceptions and query-parameter modifiers.
+Schema 18 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
+normalized network/cosmetic/scriptlet records, optional indexes and trailing CRC32.
+Buckets contain integer rule IDs, not serialized Kotlin objects or executable
+JavaScript. Rule text, selectors, procedures and scriptlet arguments are stored once
+in the existing records; bucket keys reuse the same interned string table.
+
+Network families cover ordinary requests, cosmetic-disable exceptions, redirect
+exceptions and query-parameter modifiers. Cosmetic families cover hostname/entity
+selectors and exceptions, procedural selectors and exceptions, generic selectors
+and exceptions, and leading class/ID selectors. Scriptlet families cover hostnames,
+entities, ancestor hostnames/entities, regex candidates and generic exceptions.
+Multiple scriptlet scopes sharing a bucket store their rule ID only once.
 
 Restoration checks byte/count/reference budgets, IDs and checksum. Before accepting
-a network index, it also verifies that:
+an index, it also verifies that:
 
 - The rule count matches the corresponding normalized rule family.
-- IDs in each bucket are strictly increasing, in bounds and correctly grouped.
-- Every rule has exactly its required host/page/entity/token/fallback memberships.
-- No bucket is empty and the fallback-pattern safeguard still holds.
+- IDs in each bucket are strictly increasing and in bounds.
+- Every expected membership is present, including exclusions' exception rules.
+- Total membership counts match, so extra keys or misplaced rules cannot activate.
+- No bucket is empty and the existing network fallback safeguard still holds.
 
-Missing or semantically invalid buckets rebuild from normalized records and the
-aggregate snapshot is repaired. This includes older normalized-only snapshots of
-the current schema. Structurally damaged snapshots fall back to the source caches
-and authoritative list text. The previous active immutable engine remains in use
-if building a replacement fails.
+Page membership validation enumerates expected routes and searches the restored ID
+arrays. It does not allocate replacement hostname/token maps. Missing or
+semantically invalid indexes rebuild from normalized records and repair the
+aggregate snapshot. A damaged page index does not rebuild valid network indexes.
+Structurally damaged snapshots fall back to source caches and authoritative list
+text. The previous active engine remains in use if building a replacement fails.
 
-The engine still partitions normalized network records and builds plain-host sets,
-cosmetic indexes and scriptlet routing. This is persisted **network** indexing,
-not a claim of complete runtime-state persistence. Source shards deliberately store
-normalized records only, since their merged rule order can change.
+The engine still partitions normalized network records and builds plain-host sets.
+It regenerates scriptlet dispatcher source, instruction pooling and bundled runtime
+selection from validated records. Executable source is never persisted. Source
+shards store normalized records only because merging can change their rule IDs.
 
 ## Invalidation and source reuse
 
@@ -42,11 +49,12 @@ salt with a stable production default; ordinary app releases do not invalidate i
 Parsing, matching, scriptlet-contract and binary changes bump
 `CompiledFilterCache.VERSION`.
 
-Schema 17 adds procedural data programs and the new editing/resource contracts.
+Schema 18 adds cosmetic/scriptlet ID buckets and invalidates earlier parsing and
+argument contracts. Schema 17 added procedural programs and editing/resource contracts.
 Cosmetic procedures are recompiled from their selectors on restore, and every
 editing AST is checked against its query and trust requirements. No executable
-JavaScript is read from the cache. Cosmetic maps, plain-host sets and scriptlet
-routing source still rebuild from normalized records off the UI thread.
+JavaScript is read from the cache. Index validation and dispatcher generation run
+off the UI thread.
 
 Schema 15 introduced extended scriptlet scopes, partial `$all` identities, JSONPath
 ASTs and optional network indexes. Schema 16 invalidates previous argument contracts
@@ -80,7 +88,8 @@ has one writer; there is no multi-process transaction or directory-fsync claim.
 
 ## Verification and measurements
 
-Tests verify production index persistence, warm restoration without rewriting,
+Tests verify direct reuse of restored page buckets, matching selectors, procedures,
+scriptlets and dispatcher output, production persistence, warm restoration without rewriting,
 normalized-only upgrades and repair of missing, duplicated, reordered and wrongly
 keyed memberships even when a checksum is valid. Existing coverage checks the
 network fixture corpus, bounds/truncation/checksums, trust separation, source

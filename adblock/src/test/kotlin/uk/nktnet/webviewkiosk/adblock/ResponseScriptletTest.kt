@@ -138,6 +138,58 @@ class ResponseScriptletTest {
     }
 
     @Test
+    fun trustedDataArgumentsHaveCanonicalStagesWrappersAndStorageTokens() {
+        val expressions =
+            listOf(
+                "trusted-set, text, arbitrary literal text",
+                "trusted-set, literal, alert(1)",
+                "trusted-set, callback, json:{\"safe\":true}, as, callback, runAt, 2",
+                "trusted-set, promise, false, runAt, idle, as, resolved",
+                "trusted-set, rejected, null, as, rejected",
+                "trusted-set-local-storage-item, stamp, \$now\$/\$currentISODate\$",
+                "trusted-set-session-storage-item, date, \$currentDate\$",
+                "trusted-replace-fetch-response, /ad/g, safe",
+                "trusted-replace-xhr-response, /ad/gi, safe, url:/api",
+            )
+        for (expression in expressions) {
+            assertNull(ScriptletParser.parse("+js($expression)"))
+            val instruction =
+                requireNotNull(ScriptletParser.parse("+js($expression)", true))
+            assertEquals(
+                expression,
+                instruction,
+                ScriptletParser.validated(
+                    instruction.type,
+                    instruction.arguments,
+                    true,
+                ),
+            )
+        }
+        assertEquals(
+            listOf("literal", "json:\"alert(1)\""),
+            ScriptletParser.parse("+js(trusted-set, literal, alert(1))", true)!!
+                .arguments,
+        )
+        assertEquals(
+            ScriptletParser.parse(
+                "+js(trusted-set, x, false, runAt, loading)",
+                true,
+            ),
+            ScriptletParser.parse("+js(trusted-set, x, false)", true),
+        )
+        for (expression in
+            listOf(
+                "trusted-set, x, false, as, eval",
+                "trusted-set, x, false, runAt, later",
+                "trusted-set, x, false, runAt, loading, runAt, complete",
+                "trusted-set, x, json:{\"constructor\":{}}",
+                "trusted-set-local-storage-item, x, \$unknown\$",
+            )) {
+            assertNull(expression, ScriptletParser.parse("+js($expression)", true))
+        }
+    }
+
+    @Test
     fun rejectsUnsupportedOptionsRatherThanBroadeningResponseOperations() {
         listOf(
                 "prevent-xhr",
@@ -153,10 +205,10 @@ class ResponseScriptletTest {
                 "m3u-prune",
                 "m3u-prune, *ads*",
                 "m3u-prune, /ads/m",
-                "trusted-replace-fetch-response, /ad/g, text",
+                "trusted-replace-fetch-response, /ad/gg, text",
                 "trusted-replace-xhr-response, /(a+)+/, text",
                 "trusted-set-cookie, key, value, /path",
-                "trusted-set-local-storage-item, key, \$now\$",
+                "trusted-set-local-storage-item, key, \$unknown\$",
                 "trusted-set, value, json:{invalid}",
                 "trusted-set-attr, a, href, https://example.com",
                 "trusted-set-attr, a, onclick, alert(1)",

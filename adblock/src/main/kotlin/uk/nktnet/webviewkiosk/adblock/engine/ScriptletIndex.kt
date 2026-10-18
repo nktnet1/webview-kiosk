@@ -5,13 +5,23 @@ import uk.nktnet.webviewkiosk.adblock.ScriptletInstruction
 import uk.nktnet.webviewkiosk.adblock.ScriptletType
 
 /** Host-indexed routing is mirrored in the synchronous document-start dispatcher. */
-internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
-    private val hosts = linkedMapOf<String, MutableList<Int>>()
-    private val entities = linkedMapOf<String, MutableList<Int>>()
-    private val ancestorHosts = linkedMapOf<String, MutableList<Int>>()
-    private val ancestorEntities = linkedMapOf<String, MutableList<Int>>()
-    private val regexRules = mutableListOf<Int>()
-    private val genericExceptions = mutableListOf<Int>()
+internal class ScriptletIndex(
+    private val rules: List<ScriptletRule>,
+    restored: RuleBuckets? = null,
+) {
+    val routing =
+        restored?.takeIf { ScriptletRouting.validFor(it, rules) }
+            ?: ScriptletRouting.build(rules)
+    val restoredIndexes = routing === restored
+    private val hosts = routing.tables[ScriptletBucket.HOST.ordinal]
+    private val entities = routing.tables[ScriptletBucket.ENTITY.ordinal]
+    private val ancestorHosts = routing.tables[ScriptletBucket.ANCESTOR_HOST.ordinal]
+    private val ancestorEntities =
+        routing.tables[ScriptletBucket.ANCESTOR_ENTITY.ordinal]
+    private val regexRules =
+        routing.tables[ScriptletBucket.REGEX.ordinal][""] ?: intArrayOf()
+    private val genericExceptions =
+        routing.tables[ScriptletBucket.GENERIC_EXCEPTION.ordinal][""] ?: intArrayOf()
     private val usesEntities = rules.any {
         it.domains.usesEntities || it.targets.any { target -> target.entity }
     }
@@ -20,34 +30,6 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
         require(rules.size <= MAX_RULES) { "Too many scriptlet rules" }
         require(rules.sumOf { rule -> rule.targets.count { it.regex } } <= 4096) {
             "Too many regex scriptlet scopes"
-        }
-        rules.forEachIndexed { index, rule ->
-            if (!ScriptletScopes.hasPositive(rule) && rule.exception) {
-                genericExceptions += index
-            }
-            rule.domains.included.forEach {
-                hosts.getOrPut(it) { mutableListOf() }.add(index)
-            }
-            rule.domains.includedEntities.forEach {
-                entities.getOrPut(it) { mutableListOf() }.add(index)
-            }
-            for ((host, _, regex, entity, ancestor) in
-                rule.targets.filterNot {
-                    it.excluded
-                }) {
-                if (regex) {
-                    regexRules += index
-                    continue
-                }
-                val table =
-                    when {
-                        ancestor && entity -> ancestorEntities
-                        ancestor -> ancestorHosts
-                        entity -> entities
-                        else -> hosts
-                    }
-                table.getOrPut(host) { mutableListOf() }.add(index)
-            }
         }
     }
 
@@ -62,23 +44,23 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
         }
         val candidates =
             sortedSetOf<Int>().apply {
-                addAll(genericExceptions)
-                addAll(regexRules)
+                genericExceptions.forEach(::add)
+                regexRules.forEach(::add)
             }
         fun collect(
             url: String,
-            hostTable: Map<String, List<Int>>,
-            entityTable: Map<String, List<Int>>,
+            hostTable: Map<String, IntArray>,
+            entityTable: Map<String, IntArray>,
         ) {
             val frame = httpAddress(url) ?: return
             hostSuffixes(frame.host.removeSuffix(".")) {
-                hostTable[it]?.let(candidates::addAll)
+                hostTable[it]?.forEach(candidates::add)
             }
             if (usesEntities) {
                 entityName(frame.host.removeSuffix("."), frame.topPrivateDomain())
                     ?.let { entity ->
                         hostSuffixes(entity) {
-                            entityTable[it]?.let(candidates::addAll)
+                            entityTable[it]?.forEach(candidates::add)
                         }
                     }
             }
@@ -165,11 +147,11 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
                 }
             }
         }
-        fun table(values: Map<String, List<Int>>): String = buildString {
+        fun table(values: Map<String, IntArray>): String = buildString {
             for ((name, indexes) in values.toSortedMap()) {
                 append(name).append('\t')
                 append(
-                    indexes.distinct().joinToString(",", "[", "]") {
+                    indexes.joinToString(",", "[", "]") {
                         offsets[it].toString()
                     }
                 )

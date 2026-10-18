@@ -153,7 +153,8 @@ internal object ScriptletParser {
             if (
                 type in AdvancedScriptlets.aliases.values ||
                     type in JsonEditing.types ||
-                    type in ObjectEditing.types
+                    type in ObjectEditing.types ||
+                    type == ScriptletType.TRUSTED_SET
             ) {
                 8192
             } else {

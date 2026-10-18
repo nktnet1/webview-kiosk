@@ -146,6 +146,7 @@ internal data class CompiledRuleSet(
     val scriptlets: List<ScriptletRule> = emptyList(),
     val disabledNetworks: Collection<NetworkIdentity> = emptyList(),
     val networkIndexes: NetworkIndexSnapshot? = null,
+    val pageIndexes: PageIndexSnapshot? = null,
     val totalRules: Int =
         networks.size +
             cosmetics.size +
@@ -175,6 +176,7 @@ internal data class CompiledRuleSet(
             skippedRules,
             scriptlets,
             networkIndexes,
+            pageIndexes,
         )
     }
 }
@@ -328,8 +330,10 @@ internal class CompiledFilters(
     val skippedRules: Int,
     scriptletRules: List<ScriptletRule> = emptyList(),
     networkIndexes: NetworkIndexSnapshot? = null,
+    pageIndexes: PageIndexSnapshot? = null,
 ) {
-    private val scriptletIndex = ScriptletIndex(scriptletRules)
+    private val scriptletIndex =
+        ScriptletIndex(scriptletRules, pageIndexes?.scriptlets)
     val scriptletInjection: ScriptletInjection? = scriptletIndex.injection()
 
     fun scriptlets(
@@ -352,19 +356,30 @@ internal class CompiledFilters(
     private val redirectExceptions: NetworkIndex
     private val hideExceptions: NetworkIndex
     private val parameterRules: NetworkIndex
-    private val specific = HashMap<String, MutableList<CosmeticRule>>()
-    private val generic = mutableListOf<CosmeticRule>()
-    private val classes = HashMap<String, MutableList<CosmeticRule>>()
-    private val ids = HashMap<String, MutableList<CosmeticRule>>()
-    private val specificExceptions = HashMap<String, MutableList<CosmeticRule>>()
-    private val entitySpecific = HashMap<String, MutableList<CosmeticRule>>()
-    private val entityExceptions = HashMap<String, MutableList<CosmeticRule>>()
-    private val procedures = HashMap<String, MutableList<CosmeticRule>>()
-    private val entityProcedures = HashMap<String, MutableList<CosmeticRule>>()
-    private val procedureExceptions = HashMap<String, MutableList<CosmeticRule>>()
+    private val cosmeticRules = cosmetics.toList()
+    private val cosmeticRouting =
+        pageIndexes?.cosmetics?.takeIf {
+            CosmeticRouting.validFor(it, cosmeticRules)
+        } ?: CosmeticRouting.build(cosmeticRules)
+    private val restoredCosmeticIndexes = cosmeticRouting === pageIndexes?.cosmetics
+
+    private fun bucket(kind: CosmeticBucket): Map<String, IntArray> =
+        cosmeticRouting.tables[kind.ordinal]
+
+    private val specific = bucket(CosmeticBucket.HOST)
+    private val generic = bucket(CosmeticBucket.GENERIC)[""] ?: intArrayOf()
+    private val classes = bucket(CosmeticBucket.CLASS)
+    private val ids = bucket(CosmeticBucket.ID)
+    private val specificExceptions = bucket(CosmeticBucket.EXCEPTION_HOST)
+    private val entitySpecific = bucket(CosmeticBucket.ENTITY)
+    private val entityExceptions = bucket(CosmeticBucket.EXCEPTION_ENTITY)
+    private val procedures = bucket(CosmeticBucket.PROCEDURE_HOST)
+    private val entityProcedures = bucket(CosmeticBucket.PROCEDURE_ENTITY)
+    private val procedureExceptions = bucket(CosmeticBucket.PROCEDURE_EXCEPTION_HOST)
     private val entityProcedureExceptions =
-        HashMap<String, MutableList<CosmeticRule>>()
-    private val genericExceptions = mutableListOf<CosmeticRule>()
+        bucket(CosmeticBucket.PROCEDURE_EXCEPTION_ENTITY)
+    private val genericExceptions =
+        bucket(CosmeticBucket.GENERIC_EXCEPTION)[""] ?: intArrayOf()
     val hasCosmetics = cosmetics.any { !it.exception }
     private val cosmeticsNeedEntities = cosmetics.any { it.domains.usesEntities }
 
@@ -397,76 +412,13 @@ internal class CompiledFilters(
         hideExceptions = NetworkIndex(hiding, networkIndexes?.hiding)
         redirectExceptions = NetworkIndex(redirecting, networkIndexes?.redirects)
         parameterRules = NetworkIndex(parameters, networkIndexes?.parameters)
-        for (rule in cosmetics) {
-            if (rule.procedure != null) {
-                val domainIndex =
-                    if (rule.exception) {
-                        procedureExceptions
-                    } else {
-                        procedures
-                    }
-                val entityIndex =
-                    if (rule.exception) {
-                        entityProcedureExceptions
-                    } else {
-                        entityProcedures
-                    }
-                rule.domains.included.forEach { domain ->
-                    domainIndex.getOrPut(domain) { mutableListOf() }.add(rule)
-                }
-                rule.domains.includedEntities.forEach { entity ->
-                    entityIndex.getOrPut(entity) { mutableListOf() }.add(rule)
-                }
-                continue
-            }
-            when {
-                rule.exception -> {
-                    if (
-                        rule.domains.included.isEmpty() &&
-                            rule.domains.includedEntities.isEmpty()
-                    ) {
-                        genericExceptions += rule
-                    } else {
-                        rule.domains.included.forEach { domain ->
-                            specificExceptions
-                                .getOrPut(domain) { mutableListOf() }
-                                .add(rule)
-                        }
-                        rule.domains.includedEntities.forEach { entity ->
-                            entityExceptions
-                                .getOrPut(entity) { mutableListOf() }
-                                .add(rule)
-                        }
-                    }
-                }
-
-                rule.domains.included.isNotEmpty() ||
-                    rule.domains.includedEntities.isNotEmpty() -> {
-                    rule.domains.included.forEach { domain ->
-                        specific.getOrPut(domain) { mutableListOf() }.add(rule)
-                    }
-                    rule.domains.includedEntities.forEach { entity ->
-                        entitySpecific.getOrPut(entity) { mutableListOf() }.add(rule)
-                    }
-                }
-
-                else -> {
-                    val token = genericToken(rule.selector)
-                    if (token == null) {
-                        generic += rule
-                    } else {
-                        (if (token.first == '.') {
-                                classes
-                            } else {
-                                ids
-                            })
-                            .getOrPut(token.second) { mutableListOf() }
-                            .add(rule)
-                    }
-                }
-            }
-        }
     }
+
+    val pageIndexes: PageIndexSnapshot
+        get() = PageIndexSnapshot(cosmeticRouting, scriptletIndex.routing)
+
+    val restoredPageIndexes: Boolean
+        get() = restoredCosmeticIndexes && scriptletIndex.restoredIndexes
 
     val networkIndexes: NetworkIndexSnapshot
         get() =
@@ -807,12 +759,14 @@ internal class CompiledFilters(
                 exceptions += rule.selector
             }
         }
-        genericExceptions.forEach(::except)
+        genericExceptions.forEach { except(cosmeticRules[it]) }
         hostSuffixes(host) { domain ->
-            specificExceptions[domain]?.forEach(::except)
+            specificExceptions[domain]?.forEach { except(cosmeticRules[it]) }
         }
         entity?.let { value ->
-            hostSuffixes(value) { entityExceptions[it]?.forEach(::except) }
+            hostSuffixes(value) { key ->
+                entityExceptions[key]?.forEach { except(cosmeticRules[it]) }
+            }
         }
         val result = LinkedHashSet<String>()
         var bytes = 0
@@ -832,14 +786,22 @@ internal class CompiledFilters(
             bytes += length
             result += rule.selector
         }
-        hostSuffixes(host) { domain -> specific[domain]?.forEach(::add) }
+        hostSuffixes(host) { domain ->
+            specific[domain]?.forEach { add(cosmeticRules[it]) }
+        }
         entity?.let { value ->
-            hostSuffixes(value) { entitySpecific[it]?.forEach(::add) }
+            hostSuffixes(value) { key ->
+                entitySpecific[key]?.forEach { add(cosmeticRules[it]) }
+            }
         }
         if (hide == 0) {
-            generic.forEach(::add)
-            pageClasses.take(256).forEach { token -> classes[token]?.forEach(::add) }
-            pageIds.take(256).forEach { token -> ids[token]?.forEach(::add) }
+            generic.forEach { add(cosmeticRules[it]) }
+            pageClasses.take(256).forEach { token ->
+                classes[token]?.forEach { add(cosmeticRules[it]) }
+            }
+            pageIds.take(256).forEach { token ->
+                ids[token]?.forEach { add(cosmeticRules[it]) }
+            }
         }
         return result.toList()
     }
@@ -883,11 +845,11 @@ internal class CompiledFilters(
         val exceptions = HashSet<String>()
         val candidates = LinkedHashSet<CosmeticRule>()
         fun gather(
-            source: Map<String, MutableList<CosmeticRule>>,
+            source: Map<String, IntArray>,
             key: String,
             visitor: (CosmeticRule) -> Unit,
         ) {
-            source[key]?.forEach(visitor)
+            source[key]?.forEach { visitor(cosmeticRules[it]) }
         }
         hostSuffixes(host) { key ->
             gather(procedureExceptions, key) {
@@ -920,44 +882,5 @@ internal class CompiledFilters(
 
     companion object {
         val EMPTY = CompiledFilters(emptyList(), emptyList(), 0)
-
-        private fun genericToken(selector: String): Pair<Char, String>? {
-            // A leading class/ID is mandatory unless the selector contains an OR.
-            // Complex/escaped selectors take the unconditional CSS path instead.
-            if (
-                selector.firstOrNull() !in
-                    listOf(
-                        '.',
-                        '#',
-                    ) || ',' in selector || '\\' in selector
-            ) {
-                return null
-            }
-            val end =
-                selector
-                    .indexOfFirst {
-                        it != '.' &&
-                            it != '#' &&
-                            !it.isLetterOrDigit() &&
-                            it !in "_-"
-                    }
-                    .let {
-                        if (it < 0) {
-                            selector.length
-                        } else {
-                            it
-                        }
-                    }
-            // Chained selectors .a.b and #a.b must be indexed by their first token.
-            val tokenEnd =
-                (1 until end).firstOrNull {
-                    selector[it] == '.' || selector[it] == '#'
-                } ?: end
-            return if (tokenEnd in 2..129) {
-                selector[0] to selector.substring(1, tokenEnd)
-            } else {
-                null
-            }
-        }
     }
 }

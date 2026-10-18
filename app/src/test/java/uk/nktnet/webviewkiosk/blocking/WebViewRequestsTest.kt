@@ -121,19 +121,42 @@ class WebViewRequestsTest {
     }
 
     @Test
+    fun opaqueFramesCannotBorrowUrlScopedRulesButKeepContextFreeFiltering() {
+        val store = FilterListStore(RuntimeEnvironment.getApplication())
+        store.remove(store.list().map { it.id }.toSet())
+        store.importFrom(
+            "opaque.txt",
+            ("||blocked.example^\$ping\n" +
+                    "||scoped.example^\$ping,domain=frame.example\n" +
+                    "||party.example^\$ping,third-party")
+                .byteInputStream(),
+        )
+        service.reload()
+        assertTrue(rules.shouldBlock("https://blocked.example/report", "", "ping"))
+        assertFalse(rules.shouldBlock("https://scoped.example/report", "", "ping"))
+        assertFalse(rules.shouldBlock("https://party.example/report", "", "ping"))
+        assertTrue(
+            rules.shouldBlock(
+                "https://scoped.example/report",
+                "https://frame.example",
+                "ping",
+            )
+        )
+    }
+
+    @Test
     fun nativeInitiatorsStayUnknownUnlessHeadersSupplyReliableEvidence() {
         val target = "https://ads.example/a.js"
         val page = "https://frame.example/"
-        assertEquals("", WebViewBlocker.initiator(target, page, emptyMap()))
+        assertEquals("", WebViewBlocker.initiator(target, emptyMap()))
         assertEquals(
             "",
-            WebViewBlocker.initiator(target, page, mapOf("Origin" to "null")),
+            WebViewBlocker.initiator(target, mapOf("Origin" to "null")),
         )
         assertEquals(
             "",
             WebViewBlocker.initiator(
                 target,
-                page,
                 mapOf("Sec-Fetch-Site" to "same-site"),
             ),
         )
@@ -141,7 +164,6 @@ class WebViewRequestsTest {
             "https://ads.example/",
             WebViewBlocker.initiator(
                 target,
-                "",
                 mapOf("Sec-Fetch-Site" to "same-origin"),
             ),
         )
@@ -149,7 +171,6 @@ class WebViewRequestsTest {
             page,
             WebViewBlocker.initiator(
                 target,
-                "https://top.example/",
                 mapOf("Referer" to page),
             ),
         )
@@ -157,8 +178,25 @@ class WebViewRequestsTest {
             "file:///private",
             WebViewBlocker.initiator(
                 target,
-                page,
                 mapOf("Origin" to "file:///private"),
+            ),
+        )
+        assertEquals(
+            "https://[::1]:8443/",
+            WebViewBlocker.initiator(
+                "https://user:secret@[::1]:8443/a.js?key=value#fragment",
+                mapOf("Sec-Fetch-Site" to " same-origin "),
+            ),
+        )
+        assertEquals(
+            "",
+            WebViewBlocker.initiator(
+                target,
+                mapOf(
+                    "Origin" to "null",
+                    "Referer" to page,
+                    "Sec-Fetch-Site" to "same-origin",
+                ),
             ),
         )
     }

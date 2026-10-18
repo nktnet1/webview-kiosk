@@ -1,9 +1,90 @@
 # uAssets and subscription compatibility
 
-## v1.0.28 assessment
+## v1.0.29 assessment
 
-This section supersedes the historical roadmaps below. Compatibility expands without
-adding enabled-list limits or a response-proxy network stack.
+This section supersedes the earlier assessments below. The four applicable roadmap
+items are implemented; popup/popunder filtering remains conditional on a native
+multiple-window lifecycle that this app does not provide.
+
+### Scriptlet arguments and JSON DSLs
+
+The JSONPath data interpreter adds array slices, `&&`/`||`, grouped conditions and
+nested filters. These are explicit safe extensions beyond
+[uBlock's documented JSONPath subset](https://github.com/gorhill/uBlock/wiki/uBO-flavored-JSONPath),
+which still lists slices, logical operators and parentheses as unsupported.
+They do not evaluate JavaScript expressions. Trusted constants, storage values and
+replacement arguments gain the concrete options documented in
+[SCRIPTLETS.md](SCRIPTLETS.md). Property traversal uses own data descriptors;
+prototype names, accessor reads and arbitrary expression evaluation remain excluded.
+
+### Procedural cosmetics
+
+- `:xpath(...)` evaluates relative native XPath against an explicit CSS subject.
+  Absolute document operands, `id()`, variables and JavaScript syntax are rejected.
+  Compiled expressions are reused, with dependencies observed at the relevant
+  subtree or shared root for expressions using wider axes.
+- `:shadow(CSS)` selects within an open shadow root using captured native DOM APIs.
+  A lightweight `attachShadow` hook handles late attachment to an already-matched
+  host. It does not expose or retain closed roots.
+- `:content(CSS)` matches within a template's content, including nested predicates
+  and explicit removal actions. Reached content roots observe later mutations.
+  Direct content hide/style rules are explicitly unsupported. Reversible effects
+  apply only to connected results, keeping inert templates free of private style
+  markers that their clones would inherit.
+
+Observers attach only to roots reached by applicable procedures and release their
+subjects, effects and styles when no longer needed. Suspension/resumption and
+blocking shutdown clean up observers. No continuous polling or arbitrary DOM
+property predicate is added.
+
+### Frame and service-worker context
+
+A present `Origin` header takes precedence over `Referer`; an opaque, null or
+malformed origin stays unknown rather than borrowing the referrer's context.
+Absent origin metadata can use a valid referrer or a `Sec-Fetch-Site: same-origin`
+fact. The latter supplies only the target's canonical origin. Concrete local asset
+origins keep their exemptions. Unknown initiators still use context-independent
+rules, with the existing conservative treatment of contextual exceptions.
+
+The top page's URL is no longer a fallback or exemption for unknown child requests.
+The existing WebSocket/beacon hooks capture the calling global's actual origin,
+including inherited `about:blank`/`srcdoc` origins. Opaque frames use unknown context.
+No new bridge or script injection is added solely to reconstruct network metadata.
+Native callback and worker metadata limitations remain; see the
+[WebResourceRequest API](https://developer.android.com/reference/android/webkit/WebResourceRequest).
+
+### Cosmetic and scriptlet index persistence
+
+Schema 18 stores compact hostname/entity/class/ID buckets and scriptlet ancestor,
+regex and exception buckets as primitive rule IDs. Restoration validates complete
+membership and directly reuses the saved maps/arrays. It does not regroup those
+indexes or duplicate selectors and arguments. Missing or invalid buckets rebuild
+from normalized records and repair the aggregate snapshot; see [CACHE.md](CACHE.md).
+Scriptlet executable source is still generated from validated records.
+
+### Popup/popunder filtering
+
+`$popup` and `$popunder` remain explicit unsupported modifiers. The app has no
+`onCreateWindow()`/opener/close lifecycle or enabled multiple-window support.
+Android treats new-window requests as ordinary main-frame navigation when multiple
+windows are disabled; classifying those navigations as popups would require the
+excluded heuristics. See
+[WebSettings.setSupportMultipleWindows](https://developer.android.com/reference/android/webkit/WebSettings#setSupportMultipleWindows(boolean)).
+
+### Verification
+
+The patch passes `spotlessApply`, formatting checks and Android debug lint, plus
+145 engine tests, 373 targeted Android/WebView tests and 219 Node/native Chromium
+tests. Six optional engine corpus/benchmark tests and three optional upstream
+differential tests were skipped. The incremental patch applies cleanly to the
+supplied v1.0.28 baseline. Chromium and Robolectric do not establish compatibility
+with every physical Android WebView provider; no device-level parity or performance
+improvement is claimed.
+
+## Historical v1.0.28 assessment
+
+The following records the previous implementation and remaining work. The v1.0.29
+assessment above supersedes its JSONPath, procedural and index-persistence gaps.
 
 The JSON editor now covers every named JSON/JSONL request/response and object-editing
 entry in the supplied catalogue, including their trusted counterparts. Trusted
