@@ -89,7 +89,7 @@ jobs:
           name: debug-apk
           path: app/build/outputs/apk/debug/
 
-      - name: Rename APK and select changelog
+      - name: Create versioned release APK alias and select changelog
         run: |
           VERSION_NAME="$(jq -r '.elements[0].versionName' app/build/outputs/apk/release/output-metadata.json)"
           VERSION_CODE="$(jq -r '.elements[0].versionCode' app/build/outputs/apk/release/output-metadata.json)"
@@ -98,7 +98,8 @@ jobs:
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
           cat app/build/outputs/apk/release/output-metadata.json >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          mv app/build/outputs/apk/release/*.apk "app/build/outputs/apk/release/WebviewKiosk_v$VERSION_NAME.apk"
+          cp app/build/outputs/apk/release/app-release.apk \
+            "app/build/outputs/apk/release/WebviewKiosk_v$VERSION_NAME.apk"
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
           if [ ! -f "metadata/en-US/changelogs/$VERSION_CODE.txt" ]; then
             touch "metadata/en-US/changelogs/$VERSION_CODE.txt"
