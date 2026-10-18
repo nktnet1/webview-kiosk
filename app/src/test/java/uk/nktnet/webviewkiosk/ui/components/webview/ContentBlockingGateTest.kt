@@ -22,7 +22,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -37,7 +36,6 @@ import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.blocking.BlockingStatus
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.FilterListStore
-import uk.nktnet.webviewkiosk.ui.components.common.MinimumLoadingState
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -52,7 +50,6 @@ class ContentBlockingGateTest {
     private val clock = BroadcastFrameClock()
     private val scope =
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate + clock)
-    private val loading = MinimumLoadingState(now = { 0L }, pause = {})
     private val showPage = mutableStateOf(false)
     private val createdWithRules = mutableListOf<Boolean>()
     private var mounted = false
@@ -85,7 +82,7 @@ class ContentBlockingGateTest {
         view.setContent {
             MaterialTheme {
                 if (showPage.value) {
-                    ContentBlockingGate(blocker, loading) {
+                    ContentBlockingGate(blocker) {
                         DisposableEffect(Unit) {
                             mounted = true
                             createdWithRules +=
@@ -123,14 +120,12 @@ class ContentBlockingGateTest {
         assertEquals(BlockingStatus.LOADING, blocker.status.value)
         assertFalse(mounted)
         assertTrue(createdWithRules.isEmpty())
-        assertNotNull(loading.message.value)
 
         worker.runAll()
         frames()
         assertTrue(mounted)
         assertEquals(listOf(true), createdWithRules)
         assertTrue(blocker.hasActiveCosmeticRules)
-        assertNull(loading.message.value)
     }
 
     @Test
@@ -143,7 +138,6 @@ class ContentBlockingGateTest {
         assertEquals(listOf(true), createdWithRules)
         assertTrue(mounted)
         assertTrue(worker.tasks.isEmpty())
-        assertNull(loading.message.value)
     }
 
     @Test
@@ -230,7 +224,6 @@ class ContentBlockingGateTest {
         assertEquals(listOf(false), createdWithRules)
         assertEquals(BlockingStatus.ERROR, blocker.status.value)
         assertNotNull(blocker.lastError.value)
-        assertNull(loading.message.value)
     }
 
     private fun frames() {

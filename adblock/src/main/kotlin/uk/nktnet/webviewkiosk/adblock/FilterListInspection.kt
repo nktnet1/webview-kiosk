@@ -9,20 +9,40 @@ data class FilterRuleCounts(
     val cosmeticRules: Int,
     val unsupportedRules: Int,
     val invalidRules: Int,
+    val scriptletRules: Int = 0,
+    val skipReasons: Map<FilterSkipReason, Int> = emptyMap(),
+    val partialRules: Int = 0,
 )
 
 /** Inspect text without compiling it or changing an engine's active snapshot. */
-fun inspectFilterList(text: String): FilterRuleCounts {
+fun inspectFilterList(text: String, trusted: Boolean = false): FilterRuleCounts {
+    var partial = 0
     var network = 0
     var cosmetic = 0
     var unsupported = 0
     var invalid = 0
-    FilterParser.visit(text) { _, rule ->
+    var scriptlets = 0
+    val reasons =
+        java.util.EnumMap<FilterSkipReason, Int>(FilterSkipReason::class.java)
+    FilterParser.visit(text, trusted) { _, rule ->
         when (rule) {
-            is ParsedFilter.Network -> network++
+            is ParsedFilter.Network -> {
+                network++
+                if (rule.rule.identity.partialAll) {
+                    partial++
+                }
+            }
             is ParsedFilter.Cosmetic -> cosmetic++
-            ParsedFilter.Unsupported -> unsupported++
-            is ParsedFilter.Invalid -> invalid++
+            is ParsedFilter.Scriptlet -> scriptlets++
+            is ParsedFilter.Unsupported -> {
+                unsupported++
+                reasons[rule.reason] = (reasons[rule.reason] ?: 0) + 1
+            }
+            is ParsedFilter.Invalid -> {
+                invalid++
+                reasons[FilterSkipReason.INVALID] =
+                    (reasons[FilterSkipReason.INVALID] ?: 0) + 1
+            }
         }
     }
     return FilterRuleCounts(
@@ -30,6 +50,9 @@ fun inspectFilterList(text: String): FilterRuleCounts {
         cosmetic,
         unsupported,
         invalid,
+        scriptlets,
+        reasons.toMap(),
+        partial,
     )
 }
 

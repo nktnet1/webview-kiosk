@@ -1,0 +1,377 @@
+{
+  "source": "gorhill/uBlock@dfca51bea2b8605353547f605e9cffbb6dfa0789",
+  "cases": [
+    {
+      "name": "literal",
+      "rules": [
+        "*$removeparam=a"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?b=2&c=3"
+    },
+    {
+      "name": "duplicates",
+      "rules": [
+        "*$removeparam=a"
+      ],
+      "url": "https://site.example/?a=1&keep=2&a=3#x",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?keep=2#x"
+    },
+    {
+      "name": "bare parameter",
+      "rules": [
+        "*$removeparam=a"
+      ],
+      "url": "https://site.example/?a#x",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/#x"
+    },
+    {
+      "name": "no query",
+      "rules": [
+        "*$removeparam=a"
+      ],
+      "url": "https://site.example/path",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/path"
+    },
+    {
+      "name": "fragment without query",
+      "rules": [
+        "*$removeparam=a"
+      ],
+      "url": "https://site.example/#fragment",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/#fragment"
+    },
+    {
+      "name": "remove all",
+      "rules": [
+        "*$removeparam"
+      ],
+      "url": "https://site.example/?a=1&b=2#x",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/#x"
+    },
+    {
+      "name": "empty query",
+      "rules": [
+        "*$removeparam"
+      ],
+      "url": "https://site.example/?",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?"
+    },
+    {
+      "name": "literal case",
+      "rules": [
+        "*$removeparam=A"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=1&b=2&c=3"
+    },
+    {
+      "name": "raw encoded key",
+      "rules": [
+        "*$removeparam=a"
+      ],
+      "url": "https://site.example/?%61=1&b=2",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?%61=1&b=2"
+    },
+    {
+      "name": "regex decoded value",
+      "rules": [
+        "*$removeparam=/^a=[a-z]+ [a-z]+$/"
+      ],
+      "url": "https://site.example/?a=hello%20world&b=2",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?b=2"
+    },
+    {
+      "name": "plus stays literal",
+      "rules": [
+        "*$removeparam=/^a=[a-z]+ [a-z]+$/"
+      ],
+      "url": "https://site.example/?a=hello+world&b=2",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=hello+world&b=2"
+    },
+    {
+      "name": "malformed utf8",
+      "rules": [
+        "*$removeparam=/^a=[a-z]+ [a-z]+$/"
+      ],
+      "url": "https://site.example/?a=%FFhello%20world&b=2",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=%FFhello%20world&b=2"
+    },
+    {
+      "name": "regex case flag",
+      "rules": [
+        "*$removeparam=/^UTM_/i"
+      ],
+      "url": "https://site.example/?utm_source=1&b=2",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?b=2"
+    },
+    {
+      "name": "regex anchored value",
+      "rules": [
+        "*$removeparam=/^a=1$/"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?b=2&c=3"
+    },
+    {
+      "name": "regex escaped quantifier comma",
+      "rules": [
+        "*$removeparam=/^a=[0-9]{1\\,2}$/"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?b=2&c=3"
+    },
+    {
+      "name": "negated name",
+      "rules": [
+        "*$removeparam=~a"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=1"
+    },
+    {
+      "name": "negated regex",
+      "rules": [
+        "*$removeparam=~/^a=/"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=1"
+    },
+    {
+      "name": "legacy prefix",
+      "rules": [
+        "*$queryprune=|A"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?b=2&c=3"
+    },
+    {
+      "name": "matching value exception",
+      "rules": [
+        "*$removeparam=a",
+        "*$removeparam=b",
+        "@@*$removeparam=a"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=1&c=3"
+    },
+    {
+      "name": "except all",
+      "rules": [
+        "*$removeparam=a",
+        "*$removeparam=b",
+        "@@*$removeparam"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=1&b=2&c=3"
+    },
+    {
+      "name": "important same exception",
+      "rules": [
+        "*$removeparam=a,important",
+        "@@*$removeparam=a"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?b=2&c=3"
+    },
+    {
+      "name": "important except all",
+      "rules": [
+        "*$removeparam=a,important",
+        "*$removeparam=b",
+        "@@*$removeparam"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?b=2&c=3"
+    },
+    {
+      "name": "unrelated exception",
+      "rules": [
+        "*$removeparam=a",
+        "@@*$removeparam=c"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?b=2&c=3"
+    },
+    {
+      "name": "name does not except regex",
+      "rules": [
+        "*$removeparam=/^[ab]=/",
+        "@@*$removeparam=a"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?c=3"
+    },
+    {
+      "name": "important remove all",
+      "rules": [
+        "*$removeparam,important",
+        "@@*$removeparam"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/"
+    },
+    {
+      "name": "document own domain",
+      "rules": [
+        "*$doc,removeparam=a,domain=site.example,~third-party"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "sourceUrl": "https://unrelated.example/",
+      "expected": "https://site.example/?b=2&c=3"
+    },
+    {
+      "name": "GET condition",
+      "rules": [
+        "*$method=GET,removeparam=a"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?b=2&c=3"
+    },
+    {
+      "name": "method mismatch",
+      "rules": [
+        "*$method=GET,removeparam=a"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "POST",
+      "expected": "https://site.example/?a=1&b=2&c=3"
+    },
+    {
+      "name": "type mismatch",
+      "rules": [
+        "*$script,removeparam=a"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=1&b=2&c=3"
+    },
+    {
+      "name": "excluded document",
+      "rules": [
+        "*$~doc,removeparam=a"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=1&b=2&c=3"
+    },
+    {
+      "name": "domain mismatch",
+      "rules": [
+        "*$domain=other.example,removeparam=a"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=1&b=2&c=3"
+    },
+    {
+      "name": "domain exclusion",
+      "rules": [
+        "*$domain=site.example|~site.example,removeparam=a"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=1&b=2&c=3"
+    },
+    {
+      "name": "network regex delimiter",
+      "rules": [
+        "/site\\.example\\//$removeparam=/^a=1$/,_"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?b=2&c=3"
+    },
+    {
+      "name": "URL path delimiter",
+      "rules": [
+        "/ad-$removeparam=/^a=1$/,_"
+      ],
+      "url": "https://site.example/ad-?a=1&b=2",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/ad-?b=2"
+    },
+    {
+      "name": "badfilter",
+      "rules": [
+        "*$removeparam=a",
+        "*$removeparam=a,badfilter"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=1&b=2&c=3"
+    },
+    {
+      "name": "exception only",
+      "rules": [
+        "@@*$removeparam=a"
+      ],
+      "url": "https://site.example/?a=1&b=2&c=3",
+      "type": "document",
+      "method": "GET",
+      "expected": "https://site.example/?a=1&b=2&c=3"
+    }
+  ]
+}

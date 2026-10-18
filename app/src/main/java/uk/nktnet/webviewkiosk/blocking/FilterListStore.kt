@@ -14,6 +14,8 @@ import java.util.UUID
 import org.json.JSONArray
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.adblock.FilterListValidator
+import uk.nktnet.webviewkiosk.adblock.FilterSkipReason
+import uk.nktnet.webviewkiosk.adblock.FilterSource
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.adblock.inspectFilterList
 import uk.nktnet.webviewkiosk.adblock.validateFilterFileFormat
@@ -41,6 +43,8 @@ internal data class ImportedFilterList(
      * local files.
      */
     val lastRefreshedAt: Long? = null,
+    /** Set only after a successful download of an approved immutable preset. */
+    val trusted: Boolean = false,
 )
 
 /** Counts saved entries before deduplication and cross-list rule precedence. */
@@ -51,12 +55,15 @@ internal data class FilterListInfo(
     val cosmeticRules: Int,
     val unsupportedRules: Int,
     val invalidRules: Int,
+    val scriptletRules: Int = 0,
+    val skipReasons: Map<FilterSkipReason, Int> = emptyMap(),
+    val partialRules: Int = 0,
 ) {
     val skippedRules: Int
         get() = unsupportedRules + invalidRules
 
     val totalRules: Int
-        get() = networkRules + cosmeticRules + skippedRules
+        get() = networkRules + cosmeticRules + scriptletRules + skippedRules
 }
 
 /**
@@ -98,6 +105,11 @@ internal class FilterListStore(
                 enabled = entry.optBoolean("enabled", true),
                 sourceUrl = entry.optString("sourceUrl").takeIf { it.isNotBlank() },
                 type = readType(entry),
+                trusted =
+                    entry.optBoolean("trusted", false) &&
+                        readType(entry) == FilterListType.PRESET &&
+                        entry.optString("sourceUrl") in
+                            SuggestedFilterLists.trustedUrls,
                 lastRefreshedAt =
                     entry.optLong("lastRefreshedAt", 0).takeIf { it > 0 },
             )
@@ -153,7 +165,9 @@ internal class FilterListStore(
             } else {
                 FilterListType.URL
             },
-    ): ImportedFilterList = importNew(name, input, sourceUrl, type, enabled = true)
+        trusted: Boolean = false,
+    ): ImportedFilterList =
+        importNew(name, input, sourceUrl, type, enabled = true, trusted = trusted)
 
     private fun importNew(
         name: String,
@@ -161,7 +175,15 @@ internal class FilterListStore(
         sourceUrl: String?,
         type: FilterListType,
         enabled: Boolean,
+        trusted: Boolean = false,
     ): ImportedFilterList {
+        require(
+            !trusted ||
+                type == FilterListType.PRESET &&
+                    sourceUrl in SuggestedFilterLists.trustedUrls
+        ) {
+            "Only approved uBlock presets may be trusted"
+        }
         require((type == FilterListType.FILE) == (sourceUrl == null)) {
             "A file has no download URL; a URL or preset needs one"
         }
@@ -193,7 +215,7 @@ internal class FilterListStore(
         }
         val currentBytes = existing.sumOf { fileFor(it.id).length() }
         require(currentBytes < MAX_TOTAL_BYTES) { "Filter-list storage is full" }
-        val temporary = writeValidatedTempFile(input, currentBytes)
+        val temporary = writeValidatedTempFile(input, currentBytes, trusted)
         try {
             val item =
                 ImportedFilterList(
@@ -202,6 +224,7 @@ internal class FilterListStore(
                     enabled = enabled,
                     sourceUrl = sourceUrl,
                     type = type,
+                    trusted = trusted,
                     lastRefreshedAt =
                         if (sourceUrl != null) {
                             now()
@@ -351,6 +374,7 @@ internal class FilterListStore(
         id: String,
         sourceUrl: String,
         input: InputStream,
+        trusted: Boolean = false,
     ): ImportedFilterList {
         val existing = list()
         val item =
@@ -359,7 +383,14 @@ internal class FilterListStore(
         require(item.sourceUrl != null && item.sourceUrl == sourceUrl) {
             "This list does not have the specified download URL"
         }
-        return replaceContent(existing, item, item, input)
+        require(
+            !trusted ||
+                item.type == FilterListType.PRESET &&
+                    sourceUrl in SuggestedFilterLists.trustedUrls
+        ) {
+            "Only approved uBlock presets may be trusted"
+        }
+        return replaceContent(existing, item, item.copy(trusted = trusted), input)
     }
 
     /**
@@ -413,7 +444,7 @@ internal class FilterListStore(
         // list.
         val otherBytes =
             existing.filterNot { it.id == item.id }.sumOf { fileFor(it.id).length() }
-        val temporary = writeValidatedTempFile(input, otherBytes)
+        val temporary = writeValidatedTempFile(input, otherBytes, updated.trusted)
         val refreshed =
             if (updated.sourceUrl != null) {
                 updated.copy(lastRefreshedAt = now())
@@ -463,7 +494,11 @@ internal class FilterListStore(
      * Shared import/refresh validation, writing new bytes before changing the active
      * file.
      */
-    private fun writeValidatedTempFile(input: InputStream, otherBytes: Long): File {
+    private fun writeValidatedTempFile(
+        input: InputStream,
+        otherBytes: Long,
+        trusted: Boolean = false,
+    ): File {
         if (!directory.isDirectory && !directory.mkdirs()) {
             throw IOException("Cannot create filter-list directory")
         }
@@ -507,7 +542,7 @@ internal class FilterListStore(
             validateFilterFileFormat(text)
             // Imports, edits, replacements, downloads, and clones all pass this gate
             // before either the index or an existing working file is touched.
-            validator.validate(text)
+            validator.validateSource(FilterSource(text, trusted))
             return temporary
         } catch (e: Exception) {
             temporary.delete()
@@ -517,26 +552,32 @@ internal class FilterListStore(
 
     @Synchronized
     fun setEnabled(id: String, enabled: Boolean) {
+        setEnabled(setOf(id), enabled)
+    }
+
+    /** Validate the selection before committing one index change. */
+    @Synchronized
+    fun setEnabled(ids: Set<String>, enabled: Boolean) {
         val existing = list()
-        require(existing.any { it.id == id }) { "Unknown filter list" }
-        save(
-            existing.map {
-                if (it.id == id) {
-                    it.copy(enabled = enabled)
-                } else {
-                    it
-                }
+        require(existing.map { it.id }.toSet().containsAll(ids)) {
+            "Unknown filter list"
+        }
+        val updated = existing.map {
+            if (it.id in ids) {
+                it.copy(enabled = enabled)
+            } else {
+                it
             }
-        )
+        }
+        if (updated != existing) {
+            save(updated)
+        }
     }
 
     /** Persist one bulk change; callers queue one engine reload after it commits. */
     @Synchronized
     fun setAllEnabled(enabled: Boolean) {
-        val existing = list()
-        if (existing.any { it.enabled != enabled }) {
-            save(existing.map { it.copy(enabled = enabled) })
-        }
+        setEnabled(list().map { it.id }.toSet(), enabled)
     }
 
     /** Persist display order and engine input order without touching rule files. */
@@ -558,14 +599,27 @@ internal class FilterListStore(
 
     @Synchronized
     fun remove(id: String) {
-        val existing = list()
-        require(existing.any { it.id == id }) { "Unknown filter list" }
-        save(existing.filterNot { it.id == id })
-        fileFor(id).delete()
+        remove(setOf(id))
     }
 
+    /** Commit the remaining index before deleting any selected rule files. */
     @Synchronized
-    fun enabledTexts(): List<String> =
+    fun remove(ids: Set<String>) {
+        if (ids.isEmpty()) {
+            return
+        }
+        val existing = list()
+        require(existing.map { it.id }.toSet().containsAll(ids)) {
+            "Unknown filter list"
+        }
+        save(existing.filterNot { it.id in ids })
+        ids.forEach { fileFor(it).delete() }
+    }
+
+    @Synchronized fun enabledTexts(): List<String> = enabledSources().map { it.text }
+
+    @Synchronized
+    fun enabledSources(): List<FilterSource> =
         list()
             .filter { it.enabled }
             .map { item ->
@@ -575,7 +629,7 @@ internal class FilterListStore(
                         "Filter list ${item.name} is missing or too large"
                     )
                 }
-                file.readText(Charsets.UTF_8)
+                FilterSource(file.readText(Charsets.UTF_8), item.trusted)
             }
 
     /**
@@ -585,7 +639,7 @@ internal class FilterListStore(
     fun info(id: String): FilterListInfo {
         val (item, file) = infoFile(id)
         val size = file.length()
-        val counts = inspectFilterList(file.readText(Charsets.UTF_8))
+        val counts = inspectFilterList(file.readText(Charsets.UTF_8), item.trusted)
         return FilterListInfo(
             item,
             size,
@@ -593,6 +647,9 @@ internal class FilterListStore(
             counts.cosmeticRules,
             counts.unsupportedRules,
             counts.invalidRules,
+            counts.scriptletRules,
+            counts.skipReasons,
+            counts.partialRules,
         )
     }
 
@@ -627,6 +684,7 @@ internal class FilterListStore(
                     .put("name", list.name)
                     .put("enabled", list.enabled)
                     .put("type", list.type.name)
+                    .put("trusted", list.trusted)
             list.sourceUrl?.let { entry.put("sourceUrl", it) }
             list.lastRefreshedAt?.let { entry.put("lastRefreshedAt", it) }
             array.put(entry)

@@ -86,7 +86,7 @@ class LocalTestRunnerTest(unittest.TestCase):
         result = self.run_suite("checks")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
-            "--test scripts/tests/cosmetic.test.mjs\n",
+            "--test scripts/tests/*.test.mjs\n",
             (self.root / "node-args.txt").read_text(encoding="utf-8"),
         )
 

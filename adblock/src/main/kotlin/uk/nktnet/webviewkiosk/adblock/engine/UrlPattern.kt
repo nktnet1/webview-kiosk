@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.adblock.engine
 
+import com.google.re2j.Pattern
+import com.google.re2j.PatternSyntaxException
 import java.util.Locale
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -36,11 +38,12 @@ internal fun normalizedHost(value: String, allowPrefix: Boolean = false): String
                 })
                 .split('.')
         if (
-            labels.any {
-                it.isEmpty() ||
-                    it.length > 63 ||
-                    it.startsWith('-') ||
-                    it.endsWith('-')
+            labels.withIndex().any { (index, label) ->
+                label.isEmpty() ||
+                    label.length > 63 ||
+                    label.startsWith('-') ||
+                    (label.endsWith('-') &&
+                        (!allowPrefix || index != labels.lastIndex))
             }
         ) {
             return null
@@ -77,6 +80,12 @@ internal fun normalizedHost(value: String, allowPrefix: Boolean = false): String
 
 internal fun domainMatches(host: String, domain: String): Boolean =
     host == domain || (!host.contains(':') && host.endsWith(".$domain"))
+
+/** Strip the effective public suffix, retaining all subdomain labels. */
+internal fun entityName(host: String, registeredDomain: String?): String? =
+    registeredDomain?.let {
+        host.removeSuffix(".${it.substringAfter('.')}")
+    }
 
 internal inline fun hostSuffixes(host: String, visit: (String) -> Unit) {
     visit(host)
@@ -122,6 +131,79 @@ internal class MatchBudget {
     }
 }
 
+/** Shared bounded JavaScript-compatible RE2 compiler for network modifiers. */
+internal fun compileFilterRegex(text: String, matchCase: Boolean): Pattern {
+    require(text.length <= 2048)
+    // Bound compilation before RE2/J expands counted repeats into states.
+    var escaped = false
+    var inClass = false
+    var depth = 0
+    var groups = 0
+    var repeatCost = 0
+    text.forEachIndexed { index, char ->
+        if (escaped) {
+            require(char !in "pPAzQE") { "Non-JavaScript regex escape" }
+            escaped = false
+        } else if (char == '\\') {
+            escaped = true
+        } else if (char == '[') {
+            inClass = true
+        } else if (char == ']') {
+            inClass = false
+        } else if (!inClass) {
+            if (char == '(') {
+                require(++depth <= 32 && ++groups <= 64)
+            }
+            if (char == ')') {
+                require(--depth >= 0)
+            }
+            if (char == '{') {
+                val end = text.indexOf('}', index)
+                val bounds =
+                    if (end > index) {
+                        text.substring(index + 1, end)
+                    } else {
+                        ""
+                    }
+                if (
+                    bounds.isNotEmpty() && bounds.all { it.isDigit() || it == ',' }
+                ) {
+                    require(text.getOrNull(index - 1) !in listOf(')', '}'))
+                    val counts =
+                        bounds
+                            .split(',')
+                            .filter { it.isNotEmpty() }
+                            .map { it.toIntOrNull() ?: Int.MAX_VALUE }
+                    require(counts.all { it <= 256 })
+                    repeatCost += counts.maxOrNull() ?: 0
+                    require(repeatCost <= 8192)
+                }
+            }
+        }
+    }
+    val pattern =
+        try {
+            Pattern.compile(
+                text,
+                if (matchCase) {
+                    0
+                } else {
+                    Pattern.CASE_INSENSITIVE
+                },
+            )
+        } catch (error: PatternSyntaxException) {
+            throw IllegalArgumentException(
+                "Unsupported regular expression",
+                error,
+            )
+        }
+    return pattern.also {
+        require(it.programSize() <= 2048) {
+            "Regex program exceeds the size limit"
+        }
+    }
+}
+
 internal data class UrlPattern(
     val text: String,
     val domainAnchor: Boolean,
@@ -129,14 +211,23 @@ internal data class UrlPattern(
     val endAnchor: Boolean,
     val matchCase: Boolean,
     val hostIndex: String?,
+    val regex: Boolean = false,
 ) {
+    private val compiledRegex =
+        if (regex) {
+            require(!domainAnchor && !startAnchor && !endAnchor && hostIndex == null)
+            compileFilterRegex(text, matchCase)
+        } else {
+            null
+        }
+
     val plainHost: String?
         get() = hostIndex?.takeIf { domainAnchor && text == "$it^" && !endAnchor }
 
     // Host-anchored filters use the hostname index. Other patterns get a literal
     // substring index, not a word index: "advert" must also match "myadvert.js".
     val indexToken: Int? =
-        if (hostIndex != null) {
+        if (hostIndex != null || regex) {
             null
         } else {
             run {
@@ -165,13 +256,107 @@ internal data class UrlPattern(
             }
         }
 
-    fun matches(address: HttpUrl, url: String, budget: MatchBudget): Boolean {
-        if (!domainAnchor) {
-            return glob(url, 0, !startAnchor, budget)
-        }
-        if (hostIndex != null && !domainMatches(address.host, hostIndex)) {
+    fun matches(
+        address: HttpUrl,
+        canonicalUrl: String,
+        budget: MatchBudget,
+        hostnameOnly: Boolean = false,
+    ): Boolean {
+        // Like uBO strict blocking, a typeless navigation block must end at the
+        // hostname (optionally consuming its separator). A path match such as
+        // /ads/ is useful for subresources, but must not deny a whole page.
+        if (
+            hostnameOnly &&
+                text.none {
+                    it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' || it == '_'
+                }
+        ) {
             return false
         }
+        plainHost?.let {
+            return domainMatches(address.host.removeSuffix("."), it)
+        }
+        // OkHttp escapes literal path pipes. Match their equivalent spelling only
+        // for glob filters which explicitly contain that literal character.
+        val url =
+            if (!regex && '|' in text && canonicalUrl.contains("%7c", true)) {
+                if (!budget.consume(canonicalUrl.length)) {
+                    return false
+                }
+                canonicalUrl.replace("%7c", "|", ignoreCase = true)
+            } else {
+                canonicalUrl
+            }
+        val hostStart =
+            if (domainAnchor || hostnameOnly) {
+                hostnameStart(url)
+            } else {
+                0
+            }
+        fun accepts(end: Int): Boolean {
+            if (end < 0) {
+                return false
+            }
+            if (!hostnameOnly) {
+                return true
+            }
+            val hostEnd =
+                hostStart +
+                    address.host.length +
+                    if (address.host.contains(':')) {
+                        2
+                    } else {
+                        0
+                    }
+            val minimumEnd =
+                if (address.host.endsWith('.')) {
+                    hostEnd - 1
+                } else {
+                    hostEnd
+                }
+            return end in minimumEnd..hostEnd + 1
+        }
+
+        compiledRegex?.let { pattern ->
+            // RE2/J has no backtracking. Also cap aggregate automaton work per
+            // request.
+            if (
+                !budget.consume(
+                    (url.length + 1) * maxOf(1, pattern.programSize() / 4)
+                )
+            ) {
+                return false
+            }
+            val matcher = pattern.matcher(url)
+            return matcher.find() && accepts(matcher.end())
+        }
+        if (!domainAnchor) {
+            return accepts(glob(url, 0, !startAnchor, budget))
+        }
+        if (
+            hostIndex != null &&
+                !domainMatches(address.host.removeSuffix("."), hostIndex)
+        ) {
+            return false
+        }
+        if (accepts(glob(url, hostStart, false, budget))) {
+            return true
+        }
+        if (address.host.contains(':')) {
+            return false
+        }
+        val hostEnd = hostStart + address.host.length
+        var dot = url.indexOf('.', hostStart)
+        while (dot in hostStart until hostEnd) {
+            if (accepts(glob(url, dot + 1, false, budget))) {
+                return true
+            }
+            dot = url.indexOf('.', dot + 1)
+        }
+        return false
+    }
+
+    private fun hostnameStart(url: String): Int {
         val authorityStart = url.indexOf("://") + 3
         val authorityEnd =
             url.indexOf('/', authorityStart).let {
@@ -181,29 +366,13 @@ internal data class UrlPattern(
                     it
                 }
             }
-        val hostStart =
-            url.lastIndexOf('@', authorityEnd - 1).let {
-                if (it >= authorityStart) {
-                    it + 1
-                } else {
-                    authorityStart
-                }
-            }
-        if (glob(url, hostStart, false, budget)) {
-            return true
+        // Credentials may contain the same text as the target hostname.
+        val at = url.lastIndexOf('@', authorityEnd - 1)
+        return if (at >= authorityStart) {
+            at + 1
+        } else {
+            authorityStart
         }
-        if (address.host.contains(':')) {
-            return false
-        }
-        val hostEnd = hostStart + address.host.length
-        var dot = url.indexOf('.', hostStart)
-        while (dot in hostStart until hostEnd) {
-            if (glob(url, dot + 1, false, budget)) {
-                return true
-            }
-            dot = url.indexOf('.', dot + 1)
-        }
-        return false
     }
 
     /**
@@ -214,7 +383,7 @@ internal data class UrlPattern(
         start: Int,
         search: Boolean,
         budget: MatchBudget,
-    ): Boolean {
+    ): Int {
         var p = 0
         var u = start
         var star =
@@ -226,10 +395,10 @@ internal data class UrlPattern(
         var retry = start
         while (u < url.length) {
             if (!budget.consume()) {
-                return false
+                return -1
             }
             if (p == text.length && !endAnchor) {
-                return true
+                return u
             }
             if (p < text.length && text[p] == '*') {
                 star = p++
@@ -253,11 +422,15 @@ internal data class UrlPattern(
                     }
                 u = ++retry
             } else {
-                return false
+                return -1
             }
         }
         while (p < text.length && (text[p] == '*' || text[p] == '^')) p++
-        return p == text.length
+        return if (p == text.length) {
+            u
+        } else {
+            -1
+        }
     }
 
     companion object {

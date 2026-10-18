@@ -46,12 +46,13 @@ import androidx.webkit.WebViewClientCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import java.io.File
-import java.util.concurrent.atomic.AtomicReference
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.ServiceWorkerBlocker
 import uk.nktnet.webviewkiosk.blocking.WebViewBlocker
 import uk.nktnet.webviewkiosk.blocking.WebViewCosmetics
+import uk.nktnet.webviewkiosk.blocking.WebViewRequests
+import uk.nktnet.webviewkiosk.blocking.WebViewScriptlets
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -67,6 +68,7 @@ import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigationSession
+import uk.nktnet.webviewkiosk.utils.webview.blockedPageHtml
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.handleMutualTlsRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.cancelPdfSourceRequests
@@ -76,6 +78,7 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePdfSourceRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.isPdfSourceNavigation
+import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
@@ -333,12 +336,12 @@ fun createCustomWebview(
             }
         var hideFullscreen: () -> Unit = {}
         val navigation = WebViewNavigationSession(config.isActive)
-        // shouldInterceptRequest runs off the UI thread. Never read WebView.url
-        // there.
-        val currentPageUrl = AtomicReference("")
         var cosmetics: WebViewCosmetics? = null
+        var scriptlets: WebViewScriptlets? = null
+        var requests: WebViewRequests? = null
 
         fun beginLoad(url: String) {
+            scriptlets?.refresh()
             val currentEntry =
                 systemSettings.historyStack.getOrNull(systemSettings.historyIndex)
             navigation.beginLoad(
@@ -382,13 +385,37 @@ fun createCustomWebview(
                         setTag(R.id.pdf_source_token, null)
                     }
 
+                    fun blockDocument(url: String, method: String = "GET"): Boolean {
+                        if (
+                            !WebViewBlocker.shouldBlockDocument(
+                                url,
+                                method,
+                                contentBlocker,
+                            )
+                        ) {
+                            return false
+                        }
+                        loadBlockedPage(
+                            this,
+                            userSettings,
+                            url,
+                            BlockCause.CONTENT_BLOCKING,
+                        )
+                        return true
+                    }
+
                     override fun loadUrl(url: String) {
                         if (!navigation.isActive()) {
                             return
                         }
-                        beginLoad(url)
+                        val target =
+                            WebViewBlocker.documentUrl(url, "GET", contentBlocker)
+                        if (blockDocument(target)) {
+                            return
+                        }
+                        beginLoad(target)
                         clearPdfNavigation()
-                        super.loadUrl(url)
+                        super.loadUrl(target)
                     }
 
                     override fun loadUrl(
@@ -398,15 +425,31 @@ fun createCustomWebview(
                         if (!navigation.isActive()) {
                             return
                         }
+                        val target =
+                            WebViewBlocker.documentUrl(url, "GET", contentBlocker)
+                        if (blockDocument(target)) {
+                            return
+                        }
+                        beginLoad(target)
+                        clearPdfNavigation()
+                        super.loadUrl(target, additionalHttpHeaders)
+                    }
+
+                    override fun postUrl(url: String, postData: ByteArray) {
+                        if (!navigation.isActive() || blockDocument(url, "POST")) {
+                            return
+                        }
                         beginLoad(url)
                         clearPdfNavigation()
-                        super.loadUrl(url, additionalHttpHeaders)
+                        super.postUrl(url, postData)
                     }
 
                     override fun reload() {
                         if (!navigation.isActive()) {
                             return
                         }
+                        // Interception checks the actual method, including a
+                        // reloaded POST. WebView does not expose it here.
                         url?.let { beginLoad(it) }
                         super.reload()
                     }
@@ -518,6 +561,9 @@ fun createCustomWebview(
                     }
 
                     cosmetics = WebViewCosmetics.attach(this, contentBlocker, scope)
+                    requests = WebViewRequests.attach(this, contentBlocker)
+                    scriptlets =
+                        WebViewScriptlets.attach(this, contentBlocker, scope)
 
                     if (userSettings.enableBatteryApi) {
                         addJavascriptInterface(
@@ -625,7 +671,6 @@ fun createCustomWebview(
                                 }
                                 url?.let {
                                     navigation.pageStarted(it)
-                                    currentPageUrl.set(it)
                                 }
                                 awaitingPdfPageStart = false
                                 config.setLastErrorUrl("")
@@ -776,6 +821,20 @@ fun createCustomWebview(
                                             userSettings,
                                             config.blacklistRegexes,
                                             config.whitelistRegexes,
+                                            isDocumentBlocked = {
+                                                WebViewBlocker.shouldBlockDocument(
+                                                    it,
+                                                    "GET",
+                                                    contentBlocker,
+                                                )
+                                            },
+                                            documentUrl = {
+                                                WebViewBlocker.documentUrl(
+                                                    it,
+                                                    "GET",
+                                                    contentBlocker,
+                                                )
+                                            },
                                             onAuthenticationRequired = {
                                                 token,
                                                 _,
@@ -913,12 +972,18 @@ fun createCustomWebview(
 
                                     // Preserve the app's PDF and local-file
                                     // handlers; only inspect
-                                    // normal web subresources after those have
+                                    // normal web requests after those have
                                     // declined the request.
                                     WebViewBlocker.intercept(
                                             request,
-                                            currentPageUrl.get(),
                                             contentBlocker,
+                                            blockedDocumentHtml = {
+                                                blockedPageHtml(
+                                                    userSettings,
+                                                    it,
+                                                    BlockCause.CONTENT_BLOCKING,
+                                                )
+                                            },
                                         )
                                         ?.let {
                                             return it
@@ -943,6 +1008,8 @@ fun createCustomWebview(
                                     } else {
                                         null
                                     },
+                                    request.method,
+                                    request.requestHeaders.orEmpty(),
                                 )
                             }
 
@@ -951,10 +1018,9 @@ fun createCustomWebview(
                                 view: WebView?,
                                 url: String?,
                             ): Boolean {
-                                // Older WebViews without the compatibility callback
-                                // omit frame metadata.
-                                // Only HTTP(S) overrides are guaranteed to target
-                                // the main frame.
+                                // Preserve the legacy URL policy. Document filters
+                                // wait for interception: this callback cannot
+                                // distinguish a main frame from an HTTP iframe.
                                 val isMainFrame =
                                     url?.toUri()?.scheme?.lowercase() in
                                         setOf("http", "https")
@@ -966,6 +1032,8 @@ fun createCustomWebview(
                                 requestUrl: String?,
                                 isMainFrame: Boolean,
                                 isRedirect: Boolean? = null,
+                                method: String? = null,
+                                requestHeaders: Map<String, String> = emptyMap(),
                             ): Boolean {
                                 if (!navigation.isActive()) {
                                     return true
@@ -973,13 +1041,35 @@ fun createCustomWebview(
                                 if (requestUrl.isNullOrEmpty()) {
                                     return false
                                 }
-                                val navigationUrl =
+                                val resolvedUrl =
                                     resolveBlockPageUrl(
                                         requestUrl,
                                         config.blacklistRegexes,
                                         config.whitelistRegexes,
                                         userSettings,
                                     ) ?: return true
+                                val originalPolicy =
+                                    getBlockInfo(
+                                            resolvedUrl,
+                                            config.blacklistRegexes,
+                                            config.whitelistRegexes,
+                                            userSettings,
+                                        )
+                                        .second
+                                val navigationUrl =
+                                    if (
+                                        isMainFrame &&
+                                            method != null &&
+                                            originalPolicy == null
+                                    ) {
+                                        WebViewBlocker.documentUrl(
+                                            resolvedUrl,
+                                            method,
+                                            contentBlocker,
+                                        )
+                                    } else {
+                                        resolvedUrl
+                                    }
                                 if (isMainFrame) {
                                     systemSettings.urlBeingHandled = navigationUrl
                                     if (
@@ -992,13 +1082,29 @@ fun createCustomWebview(
                                     }
                                 }
 
-                                val (schemeType, blockCause) =
+                                val (schemeType, policyBlockCause) =
                                     getBlockInfo(
                                         url = navigationUrl,
                                         blacklistRegexes = config.blacklistRegexes,
                                         whitelistRegexes = config.whitelistRegexes,
                                         userSettings = userSettings,
                                     )
+                                val blockCause =
+                                    originalPolicy
+                                        ?: policyBlockCause
+                                        ?: if (
+                                            isMainFrame &&
+                                                method != null &&
+                                                WebViewBlocker.shouldBlockDocument(
+                                                    navigationUrl,
+                                                    method,
+                                                    contentBlocker,
+                                                )
+                                        ) {
+                                            BlockCause.CONTENT_BLOCKING
+                                        } else {
+                                            null
+                                        }
                                 if (blockCause != null) {
                                     when (
                                         userSettings.overrideUrlLoadingBlockAction
@@ -1050,7 +1156,7 @@ fun createCustomWebview(
                                 }
                                 if (navigationUrl != requestUrl) {
                                     if (isMainFrame) {
-                                        loadUrl(navigationUrl)
+                                        loadUrl(navigationUrl, requestHeaders)
                                     }
                                     return true
                                 }
@@ -1622,6 +1728,8 @@ fun createCustomWebview(
             }
             dialogs.dispose()
             cosmetics?.dispose()
+            scriptlets?.dispose()
+            requests?.dispose()
             blobInterface?.dispose()
         }
     }

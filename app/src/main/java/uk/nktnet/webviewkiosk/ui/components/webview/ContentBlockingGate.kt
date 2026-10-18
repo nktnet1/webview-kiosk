@@ -13,7 +13,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
@@ -21,12 +20,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.blocking.BlockingStatus
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
-import uk.nktnet.webviewkiosk.ui.components.common.MinimumLoadingState
 
 @Composable
 internal fun ContentBlockingGate(
     blocker: ContentBlockingService,
-    loading: MinimumLoadingState = remember { MinimumLoadingState() },
     content: @Composable () -> Unit,
 ) {
     val enabled by blocker.enabled.collectAsState()
@@ -34,7 +31,6 @@ internal fun ContentBlockingGate(
     val rulesPending by blocker.rulesPending.collectAsState()
     val status by blocker.status.collectAsState()
     val stage by blocker.loadStage.collectAsState()
-    val displayedMessage by loading.message.collectAsState()
     val waiting =
         rulesPending || !initialLoadComplete || status == BlockingStatus.LOADING
     val message =
@@ -44,14 +40,7 @@ internal fun ContentBlockingGate(
             null
         }
     LaunchedEffect(blocker, rulesPending) { blocker.prepareForWebView() }
-    LaunchedEffect(message) {
-        if (message != null) {
-            loading.show(message)
-        } else {
-            loading.hide()
-        }
-    }
-    if (waiting || displayedMessage != null) {
+    if (waiting) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -60,7 +49,7 @@ internal fun ContentBlockingGate(
             ) {
                 CircularProgressIndicator()
                 Text(
-                    message ?: displayedMessage.orEmpty(),
+                    message.orEmpty(),
                     style = MaterialTheme.typography.bodyMedium,
                     fontStyle = FontStyle.Italic,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

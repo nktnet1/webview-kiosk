@@ -1,0 +1,351 @@
+package uk.nktnet.webviewkiosk.adblock.engine
+
+import uk.nktnet.webviewkiosk.adblock.ScriptletInjection
+import uk.nktnet.webviewkiosk.adblock.ScriptletInstruction
+import uk.nktnet.webviewkiosk.adblock.ScriptletType
+
+/** Host-indexed routing is mirrored in the synchronous document-start dispatcher. */
+internal class ScriptletIndex(
+    private val rules: List<ScriptletRule>,
+    restored: RuleBuckets? = null,
+) {
+    val routing =
+        restored?.takeIf { ScriptletRouting.validFor(it, rules) }
+            ?: ScriptletRouting.build(rules)
+    val restoredIndexes = routing === restored
+    private val hosts = routing.tables[ScriptletBucket.HOST.ordinal]
+    private val entities = routing.tables[ScriptletBucket.ENTITY.ordinal]
+    private val ancestorHosts = routing.tables[ScriptletBucket.ANCESTOR_HOST.ordinal]
+    private val ancestorEntities =
+        routing.tables[ScriptletBucket.ANCESTOR_ENTITY.ordinal]
+    private val regexRules =
+        routing.tables[ScriptletBucket.REGEX.ordinal][""] ?: intArrayOf()
+    private val genericExceptions =
+        routing.tables[ScriptletBucket.GENERIC_EXCEPTION.ordinal][""] ?: intArrayOf()
+    private val usesEntities = rules.any {
+        it.domains.usesEntities || it.targets.any { target -> target.entity }
+    }
+
+    init {
+        require(rules.size <= MAX_RULES) { "Too many scriptlet rules" }
+        require(rules.sumOf { rule -> rule.targets.count { it.regex } } <= 4096) {
+            "Too many regex scriptlet scopes"
+        }
+    }
+
+    fun instructions(
+        url: String,
+        ancestors: List<String> = emptyList(),
+    ): List<ScriptletInstruction> {
+        val address = httpAddress(url) ?: return emptyList()
+        val host = address.host.removeSuffix(".")
+        if (host in PRIVATE_HOSTS) {
+            return emptyList()
+        }
+        val candidates =
+            sortedSetOf<Int>().apply {
+                genericExceptions.forEach(::add)
+                regexRules.forEach(::add)
+            }
+        fun collect(
+            url: String,
+            hostTable: Map<String, IntArray>,
+            entityTable: Map<String, IntArray>,
+        ) {
+            val frame = httpAddress(url) ?: return
+            hostSuffixes(frame.host.removeSuffix(".")) {
+                hostTable[it]?.forEach(candidates::add)
+            }
+            if (usesEntities) {
+                entityName(frame.host.removeSuffix("."), frame.topPrivateDomain())
+                    ?.let { entity ->
+                        hostSuffixes(entity) {
+                            entityTable[it]?.forEach(candidates::add)
+                        }
+                    }
+            }
+        }
+        collect(url, hosts, entities)
+        ancestors.take(64).forEach { collect(it, ancestorHosts, ancestorEntities) }
+        val matching =
+            candidates.map(rules::get).filter {
+                ScriptletScopes.matches(it, url, ancestors)
+            }
+        if (matching.any { it.exception && it.instruction == null }) {
+            return emptyList()
+        }
+        val excepted =
+            matching.filter { it.exception }.map { it.instruction }.toSet()
+        return matching
+            .asSequence()
+            .filterNot { it.exception }
+            .mapNotNull { it.instruction }
+            .filterNot { it in excepted }
+            .distinct()
+            .take(MAX_PER_PAGE)
+            .toList()
+    }
+
+    fun injection(): ScriptletInjection? {
+        if (rules.none { !it.exception }) {
+            return null
+        }
+        // Domain rules often share an instruction. Serialize arguments once, then
+        // decode only selected instruction IDs in the document-start dispatcher.
+        val instructionOffsets = linkedMapOf<ScriptletInstruction, Int>()
+        val instructions = buildString {
+            for ((instruction) in rules) {
+                if (instruction == null) {
+                    continue
+                }
+                if (instruction in instructionOffsets) {
+                    continue
+                }
+                instructionOffsets[instruction] = length
+                append('[').append(json(instruction.type.name)).append(',')
+                strings(instruction.arguments)
+                append(',').append(module(instruction.type)).append("]\n")
+                require(length <= MAX_ROUTING_BYTES) {
+                    "Scriptlet instruction data exceeds 16 MiB"
+                }
+            }
+        }
+        val offsets = mutableListOf<Int>()
+        val data = buildString {
+            for ((instruction, domains, exception, targets) in rules) {
+                offsets += length
+                append('[')
+                append(instruction?.let(instructionOffsets::get) ?: -1)
+                append(",null")
+                append(',')
+                strings(domains.excluded)
+                append(',').append(exception).append(',')
+                strings(domains.excludedEntities)
+                append(",[")
+                targets.forEachIndexed { index, target ->
+                    if (index != 0) {
+                        append(',')
+                    }
+                    append('[').append(json(target.host)).append(',')
+                    append(target.path?.let(::json) ?: "null").append(',')
+                    append(target.regex)
+                        .append(',')
+                        .append(target.entity)
+                        .append(',')
+                    append(target.ancestor)
+                        .append(',')
+                        .append(target.excluded)
+                        .append(']')
+                }
+                append("],")
+                strings(domains.included)
+                append(',')
+                strings(domains.includedEntities)
+                append("]\n")
+                require(length <= MAX_ROUTING_BYTES) {
+                    "Scriptlet routing data exceeds 16 MiB"
+                }
+            }
+        }
+        fun table(values: Map<String, IntArray>): String = buildString {
+            for ((name, indexes) in values.toSortedMap()) {
+                append(name).append('\t')
+                append(
+                    indexes.joinToString(",", "[", "]") {
+                        offsets[it].toString()
+                    }
+                )
+                append('\n')
+                require(length <= MAX_ROUTING_BYTES) {
+                    "Scriptlet routing data exceeds 16 MiB"
+                }
+            }
+        }
+        val regex =
+            regexRules
+                .distinct()
+                .flatMap { index ->
+                    rules[index]
+                        .targets
+                        .filter { it.regex && !it.excluded }
+                        .map { target ->
+                            val path = target.path?.let(::json) ?: "null"
+                            "[${json(target.host)},$path,${offsets[index]}]"
+                        }
+                }
+                .joinToString(",", "[", "]")
+        val entityLabels =
+            (entities.keys +
+                    ancestorEntities.keys +
+                    rules.flatMap { it.domains.excludedEntities } +
+                    rules.flatMap {
+                        it.targets
+                            .filter { target -> target.entity }
+                            .map { target -> target.host }
+                    })
+                .map { it.substringAfterLast('.') }
+                .distinct()
+                .sorted()
+                .joinToString("\n", postfix = "\n")
+        val exceptionData =
+            genericExceptions.joinToString(",", "[", "]") {
+                offsets[it].toString()
+            }
+        val suffixData =
+            if (usesEntities) {
+                json(ScriptletSuffixes.serialized)
+            } else {
+                "null"
+            }
+        val routes =
+            "{" +
+                "\"hosts\":${json(table(hosts))}," +
+                "\"entities\":${json(table(entities))}," +
+                "\"ancestors\":${json(table(ancestorHosts))}," +
+                "\"ancestorEntities\":${json(table(ancestorEntities))}," +
+                "\"regex\":${json(regex)}," +
+                "\"entityLabels\":${json(entityLabels)}," +
+                "\"usesAncestors\":${rules.any { it.targets.any { target -> target.ancestor } }}," +
+                "\"exceptions\":$exceptionData," +
+                "\"suffixes\":$suffixData," +
+                "\"limit\":$MAX_PER_PAGE}"
+        require(
+            data.toByteArray().size.toLong() +
+                routes.toByteArray().size +
+                instructions.toByteArray().size <= MAX_ROUTING_BYTES
+        ) {
+            "Scriptlet routing data exceeds 16 MiB"
+        }
+        // Only matching buckets and records are parsed in each frame. The wildcard
+        // origin also covers arbitrary ports and cross-origin descendant scopes.
+        // No bridge or privileged page-callable API is exposed.
+        val modules = instructionOffsets.keys.map { module(it.type) }.toSet()
+        val resources =
+            instructionOffsets.keys
+                .filter {
+                    it.type in
+                        setOf(ScriptletType.RESOURCE, ScriptletType.TRUSTED_RESOURCE)
+                }
+                .map { it.arguments.first() }
+                .toSet()
+        val libraries =
+            listOf(
+                    if (1 in modules) {
+                        extraRuntime
+                    } else {
+                        "null"
+                    },
+                    ScriptletResources.factories(resources),
+                    if (2 in modules) {
+                        networkRuntime
+                    } else {
+                        "null"
+                    },
+                    if (3 in modules) {
+                        advancedRuntime
+                    } else {
+                        "null"
+                    },
+                )
+                .joinToString(",", prefix = ",")
+        return ScriptletInjection(
+            "$runtime($routes,${json(data)},${json(instructions)}$libraries);",
+            setOf("*"),
+        )
+    }
+
+    companion object {
+        const val MAX_RULES = 65_536
+        const val MAX_PER_PAGE = 1024
+        const val MAX_ROUTING_BYTES = 16 * 1024 * 1024
+
+        private fun module(type: ScriptletType): Int =
+            when (type) {
+                in ResponseScriptlets.networkTypes -> 2
+                in ObjectEditing.elementTypes -> 1
+                in ObjectEditing.types -> 0
+                in ObjectPruning.types -> 0
+                in AdvancedScriptlets.aliases.values -> 3
+                ScriptletType.SET,
+                ScriptletType.ABORT_READ,
+                ScriptletType.ABORT_WRITE,
+                ScriptletType.PREVENT_WINDOW_OPEN,
+                ScriptletType.PREVENT_ADD_EVENT_LISTENER,
+                ScriptletType.ABORT_CURRENT_SCRIPT,
+                ScriptletType.JSON_PRUNE,
+                ScriptletType.JSON_EDIT,
+                ScriptletType.TRUSTED_JSON_EDIT,
+                ScriptletType.PREVENT_FETCH,
+                ScriptletType.TRUSTED_PREVENT_FETCH,
+                ScriptletType.TRUSTED_SET -> 0
+                else -> 1
+            }
+
+        private val PRIVATE_HOSTS =
+            setOf(
+                "appassets.androidplatform.net",
+                "pdf-dummy.webviewkiosk.nktnet.uk",
+            )
+        private val runtime by lazy {
+            ScriptletIndex::class
+                .java
+                .getResourceAsStream("/adblock/scriptlets.js")!!
+                .bufferedReader()
+                .use { it.readText() }
+        }
+
+        private val extraRuntime by lazy {
+            ScriptletIndex::class
+                .java
+                .getResourceAsStream("/adblock/scriptlets-extra.js")!!
+                .bufferedReader()
+                .use { it.readText() }
+        }
+
+        private val networkRuntime by lazy {
+            ScriptletIndex::class
+                .java
+                .getResourceAsStream("/adblock/scriptlets-network.js")!!
+                .bufferedReader()
+                .use { it.readText() }
+        }
+
+        private val advancedRuntime by lazy {
+            ScriptletIndex::class
+                .java
+                .getResourceAsStream("/adblock/scriptlets-advanced.js")!!
+                .bufferedReader()
+                .use { it.readText() }
+        }
+
+        /** JSON only: filter text can never escape into JavaScript source. */
+        internal fun json(value: String): String = buildString {
+            append('"')
+            value.forEach { char ->
+                when (char) {
+                    '"' -> append("\\\"")
+                    '\\' -> append("\\\\")
+                    '<',
+                    '>',
+                    '&',
+                    '\u2028',
+                    '\u2029' ->
+                        append("\\u").append(char.code.toString(16).padStart(4, '0'))
+                    else -> {
+                        if (char.code < 32) {
+                            append("\\u")
+                                .append(char.code.toString(16).padStart(4, '0'))
+                        } else {
+                            append(char)
+                        }
+                    }
+                }
+            }
+            append('"')
+        }
+
+        private fun StringBuilder.strings(values: Collection<String>) {
+            append(values.joinToString(",", "[", "]", transform = ::json))
+        }
+    }
+}

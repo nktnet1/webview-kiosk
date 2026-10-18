@@ -28,7 +28,23 @@ internal object SuggestedFilterLists {
     private const val HAGEZI_BASE_URL =
         "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock"
 
-    val all =
+    private fun ublock(name: String, description: String, file: String) =
+        SuggestedFilterList(
+            name = "uBlock $name",
+            description = description,
+            url = "https://ublockorigin.github.io/uAssets/filters/$file.txt",
+        )
+
+    private val ublock =
+        listOf(
+            ublock("Ads", "Ads", "filters"),
+            ublock("Privacy", "Trackers", "privacy"),
+            ublock("Badware", "Malicious sites", "badware"),
+            ublock("Quick fixes", "Urgent filter fixes", "quick-fixes"),
+            ublock("Unbreak", "Site compatibility fixes", "unbreak"),
+        )
+
+    private val others =
         listOf(
             SuggestedFilterList(
                 name = "EasyList",
@@ -41,14 +57,24 @@ internal object SuggestedFilterLists {
                 url = "https://easylist.to/easylist/easyprivacy.txt",
             ),
             SuggestedFilterList(
+                name = "Online Malicious URL Blocklist",
+                // Maintainer's network-filter format avoids unsupported $all/CSP.
+                description = "Malicious site navigation",
+                url =
+                    "https://malware-filter.gitlab.io/urlhaus-filter/" +
+                        "urlhaus-filter-vivaldi-online.txt",
+            ),
+            SuggestedFilterList(
+                name = "Peter Lowe’s Ad and tracking server list",
+                description = "Ads & trackers",
+                url =
+                    "https://pgl.yoyo.org/adservers/serverlist.php?" +
+                        "hostformat=hosts&showintro=1&mimetype=plaintext",
+            ),
+            SuggestedFilterList(
                 name = "AdGuard Base",
                 description = "Ads",
                 url = "https://filters.adtidy.org/extension/ublock/filters/2.txt",
-            ),
-            SuggestedFilterList(
-                name = "uBlock Origin",
-                description = "Ads",
-                url = "https://ublockorigin.github.io/uAssets/filters/filters.txt",
             ),
             SuggestedFilterList(
                 name = "HaGeZi Multi LIGHT",
@@ -76,6 +102,25 @@ internal object SuggestedFilterLists {
                 url = "$HAGEZI_BASE_URL/ultimate.txt",
             ),
         )
+
+    private val optionalUblock =
+        listOf(
+            ublock("Annoyances - Cookies", "Cookie notices", "annoyances-cookies"),
+            ublock("Annoyances - Others", "Other annoyances", "annoyances-others"),
+        )
+
+    val trustedUrls = (ublock + optionalUblock).map { it.url }.toSet()
+
+    val all = ublock + optionalUblock + others
+
+    // The nine globally enabled subscriptions in upstream assets/assets.json.
+    // Regional and optional annoyance lists depend on user preference.
+    val defaults = ublock + others.take(4)
+
+    fun missingDefaults(lists: List<ImportedFilterList>): List<SuggestedFilterList> {
+        val existing = lists.mapNotNull { it.sourceUrl }.toSet()
+        return defaults.filterNot { it.url in existing }
+    }
 }
 
 internal fun String.toFilterListUrlOrNull(): HttpUrl? =
@@ -126,8 +171,42 @@ internal class SuggestedFilterListDownloader(
                 input = stream,
                 sourceUrl = suggestion.url,
                 type = FilterListType.PRESET,
+                trusted = suggestion.url in SuggestedFilterLists.trustedUrls,
             )
         }
+    }
+
+    /**
+     * Add missing defaults, preserving existing order, edits, and enabled states.
+     */
+    fun downloadDefaults(
+        store: FilterListStore,
+        requested: List<SuggestedFilterList> = SuggestedFilterLists.defaults,
+    ): FilterRefreshResult {
+        require(
+            requested.distinct().size == requested.size &&
+                requested.all { it in SuggestedFilterLists.defaults }
+        ) {
+            "Only default presets may be added by this action"
+        }
+        val missing = requested.filterNot {
+            store.containsSource(it.url)
+        }
+        val failures = mutableListOf<FilterRefreshFailure>()
+        var added = 0
+        missing.forEach { suggestion ->
+            try {
+                download(suggestion, store)
+                added++
+            } catch (error: Exception) {
+                failures +=
+                    FilterRefreshFailure(
+                        suggestion.name,
+                        error.message ?: "Download failed",
+                    )
+            }
+        }
+        return FilterRefreshResult(added, missing.size, failures)
     }
 
     /** Download a manually entered URL using the same limits as presets. */
@@ -159,7 +238,14 @@ internal class SuggestedFilterListDownloader(
             current.sourceUrl
                 ?: throw IllegalArgumentException("Local lists cannot be refreshed")
         return fetch(url) { stream ->
-            store.replaceFromSource(current.id, url, stream)
+            store.replaceFromSource(
+                current.id,
+                url,
+                stream,
+                trusted =
+                    current.type == FilterListType.PRESET &&
+                        url in SuggestedFilterLists.trustedUrls,
+            )
         }
     }
 
@@ -197,8 +283,15 @@ internal class SuggestedFilterListDownloader(
      * Continue past individual failures. Callers queue one engine reload after the
      * batch.
      */
-    fun refreshAll(store: FilterListStore): FilterRefreshResult {
-        val candidates = store.list().filter { it.sourceUrl != null }
+    fun refreshAll(store: FilterListStore): FilterRefreshResult =
+        refreshSelected(store, store.list().map { it.id }.toSet())
+
+    /** Refresh only the selected subscriptions; local lists have no download URL. */
+    fun refreshSelected(
+        store: FilterListStore,
+        ids: Set<String>,
+    ): FilterRefreshResult {
+        val candidates = store.list().filter { it.id in ids && it.sourceUrl != null }
         val failures = mutableListOf<FilterRefreshFailure>()
         var updated = 0
         candidates.forEach { item ->

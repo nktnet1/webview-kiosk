@@ -127,23 +127,23 @@ fun loadBlockedPage(
             url
         }
 
-    val html =
-        userSettings.customBlockPageHtml.ifBlank {
-            generateBlockedPageHtml(
-                userSettings.theme,
-                blockCause,
-                userSettings,
-                url,
-            )
-        }
     webView?.loadDataWithBaseURL(
         baseUrl,
-        html,
+        blockedPageHtml(userSettings, url, blockCause),
         "text/html",
         "UTF-8",
         null,
     )
 }
+
+fun blockedPageHtml(
+    userSettings: UserSettings,
+    url: String,
+    blockCause: BlockCause,
+): String =
+    userSettings.customBlockPageHtml.ifBlank {
+        generateBlockedPageHtml(userSettings.theme, blockCause, userSettings, url)
+    }
 
 fun isCustomBlockPageUrl(schemeType: SchemeType, uri: Uri): Boolean {
     return schemeType == SchemeType.APP_CUSTOM && uri.host == BLOCK_HOST

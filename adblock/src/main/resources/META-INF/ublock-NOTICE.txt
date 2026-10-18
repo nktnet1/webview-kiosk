@@ -1,0 +1,117 @@
+uBlock Origin scriptlet attribution
+
+Copyright (C) 2019-2026 Raymond Hill and contributors
+SPDX-License-Identifier: GPL-3.0-or-later
+https://github.com/gorhill/uBlock
+Full unchanged licence: META-INF/licenses/ublock-GPL-3.0.txt
+
+Source: user-supplied uBlock-master.zip, commit
+  dfca51bea2b8605353547f605e9cffbb6dfa0789
+Archive SHA-256:
+  02eb8dbacc8ff09fd51524acd718998865c69a06041d3619def9d7204856311a
+
+adblock/scriptlets.js, scriptlets-extra.js, scriptlets-network.js and
+scriptlets-advanced.js adapt behavior
+and implementation patterns from src/js/resources at that commit: scriptlets.js, utils.js,
+set-constant.js, abort-current-script.js, prevent-addeventlistener.js,
+prevent-settimeout.js, json-prune.js, object-prune.js, prevent-fetch.js,
+stack-trace.js, cookie.js, localstorage.js, attribute.js, href-sanitizer.js,
+prevent-innerHTML.js, prevent-dialog.js, prevent-navigation.js, prevent-bab.js,
+noeval.js, spoof-css.js, prevent-xhr.js, and the XML/HLS/overlay implementations
+in scriptlets.js, plus replace-argument.js, create-html.js,
+prevent-clipboard-write.js and vod.js. Modification date: 2026-10-17. Local changes include
+strict typed arguments, shared hooks, frame routing, protected timers, and
+bounded resource use, recoverable XHR lifecycle state, response limits, and
+trusted-source enforcement, bounded trusted DOM/method helpers and MPD timing. This is a subset of the extension's behavior.
+
+The timer boosters retain upstream's NanoFilters reference:
+Repository: https://github.com/NanoAdblocker/NanoFilters
+Commit: 1f3be7211bb0809c5106996f52564bf10c4525f7
+File: NanoFiltersSource/NanoResources.txt, lines 82 and 126
+
+adblock/ubo/ contains these fixed src/web_accessible_resources shims:
+  amazon_ads.js, adthrive_abd.js, doubleclick_instream_ad_status.js,
+  fingerprint2.js, fingerprint3.js, google-analytics_analytics.js,
+  google-analytics_ga.js, googletagservices_gpt.js, nitropay_ads.js,
+  nofab.js, popads.js, popads-dummy.js, prebid-ads.js, sensors-analytics.js.
+Original source notices are retained. google-analytics_ga.js was reformatted on
+2026-10-16 to meet the project's 100-column limit; behavior is unchanged.
+Other shim source bytes are unchanged. amazon_apstag.js and chartbeat.js,
+noop.json, noop-0.1s.mp3, noop-1s.mp4 and 32x32.png are additionally bundled for
+network redirects; their upstream source bytes/notices are retained.
+Implementation modules are bundled. Trusted node-text/HTML parameters can alter
+executable page content under the provenance policy documented in adblock/docs/SCRIPTLETS.md.
+
+Upstream source:
+https://github.com/gorhill/uBlock/tree/dfca51bea2b8605353547f605e9cffbb6dfa0789/src
+
+Network regex support uses RE2/J 1.8 (https://github.com/google/re2j).
+Its complete BSD notices are in META-INF/licenses/re2j-BSD.txt.
+
+The v1.0.25 JSON editing subset follows src/js/jsonpath.js and
+src/js/resources/json-edit.js, retrieved from upstream on 2026-10-17.
+It compiles queries to a bounded data AST, preserves upstream's v1/v2 filter
+semantics, and excludes executable expressions, assignments, and unimplemented DSLs.
+The additional unchanged redirect resources were retrieved from
+https://github.com/gorhill/uBlock/tree/master/src/web_accessible_resources
+on 2026-10-17. SHA-256 of the bundled bytes:
+  google-analytics_cx_api.js: b1bdb8c30c6744be3c68bba5de49df7a2f04d3d8b295f0a26ab1ade5af738139
+  google-analytics_inpage_linkid.js:
+    816b8366769981f63ebda4aed7796d51edaf81f219951a1ac1f16220e9f26fac
+  scorecardresearch_beacon.js: c177360b3723b924a168fc72ed728f924fe72e40cfc0c1d3fb5237849c590946
+  noop-vast2.xml: a8fb181a797b4e48bb5d239ab5030f33ed65ebf339e38a5131ce966331226cef
+  noop-vast3.xml: 71a904ba726ae38a8aa08425bae824e9850452b5c41a182bdc526a139ba3a9bc
+  noop-vast4.xml: d06c733ba42b81cd66c7fcaabc75b51c59292cdbccdcfb6a88bf2b57d262047b
+  noop-vmap1.xml: fcc40f36d86c8f7146d4b2f0c1273cc46282c2c236303dabc172dfacfdf86508
+  3x2.png: c3fdb994f265ca41374d5aeeafefe0e0fe79b74508c7f09d26f6767971317eed
+
+The v1.0.26 JSONPath additions follow the same upstream jsonpath.js implementation:
+guard quantifiers, regex selectors/comparisons and current-node predicates.
+Listener options follow src/js/resources/prevent-addeventlistener.js at the
+pinned dfca51bea2b8605353547f605e9cffbb6dfa0789 commit, with shared hooks and native
+element matching instead of document-query fallback.
+
+Additional redirect resources from that pinned commit:
+  piano-analytics.js: b53897c0a853b71d7c0b1234ba5431f7253cbd2fd3a21d65bb1d3a68f2757df8
+  google-ima.js: 4bf71a6a89fdea1a8d6e3df8b1521eab679a544a1db355367fa0ab9808d20682
+Piano retains its original source bytes. IMA retains its source notices and
+implementation; source-comment whitespace was normalized to meet the column limit.
+IMA is also eligible for inline injection upstream and is included on demand.
+Its original MPL-2.0 notice applies; full licence: META-INF/licenses/google-ima-MPL-2.0.txt.
+Original Mozilla shim:
+https://searchfox.org/mozilla-central/rev/d317e93d9a59c9e4c06ada85fbff9f6a1ceaaad1/browser/extensions/webcompat/shims/google-ima.js
+The inline resource wrapper supplies captured animation frames and timers to keep
+local shim callbacks independent of selected page-timer scriptlets.
+
+The v1.0.28 additions follow the same pinned upstream commit above, retrieved on
+2026-10-17. JSON/object editing, trusted mutation, legacy pruning and XML XPath
+behavior adapt jsonpath.js, resources/json-edit.js and resources/object-prune.js.
+The new JS resource files were reformatted; AdsByGoogle additionally replaces its
+repeated full-document scan with bounded subtree work. Original notices are kept.
+The IMA DAI shim retains its AdGuard source, GPLv3 licence and pinned commit notice.
+The existing full GPLv3 text is bundled at META-INF/licenses/ublock-GPL-3.0.txt.
+SHA-256 of the additional bundled resource bytes:
+  ampproject_v0.js:
+    b279255cb2bbdbe5c70403b9825770768b4d5253a623d5150b76e209dd10d675
+  outbrain-widget.js:
+    90acb4602585c011e2eb1a1b6e4b50b48cc474dbba1e6cbbcf8d2b02be7124be
+  hd-main.js:
+    5eb91bfa38ee1ddefd6722b73a67dc079881e6fbe034c318557bb9f701cc8808
+  nobab2.js:
+    67f341aa6df8d2b3a44468034b3cc24aa8bcf4f7f3389bd682e72831a7ed599a
+  googlesyndication_adsbygoogle.js:
+    43beddf9e9408cc8da0ffd78346af6ef42c803093ebcd295a72eada191d3a315
+  google-ima-dai.js:
+    3ee835cda7b195737522bf6879f125a408258b6bbac7d0e235842dc15c823f48
+  noeval.js:
+    bf41cdcc6a81a53c432ce70493feadc5ac484043d0a33cdbf531058873bee7c3
+  noeval-silent.js:
+    9d23a1475b69ef939f389ad1eeeb7bdfb97aa2eed57a66eeed49667c3bdb7a6a
+  noop-0.5s.mp3:
+    74dceaeb010690bf7b68f20d89d3891c989d8d0bd9cd388a87096269fbe0915e
+
+Procedural argument semantics additionally follow static-filtering-parser.js and
+contentscript-extra.js at the pinned commit. The local Kotlin parser compiles a
+data-only subset; the WebView runner uses targeted observers, reversible effects
+and cached-subject invalidation. Optional native-browser differential tests use
+an externally supplied copy of that upstream runtime.

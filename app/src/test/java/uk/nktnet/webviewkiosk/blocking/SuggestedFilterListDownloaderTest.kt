@@ -65,8 +65,107 @@ class SuggestedFilterListDownloaderTest {
         )
 
     @Test
+    fun confirmationBatchAddsOnlyTheRequestedMissingDefaults() {
+        val requested = SuggestedFilterLists.defaults.take(2)
+        val first =
+            store.importFrom(
+                "Already added",
+                "||ads.example^".byteInputStream(),
+                requested.first().url,
+                FilterListType.URL,
+            )
+        assertEquals(
+            SuggestedFilterLists.defaults.drop(1),
+            SuggestedFilterLists.missingDefaults(store.list()),
+        )
+        val requests = AtomicInteger()
+        val result =
+            downloader(
+                    requests = requests,
+                    suggestion = requested[1],
+                )
+                .downloadDefaults(store, requested)
+        assertEquals(1, requests.get())
+        assertEquals(1, result.updated)
+        assertEquals(1, result.total)
+        assertEquals(
+            listOf(first.sourceUrl, requested[1].url),
+            store.list().map { it.sourceUrl },
+        )
+    }
+
+    @Test
+    fun annoyancePresetsAreTrustedOnlyAfterDownloadAndStayOutOfDefaults() {
+        val suggestion =
+            SuggestedFilterLists.all.first {
+                it.name == "uBlock Annoyances - Cookies"
+            }
+        assertEquals(9, SuggestedFilterLists.defaults.size)
+        assertFalse(suggestion in SuggestedFilterLists.defaults)
+        val text = "site.example##+js(trusted-click-element, #reject)"
+        val imported =
+            downloader(content = text, suggestion = suggestion)
+                .download(
+                    suggestion,
+                    FilterListStore(RuntimeEnvironment.getApplication()),
+                )
+        assertTrue(imported.trusted)
+    }
+
+    @Test
+    fun onlyFreshApprovedPresetDownloadsCarryTrustedProvenance() {
+        val text =
+            "||ads.example^\n" +
+                "site.example##+js(trusted-prevent-xhr, ads, literal response)"
+        val ublock = SuggestedFilterLists.all.first { it.name == "uBlock Ads" }
+        // Metadata alone does not attest that stored bytes passed the loader.
+        val legacy =
+            store.importFrom(
+                "Legacy",
+                text.byteInputStream(),
+                ublock.url,
+                FilterListType.PRESET,
+            )
+        assertFalse(legacy.trusted)
+        assertFalse(store.enabledSources().single().trusted)
+        val refreshed =
+            downloader(content = text, suggestion = ublock).refresh(legacy, store)
+        assertTrue(refreshed.trusted)
+        assertTrue(store.list().single().trusted)
+        assertTrue(store.enabledSources().single().trusted)
+        val easy = SuggestedFilterLists.all.first { it.name == "EasyList" }
+        val ordinary =
+            downloader(content = text, suggestion = easy).download(easy, store)
+        assertFalse(ordinary.trusted)
+        val custom = store.importFrom("Custom", text.byteInputStream(), ublock.url)
+        assertFalse(custom.trusted)
+        assertFalse(store.enabledSources().last().trusted)
+        assertThrows(IllegalArgumentException::class.java) {
+            store.importFrom(
+                "Spoofed",
+                text.byteInputStream(),
+                ublock.url,
+                trusted = true,
+            )
+        }
+    }
+
+    @Test
+    fun trustedOnlyPresetPassesValidationAndIsCountedAsExecutable() {
+        val validatedStore = FilterListStore(RuntimeEnvironment.getApplication())
+        val text = "site.example##+js(trusted-prevent-xhr, ads, literal response)"
+        val imported = downloader(content = text).download(preset, validatedStore)
+        assertTrue(imported.trusted)
+        assertEquals(1, validatedStore.info(imported.id).scriptletRules)
+        assertEquals(0, validatedStore.info(imported.id).unsupportedRules)
+        assertThrows(IllegalArgumentException::class.java) {
+            validatedStore.importFrom("Custom", text.byteInputStream())
+        }
+    }
+
+    @Test
     fun officialUBlockIncludesResolveSameOriginAndSkipInactiveBranches() {
-        val ublock = SuggestedFilterLists.all[3]
+        val ublock = SuggestedFilterLists.all.first { it.name == "uBlock Ads" }
         val requested = mutableListOf<String>()
         val contents =
             mapOf(
@@ -163,10 +262,18 @@ class SuggestedFilterListDownloaderTest {
     fun suggestionsAreLinksNotBundledLists() {
         assertEquals(
             listOf(
+                "uBlock Ads",
+                "uBlock Privacy",
+                "uBlock Badware",
+                "uBlock Quick fixes",
+                "uBlock Unbreak",
+                "uBlock Annoyances - Cookies",
+                "uBlock Annoyances - Others",
                 "EasyList",
                 "EasyPrivacy",
+                "Online Malicious URL Blocklist",
+                "Peter Lowe’s Ad and tracking server list",
                 "AdGuard Base",
-                "uBlock Origin",
                 "HaGeZi Multi LIGHT",
                 "HaGeZi Multi NORMAL",
                 "HaGeZi Multi PRO",
@@ -189,14 +296,136 @@ class SuggestedFilterListDownloaderTest {
         )
         assertEquals(
             "https://filters.adtidy.org/extension/ublock/filters/2.txt",
-            SuggestedFilterLists.all[2].url,
+            SuggestedFilterLists.all.first { it.name == "AdGuard Base" }.url,
         )
         assertEquals(
             "https://ublockorigin.github.io/uAssets/filters/filters.txt",
-            SuggestedFilterLists.all[3].url,
+            SuggestedFilterLists.all.first { it.name == "uBlock Ads" }.url,
         )
         assertTrue(SuggestedFilterLists.all.all { it.url.startsWith("https://") })
         assertTrue(store.list().isEmpty())
+    }
+
+    @Test
+    fun defaultSubscriptionsSkipExtendedScopesButStillRejectMalformedRefreshes() {
+        val validatedStore = FilterListStore(RuntimeEnvironment.getApplication())
+        val inputs =
+            listOf(
+                "uBlock Quick fixes" to
+                    "||ads.example^\nf51rm.com>>##+js(nowoif, /^ [-\\d]/)\n" +
+                        "igorslab.de/community/#@#img:remove-attr(/data-.+/)",
+                "uBlock Unbreak" to
+                    "@@||needed.example^\nnijie.info/ad_log.php#@#._banner_view",
+                "Online Malicious URL Blocklist" to
+                    "||shared.example/uploads/malware.exe^\$document",
+            )
+        inputs.forEach { (name, text) ->
+            val suggestion = SuggestedFilterLists.defaults.first { it.name == name }
+            val imported =
+                downloader(content = text, suggestion = suggestion)
+                    .download(suggestion, validatedStore)
+            assertEquals(suggestion.url, imported.sourceUrl)
+        }
+        assertEquals(3, validatedStore.list().size)
+        assertEquals(inputs.map { it.second }, validatedStore.enabledTexts())
+
+        val original = validatedStore.list().first()
+        val suggestion =
+            SuggestedFilterLists.defaults.first { it.url == original.sourceUrl }
+        val malformed =
+            downloader(content = "site example##.advert", suggestion = suggestion)
+        assertThrows(IllegalArgumentException::class.java) {
+            malformed.refresh(original, validatedStore)
+        }
+        assertEquals(original, validatedStore.list().first())
+        assertEquals(inputs.map { it.second }, validatedStore.enabledTexts())
+    }
+
+    @Test
+    fun defaultsMatchUpstreamAndPreserveExistingStateAndOrder() {
+        assertEquals(
+            SuggestedFilterLists.all
+                .filterNot {
+                    it.name.startsWith("uBlock Annoyances")
+                }
+                .take(9),
+            SuggestedFilterLists.defaults,
+        )
+        val existing =
+            store.importFrom(
+                "My EasyList",
+                "||kept.example^".byteInputStream(),
+                SuggestedFilterLists.defaults[5].url,
+            )
+        store.setEnabled(existing.id, false)
+        val requested = mutableListOf<String>()
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        requested += chain.request().url.toString()
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("OK")
+                            .body(
+                                "||ads.example^"
+                                    .toResponseBody("text/plain".toMediaType())
+                            )
+                            .build()
+                    }
+                    .build()
+            )
+        val result = client.downloadDefaults(store)
+        assertEquals(8, result.updated)
+        assertEquals(8, result.total)
+        assertTrue(result.failures.isEmpty())
+        assertEquals(8, requested.distinct().size)
+        assertFalse(existing.sourceUrl in requested)
+        assertEquals(existing.copy(enabled = false), store.list().first())
+        assertEquals(9, store.list().size)
+        val second = client.downloadDefaults(store)
+        assertEquals(0, second.total)
+        assertEquals(8, requested.size)
+        assertEquals(9, store.list().size)
+    }
+
+    @Test
+    fun defaultDownloadsKeepSuccessfulListsAndRetryOnlyFailures() {
+        val failedUrl = SuggestedFilterLists.defaults[2].url
+        var fail = true
+        val requested = mutableListOf<String>()
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        requested += chain.request().url.toString()
+                        if (fail && chain.request().url.toString() == failedUrl) {
+                            throw IOException("Offline")
+                        }
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("OK")
+                            .body(
+                                "||ads.example^"
+                                    .toResponseBody("text/plain".toMediaType())
+                            )
+                            .build()
+                    }
+                    .build()
+            )
+        val first = client.downloadDefaults(store)
+        assertEquals(8, first.updated)
+        assertEquals(listOf("uBlock Badware"), first.failures.map { it.name })
+        fail = false
+        requested.clear()
+        val second = client.downloadDefaults(store)
+        assertEquals(1, second.updated)
+        assertEquals(listOf(failedUrl), requested)
+        assertEquals(9, store.list().size)
     }
 
     @Test
@@ -209,6 +438,7 @@ class SuggestedFilterListDownloaderTest {
             assertEquals(FilterListType.PRESET, imported.type)
             assertTrue(imported.enabled)
             assertTrue(store.containsPreset(suggestion.url))
+            store.remove(imported.id)
         }
     }
 
@@ -231,7 +461,7 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun manuallyAddedUBlockUrlRemainsEditableAfterAddingThePreset() {
-        val source = SuggestedFilterLists.all[3].url
+        val source = SuggestedFilterLists.all.first { it.name == "uBlock Ads" }.url
         val existing =
             store.importFrom(
                 "Custom uBlock",
@@ -248,8 +478,7 @@ class SuggestedFilterListDownloaderTest {
                 .type,
         )
 
-        downloader(suggestion = SuggestedFilterLists.all[3])
-            .download(SuggestedFilterLists.all[3], store)
+        downloader(suggestion = preset).download(preset, store)
         assertEquals(
             listOf(FilterListType.URL, FilterListType.PRESET),
             store.list().map { it.type },
@@ -259,7 +488,7 @@ class SuggestedFilterListDownloaderTest {
     @Test
     fun explicitDownloadStoresListAndSourceWithoutRequiringNativeCode() {
         val imported = downloader().download(preset, store)
-        assertEquals("EasyList.txt", imported.name)
+        assertEquals("${preset.name}.txt", imported.name)
         assertEquals(preset.url, imported.sourceUrl)
         assertTrue(imported.enabled)
         assertEquals(
@@ -691,6 +920,126 @@ class SuggestedFilterListDownloaderTest {
                 local,
             ),
             store.list(),
+        )
+    }
+
+    @Test
+    fun updateSelectionSkipsUnselectedListsAndLocalFiles() {
+        val selectedPreset =
+            store.importFrom(
+                "Preset",
+                "||old.example^".byteInputStream(),
+                preset.url,
+                FilterListType.PRESET,
+            )
+        val selectedUrl =
+            store.importFrom(
+                "URL",
+                "||old.example^".byteInputStream(),
+                "https://example.org/selected.txt",
+            )
+        val unselected =
+            store.importFrom(
+                "Unselected",
+                "||unchanged.example^".byteInputStream(),
+                "https://example.org/unselected.txt",
+            )
+        val local = store.importFrom("Local", "||local.example^".byteInputStream())
+        store.setEnabled(selectedUrl.id, false)
+        val requests = mutableListOf<String>()
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        requests += chain.request().url.toString()
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("test")
+                            .body("||updated.example^".toResponseBody())
+                            .build()
+                    }
+                    .build()
+            )
+        currentTime = 2_000L
+
+        val result =
+            client.refreshSelected(
+                store,
+                setOf(selectedPreset.id, selectedUrl.id, local.id),
+            )
+
+        assertEquals(FilterRefreshResult(2, 2, emptyList()), result)
+        assertEquals(listOf(preset.url, selectedUrl.sourceUrl), requests)
+        assertEquals(
+            listOf(
+                selectedPreset.copy(lastRefreshedAt = 2_000L, trusted = true),
+                selectedUrl.copy(lastRefreshedAt = 2_000L, enabled = false),
+                unselected,
+                local,
+            ),
+            store.list(),
+        )
+        assertEquals(
+            listOf("||updated.example^", "||unchanged.example^", "||local.example^"),
+            store.enabledTexts(),
+        )
+        assertEquals(
+            FilterRefreshResult(0, 0, emptyList()),
+            client.refreshSelected(store, emptySet()),
+        )
+        assertEquals(2, requests.size)
+    }
+
+    @Test
+    fun failedSelectedDownloadKeepsItsRulesAndContinuesToNextSelection() {
+        val bad =
+            store.importFrom(
+                "Bad",
+                "||old.example^".byteInputStream(),
+                "https://example.org/bad.txt",
+            )
+        val good =
+            store.importFrom(
+                "Good",
+                "||old.example^".byteInputStream(),
+                preset.url,
+                FilterListType.PRESET,
+            )
+        val requests = mutableListOf<String>()
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        val url = chain.request().url.toString()
+                        requests += url
+                        if (url == bad.sourceUrl) {
+                            throw IOException("Unavailable")
+                        }
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("test")
+                            .body("||updated.example^".toResponseBody())
+                            .build()
+                    }
+                    .build()
+            )
+        currentTime = 2_000L
+
+        val result = client.refreshSelected(store, setOf(bad.id, good.id))
+
+        assertEquals(2, result.total)
+        assertEquals(1, result.updated)
+        assertEquals(listOf("Bad"), result.failures.map { it.name })
+        assertEquals(listOf(bad.sourceUrl, good.sourceUrl), requests)
+        assertEquals(bad, store.list().first())
+        assertEquals(2_000L, store.list().last().lastRefreshedAt)
+        assertEquals(
+            listOf("||old.example^", "||updated.example^"),
+            store.enabledTexts(),
         )
     }
 }
