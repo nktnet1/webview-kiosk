@@ -1,0 +1,5 @@
+## Changes
+
+- Added native content blocking for ads and trackers (custom kotlin engine)
+- Supports uBlock Origin, AdGuard, EasyList and HaGeZi preset filters
+- Improved filter caching, WebView compatibility and loading behaviour

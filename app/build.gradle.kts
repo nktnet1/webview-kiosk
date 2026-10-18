@@ -20,8 +20,8 @@ android {
         applicationId = "uk.nktnet.webviewkiosk"
         minSdk = 21
         targetSdk = 37
-        versionCode = 136
-        versionName = "0.26.22"
+        versionCode = 137
+        versionName = "0.26.23"
         buildConfigField("int", "MIN_SDK_VERSION", "$minSdk")
     }
 
