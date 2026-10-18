@@ -50,13 +50,14 @@ internal object ScriptletScopes {
                 escaped = false
                 continue
             }
-            when {
-                char == '\\' -> escaped = true
-                char == '/' &&
+            when (char) {
+                '\\' -> escaped = true
+                '/' if
                     (regex ||
                         index == start ||
-                        index == start + 1 && value[start] == '~') -> regex = !regex
-                char == ',' && !regex -> {
+                        index == start + 1 && value[start] == '~')
+                 -> regex = !regex
+                ',' if !regex -> {
                     entries += value.substring(start, index)
                     start = index + 1
                 }
