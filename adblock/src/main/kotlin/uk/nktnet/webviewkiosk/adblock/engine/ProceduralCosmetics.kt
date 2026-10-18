@@ -354,7 +354,7 @@ internal object ProceduralCosmetics {
                 }
             }
             require(!Regex("\\bid\\s*\\(").containsMatchIn(expression))
-            require(expression.none { it in "${'$'}{};\\" })
+            require(expression.none { it in $$"${};\\" })
             return value
         }
 

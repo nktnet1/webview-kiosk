@@ -32,25 +32,24 @@ internal object ScriptletRouting {
             rule.domains.includedEntities.forEach {
                 routes += ScriptletBucket.ENTITY to it
             }
-            for (target in rule.targets) {
-                if (target.excluded) {
+            for ((host, _, regex, entity, ancestor, excluded) in rule.targets) {
+                if (excluded) {
                     continue
                 }
                 val bucket =
                     when {
-                        target.regex -> ScriptletBucket.REGEX
-                        target.ancestor && target.entity ->
-                            ScriptletBucket.ANCESTOR_ENTITY
-                        target.ancestor -> ScriptletBucket.ANCESTOR_HOST
-                        target.entity -> ScriptletBucket.ENTITY
+                        regex -> ScriptletBucket.REGEX
+                        ancestor && entity -> ScriptletBucket.ANCESTOR_ENTITY
+                        ancestor -> ScriptletBucket.ANCESTOR_HOST
+                        entity -> ScriptletBucket.ENTITY
                         else -> ScriptletBucket.HOST
                     }
                 routes +=
                     bucket to
-                        if (target.regex) {
+                        if (regex) {
                             ""
                         } else {
-                            target.host
+                            host
                         }
             }
             for ((bucket, key) in routes) {

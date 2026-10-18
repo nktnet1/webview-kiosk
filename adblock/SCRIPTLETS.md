@@ -127,7 +127,7 @@ all upstream options. ⚠️ means a provider-dependent feature. ❌ means skipp
 Unknown arguments discard the whole instruction. There is no approximate fallback.
 
 | Status | Names / families                            | Implemented subset                                                                                                                     |
-| ------ | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+|--------|---------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
 | ✅     | `set`, `set-constant`                       | Dotted property, predefined value or integer ±32767                                                                                    |
 | ✅     | `aopr`, `aopw`                              | Nested/missing/replaced owners; shared property traps                                                                                  |
 | ✅     | `aost`                                      | Property, bounded normalized stack pattern, optional negation                                                                          |
@@ -170,7 +170,7 @@ Unknown arguments discard the whole instruction. There is no approximate fallbac
 | ✅     | `mpegdash-prune`                            | XHR MPD Period durations/starts; fully timed manifests only                                                                            |
 | ✅     | JSON/JSONL response editors                 | Bounded JSONPath selectors, indexes, unions, filters, regexes, guarded query chains, Fetch/XHR predicates and JSONL capture extraction |
 | ✅     | Request-body and object editors             | String request bodies and method/property/element hooks; trusted data directives above                                                 |
-| ❌ | Remaining editing forms | Arbitrary expressions and accessor-defined JSON data |
+| ❌     | Remaining editing forms                     | Arbitrary expressions and accessor-defined JSON data                                                                                   |
 | ❌     | Debug/close-window                          | Deliberate debugger exclusion and no native window lifecycle                                                                           |
 
 The safe constant set is empty string, undefined/null, booleans, empty arrays or
@@ -311,12 +311,12 @@ and included in aggregate/per-source cache identity. Failed refreshes retain the
 prior bytes and trust. This is provenance policy, not signature verification.
 
 | Trusted operation                                                    | Supported subset                                                                                      |
-| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+|----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
 | `trusted-prevent-fetch`, `trusted-prevent-xhr`                       | URL/method predicate and literal/empty body; WAR, generated-length and random-body directives skipped |
-| `trusted-replace-fetch-response`, `trusted-replace-xhr-response` | Safe regexes, including `g` |
-| `trusted-set-local-storage-item`, `trusted-set-session-storage-item` | Literals/date tokens |
+| `trusted-replace-fetch-response`, `trusted-replace-xhr-response`     | Safe regexes, including `g`                                                                           |
+| `trusted-set-local-storage-item`, `trusted-set-session-storage-item` | Literals/date tokens                                                                                  |
 | `trusted-set-cookie`, `trusted-set-cookie-reload`                    | Name, literal string and root/none path; dynamic, expiry and domain extras skipped                    |
-| `trusted-set-constant` / `trusted-set` | Data constants plus `runAt` and `as` options above |
+| `trusted-set-constant` / `trusted-set`                               | Data constants plus `runAt` and `as` options above                                                    |
 | `trusted-set-attr`                                                   | Safe selector, explicitly allowed attribute and literal value; all other attributes skipped           |
 
 Trusted constants remain locked across type changes. JSON parsing never evaluates
