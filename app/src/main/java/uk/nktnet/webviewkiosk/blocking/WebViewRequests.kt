@@ -71,10 +71,18 @@ private constructor(
     companion object {
         private const val BRIDGE = "wkRequestRules"
 
+        internal fun shouldInstall(
+            service: ContentBlockingService,
+            javaScriptEnabled: Boolean,
+        ): Boolean = javaScriptEnabled && service.hasActiveRules
+
         fun attach(
             webView: WebView,
             service: ContentBlockingService,
         ): WebViewRequests? {
+            if (!shouldInstall(service, webView.settings.javaScriptEnabled)) {
+                return null
+            }
             var binding: WebViewRequests? = null
             return try {
                 if (

@@ -46,6 +46,21 @@ class WebViewRequestsTest {
     }
 
     @Test
+    fun requestHooksRequireJavaScriptAndAnActiveList() {
+        assertTrue(WebViewRequests.shouldInstall(service, true))
+        assertFalse(WebViewRequests.shouldInstall(service, false))
+
+        service.setEnabled(false)
+        assertFalse(WebViewRequests.shouldInstall(service, true))
+
+        service.setEnabled(true)
+        val store = FilterListStore(RuntimeEnvironment.getApplication())
+        store.remove(store.list().map { it.id }.toSet())
+        service.reload()
+        assertFalse(WebViewRequests.shouldInstall(service, true))
+    }
+
+    @Test
     fun pageHooksUseLivePolicyAndTheCallingFramesContext() {
         assertTrue(
             rules.shouldBlock(

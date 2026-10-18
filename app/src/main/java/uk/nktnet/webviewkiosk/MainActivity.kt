@@ -74,7 +74,6 @@ import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.auth.CustomAuthPasswordDialog
-import uk.nktnet.webviewkiosk.ui.components.common.MinimumLoadingState
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.ClientCertificateInstaller
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
@@ -253,8 +252,6 @@ open class MainActivity : AppCompatActivity() {
             val blocker = remember { ContentBlockingService.get(applicationContext) }
             val ruleLoadStage by blocker.loadStage.collectAsState()
             val rulesReady by blocker.initialLoadComplete.collectAsState()
-            val startupLoading = remember { MinimumLoadingState() }
-            val displayedStartupMessage by startupLoading.message.collectAsState()
             val startupMessage =
                 if (webViewReady) {
                     null
@@ -263,14 +260,6 @@ open class MainActivity : AppCompatActivity() {
                 } else {
                     ruleLoadStage?.description ?: "Preparing content blocking…"
                 }
-            LaunchedEffect(startupMessage) {
-                if (startupMessage != null) {
-                    startupLoading.show(startupMessage)
-                } else {
-                    startupLoading.hide()
-                }
-            }
-
             KeepScreenOnOption()
 
             val waitingForUnlock by
@@ -467,9 +456,7 @@ open class MainActivity : AppCompatActivity() {
                                 CustomAuthPasswordDialog()
                             }
                             if (handlesApplicationEvents) {
-                                if (
-                                    webViewReady && displayedStartupMessage == null
-                                ) {
+                                if (webViewReady) {
                                     // Avoid racing the first WebView constructor
                                     // against native startup.
                                     // Keep the controller alive while the provider
@@ -489,9 +476,7 @@ open class MainActivity : AppCompatActivity() {
                                         ) {
                                             CircularProgressIndicator()
                                             Text(
-                                                startupMessage
-                                                    ?: displayedStartupMessage
-                                                        .orEmpty(),
+                                                startupMessage.orEmpty(),
                                                 style =
                                                     MaterialTheme.typography
                                                         .bodyMedium,

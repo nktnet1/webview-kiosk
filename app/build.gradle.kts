@@ -71,6 +71,9 @@ android {
     }
 
     packaging {
+        // Retain native symbols for reproducible APK packaging.
+        jniLibs.keepDebugSymbols.add("**/*.so")
+
         resources {
             excludes +=
                 listOf(

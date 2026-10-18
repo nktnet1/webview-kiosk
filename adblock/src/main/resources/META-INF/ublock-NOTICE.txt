@@ -40,7 +40,7 @@ Other shim source bytes are unchanged. amazon_apstag.js and chartbeat.js,
 noop.json, noop-0.1s.mp3, noop-1s.mp4 and 32x32.png are additionally bundled for
 network redirects; their upstream source bytes/notices are retained.
 Implementation modules are bundled. Trusted node-text/HTML parameters can alter
-executable page content under the provenance policy documented in SCRIPTLETS.md.
+executable page content under the provenance policy documented in adblock/docs/SCRIPTLETS.md.
 
 Upstream source:
 https://github.com/gorhill/uBlock/tree/dfca51bea2b8605353547f605e9cffbb6dfa0789/src
