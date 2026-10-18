@@ -19,14 +19,14 @@ Most skipped entries are **not implemented yet**. Their absence does not establi
 WebView limitation. The reasons below distinguish missing work from platform constraints.
 Supported entries also reject unimplemented argument forms rather than approximating them.
 
-| Reason | Examples | What would be needed |
-| --- | --- | --- |
-| Argument subsets | Remaining JSONPath forms and accessor-based data | Correct bounded semantics without invoking site getters |
-| Eval semantics | `evaldata-prune` | A transparent direct-eval contract for unrelated calls |
-| Native integration | `close-window` | A native window lifecycle and a defined kiosk close policy |
-| Deliberate exclusion | Debug helpers | Debugger hooks are not installed in the production blocker |
-| Provider capability | Document start | `DOCUMENT_START_SCRIPT`; late injection cannot intercept earlier page scripts |
-| Provider capability | `prevent-navigation` | Native Navigation API |
+| Reason               | Examples                                         | What would be needed                                                          |
+| -------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Argument subsets     | Remaining JSONPath forms and accessor-based data | Correct bounded semantics without invoking site getters                       |
+| Eval semantics       | `evaldata-prune`                                 | A transparent direct-eval contract for unrelated calls                        |
+| Native integration   | `close-window`                                   | A native window lifecycle and a defined kiosk close policy                    |
+| Deliberate exclusion | Debug helpers                                    | Debugger hooks are not installed in the production blocker                    |
+| Provider capability  | Document start                                   | `DOCUMENT_START_SCRIPT`; late injection cannot intercept earlier page scripts |
+| Provider capability  | `prevent-navigation`                             | Native Navigation API                                                         |
 
 Fresh approved uBlock preset downloads now carry trusted provenance. A custom list,
 matching source URL or directive does not gain trust. Trusted editors, pruning, clipboard protection and IMA DAI have
@@ -42,137 +42,137 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 
 ## Canonical entries
 
-| Canonical name | Status / contract or reason |
-| --- | --- |
-| `abort-current-script.js` | ✅ current-script |
-| `set-attr.js` | ✅ attributes |
-| `trusted-set-attr.js` | ✅ trusted safe attribute / literal value |
-| `remove-attr.js` | ✅ attributes |
-| `trusted-create-html.js` | ✅ trusted bounded HTML; top frame only |
-| `href-sanitizer.js` | ✅ links |
-| `proxy-apply-config.js` | ❌ configuration/debug |
-| `edit-outbound-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `trusted-edit-outbound-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `json-edit.js` | ✅ bounded JSONPath subset; see argument contract |
-| `trusted-json-edit.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `edit-inbound-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `trusted-edit-inbound-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `edit-this-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `trusted-edit-this-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `edit-object-on-getter.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `trusted-edit-object-on-getter.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `edit-object-on-setter.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `trusted-edit-object-on-setter.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `edit-element-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `trusted-edit-element-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `json-edit-xhr-response.js` | ✅ bounded JSONPath subset; see argument contract |
-| `trusted-json-edit-xhr-response.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `json-edit-xhr-request.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `trusted-json-edit-xhr-request.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `json-edit-fetch-response.js` | ✅ bounded JSONPath subset; see argument contract |
-| `trusted-json-edit-fetch-response.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `trusted-edit-inbound-element.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `json-edit-fetch-request.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `trusted-json-edit-fetch-request.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `jsonl-edit-xhr-response.js` | ✅ bounded JSONPath subset; see argument contract |
-| `trusted-jsonl-edit-xhr-response.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `jsonl-edit-fetch-response.js` | ✅ bounded JSONPath subset; see argument contract |
-| `trusted-jsonl-edit-fetch-response.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `abort-on-stack-trace.js` | ✅ stack |
-| `trusted-prune-inbound-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `trusted-prune-outbound-object.js` | ✅ validated editing subset; see SCRIPTLETS.md |
-| `json-prune.js` | ✅ json |
-| `json-prune-fetch-response.js` | ✅ bounded response pruning |
-| `json-prune-xhr-response.js` | ✅ bounded response pruning |
-| `evaldata-prune.js` | ❌ general eval interception changes direct-eval scope |
-| `noeval-if.js` | ✅ eval |
-| `prevent-addEventListener.js` | ✅ listeners |
-| `prevent-bab.js` | ✅ BAB |
-| `prevent-clipboard-write.js` | ✅ requires trust; match/exclude; no alert UI |
-| `prevent-dialog.js` | ✅ dialog |
-| `prevent-fetch.js` | ✅ fetch |
-| `trusted-prevent-fetch.js` | ✅ trusted literal response |
-| `freeze-element-property.js` | ✅ freeze |
-| `prevent-innerHTML.js` | ✅ freeze |
-| `prevent-navigation.js` | ⚠️ Navigation API |
-| `prevent-setTimeout.js` | ✅ timers |
-| `prevent-setInterval.js` | ✅ timers |
-| `prevent-requestAnimationFrame.js` | ✅ animation |
-| `set-constant.js` | ✅ constants |
-| `trusted-set-constant.js` | ✅ trusted bounded JSON constant |
-| `trusted-replace-argument.js` | ✅ trusted bounded argument/receiver replacement |
-| `spoof-css.js` | ✅ style |
-| `prevent-xhr.js` | ✅ bounded native XHR emulation |
-| `trusted-prevent-xhr.js` | ✅ trusted literal response |
-| `mpegdash-prune.js` | ✅ bounded fully timed XHR MPD Periods |
-| `set-cookie.js` | ✅ cookies |
-| `set-cookie-reload.js` | ✅ cookies |
-| `trusted-set-cookie.js` | ✅ trusted literal cookie |
-| `trusted-set-cookie-reload.js` | ✅ trusted literal cookie / reload |
-| `remove-cookie.js` | ✅ cookies |
-| `set-local-storage-item.js` | ✅ storage |
-| `set-session-storage-item.js` | ✅ storage |
-| `trusted-set-local-storage-item.js` | ✅ trusted literal storage |
-| `trusted-set-session-storage-item.js` | ✅ trusted literal storage |
-| `abort-on-property-read.js` | ✅ properties |
-| `abort-on-property-write.js` | ✅ properties |
-| `adjust-setInterval.js` | ✅ boosters |
-| `adjust-setTimeout.js` | ✅ boosters |
-| `prevent-refresh.js` | ✅ refresh |
-| `remove-class.js` | ✅ classes |
-| `webrtc-if.js` | ✅ webrtc |
-| `prevent-window-open.js` | ✅ window-open |
-| `close-window.js` | ❌ native window adapter |
-| `window.name-defuser.js` | ✅ name |
-| `overlay-buster.js` | ✅ bounded shared observer / no polling |
-| `alert-buster.js` | ✅ alert |
-| `nowebrtc.js` | ✅ webrtc |
-| `disable-newtab-links.js` | ✅ links |
-| `xml-prune.js` | ✅ bounded CSS element pruning |
-| `m3u-prune.js` | ✅ HLS EXTINF segment pruning |
-| `call-nothrow.js` | ✅ calls |
-| `remove-node-text.js` | ✅ node-text |
-| `prevent-canvas.js` | ✅ canvas |
-| `multiup.js` | ✅ multiup |
-| `break-on-call.js` | ❌ debugger |
-| `trusted-replace-node-text.js` | ✅ trusted bounded node-text replacement |
-| `trusted-replace-fetch-response.js` | ✅ trusted bounded response text |
-| `trusted-replace-xhr-response.js` | ✅ trusted bounded response text |
-| `trusted-click-element.js` | ✅ trusted bounded CSS/shadow-root steps |
-| `trusted-replace-outbound-text.js` | ✅ trusted bounded returned text/base64 |
-| `trusted-suppress-native-method.js` | ✅ trusted primitive signatures and stack predicate |
-| `trusted-prevent-dom-bypass.js` | ✅ selected APIs in anonymous same-origin frames |
-| `trusted-override-element-method.js` | ✅ trusted selector and constant/throw disposition |
-| `amazon_ads.js` | ✅ fixed API shim |
-| `amazon_apstag.js` | ↪️ bundled `$redirect`; upstream has no `+js` entry |
-| `ampproject_v0.js` | ↪️ bundled redirect; no equivalent inline context |
-| `adthrive_abd.js` | ✅ fixed API shim |
-| `chartbeat.js` | ↪️ bundled `$redirect`; upstream has no `+js` entry |
-| `doubleclick_instream_ad_status.js` | ✅ fixed API shim |
-| `fingerprint2.js` | ✅ fixed API shim |
-| `fingerprint3.js` | ✅ fixed API shim |
-| `google-analytics_analytics.js` | ✅ fixed API shim |
-| `google-analytics_cx_api.js` | ↪️ bundled redirect-only resource; no `+js` eligibility |
-| `google-analytics_ga.js` | ✅ fixed API shim |
-| `google-analytics_inpage_linkid.js` | ↪️ bundled redirect-only resource; no `+js` eligibility |
-| `google-ima.js` | ✅ fixed media API shim; event/callback lifecycle tested |
-| `google-ima-dai.js` | ✅ trusted fixed stream API shim; redirect and inline |
-| `googlesyndication_adsbygoogle.js` | ✅ fixed iframe API shim; bounded subtree observer |
-| `googletagservices_gpt.js` | ✅ fixed API shim |
-| `hd-main.js` | ↪️ bundled redirect; no equivalent inline context |
-| `nitropay_ads.js` | ✅ fixed API shim |
-| `nobab2.js` | ↪️ bundled redirect; no equivalent inline context |
-| `noeval.js` | ✅ eval-all |
-| `noeval-silent.js` | ✅ eval-all |
-| `nofab.js` | ✅ fixed API shim |
-| `noop.js` | ❌ no blocking behavior |
-| `outbrain-widget.js` | ↪️ bundled redirect; no equivalent inline context |
-| `piano-analytics.js` | ↪️ bundled `$redirect`; upstream has no `+js` entry |
-| `popads.js` | ✅ fixed API shim |
-| `popads-dummy.js` | ✅ fixed API shim |
-| `prebid-ads.js` | ✅ fixed API shim |
-| `scorecardresearch_beacon.js` | ↪️ bundled redirect-only resource; no `+js` eligibility |
-| `sensors-analytics.js` | ✅ fixed API shim |
+| Canonical name                         | Status / contract or reason                              |
+| -------------------------------------- | -------------------------------------------------------- |
+| `abort-current-script.js`              | ✅ current-script                                        |
+| `set-attr.js`                          | ✅ attributes                                            |
+| `trusted-set-attr.js`                  | ✅ trusted safe attribute / literal value                |
+| `remove-attr.js`                       | ✅ attributes                                            |
+| `trusted-create-html.js`               | ✅ trusted bounded HTML; top frame only                  |
+| `href-sanitizer.js`                    | ✅ links                                                 |
+| `proxy-apply-config.js`                | ❌ configuration/debug                                   |
+| `edit-outbound-object.js`              | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `trusted-edit-outbound-object.js`      | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `json-edit.js`                         | ✅ bounded JSONPath subset; see argument contract        |
+| `trusted-json-edit.js`                 | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `edit-inbound-object.js`               | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `trusted-edit-inbound-object.js`       | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `edit-this-object.js`                  | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `trusted-edit-this-object.js`          | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `edit-object-on-getter.js`             | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `trusted-edit-object-on-getter.js`     | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `edit-object-on-setter.js`             | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `trusted-edit-object-on-setter.js`     | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `edit-element-object.js`               | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `trusted-edit-element-object.js`       | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `json-edit-xhr-response.js`            | ✅ bounded JSONPath subset; see argument contract        |
+| `trusted-json-edit-xhr-response.js`    | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `json-edit-xhr-request.js`             | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `trusted-json-edit-xhr-request.js`     | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `json-edit-fetch-response.js`          | ✅ bounded JSONPath subset; see argument contract        |
+| `trusted-json-edit-fetch-response.js`  | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `trusted-edit-inbound-element.js`      | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `json-edit-fetch-request.js`           | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `trusted-json-edit-fetch-request.js`   | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `jsonl-edit-xhr-response.js`           | ✅ bounded JSONPath subset; see argument contract        |
+| `trusted-jsonl-edit-xhr-response.js`   | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `jsonl-edit-fetch-response.js`         | ✅ bounded JSONPath subset; see argument contract        |
+| `trusted-jsonl-edit-fetch-response.js` | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `abort-on-stack-trace.js`              | ✅ stack                                                 |
+| `trusted-prune-inbound-object.js`      | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `trusted-prune-outbound-object.js`     | ✅ validated editing subset; see SCRIPTLETS.md           |
+| `json-prune.js`                        | ✅ json                                                  |
+| `json-prune-fetch-response.js`         | ✅ bounded response pruning                              |
+| `json-prune-xhr-response.js`           | ✅ bounded response pruning                              |
+| `evaldata-prune.js`                    | ❌ general eval interception changes direct-eval scope   |
+| `noeval-if.js`                         | ✅ eval                                                  |
+| `prevent-addEventListener.js`          | ✅ listeners                                             |
+| `prevent-bab.js`                       | ✅ BAB                                                   |
+| `prevent-clipboard-write.js`           | ✅ requires trust; match/exclude; no alert UI            |
+| `prevent-dialog.js`                    | ✅ dialog                                                |
+| `prevent-fetch.js`                     | ✅ fetch                                                 |
+| `trusted-prevent-fetch.js`             | ✅ trusted literal response                              |
+| `freeze-element-property.js`           | ✅ freeze                                                |
+| `prevent-innerHTML.js`                 | ✅ freeze                                                |
+| `prevent-navigation.js`                | ⚠️ Navigation API                                        |
+| `prevent-setTimeout.js`                | ✅ timers                                                |
+| `prevent-setInterval.js`               | ✅ timers                                                |
+| `prevent-requestAnimationFrame.js`     | ✅ animation                                             |
+| `set-constant.js`                      | ✅ constants                                             |
+| `trusted-set-constant.js`              | ✅ trusted bounded JSON constant                         |
+| `trusted-replace-argument.js`          | ✅ trusted bounded argument/receiver replacement         |
+| `spoof-css.js`                         | ✅ style                                                 |
+| `prevent-xhr.js`                       | ✅ bounded native XHR emulation                          |
+| `trusted-prevent-xhr.js`               | ✅ trusted literal response                              |
+| `mpegdash-prune.js`                    | ✅ bounded fully timed XHR MPD Periods                   |
+| `set-cookie.js`                        | ✅ cookies                                               |
+| `set-cookie-reload.js`                 | ✅ cookies                                               |
+| `trusted-set-cookie.js`                | ✅ trusted literal cookie                                |
+| `trusted-set-cookie-reload.js`         | ✅ trusted literal cookie / reload                       |
+| `remove-cookie.js`                     | ✅ cookies                                               |
+| `set-local-storage-item.js`            | ✅ storage                                               |
+| `set-session-storage-item.js`          | ✅ storage                                               |
+| `trusted-set-local-storage-item.js`    | ✅ trusted literal storage                               |
+| `trusted-set-session-storage-item.js`  | ✅ trusted literal storage                               |
+| `abort-on-property-read.js`            | ✅ properties                                            |
+| `abort-on-property-write.js`           | ✅ properties                                            |
+| `adjust-setInterval.js`                | ✅ boosters                                              |
+| `adjust-setTimeout.js`                 | ✅ boosters                                              |
+| `prevent-refresh.js`                   | ✅ refresh                                               |
+| `remove-class.js`                      | ✅ classes                                               |
+| `webrtc-if.js`                         | ✅ webrtc                                                |
+| `prevent-window-open.js`               | ✅ window-open                                           |
+| `close-window.js`                      | ❌ native window adapter                                 |
+| `window.name-defuser.js`               | ✅ name                                                  |
+| `overlay-buster.js`                    | ✅ bounded shared observer / no polling                  |
+| `alert-buster.js`                      | ✅ alert                                                 |
+| `nowebrtc.js`                          | ✅ webrtc                                                |
+| `disable-newtab-links.js`              | ✅ links                                                 |
+| `xml-prune.js`                         | ✅ bounded CSS element pruning                           |
+| `m3u-prune.js`                         | ✅ HLS EXTINF segment pruning                            |
+| `call-nothrow.js`                      | ✅ calls                                                 |
+| `remove-node-text.js`                  | ✅ node-text                                             |
+| `prevent-canvas.js`                    | ✅ canvas                                                |
+| `multiup.js`                           | ✅ multiup                                               |
+| `break-on-call.js`                     | ❌ debugger                                              |
+| `trusted-replace-node-text.js`         | ✅ trusted bounded node-text replacement                 |
+| `trusted-replace-fetch-response.js`    | ✅ trusted bounded response text                         |
+| `trusted-replace-xhr-response.js`      | ✅ trusted bounded response text                         |
+| `trusted-click-element.js`             | ✅ trusted bounded CSS/shadow-root steps                 |
+| `trusted-replace-outbound-text.js`     | ✅ trusted bounded returned text/base64                  |
+| `trusted-suppress-native-method.js`    | ✅ trusted primitive signatures and stack predicate      |
+| `trusted-prevent-dom-bypass.js`        | ✅ selected APIs in anonymous same-origin frames         |
+| `trusted-override-element-method.js`   | ✅ trusted selector and constant/throw disposition       |
+| `amazon_ads.js`                        | ✅ fixed API shim                                        |
+| `amazon_apstag.js`                     | ↪️ bundled `$redirect`; upstream has no `+js` entry      |
+| `ampproject_v0.js`                     | ↪️ bundled redirect; no equivalent inline context        |
+| `adthrive_abd.js`                      | ✅ fixed API shim                                        |
+| `chartbeat.js`                         | ↪️ bundled `$redirect`; upstream has no `+js` entry      |
+| `doubleclick_instream_ad_status.js`    | ✅ fixed API shim                                        |
+| `fingerprint2.js`                      | ✅ fixed API shim                                        |
+| `fingerprint3.js`                      | ✅ fixed API shim                                        |
+| `google-analytics_analytics.js`        | ✅ fixed API shim                                        |
+| `google-analytics_cx_api.js`           | ↪️ bundled redirect-only resource; no `+js` eligibility  |
+| `google-analytics_ga.js`               | ✅ fixed API shim                                        |
+| `google-analytics_inpage_linkid.js`    | ↪️ bundled redirect-only resource; no `+js` eligibility  |
+| `google-ima.js`                        | ✅ fixed media API shim; event/callback lifecycle tested |
+| `google-ima-dai.js`                    | ✅ trusted fixed stream API shim; redirect and inline    |
+| `googlesyndication_adsbygoogle.js`     | ✅ fixed iframe API shim; bounded subtree observer       |
+| `googletagservices_gpt.js`             | ✅ fixed API shim                                        |
+| `hd-main.js`                           | ↪️ bundled redirect; no equivalent inline context        |
+| `nitropay_ads.js`                      | ✅ fixed API shim                                        |
+| `nobab2.js`                            | ↪️ bundled redirect; no equivalent inline context        |
+| `noeval.js`                            | ✅ eval-all                                              |
+| `noeval-silent.js`                     | ✅ eval-all                                              |
+| `nofab.js`                             | ✅ fixed API shim                                        |
+| `noop.js`                              | ❌ no blocking behavior                                  |
+| `outbrain-widget.js`                   | ↪️ bundled redirect; no equivalent inline context        |
+| `piano-analytics.js`                   | ↪️ bundled `$redirect`; upstream has no `+js` entry      |
+| `popads.js`                            | ✅ fixed API shim                                        |
+| `popads-dummy.js`                      | ✅ fixed API shim                                        |
+| `prebid-ads.js`                        | ✅ fixed API shim                                        |
+| `scorecardresearch_beacon.js`          | ↪️ bundled redirect-only resource; no `+js` eligibility  |
+| `sensors-analytics.js`                 | ✅ fixed API shim                                        |
 
 ## Upstream aliases
 

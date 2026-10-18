@@ -31,19 +31,22 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
             rule.domains.includedEntities.forEach {
                 entities.getOrPut(it) { mutableListOf() }.add(index)
             }
-            for (target in rule.targets.filterNot { it.excluded }) {
-                if (target.regex) {
+            for ((host, _, regex, entity, ancestor) in
+                rule.targets.filterNot {
+                    it.excluded
+                }) {
+                if (regex) {
                     regexRules += index
                     continue
                 }
                 val table =
                     when {
-                        target.ancestor && target.entity -> ancestorEntities
-                        target.ancestor -> ancestorHosts
-                        target.entity -> entities
+                        ancestor && entity -> ancestorEntities
+                        ancestor -> ancestorHosts
+                        entity -> entities
                         else -> hosts
                     }
-                table.getOrPut(target.host) { mutableListOf() }.add(index)
+                table.getOrPut(host) { mutableListOf() }.add(index)
             }
         }
     }
@@ -109,8 +112,10 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
         // decode only selected instruction IDs in the document-start dispatcher.
         val instructionOffsets = linkedMapOf<ScriptletInstruction, Int>()
         val instructions = buildString {
-            for (rule in rules) {
-                val instruction = rule.instruction ?: continue
+            for ((instruction) in rules) {
+                if (instruction == null) {
+                    continue
+                }
                 if (instruction in instructionOffsets) {
                     continue
                 }
@@ -125,18 +130,17 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
         }
         val offsets = mutableListOf<Int>()
         val data = buildString {
-            for (rule in rules) {
+            for ((instruction, domains, exception, targets) in rules) {
                 offsets += length
                 append('[')
-                val instruction = rule.instruction
                 append(instruction?.let(instructionOffsets::get) ?: -1)
                 append(",null")
                 append(',')
-                strings(rule.domains.excluded)
-                append(',').append(rule.exception).append(',')
-                strings(rule.domains.excludedEntities)
+                strings(domains.excluded)
+                append(',').append(exception).append(',')
+                strings(domains.excludedEntities)
                 append(",[")
-                rule.targets.forEachIndexed { index, target ->
+                targets.forEachIndexed { index, target ->
                     if (index != 0) {
                         append(',')
                     }
@@ -152,9 +156,9 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
                         .append(']')
                 }
                 append("],")
-                strings(rule.domains.included)
+                strings(domains.included)
                 append(',')
-                strings(rule.domains.includedEntities)
+                strings(domains.includedEntities)
                 append("]\n")
                 require(length <= MAX_ROUTING_BYTES) {
                     "Scriptlet routing data exceeds 16 MiB"

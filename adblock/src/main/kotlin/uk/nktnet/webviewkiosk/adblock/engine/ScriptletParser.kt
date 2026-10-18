@@ -201,11 +201,6 @@ internal object ScriptletParser {
                 ScriptletType.PREVENT_WINDOW_OPEN ->
                     args.size <= 1 && patterns(0) && args.firstOrNull() != "debug"
 
-                ScriptletType.PREVENT_ADD_EVENT_LISTENER ->
-                    args.size in 1..2 &&
-                        args.any { it.isNotEmpty() } &&
-                        patterns(0, 1)
-
                 ScriptletType.PREVENT_SET_TIMEOUT ->
                     args.size in 1..2 &&
                         args.any { it.isNotEmpty() } &&
@@ -234,7 +229,6 @@ internal object ScriptletParser {
         val arity =
             when (type) {
                 ScriptletType.SET,
-                ScriptletType.PREVENT_ADD_EVENT_LISTENER,
                 ScriptletType.PREVENT_SET_TIMEOUT,
                 ScriptletType.JSON_PRUNE,
                 ScriptletType.PREVENT_FETCH -> 2

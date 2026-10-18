@@ -38,8 +38,10 @@ abstract class GenerateScriptletSuffixes : DefaultTask() {
                     null
                 } else {
                     ZipFile(file).use { zip ->
-                        zip.getEntry(entry)?.let {
-                            zip.getInputStream(it).use { it.readBytes() }
+                        zip.getEntry(entry)?.let { zipEntry ->
+                            zip.getInputStream(zipEntry).use { stream ->
+                                stream.readBytes()
+                            }
                         }
                     }
                 }
@@ -54,6 +56,8 @@ abstract class GenerateScriptletSuffixes : DefaultTask() {
 val suffixResources = layout.buildDirectory.dir("generated/scriptlet-suffixes")
 val generateScriptletSuffixes =
     tasks.register<GenerateScriptletSuffixes>("generateScriptletSuffixes") {
+        group = "build"
+        description = "Extract OkHttp's public suffix list for scriptlet routing."
         suffixClasspath.from(configurations.runtimeClasspath)
         destination.set(suffixResources.map { it.file("adblock/publicsuffix.list") })
     }

@@ -81,52 +81,52 @@ Support for a name does not imply support for all its upstream argument forms.
 all upstream options. ⚠️ means a provider-dependent feature. ❌ means skipped.
 Unknown arguments discard the whole instruction. There is no approximate fallback.
 
-| Status | Names / families | Implemented subset |
-| --- | --- | --- |
-| ✅ | `set`, `set-constant` | Dotted property, predefined value or integer ±32767 |
-| ✅ | `aopr`, `aopw` | Nested/missing/replaced owners; shared property traps |
-| ✅ | `aost` | Property, bounded normalized stack pattern, optional negation |
-| ✅ | `acs`, `acis` | Property, current-script text, optional script source pattern |
-| ✅ | `nowoif` | All calls or pattern/negation; no delayed decoys |
-| ✅ | `aeld` | Exact event name or regex, callback/handleEvent source, readiness, element scopes and hook protection |
-| ✅ | `nostif`, `nosiif` | Callback pattern, exact/range delay, negation |
-| ✅ | `norafif` | Callback pattern or negation; logging-only invocation skipped |
-| ✅ | `nano-stb`, `nano-sib` | Pattern, exact delay or `*`, finite multiplier |
-| ✅ | `noeval-if` | One nonempty pattern; native page eval pass-through otherwise |
-| ✅ | `noeval`, `noeval-silent` | Legacy no-argument prevention of all eval calls |
-| ✅ | `json-prune` | Own paths, guards, `[]`/`*`; JSON.parse and Response.json |
-| ✅ | `no-fetch-if` | URL/method predicates and safe empty canned responses |
-| ✅ | Local/session storage setters | Key plus safe value or exact/regex `$remove$` |
-| ✅ | Cookie setters/reload/removal | Safe values, validated path/reload flags, and trusted variants documented below |
-| ✅ | `set-attr` | Safe attribute, empty/boolean/integer/copy value; after load |
-| ✅ | `ra`, `rc` | Attribute/class tokens, optional selector, asap/stay/complete |
-| ✅ | `rmnt` | Node name and text pattern; parsing phase only, no replace options |
-| ✅ | `prevent-dialog` | Optional selector suffix; closes matching open dialogs |
-| ✅ | `href-sanitizer` | Selector, text/attribute/single query parameter source |
-| ✅ | `prevent-innerHTML`, freeze property | Selected DOM properties, selector, value pattern |
-| ✅ | `spoof-css` | Selector and up to three allowed style/rectangle pairs |
-| ✅ | `prevent-canvas` | Optional context-type pattern/negation |
-| ✅ | `call-nothrow` | Existing dotted function; preserves receiver, arguments, result |
-| ✅ | `window.name-defuser` | Clears top-frame name only |
-| ✅ | `disable-newtab-links` | Removes target and cancels matching anchor clicks |
-| ✅ | `prevent-refresh` | Meta refresh stop after load; optional immediate behavior |
-| ✅ | `nowebrtc`, `webrtc-if` | Native API prevention or bounded ICE allow-pattern |
-| ✅ | `nobab` | Upstream BAB eval signatures and timeout signature |
-| ✅ | `alert-buster` | Defuses alert; confirm and prompt retain native behavior |
-| ✅ | `multiup` | Direct form button link navigation, HTTP(S) destinations only |
-| ✅ | Seventeen fixed API shims | No filter arguments; includes IMA lifecycle callbacks; see catalogue for exact names |
-| ⚠️ | `prevent-navigation` | Requires native Navigation API and cancelable automatic events |
-| ✅ | `no-xhr-if` / `prevent-xhr` | URL/method predicates, canned responses and native instances |
-| ✅ | JSON Fetch/XHR pruning | Own paths, guards, URL/method and optional stack predicates |
-| ✅ | Trusted operations and clipboard protection | Approved download provenance and contracts below |
-| ✅ | `xml-prune` | CSS or native XPath selection, optional CSS guard and URL pattern |
-| ✅ | `m3u-prune` | HLS EXTINF/URI segment pairs and following discontinuity |
-| ✅ | `overlay-buster` | Shared observer, bounded sweep and 30-second deadline |
-| ✅ | `mpegdash-prune` | XHR MPD Period durations/starts; fully timed manifests only |
-| ✅ | JSON/JSONL response editors | Bounded JSONPath selectors, indexes, unions, filters, regexes, guarded query chains, Fetch/XHR predicates and JSONL capture extraction |
-| ✅ | Request-body and object editors | String request bodies and method/property/element hooks; trusted data directives above |
-| ❌ | Remaining editing forms | Arbitrary expressions, slices and accessor-defined JSON data |
-| ❌ | Debug/close-window | Deliberate debugger exclusion and no native window lifecycle |
+| Status | Names / families                            | Implemented subset                                                                                                                     |
+| ------ | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅     | `set`, `set-constant`                       | Dotted property, predefined value or integer ±32767                                                                                    |
+| ✅     | `aopr`, `aopw`                              | Nested/missing/replaced owners; shared property traps                                                                                  |
+| ✅     | `aost`                                      | Property, bounded normalized stack pattern, optional negation                                                                          |
+| ✅     | `acs`, `acis`                               | Property, current-script text, optional script source pattern                                                                          |
+| ✅     | `nowoif`                                    | All calls or pattern/negation; no delayed decoys                                                                                       |
+| ✅     | `aeld`                                      | Exact event name or regex, callback/handleEvent source, readiness, element scopes and hook protection                                  |
+| ✅     | `nostif`, `nosiif`                          | Callback pattern, exact/range delay, negation                                                                                          |
+| ✅     | `norafif`                                   | Callback pattern or negation; logging-only invocation skipped                                                                          |
+| ✅     | `nano-stb`, `nano-sib`                      | Pattern, exact delay or `*`, finite multiplier                                                                                         |
+| ✅     | `noeval-if`                                 | One nonempty pattern; native page eval pass-through otherwise                                                                          |
+| ✅     | `noeval`, `noeval-silent`                   | Legacy no-argument prevention of all eval calls                                                                                        |
+| ✅     | `json-prune`                                | Own paths, guards, `[]`/`*`; JSON.parse and Response.json                                                                              |
+| ✅     | `no-fetch-if`                               | URL/method predicates and safe empty canned responses                                                                                  |
+| ✅     | Local/session storage setters               | Key plus safe value or exact/regex `$remove$`                                                                                          |
+| ✅     | Cookie setters/reload/removal               | Safe values, validated path/reload flags, and trusted variants documented below                                                        |
+| ✅     | `set-attr`                                  | Safe attribute, empty/boolean/integer/copy value; after load                                                                           |
+| ✅     | `ra`, `rc`                                  | Attribute/class tokens, optional selector, asap/stay/complete                                                                          |
+| ✅     | `rmnt`                                      | Node name and text pattern; parsing phase only, no replace options                                                                     |
+| ✅     | `prevent-dialog`                            | Optional selector suffix; closes matching open dialogs                                                                                 |
+| ✅     | `href-sanitizer`                            | Selector, text/attribute/single query parameter source                                                                                 |
+| ✅     | `prevent-innerHTML`, freeze property        | Selected DOM properties, selector, value pattern                                                                                       |
+| ✅     | `spoof-css`                                 | Selector and up to three allowed style/rectangle pairs                                                                                 |
+| ✅     | `prevent-canvas`                            | Optional context-type pattern/negation                                                                                                 |
+| ✅     | `call-nothrow`                              | Existing dotted function; preserves receiver, arguments, result                                                                        |
+| ✅     | `window.name-defuser`                       | Clears top-frame name only                                                                                                             |
+| ✅     | `disable-newtab-links`                      | Removes target and cancels matching anchor clicks                                                                                      |
+| ✅     | `prevent-refresh`                           | Meta refresh stop after load; optional immediate behavior                                                                              |
+| ✅     | `nowebrtc`, `webrtc-if`                     | Native API prevention or bounded ICE allow-pattern                                                                                     |
+| ✅     | `nobab`                                     | Upstream BAB eval signatures and timeout signature                                                                                     |
+| ✅     | `alert-buster`                              | Defuses alert; confirm and prompt retain native behavior                                                                               |
+| ✅     | `multiup`                                   | Direct form button link navigation, HTTP(S) destinations only                                                                          |
+| ✅     | Seventeen fixed API shims                   | No filter arguments; includes IMA lifecycle callbacks; see catalogue for exact names                                                   |
+| ⚠️     | `prevent-navigation`                        | Requires native Navigation API and cancelable automatic events                                                                         |
+| ✅     | `no-xhr-if` / `prevent-xhr`                 | URL/method predicates, canned responses and native instances                                                                           |
+| ✅     | JSON Fetch/XHR pruning                      | Own paths, guards, URL/method and optional stack predicates                                                                            |
+| ✅     | Trusted operations and clipboard protection | Approved download provenance and contracts below                                                                                       |
+| ✅     | `xml-prune`                                 | CSS or native XPath selection, optional CSS guard and URL pattern                                                                      |
+| ✅     | `m3u-prune`                                 | HLS EXTINF/URI segment pairs and following discontinuity                                                                               |
+| ✅     | `overlay-buster`                            | Shared observer, bounded sweep and 30-second deadline                                                                                  |
+| ✅     | `mpegdash-prune`                            | XHR MPD Period durations/starts; fully timed manifests only                                                                            |
+| ✅     | JSON/JSONL response editors                 | Bounded JSONPath selectors, indexes, unions, filters, regexes, guarded query chains, Fetch/XHR predicates and JSONL capture extraction |
+| ✅     | Request-body and object editors             | String request bodies and method/property/element hooks; trusted data directives above                                                 |
+| ❌     | Remaining editing forms                     | Arbitrary expressions, slices and accessor-defined JSON data                                                                           |
+| ❌     | Debug/close-window                          | Deliberate debugger exclusion and no native window lifecycle                                                                           |
 
 The safe constant set is empty string, undefined/null, booleans, empty arrays or
 objects, noop/true/false/throw functions, and bounded integers. Functions are locally
@@ -265,14 +265,14 @@ EasyList and other presets remain untrusted. Trust is persisted with saved bytes
 and included in aggregate/per-source cache identity. Failed refreshes retain the
 prior bytes and trust. This is provenance policy, not signature verification.
 
-| Trusted operation | Supported subset |
-| --- | --- |
-| `trusted-prevent-fetch`, `trusted-prevent-xhr` | URL/method predicate and literal/empty body; WAR, generated-length and random-body directives skipped |
-| `trusted-replace-fetch-response`, `trusted-replace-xhr-response` | Bounded literal/regex pattern, replacement string and optional URL/method predicate; no extras |
-| `trusted-set-local-storage-item`, `trusted-set-session-storage-item` | Key and literal string; dynamic `$...$` tokens skipped |
-| `trusted-set-cookie`, `trusted-set-cookie-reload` | Name, literal string and root/none path; dynamic, expiry and domain extras skipped |
-| `trusted-set-constant` / `trusted-set` | Safe constant, `json:` JSON or object with `value`, depth at most 16; no extras |
-| `trusted-set-attr` | Safe selector, explicitly allowed attribute and literal value; all other attributes skipped |
+| Trusted operation                                                    | Supported subset                                                                                      |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `trusted-prevent-fetch`, `trusted-prevent-xhr`                       | URL/method predicate and literal/empty body; WAR, generated-length and random-body directives skipped |
+| `trusted-replace-fetch-response`, `trusted-replace-xhr-response`     | Bounded literal/regex pattern, replacement string and optional URL/method predicate; no extras        |
+| `trusted-set-local-storage-item`, `trusted-set-session-storage-item` | Key and literal string; dynamic `$...$` tokens skipped                                                |
+| `trusted-set-cookie`, `trusted-set-cookie-reload`                    | Name, literal string and root/none path; dynamic, expiry and domain extras skipped                    |
+| `trusted-set-constant` / `trusted-set`                               | Safe constant, `json:` JSON or object with `value`, depth at most 16; no extras                       |
+| `trusted-set-attr`                                                   | Safe selector, explicitly allowed attribute and literal value; all other attributes skipped           |
 
 Trusted constants remain locked across type changes. JSON parsing never evaluates
 source. Trusted attributes use literal values, not attribute-copy shorthand.
@@ -291,18 +291,18 @@ matching intentional full-screen UI can be removed, as with upstream.
 
 [COMPATIBILITY.md](COMPATIBILITY.md) records the supplied-list audit and remaining gaps.
 
-| Operation | Accepted subset |
-| --- | --- |
-| `trusted-rpnt` and aliases | Node name/pattern, replacement pattern/string, literal replacement; at most two option pairs from `condition`/`includes`, `excludes`, `sedCount` 1–1024 and `quitAfter` 0–30000 |
-| `trusted-click-element` | At most 16 CSS/delay steps, optional `;`/`|` separator, open shadow roots via `>>>`, cookie/localStorage assertions, delay/timeout at most 30 s; XPath and visibility directives skipped |
-| `trusted-replace-argument` | Existing dotted method, index ±31 or `this`, safe/JSON constant, `add:number` or `repl:/pattern/replacement/flags`, optional condition |
-| `trusted-replace-outbound-text` | Existing method, pattern, replacement, optional condition/base64 encoding; native nonstrings/errors preserved |
-| `trusted-suppress-native-method` | Existing method, up to 16 primitive/pattern signature slots or `*`, optional prevent/abort and stack pattern; unknown slots and debug forms skipped |
-| `trusted-prevent-dom-bypass` | Existing insertion method plus explicit target API; delegates only anonymous/same-document same-origin child contexts; wholesale window replacement skipped |
-| `trusted-override-element-method` | Existing method, optional native selector, empty/constant/throw disposition |
-| `trusted-create-html` | Top-frame parent CSS selector, HTML, optional removal duration, up to four targets and loading/interactive/complete run phase |
-| `prevent-clipboard-write` | Requires trusted provenance despite its name; pattern and optional `excludeMatches`; missing clipboard APIs pass through; alert markup skipped |
-| `mpegdash-prune` | XHR URL/method predicate and CSS Period selector; fully specified start/duration attributes, at most 128 Periods, zero selected durations and recalculate starts/total; XPath/live/incomplete manifests pass through |
+| Operation                         | Accepted subset                                                                                                                                                                                                      |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `trusted-rpnt` and aliases        | Node name/pattern, replacement pattern/string, literal replacement; at most two option pairs from `condition`/`includes`, `excludes`, `sedCount` 1–1024 and `quitAfter` 0–30000                                      |
+| `trusted-click-element`           | At most 16 CSS/delay steps, optional `;`/`\|` separator, open shadow roots via `>>>`, cookie/localStorage assertions, delay/timeout at most 30 s; XPath and visibility directives skipped                            |
+| `trusted-replace-argument`        | Existing dotted method, index ±31 or `this`, safe/JSON constant, `add:number` or `repl:/pattern/replacement/flags`, optional condition                                                                               |
+| `trusted-replace-outbound-text`   | Existing method, pattern, replacement, optional condition/base64 encoding; native nonstrings/errors preserved                                                                                                        |
+| `trusted-suppress-native-method`  | Existing method, up to 16 primitive/pattern signature slots or `*`, optional prevent/abort and stack pattern; unknown slots and debug forms skipped                                                                  |
+| `trusted-prevent-dom-bypass`      | Existing insertion method plus explicit target API; delegates only anonymous/same-document same-origin child contexts; wholesale window replacement skipped                                                          |
+| `trusted-override-element-method` | Existing method, optional native selector, empty/constant/throw disposition                                                                                                                                          |
+| `trusted-create-html`             | Top-frame parent CSS selector, HTML, optional removal duration, up to four targets and loading/interactive/complete run phase                                                                                        |
+| `prevent-clipboard-write`         | Requires trusted provenance despite its name; pattern and optional `excludeMatches`; missing clipboard APIs pass through; alert markup skipped                                                                       |
+| `mpegdash-prune`                  | XHR URL/method predicate and CSS Period selector; fully specified start/duration attributes, at most 128 Periods, zero selected durations and recalculate starts/total; XPath/live/incomplete manifests pass through |
 
 Trusted text replacements retain `$1`, `$&`, `$$` and prefix/suffix substitution.
 Bodies and expanded results are capped at 64 KiB, with at most 1024 replacements;
@@ -409,12 +409,12 @@ The same Quick fixes and Unbreak bytes were measured against the v1.0.14 and v1.
 source trees. The former rejected these complete lists because valid advanced scopes
 were classified as invalid. They now import their supported rules and skip those scopes.
 
-| Input | v1.0.14 import | v1.0.15 import | v1.0.15 supported / skipped |
-| --- | --- | --- | ---: |
-| Quick fixes | Rejected: 3 invalid scopes | Accepted; 0 invalid | 250 / 176 |
-| Unbreak | Rejected: 1 invalid scope | Accepted; 0 invalid | 2200 / 339 |
-| URLHaus AdGuard format | Rejected: `$all` unsupported | Still unsupported | 0 / 23980 |
-| URLHaus Vivaldi/Brave format | Accepted by engine | Used by new preset downloads | 23980 / 0 |
+| Input                        | v1.0.14 import               | v1.0.15 import               | v1.0.15 supported / skipped |
+| ---------------------------- | ---------------------------- | ---------------------------- | --------------------------: |
+| Quick fixes                  | Rejected: 3 invalid scopes   | Accepted; 0 invalid          |                   250 / 176 |
+| Unbreak                      | Rejected: 1 invalid scope    | Accepted; 0 invalid          |                  2200 / 339 |
+| URLHaus AdGuard format       | Rejected: `$all` unsupported | Still unsupported            |                   0 / 23980 |
+| URLHaus Vivaldi/Brave format | Accepted by engine           | Used by new preset downloads |                   23980 / 0 |
 
 The two URLHaus formats are different published inputs; this is a subscription-format
 correction, not an increase in scriptlet support. SHA-256 values identify the tested files:
@@ -454,61 +454,61 @@ Its header contains a timestamp placeholder, so the hash identifies the tested v
 Counts exclude comments and inactive conditional branches and precede page deduplication.
 Original bundle and v1.0.13 counts were remeasured with the same bytes.
 
-| Metric | Bundle v1.0.12 | Saved v1.0.13 | v1.0.14 | v1.0.15 |
-| --- | ---: | ---: | ---: | ---: |
-| Total active rules | 6064 | 6064 | 6064 | 6064 |
-| Network rules | 1432 | 1432 | 1432 | 1432 |
-| Cosmetic rules | 1771 | 1771 | 1771 | 1771 |
-| Executable scriptlet rules | 0 | 1525 | 1759 | 1759 |
-| Total supported | 3203 | 4728 | 4962 | 4962 |
-| Total skipped | 2861 | 1336 | 1102 | 1102 |
-| Skipped scriptlets | 2444 | 919 | 685 | 685 |
-| Invalid rules | 0 | 0 | 0 | 0 |
+| Metric                     | Bundle v1.0.12 | Saved v1.0.13 | v1.0.14 | v1.0.15 |
+| -------------------------- | -------------: | ------------: | ------: | ------: |
+| Total active rules         |           6064 |          6064 |    6064 |    6064 |
+| Network rules              |           1432 |          1432 |    1432 |    1432 |
+| Cosmetic rules             |           1771 |          1771 |    1771 |    1771 |
+| Executable scriptlet rules |              0 |          1525 |    1759 |    1759 |
+| Total supported            |           3203 |          4728 |    4962 |    4962 |
+| Total skipped              |           2861 |          1336 |    1102 |    1102 |
+| Skipped scriptlets         |           2444 |           919 |     685 |     685 |
+| Invalid rules              |              0 |             0 |       0 |       0 |
 
 The v1.0.15 follow-up changes subscription handling and feedback; it adds no scriptlet
 implementations and does not alter this corpus's executable-rule count.
 
-| Active scriptlet name | Total | v1.0.13 executable | v1.0.14 executable |
-| --- | ---: | ---: | ---: |
-| `acs` | 345 | 250 | 250 |
-| `aeld` | 199 | 134 | 134 |
-| `aopr` | 635 | 473 | 473 |
-| `aopw` | 181 | 122 | 122 |
-| `aost` | 22 | 0 | 19 |
-| `cookie-remover` | 2 | 0 | 2 |
-| `disable-newtab-links` | 2 | 0 | 1 |
-| `href-sanitizer` | 1 | 0 | 1 |
-| `json-edit` | 1 | 0 | 0 |
-| `json-edit-fetch-response` | 1 | 0 | 0 |
-| `json-prune` | 19 | 12 | 12 |
-| `json-prune-fetch-response` | 1 | 0 | 0 |
-| `json-prune-xhr-response` | 1 | 0 | 0 |
-| `jsonl-edit-xhr-response` | 1 | 0 | 0 |
-| `nano-sib` | 51 | 0 | 40 |
-| `nano-stb` | 31 | 0 | 23 |
-| `no-fetch-if` | 23 | 19 | 19 |
-| `no-xhr-if` | 22 | 0 | 0 |
-| `nobab` | 15 | 0 | 13 |
-| `noeval` | 24 | 0 | 21 |
-| `noeval-if` | 5 | 0 | 4 |
-| `nofab` | 10 | 0 | 9 |
-| `norafif` | 1 | 0 | 1 |
-| `nosiif` | 26 | 0 | 23 |
-| `nostif` | 193 | 175 | 175 |
-| `nowebrtc` | 47 | 0 | 24 |
-| `nowoif` | 178 | 87 | 87 |
-| `popads-dummy` | 18 | 0 | 12 |
-| `popads.net` | 3 | 0 | 1 |
-| `ra` | 28 | 0 | 12 |
-| `refresh-defuser` | 2 | 0 | 2 |
-| `rmnt` | 27 | 0 | 19 |
-| `rpnt` | 11 | 0 | 0 |
-| `set` | 301 | 252 | 252 |
-| `set-constant` | 1 | 1 | 1 |
-| `set-cookie` | 6 | 0 | 6 |
-| `set-local-storage-item` | 1 | 0 | 1 |
-| `trusted-replace-xhr-response` | 7 | 0 | 0 |
-| `trusted-rpfr` | 2 | 0 | 0 |
+| Active scriptlet name          | Total | v1.0.13 executable | v1.0.14 executable |
+| ------------------------------ | ----: | -----------------: | -----------------: |
+| `acs`                          |   345 |                250 |                250 |
+| `aeld`                         |   199 |                134 |                134 |
+| `aopr`                         |   635 |                473 |                473 |
+| `aopw`                         |   181 |                122 |                122 |
+| `aost`                         |    22 |                  0 |                 19 |
+| `cookie-remover`               |     2 |                  0 |                  2 |
+| `disable-newtab-links`         |     2 |                  0 |                  1 |
+| `href-sanitizer`               |     1 |                  0 |                  1 |
+| `json-edit`                    |     1 |                  0 |                  0 |
+| `json-edit-fetch-response`     |     1 |                  0 |                  0 |
+| `json-prune`                   |    19 |                 12 |                 12 |
+| `json-prune-fetch-response`    |     1 |                  0 |                  0 |
+| `json-prune-xhr-response`      |     1 |                  0 |                  0 |
+| `jsonl-edit-xhr-response`      |     1 |                  0 |                  0 |
+| `nano-sib`                     |    51 |                  0 |                 40 |
+| `nano-stb`                     |    31 |                  0 |                 23 |
+| `no-fetch-if`                  |    23 |                 19 |                 19 |
+| `no-xhr-if`                    |    22 |                  0 |                  0 |
+| `nobab`                        |    15 |                  0 |                 13 |
+| `noeval`                       |    24 |                  0 |                 21 |
+| `noeval-if`                    |     5 |                  0 |                  4 |
+| `nofab`                        |    10 |                  0 |                  9 |
+| `norafif`                      |     1 |                  0 |                  1 |
+| `nosiif`                       |    26 |                  0 |                 23 |
+| `nostif`                       |   193 |                175 |                175 |
+| `nowebrtc`                     |    47 |                  0 |                 24 |
+| `nowoif`                       |   178 |                 87 |                 87 |
+| `popads-dummy`                 |    18 |                  0 |                 12 |
+| `popads.net`                   |     3 |                  0 |                  1 |
+| `ra`                           |    28 |                  0 |                 12 |
+| `refresh-defuser`              |     2 |                  0 |                  2 |
+| `rmnt`                         |    27 |                  0 |                 19 |
+| `rpnt`                         |    11 |                  0 |                  0 |
+| `set`                          |   301 |                252 |                252 |
+| `set-constant`                 |     1 |                  1 |                  1 |
+| `set-cookie`                   |     6 |                  0 |                  6 |
+| `set-local-storage-item`       |     1 |                  0 |                  1 |
+| `trusted-replace-xhr-response` |     7 |                  0 |                  0 |
+| `trusted-rpfr`                 |     2 |                  0 |                  0 |
 
 ## Validation and performance
 
@@ -546,16 +546,16 @@ samples, document-start 31 measured samples after five warmups, and timer dispat
 11 measured samples after five warmups, 200000 calls each. Native timers are stubs;
 these values exclude Android scheduling, rendering, networking and real DOM traversal.
 
-| Host measurement | v1.0.13 | v1.0.14 |
-| --- | ---: | ---: |
-| Injection source bytes | 189426 | 241640 |
-| Source compilation, ms | 0.936 | 1.605 |
-| Unrelated document gate, ms | 0.032 | 0.040 |
-| YouTube document start, ms | 1.093 | 1.371 |
-| Publisher document start, ms | 1.114 | 1.377 |
-| Native timer stub, µs/call | 0.169 | 0.189 |
-| One defuser rule, µs/call | 0.436 | 0.396 |
-| Eight defuser rules, µs/call | 0.591 | 0.595 |
+| Host measurement             | v1.0.13 | v1.0.14 |
+| ---------------------------- | ------: | ------: |
+| Injection source bytes       |  189426 |  241640 |
+| Source compilation, ms       |   0.936 |   1.605 |
+| Unrelated document gate, ms  |   0.032 |   0.040 |
+| YouTube document start, ms   |   1.093 |   1.371 |
+| Publisher document start, ms |   1.114 |   1.377 |
+| Native timer stub, µs/call   |   0.169 |   0.189 |
+| One defuser rule, µs/call    |   0.436 |   0.396 |
+| Eight defuser rules, µs/call |   0.591 |   0.595 |
 
 The final Kotlin corpus run measured warm compilation at 40.3 ms (v1.0.13) and
 38.8 ms (v1.0.14), with lookup at 7.33 and 7.74 µs per call respectively. An earlier

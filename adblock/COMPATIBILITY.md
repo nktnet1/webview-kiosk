@@ -123,17 +123,17 @@ no new observer, polling or DOM scan is added. IMA's fixed local media API shim
 and the redirect-only Piano Analytics shim are bundled on demand. IMA callbacks
 use captured animation frames when injected alongside scriptlets.
 
-| Roadmap item | Result |
-| --- | --- |
-| Document-start overhead | Improved with shared instruction data and per-frame runtime selection. JavaScript source still has to be parsed by WebView. |
-| Scriptlet arguments / DSLs | Expanded tested subsets; request-body streams, trusted assignments/functions and unsupported options remain explicit skips. |
-| Efficient procedural cosmetics | Native media queries added. Wider DOM procedures require incremental targeting before expansion. |
-| Redirect/API shims | IMA and Piano added. DAI remains unsupported pending trust and request-lifecycle integration. |
-| Iframe and worker metadata | Existing native Referer/Origin and ancestor-origin routing retained; unavailable initiators remain unknown. |
-| Compiled index persistence | Enabled in production for four network families, independently of benchmark results. |
-| Popup/popunder | Still conditional; this app does not own a multiple-window lifecycle. |
-| WebSocket / beacon | Optional partial wrappers remain future work, not a promise of complete interception. |
-| CSP / HTML response rewriting | Remains unsupported; no replacement networking layer is introduced. |
+| Roadmap item                   | Result                                                                                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Document-start overhead        | Improved with shared instruction data and per-frame runtime selection. JavaScript source still has to be parsed by WebView. |
+| Scriptlet arguments / DSLs     | Expanded tested subsets; request-body streams, trusted assignments/functions and unsupported options remain explicit skips. |
+| Efficient procedural cosmetics | Native media queries added. Wider DOM procedures require incremental targeting before expansion.                            |
+| Redirect/API shims             | IMA and Piano added. DAI remains unsupported pending trust and request-lifecycle integration.                               |
+| Iframe and worker metadata     | Existing native Referer/Origin and ancestor-origin routing retained; unavailable initiators remain unknown.                 |
+| Compiled index persistence     | Enabled in production for four network families, independently of benchmark results.                                        |
+| Popup/popunder                 | Still conditional; this app does not own a multiple-window lifecycle.                                                       |
+| WebSocket / beacon             | Optional partial wrappers remain future work, not a promise of complete interception.                                       |
+| CSP / HTML response rewriting  | Remains unsupported; no replacement networking layer is introduced.                                                         |
 
 The principle remains maximum correct compatibility without disproportionate
 WebView workarounds. Capacity safeguards and malicious-input validation remain.
@@ -181,16 +181,16 @@ where supplied. Worker requests lacking initiators evaluate context-free rules;
 potential contextual exceptions conservatively allow the request. No unrelated tab
 URL is borrowed, and internal asset origins remain excluded.
 
-| Remaining work | Android WebView assessment |
-| --- | --- |
-| Production persisted indexes | Prototype available; disabled because the host warm-load comparison did not establish a benefit. Profile combined read/validation/build time and allocations on Android before enabling. |
-| Remaining scriptlet arguments and JSONPath operations | Recommended where a bounded parser and correct API hook suffice. Request-body streams and additional trusted mutations need separate lifecycle and provenance tests. |
-| Wider procedural cosmetics | Selective: prefer native CSS and targeted, incremental observers. Do not expand repeated document-wide scans merely to accept more syntax. |
-| Larger redirect shims, including IMA/DAI | Feasible, with upstream API/callback and media tests before accepting the resource. |
-| Popup/popunder and close-window | Conditional on native multi-window ownership; this app has no such lifecycle. |
-| WebSocket/beacon wrappers | Optional partial coverage. They cannot replace network-level interception or cover workers completely. |
-| Subresource removeparam | Avoid a replacement network stack solely for URL rewriting. Navigation removal remains supported. |
-| CSP and HTML response rewriting | Unsupported: ordinary interception does not expose original response headers/bodies for transparent editing. |
+| Remaining work                                        | Android WebView assessment                                                                                                                                                               |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Production persisted indexes                          | Prototype available; disabled because the host warm-load comparison did not establish a benefit. Profile combined read/validation/build time and allocations on Android before enabling. |
+| Remaining scriptlet arguments and JSONPath operations | Recommended where a bounded parser and correct API hook suffice. Request-body streams and additional trusted mutations need separate lifecycle and provenance tests.                     |
+| Wider procedural cosmetics                            | Selective: prefer native CSS and targeted, incremental observers. Do not expand repeated document-wide scans merely to accept more syntax.                                               |
+| Larger redirect shims, including IMA/DAI              | Feasible, with upstream API/callback and media tests before accepting the resource.                                                                                                      |
+| Popup/popunder and close-window                       | Conditional on native multi-window ownership; this app has no such lifecycle.                                                                                                            |
+| WebSocket/beacon wrappers                             | Optional partial coverage. They cannot replace network-level interception or cover workers completely.                                                                                   |
+| Subresource removeparam                               | Avoid a replacement network stack solely for URL rewriting. Navigation removal remains supported.                                                                                        |
+| CSP and HTML response rewriting                       | Unsupported: ordinary interception does not expose original response headers/bodies for transparent editing.                                                                             |
 
 Compatibility work is recommended when WebView can implement the rule correctly
 without disproportionate platform-specific workarounds. More enabled rules alone
@@ -216,10 +216,10 @@ No subscription text is added to the application or repository.
 The publisher downloads taken on 2026-10-17 reproduce both reported baseline
 counts. EasyPrivacy identifies version `202610170019` in its header.
 
-| Publisher input | SHA-256 | v1.0.16 skips | v1.0.17 skips |
-| --- | --- | ---: | ---: |
-| EasyList | `8c3ae2e3528ce9b66f217e3ccf6aa4c4c0bbaae3d299fd920e7a0617d03834f6` | 3177 | 3000 |
-| EasyPrivacy | `1a8fc2e0f7706696a7f659203ad31ceb15f26c82c3dafd8a7dd6a61cd7ac3250` | 103 | 9 |
+| Publisher input | SHA-256                                                            | v1.0.16 skips | v1.0.17 skips |
+| --------------- | ------------------------------------------------------------------ | ------------: | ------------: |
+| EasyList        | `8c3ae2e3528ce9b66f217e3ccf6aa4c4c0bbaae3d299fd920e7a0617d03834f6` |          3177 |          3000 |
+| EasyPrivacy     | `1a8fc2e0f7706696a7f659203ad31ceb15f26c82c3dafd8a7dd6a61cd7ac3250` |           103 |             9 |
 
 The attached uAssets third-party copies are different inputs. Their EasyList
 SHA-256 is `f5396aef1f299e1bd28c2db7750ea9bc4682d8f576292482a9c983f14a9d358f`;
@@ -254,11 +254,11 @@ app release numbers remain absent from cache identity. See [CACHE.md](CACHE.md).
 
 The remaining 3000 publisher EasyList rules are:
 
-| Count | Family | Assessment |
-| ---: | --- | --- |
-| 2969 | `$popup` rules | Feasible with native popup ownership and opener/target context. The current blocker lacks that lifecycle; applying these to ordinary navigation would change their meaning. |
-| 28 | Procedural cosmetics and CSS-property matching | Implementation/contract gaps, including sibling/nested chains and patterns beyond the text limits. WebView does not inherently forbid these. |
-| 3 | CSP rules/exceptions | The current integration cannot edit original response headers. A response-owning network integration would be needed. |
+| Count | Family                                         | Assessment                                                                                                                                                                  |
+| ----: | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|  2969 | `$popup` rules                                 | Feasible with native popup ownership and opener/target context. The current blocker lacks that lifecycle; applying these to ordinary navigation would change their meaning. |
+|    28 | Procedural cosmetics and CSS-property matching | Implementation/contract gaps, including sibling/nested chains and patterns beyond the text limits. WebView does not inherently forbid these.                                |
+|     3 | CSP rules/exceptions                           | The current integration cannot edit original response headers. A response-owning network integration would be needed.                                                       |
 
 The popup count includes rules combining popup and other type modifiers. The
 whole rule stays skipped until every modifier has its intended semantics.
@@ -278,17 +278,17 @@ Most remaining scriptlet gaps are feasible in a sufficiently capable WebView.
 The canonical catalogue and precise accepted argument forms are in
 [SCRIPTLET-CATALOG.md](SCRIPTLET-CATALOG.md) and [SCRIPTLETS.md](SCRIPTLETS.md).
 
-| Gap | Feasibility and current decision |
-| --- | --- |
-| JSON/object/JSONL edit DSLs and additional trusted pruning | Feasible implementation work. They need a complete bounded parser, mutation semantics and response/request tests; approximating the DSL is unsafe. |
-| Broader existing scriptlet arguments | Feasible work, including cookie reload extras, XPath, advanced media/text patterns and late custom method chains. Current subsets reject these. |
-| Scriptlet entity/regex/path scopes and descendant-frame routing | Feasible but not supplied by the current JavaScript dispatcher. Native network/cosmetic entity matching does not imply scriptlet entity support. |
-| Google IMA/DAI and other unbundled API/resource shims | Feasible compatibility work. The two new Amazon apstag/Chartbeat redirects do not make them valid `+js` entry points. |
-| Popup filtering and `close-window` | Require native window ownership, opener context and a defined kiosk close policy. No page-callable app-exit bridge is introduced. |
-| CSP and response-time HTML filtering (`##^`) | No transparent original-response editing path in the current WebView integration. Page DOM mutation is not equivalent to filtering before parsing. |
-| Document-start hooks | Require `WebViewFeature.DOCUMENT_START_SCRIPT`; registration is feature-guarded. Unsupported providers skip scriptlets, since late injection cannot recover earlier author-script calls. |
-| Navigation cancellation | Requires a native Navigation API and cancelable events. Ordinary noncancelable events cannot provide equivalent behavior. |
-| Debug/configuration helpers | Deliberately excluded from production injection. |
+| Gap                                                             | Feasibility and current decision                                                                                                                                                         |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| JSON/object/JSONL edit DSLs and additional trusted pruning      | Feasible implementation work. They need a complete bounded parser, mutation semantics and response/request tests; approximating the DSL is unsafe.                                       |
+| Broader existing scriptlet arguments                            | Feasible work, including cookie reload extras, XPath, advanced media/text patterns and late custom method chains. Current subsets reject these.                                          |
+| Scriptlet entity/regex/path scopes and descendant-frame routing | Feasible but not supplied by the current JavaScript dispatcher. Native network/cosmetic entity matching does not imply scriptlet entity support.                                         |
+| Google IMA/DAI and other unbundled API/resource shims           | Feasible compatibility work. The two new Amazon apstag/Chartbeat redirects do not make them valid `+js` entry points.                                                                    |
+| Popup filtering and `close-window`                              | Require native window ownership, opener context and a defined kiosk close policy. No page-callable app-exit bridge is introduced.                                                        |
+| CSP and response-time HTML filtering (`##^`)                    | No transparent original-response editing path in the current WebView integration. Page DOM mutation is not equivalent to filtering before parsing.                                       |
+| Document-start hooks                                            | Require `WebViewFeature.DOCUMENT_START_SCRIPT`; registration is feature-guarded. Unsupported providers skip scriptlets, since late injection cannot recover earlier author-script calls. |
+| Navigation cancellation                                         | Requires a native Navigation API and cancelable events. Ordinary noncancelable events cannot provide equivalent behavior.                                                                |
+| Debug/configuration helpers                                     | Deliberately excluded from production injection.                                                                                                                                         |
 
 New trusted node-text, click, argument/outbound replacement, method suppression,
 DOM bypass/override and HTML helpers have explicit bounded contracts. Clipboard

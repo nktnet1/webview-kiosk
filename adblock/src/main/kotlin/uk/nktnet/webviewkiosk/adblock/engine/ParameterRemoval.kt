@@ -34,7 +34,15 @@ internal data class ParameterRemoval(val text: String) {
                 value.isNotEmpty() &&
                 value.all { it.code < 128 }
         ) {
-            UrlPattern(value, false, false, false, true, null).indexToken
+            UrlPattern(
+                    text = value,
+                    domainAnchor = false,
+                    startAnchor = false,
+                    endAnchor = false,
+                    matchCase = true,
+                    hostIndex = null,
+                )
+                .indexToken
         } else {
             null
         }

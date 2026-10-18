@@ -50,18 +50,16 @@ internal object ScriptletScopes {
                 escaped = false
                 continue
             }
-            if (char == '\\') {
-                escaped = true
-            } else if (
+            when {
+                char == '\\' -> escaped = true
                 char == '/' &&
                     (regex ||
                         index == start ||
-                        index == start + 1 && value[start] == '~')
-            ) {
-                regex = !regex
-            } else if (char == ',' && !regex) {
-                entries += value.substring(start, index)
-                start = index + 1
+                        index == start + 1 && value[start] == '~') -> regex = !regex
+                char == ',' && !regex -> {
+                    entries += value.substring(start, index)
+                    start = index + 1
+                }
             }
         }
         require(!regex && !escaped)
@@ -127,7 +125,7 @@ internal object ScriptletScopes {
             val low = match.groupValues[1].toInt()
             val high = match.groupValues[2].toIntOrNull() ?: low
             val previous = source.getOrNull(match.range.first - 1) ?: return false
-            if (low > high || high > 16 || previous in ")*+?}^$") {
+            if (high !in low..16 || previous in ")*+?}^$") {
                 return false
             }
             work *= maxOf(1, high - low + 1)
@@ -195,14 +193,12 @@ internal object ScriptletScopes {
             } else {
                 target.matches(host, domain, path)
             }
-        if (rule.targets.any { it.excluded && match(it) }) {
-            return false
-        }
-        return !hasPositive(rule) ||
-            scope.included.any { domainMatches(host, it) } ||
-            scope.includedEntities.any {
-                entity != null && domainMatches(entity, it)
-            } ||
-            rule.targets.any { !it.excluded && match(it) }
+        return rule.targets.none { it.excluded && match(it) } &&
+            (!hasPositive(rule) ||
+                scope.included.any { domainMatches(host, it) } ||
+                scope.includedEntities.any {
+                    entity != null && domainMatches(entity, it)
+                } ||
+                rule.targets.any { !it.excluded && match(it) })
     }
 }

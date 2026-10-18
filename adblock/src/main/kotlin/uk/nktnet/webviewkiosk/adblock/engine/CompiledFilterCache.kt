@@ -496,14 +496,15 @@ internal class CompiledFilterCache(
                     strings.scope(domains)
                     output.writeBoolean(exception)
                     output.writeInt(targets.size)
-                    for (target in targets) {
-                        strings.write(target.host)
-                        output.writeBoolean(target.path != null)
-                        target.path?.let(strings::write)
-                        output.writeBoolean(target.regex)
-                        output.writeBoolean(target.entity)
-                        output.writeBoolean(target.ancestor)
-                        output.writeBoolean(target.excluded)
+                    for ((host, path, regex, entity, ancestor, excluded) in
+                        targets) {
+                        strings.write(host)
+                        output.writeBoolean(path != null)
+                        path?.let(strings::write)
+                        output.writeBoolean(regex)
+                        output.writeBoolean(entity)
+                        output.writeBoolean(ancestor)
+                        output.writeBoolean(excluded)
                     }
                     output.writeBoolean(instruction != null)
                     if (instruction != null) {

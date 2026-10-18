@@ -20,7 +20,7 @@ internal object CookieScriptlets {
     private val seconds = Regex("[0-9]{1,10}")
     private val name = Regex("[!#$%&'*+.^_`|~0-9A-Za-z\\[\\]-]+")
     private val placeholders =
-        listOf("\$now\$", "\$currentDate\$", "\$currentISODate\$")
+        listOf($$"$now$", $$"$currentDate$", $$"$currentISODate$")
 
     fun validated(type: ScriptletType, input: List<String>): ScriptletInstruction? {
         val trusted = type in trustedTypes

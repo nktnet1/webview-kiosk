@@ -1368,7 +1368,7 @@ private fun FilterListInfoDialog(
                             ?.let { info ->
                                 InfoSection("Partially supported rules") {
                                     InfoStat(
-                                        "\$all",
+                                        $$"$all",
                                         numbers.format(info.partialRules),
                                     )
                                     Text(

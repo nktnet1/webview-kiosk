@@ -44,19 +44,17 @@ private constructor(
                     "ping" -> url
                     else -> return false
                 }
-            if (!WebViewBlocker.isFilterableUrl(target)) {
-                return false
-            }
-            return service.shouldBlock(
-                url,
-                source,
-                type,
-                if (type == "ping") {
-                    "POST"
-                } else {
-                    "GET"
-                },
-            )
+            return WebViewBlocker.isFilterableUrl(target) &&
+                service.shouldBlock(
+                    url,
+                    source,
+                    type,
+                    if (type == "ping") {
+                        "POST"
+                    } else {
+                        "GET"
+                    },
+                )
         }
     }
 

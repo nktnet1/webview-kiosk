@@ -259,7 +259,7 @@ internal object JsonEditing {
                 } else {
                     minimum
                 }
-            require(minimum <= maximum && maximum <= 1_000_000)
+            require(maximum in minimum..1_000_000)
             // Upstream treats a zero range endpoint as its omitted default.
             // Exact {0} is the unambiguous absence guard.
             require(',' !in raw || maximum != 0)

@@ -38,7 +38,7 @@ internal class NetworkRouting(
                 rule.conditions.domains.includedEntities.isNotEmpty()
         fun token(rule: NetworkIdentity): Int? =
             rule.pattern.indexToken ?: rule.removeParam?.indexToken
-        if (
+        val invalidBuckets =
             hosts.any { (key, ids) ->
                 !check(ids) { it.pattern.hostIndex == key }
             } ||
@@ -67,20 +67,18 @@ internal class NetworkRouting(
                             !scoped(it) &&
                             token(it) == null
                     }
-        ) {
-            return false
-        }
-        return rules.indices.all { index ->
-            val rule = rules[index]
-            val expected =
-                if (rule.pattern.hostIndex == null && scoped(rule)) {
-                    rule.conditions.domains.included.size +
-                        rule.conditions.domains.includedEntities.size
-                } else {
-                    1
-                }
-            references[index] == expected
-        }
+        return !invalidBuckets &&
+            rules.indices.all { index ->
+                val rule = rules[index]
+                val expected =
+                    if (rule.pattern.hostIndex == null && scoped(rule)) {
+                        rule.conditions.domains.included.size +
+                            rule.conditions.domains.includedEntities.size
+                    } else {
+                        1
+                    }
+                references[index] == expected
+            }
     }
 
     private fun <T> same(

@@ -187,7 +187,6 @@ internal object WebViewBlocker {
         val type =
             response.mimeType
                 ?: when (response) {
-                    BlockingResponse.ALLOW -> return null
                     BlockingResponse.EMPTY_SCRIPT -> "application/javascript"
                     BlockingResponse.EMPTY_STYLESHEET -> "text/css"
                     BlockingResponse.EMPTY_HTML -> "text/html"
