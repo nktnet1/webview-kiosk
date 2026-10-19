@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.blocking
 
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -16,7 +17,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import uk.nktnet.webviewkiosk.adblock.FilterListValidator
 
 @RunWith(RobolectricTestRunner::class)
 class SuggestedFilterListDownloaderTest {
@@ -36,7 +36,7 @@ class SuggestedFilterListDownloaderTest {
         store =
             FilterListStore(
                 context,
-                validator = FilterListValidator {},
+                validator = {},
                 now = { currentTime },
             )
     }
@@ -317,7 +317,7 @@ class SuggestedFilterListDownloaderTest {
                 "uBlock Unbreak" to
                     "@@||needed.example^\nnijie.info/ad_log.php#@#._banner_view",
                 "Online Malicious URL Blocklist" to
-                    "||shared.example/uploads/malware.exe^\$document",
+                    $$"||shared.example/uploads/malware.exe^$document",
             )
         inputs.forEach { (name, text) ->
             val suggestion = SuggestedFilterLists.defaults.first { it.name == name }
@@ -394,14 +394,16 @@ class SuggestedFilterListDownloaderTest {
     @Test
     fun defaultDownloadsKeepSuccessfulListsAndRetryOnlyFailures() {
         val failedUrl = SuggestedFilterLists.defaults[2].url
-        var fail = true
+        val fail = AtomicBoolean(true)
         val requested = mutableListOf<String>()
         val client =
             SuggestedFilterListDownloader(
                 OkHttpClient.Builder()
                     .addInterceptor { chain ->
                         requested += chain.request().url.toString()
-                        if (fail && chain.request().url.toString() == failedUrl) {
+                        if (
+                            fail.get() && chain.request().url.toString() == failedUrl
+                        ) {
                             throw IOException("Offline")
                         }
                         Response.Builder()
@@ -420,7 +422,7 @@ class SuggestedFilterListDownloaderTest {
         val first = client.downloadDefaults(store)
         assertEquals(8, first.updated)
         assertEquals(listOf("uBlock Badware"), first.failures.map { it.name })
-        fail = false
+        fail.set(false)
         requested.clear()
         val second = client.downloadDefaults(store)
         assertEquals(1, second.updated)

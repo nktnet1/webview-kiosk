@@ -8,6 +8,8 @@ import com.hivemq.client.mqtt.MqttClientState
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -361,7 +363,7 @@ class MqttServiceConnectionTest {
                         )
                         .toString(),
                 )
-                val delivery = withTimeout(5_000) { applied.await() }
+                val delivery = withTimeout(5.seconds) { applied.await() }
 
                 assertEquals("https://example.com/tcp", settings.homeUrl)
                 assertEquals(
@@ -556,7 +558,7 @@ class MqttServiceConnectionTest {
                 "test/commands",
                 """{"command":"clear_history","messageId":"$id","interact":false}""",
             )
-            awaitCondition { dispatched.isCompleted }
+            awaitConditionSuspending { dispatched.isCompleted }
             dispatched.await()
         } finally {
             dispatched.cancel()
@@ -585,15 +587,17 @@ class MqttServiceConnectionTest {
     private fun start(startId: Int = 1) =
         controller.get().onStartCommand(null, 0, startId)
 
-    private fun awaitCondition(condition: () -> Boolean) {
+    private fun awaitCondition(condition: () -> Boolean) = runBlocking {
+        awaitConditionSuspending(condition)
+    }
+
+    private suspend fun awaitConditionSuspending(condition: () -> Boolean) {
         try {
-            runBlocking {
-                withTimeout(5_000) {
-                    while (!condition()) {
-                        broker.assertHealthy()
-                        shadowOf(Looper.getMainLooper()).idle()
-                        delay(1)
-                    }
+            withTimeout(5.seconds) {
+                while (!condition()) {
+                    broker.assertHealthy()
+                    shadowOf(Looper.getMainLooper()).idle()
+                    delay(1.milliseconds)
                 }
             }
         } catch (e: TimeoutCancellationException) {

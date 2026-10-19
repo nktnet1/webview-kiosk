@@ -33,7 +33,7 @@ class ScriptletServiceTest {
                 .byteInputStream(),
         )
         val engine = KotlinFilterEngine()
-        val service = ContentBlockingService(store, engine, Executor { it.run() })
+        val service = ContentBlockingService(store, engine, { it.run() })
         service.start()
         assertTrue(service.hasActiveRules)
         assertNotNull(service.scriptletInjection.value)

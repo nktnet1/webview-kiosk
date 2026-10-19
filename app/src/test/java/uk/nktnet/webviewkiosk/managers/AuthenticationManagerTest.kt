@@ -1,3 +1,5 @@
+@file:Suppress("UsePropertyAccessSyntax")
+
 package uk.nktnet.webviewkiosk.managers
 
 import android.app.KeyguardManager
@@ -1014,7 +1016,7 @@ class AuthTestActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
     }
 
-    @Deprecated("Test legacy credential launch")
+    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override fun startActivityForResult(intent: Intent, requestCode: Int) {
         credentialRequests.add(requestCode)
     }
@@ -1022,8 +1024,10 @@ class AuthTestActivity : AppCompatActivity() {
 
 @Implements(KeyguardManager::class)
 class CredentialKeyguardShadow : ShadowKeyguardManager() {
+    // Robolectric calls shadow methods reflectively.
+    @Suppress("unused")
     @Implementation
-    protected fun createConfirmDeviceCredentialIntent(
+    fun createConfirmDeviceCredentialIntent(
         title: CharSequence,
         description: CharSequence,
     ): Intent = Intent("test.confirm-credential")

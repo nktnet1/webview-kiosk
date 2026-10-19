@@ -19,8 +19,8 @@ class FilterFileFormatTest {
                 "[Adblock Plus 2.0]\n! Title: Test\n||ads.example^",
                 "[advertisement]",
                 "[0-9]*tracking",
-                "[\"ad\"]\$script",
-                "{\"ad\":true}\$script",
+                $$"[\"ad\"]$script",
+                $$"{\"ad\":true}$script",
                 "||api.example/ads?payload={\"ad\":true}",
                 "example.com##[data-ad=\"true\"]",
             )) {
@@ -67,7 +67,7 @@ class FilterFileFormatTest {
             listOf(
                 "\uFEFF! 例子\tfilters\r\n0.0.0.0\tads.example\r\n||例子.测试^\r\n",
                 "advertisement\n@@allowed\n/ads/banner*\n||ads.example^",
-                "||ads.example^\$csp=script-src 'none'\nexample.com##div > .ad",
+                $$"||ads.example^$csp=script-src 'none'\nexample.com##div > .ad",
             )) {
             validateFilterFileFormat(text)
         }

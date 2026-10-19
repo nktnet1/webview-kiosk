@@ -20,7 +20,7 @@ class FilterCacheBenchmarkTest {
             listOf(
                 (0 until 20_000).joinToString("\n") { "||ads$it.example^" },
                 (0 until 10_000).joinToString("\n") {
-                    "||cdn$it.example/advert\$script,domain=site$it.example"
+                    $$"||cdn$$it.example/advert$script,domain=site$$it.example"
                 },
                 (0 until 10_000).joinToString("\n") { "site$it.example##.advert" },
                 (0 until 1_000).joinToString("\n") {
@@ -60,7 +60,7 @@ class FilterCacheBenchmarkTest {
             listOf(
                 (0 until 20_000).joinToString("\n") { "||ads$it.example^" },
                 (0 until 10_000).joinToString("\n") {
-                    "||cdn$it.example/advert\$script,domain=site$it.example"
+                    $$"||cdn$$it.example/advert$script,domain=site$$it.example"
                 },
                 (0 until 10_000).joinToString("\n") { "site$it.example##.advert" },
                 (0 until 1_000).joinToString("\n") {

@@ -74,7 +74,7 @@ internal class LoopbackMqttBroker : AutoCloseable {
         assertHealthy()
     }
 
-    data class Publication(
+    class Publication(
         val topic: String,
         val payload: String,
         val properties: ByteArray,
@@ -253,7 +253,7 @@ internal class LoopbackMqttBroker : AutoCloseable {
         }
     }
 
-    private data class Packet(val header: Int, val body: ByteArray)
+    private class Packet(val header: Int, val body: ByteArray)
 
     private fun readPacket(input: DataInputStream): Packet {
         val header = input.readUnsignedByte()

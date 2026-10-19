@@ -1,3 +1,5 @@
+@file:Suppress("UsePropertyAccessSyntax")
+
 package uk.nktnet.webviewkiosk.ui.components.auth
 
 import android.app.KeyguardManager
@@ -13,7 +15,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.semantics.SemanticsActions
@@ -526,7 +527,6 @@ class RequireAuthWrapperTest {
         pumpFrames()
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     private fun nodes(): List<SemanticsNode> {
         val root = view.getChildAt(0) as ViewRootForTest
         root.measureAndLayoutForTest()

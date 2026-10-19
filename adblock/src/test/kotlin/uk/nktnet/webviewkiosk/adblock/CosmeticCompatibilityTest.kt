@@ -14,7 +14,7 @@ class CosmeticCompatibilityTest {
     @Test
     fun nestedTextConditionsKeepTheirChildSelectorAndCacheRepresentation() {
         val text =
-            "site.example#?#.card:has(> .label:has-text(/^(Sponsored|Sponsorisé)\$/))\n" +
+            "site.example#?#.card:has(> .label:has-text(/^(Sponsored|Sponsorisé)$/))\n" +
                 "site.example#?#a:has(p:has-text(Advert)):not(.content)"
         val file = File(folder.root, "rules.bin")
         val original = KotlinFilterEngine(file)
@@ -82,7 +82,7 @@ class CosmeticCompatibilityTest {
         engine.replace(
             listOf(
                 "site.example#?#.heading:has-text(Ads) + ul\n" +
-                    "site.example#?#.card:has(.label:has-text(/(a+)+\$/))\n" +
+                    "site.example#?#.card:has(.label:has-text(/(a+)+$/))\n" +
                     "site.example#?#.card:has-text(Ads):has-text(Other)"
             )
         )

@@ -2,7 +2,6 @@ package uk.nktnet.webviewkiosk.blocking
 
 import android.net.Uri
 import android.webkit.WebResourceRequest
-import java.util.concurrent.Executor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -11,7 +10,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import uk.nktnet.webviewkiosk.adblock.FilterListValidator
 import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
 
 @RunWith(RobolectricTestRunner::class)
@@ -30,7 +28,7 @@ class ServiceWorkerBlockerTest {
             .clear()
             .commit()
         java.io.File(context.filesDir, "content-blocking-lists").deleteRecursively()
-        val store = FilterListStore(context, FilterListValidator {})
+        val store = FilterListStore(context, {})
         store.importFrom("ads.txt", "||ads.example^".byteInputStream())
         val engine =
             object : NetworkFilterEngine {
@@ -51,7 +49,7 @@ class ServiceWorkerBlockerTest {
                 }
             }
         service =
-            ContentBlockingService(store, engine, Executor { it.run() }).also {
+            ContentBlockingService(store, engine, { it.run() }).also {
                 it.start()
             }
     }

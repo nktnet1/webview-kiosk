@@ -3,11 +3,12 @@ package uk.nktnet.webviewkiosk.managers
 import android.content.Context
 import android.os.Looper
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.takeWhile
@@ -110,7 +111,7 @@ class UnifiedPushManagerTest {
                     InboundSettingsMessage(messageId = marker),
                     Source.UNIFIEDPUSH,
                 )
-                withTimeout(5_000) { collector.join() }
+                withTimeout(5.seconds) { collector.join() }
             } finally {
                 collector.cancel()
             }
@@ -301,7 +302,7 @@ class UnifiedPushManagerTest {
             }
         try {
             send(settingsPayload(listOf(settings.appInstanceId), listOf("operator")))
-            withTimeout(5_000) { collector.join() }
+            withTimeout(5.seconds) { collector.join() }
 
             assertEquals(updatedHome, userSettings.homeUrl)
             assertEquals(Source.UNIFIEDPUSH, applied.single().source)
@@ -609,10 +610,10 @@ class UnifiedPushManagerTest {
     }
 
     private suspend fun awaitDispatch(collector: Job) {
-        withTimeout(5_000) {
+        withTimeout(5.seconds) {
             while (!collector.isCompleted) {
                 shadowOf(Looper.getMainLooper()).idle()
-                delay(1)
+                delay(1.milliseconds)
             }
             collector.join()
         }

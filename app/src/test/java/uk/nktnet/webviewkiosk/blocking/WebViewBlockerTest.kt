@@ -2,7 +2,6 @@ package uk.nktnet.webviewkiosk.blocking
 
 import android.net.Uri
 import android.webkit.WebResourceRequest
-import java.util.concurrent.Executor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -13,7 +12,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import uk.nktnet.webviewkiosk.adblock.BlockingResponse
-import uk.nktnet.webviewkiosk.adblock.FilterListValidator
 import uk.nktnet.webviewkiosk.adblock.FilterSource
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
@@ -32,7 +30,7 @@ class WebViewBlockerTest {
             .clear()
             .commit()
         java.io.File(context.filesDir, "content-blocking-lists").deleteRecursively()
-        val store = FilterListStore(context, validator = FilterListValidator {})
+        val store = FilterListStore(context, validator = {})
         store.importFrom("ads.txt", "||ads.example^".byteInputStream())
         val engine =
             object : NetworkFilterEngine {
@@ -48,7 +46,7 @@ class WebViewBlockerTest {
                 ) = true
             }
         service =
-            ContentBlockingService(store, engine, Executor { it.run() }).also {
+            ContentBlockingService(store, engine, { it.run() }).also {
                 it.start()
             }
     }
@@ -119,16 +117,16 @@ class WebViewBlockerTest {
         store.remove(store.list().map { it.id }.toSet())
         store.importFrom(
             "surrogates.txt",
-            ("||ads.example^\$script,redirect=noopjs\n" +
-                    "||styles.example^\$stylesheet,redirect=noopcss\n" +
-                    "@@||ads.example/allowed.js\$script")
+            ($$"||ads.example^$script,redirect=noopjs\n" +
+                    $$"||styles.example^$stylesheet,redirect=noopcss\n" +
+                    $$"@@||ads.example/allowed.js$script")
                 .byteInputStream(),
         )
         val blocker =
             ContentBlockingService(
                     store,
                     KotlinFilterEngine(),
-                    Executor { it.run() },
+                    { it.run() },
                 )
                 .also { it.start() }
         val script =
@@ -181,7 +179,7 @@ class WebViewBlockerTest {
         val text =
             resources
                 .mapIndexed { index, response ->
-                    "||r$index.example^\$redirect=${response.resourcePath}"
+                    $$"||r$$index.example^$redirect=$${response.resourcePath}"
                 }
                 .joinToString("\n")
         store.importFrom("resources.txt", text.byteInputStream())
@@ -190,7 +188,7 @@ class WebViewBlockerTest {
             ContentBlockingService(
                     store,
                     engine,
-                    Executor { it.run() },
+                    { it.run() },
                 )
                 .also { it.start() }
         // Exercise response bytes independently of the loader's provenance tests.
@@ -227,15 +225,15 @@ class WebViewBlockerTest {
         val store = FilterListStore(context)
         store.importFrom(
             "images.txt",
-            ("||pixel.example^\$image,redirect=1x1.gif\n" +
-                    "||square.example^\$image,redirect=2x2.png")
+            ($$"||pixel.example^$image,redirect=1x1.gif\n" +
+                    $$"||square.example^$image,redirect=2x2.png")
                 .byteInputStream(),
         )
         val blocker =
             ContentBlockingService(
                     store,
                     KotlinFilterEngine(),
-                    Executor { it.run() },
+                    { it.run() },
                 )
                 .also { it.start() }
         val gif =
@@ -256,7 +254,7 @@ class WebViewBlockerTest {
 
     @Test
     fun queryRemovalOnlyRewritesGetDocumentsAndKeepsOriginalBlockDecisions() {
-        val blocker = realService("*\$removeparam=track\n||blocked.example^\$doc")
+        val blocker = realService($$"*$removeparam=track\n||blocked.example^$doc")
         val url = "https://site.example/?track=1&keep=2"
         assertEquals(
             "https://site.example/?keep=2",
@@ -282,8 +280,8 @@ class WebViewBlockerTest {
     fun documentsUseTheirOwnContextAndActualMethodRegardlessOfHeaders() {
         val blocker =
             realService(
-                "||forms.example^\$doc,method=POST,domain=forms.example,~third-party\n" +
-                    "@@||forms.example/safe\$document"
+                $$"||forms.example^$doc,method=POST,domain=forms.example,~third-party\n" +
+                    $$"@@||forms.example/safe$document"
             )
         val blocked =
             WebViewBlocker.shouldBlockDocument(
@@ -370,7 +368,7 @@ class WebViewBlockerTest {
         return ContentBlockingService(
                 store,
                 KotlinFilterEngine(),
-                Executor { it.run() },
+                { it.run() },
             )
             .also {
                 it.start()
@@ -406,7 +404,7 @@ class WebViewBlockerTest {
 
     @Test
     fun subresourcesUseOnlyNativeFrameInitiatorHeaders() {
-        val blocker = realService("||ads.example^\$script,domain=frame.example")
+        val blocker = realService($$"||ads.example^$script,domain=frame.example")
         assertTrue(
             WebViewBlocker.shouldBlock(
                 "https://ads.example/a.js",
@@ -444,7 +442,7 @@ class WebViewBlockerTest {
 
     @Test
     fun nativeOriginTakesPrecedenceOverReferrerForFrameRules() {
-        val blocker = realService("||ads.example^\$script,domain=frame.example")
+        val blocker = realService($$"||ads.example^$script,domain=frame.example")
         fun blocked(origin: String, referrer: String) =
             WebViewBlocker.shouldBlock(
                 "https://ads.example/a.js",
@@ -471,7 +469,7 @@ class WebViewBlockerTest {
 
     @Test
     fun opaqueAndMalformedInitiatorsStillApplyContextFreeRules() {
-        val blocker = realService("||ads.example^\$script")
+        val blocker = realService($$"||ads.example^$script")
         for (source in
             listOf(
                 "null",
@@ -522,8 +520,8 @@ class WebViewBlockerTest {
     fun unknownFrameOriginsKeepPotentialContextualExceptions() {
         val blocker =
             realService(
-                "||ads.example^\$script\n" +
-                    "@@||ads.example^\$script,domain=allowed.example"
+                $$"||ads.example^$script\n" +
+                    $$"@@||ads.example^$script,domain=allowed.example"
             )
         fun blocked(headers: Map<String, String>) =
             WebViewBlocker.shouldBlock(

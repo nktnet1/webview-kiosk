@@ -14,7 +14,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import uk.nktnet.webviewkiosk.adblock.FilterListValidator
 import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
 import uk.nktnet.webviewkiosk.adblock.RuleLoadStage
 
@@ -34,7 +33,7 @@ class ContentBlockingServiceTest {
             .clear()
             .commit()
         java.io.File(context.filesDir, "content-blocking-lists").deleteRecursively()
-        store = FilterListStore(context, validator = FilterListValidator {})
+        store = FilterListStore(context, validator = {})
         engine = FakeEngine()
         executor = QueuedExecutor()
         service = ContentBlockingService(store, engine, executor)
@@ -282,7 +281,7 @@ class ContentBlockingServiceTest {
             ContentBlockingService(
                 store,
                 engine,
-                Executor {
+                {
                     throw java.util.concurrent.RejectedExecutionException("closed")
                 },
             )
@@ -392,7 +391,7 @@ class ContentBlockingServiceTest {
             ContentBlockingService(
                 store,
                 engine,
-                Executor {
+                {
                     throw java.util.concurrent.RejectedExecutionException("closed")
                 },
             )

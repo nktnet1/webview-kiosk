@@ -19,6 +19,8 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -396,7 +398,7 @@ class MqttForegroundServiceTest {
     @Test
     fun acceptedServiceAppliesSettingsThroughItsActualCollector() = runBlocking {
         start()
-        awaitSubscriptions(1)
+        awaitSubscriptionsSuspending(1)
         val message =
             InboundSettingsMessage(
                 messageId = "service-settings",
@@ -420,7 +422,7 @@ class MqttForegroundServiceTest {
             }
         try {
             RemoteMessageManager.emitSettings(message, Source.MQTT)
-            val applied = withTimeout(5_000) { received.await() }
+            val applied = withTimeout(5.seconds) { received.await() }
 
             assertEquals("https://example.com/remote", userSettings.homeUrl)
             assertEquals(Source.MQTT, applied.source)
@@ -606,10 +608,10 @@ class MqttForegroundServiceTest {
     }
 
     private fun awaitMainCondition(condition: () -> Boolean) = runBlocking {
-        withTimeout(5_000) {
+        withTimeout(5.seconds) {
             while (!condition()) {
                 shadowOf(Looper.getMainLooper()).idle()
-                delay(1)
+                delay(1.milliseconds)
             }
         }
     }
@@ -649,7 +651,11 @@ class MqttForegroundServiceTest {
     }
 
     private fun awaitSubscriptions(count: Int) = runBlocking {
-        withTimeout(5_000) {
+        awaitSubscriptionsSuspending(count)
+    }
+
+    private suspend fun awaitSubscriptionsSuspending(count: Int) {
+        withTimeout(5.seconds) {
             while (
                 (RemoteMessageManager.settingsFlow as MutableSharedFlow<*>)
                     .subscriptionCount
@@ -657,7 +663,7 @@ class MqttForegroundServiceTest {
                     (RemoteMessageManager.requestsFlow as MutableSharedFlow<*>)
                         .subscriptionCount
                         .value != count
-            ) delay(1)
+            ) delay(1.milliseconds)
         }
     }
 
@@ -674,10 +680,10 @@ class MqttForegroundServiceTest {
                 InboundClearHistoryCommand(messageId = id, interact = false),
                 Source.MQTT,
             )
-            withTimeout(5_000) {
+            withTimeout(5.seconds) {
                 while (!collector.isCompleted) {
                     shadowOf(Looper.getMainLooper()).idle()
-                    delay(1)
+                    delay(1.milliseconds)
                 }
                 collector.join()
             }

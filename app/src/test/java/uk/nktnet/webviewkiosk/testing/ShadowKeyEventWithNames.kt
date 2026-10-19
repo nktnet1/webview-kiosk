@@ -21,9 +21,10 @@ class ShadowKeyEventWithNames : ShadowKeyEvent() {
                 }
                 .associate { it.getInt(null) to it.name.removePrefix("KEYCODE_") }
 
+        // Robolectric invokes this implementation reflectively.
+        @Suppress("unused")
         @JvmStatic
         @Implementation
-        protected fun nativeKeyCodeToString(keyCode: Int): String? =
-            keyCodeNames[keyCode]
+        fun nativeKeyCodeToString(keyCode: Int): String? = keyCodeNames[keyCode]
     }
 }

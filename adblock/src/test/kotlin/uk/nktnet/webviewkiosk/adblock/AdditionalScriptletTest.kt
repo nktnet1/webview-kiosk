@@ -204,7 +204,7 @@ class AdditionalScriptletTest {
                 "aost, constructor.x, stack",
                 "set-cookie, name, arbitrary",
                 "set-cookie, name, true, /path",
-                "set-local-storage-item, key, \$now\$",
+                $$"set-local-storage-item, key, $now$",
                 "set-cookie, name, true, , unknown, 1",
                 "set-attr, body, onclick, true",
                 "set-attr, iframe, srcdoc, true",

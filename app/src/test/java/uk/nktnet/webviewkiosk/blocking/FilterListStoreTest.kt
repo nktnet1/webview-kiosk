@@ -13,7 +13,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import uk.nktnet.webviewkiosk.adblock.FilterListValidator
 
 @RunWith(RobolectricTestRunner::class)
 class FilterListStoreTest {
@@ -28,7 +27,7 @@ class FilterListStoreTest {
             .clear()
             .commit()
         java.io.File(context.filesDir, "content-blocking-lists").deleteRecursively()
-        store = FilterListStore(context, validator = FilterListValidator {})
+        store = FilterListStore(context, validator = {})
     }
 
     @Test
@@ -41,7 +40,7 @@ class FilterListStoreTest {
     fun downloadTimesPersistAndArePreservedByMetadataChanges() {
         val context = RuntimeEnvironment.getApplication()
         var time = 1_000L
-        val timed = FilterListStore(context, FilterListValidator {}, now = { time })
+        val timed = FilterListStore(context, {}, now = { time })
         val remote =
             timed.importFrom(
                 "Remote",
@@ -72,7 +71,7 @@ class FilterListStoreTest {
     fun successfulRefreshesAndSourceChangesAdvanceTheirSavedTime() {
         val context = RuntimeEnvironment.getApplication()
         var time = 1_000L
-        val timed = FilterListStore(context, FilterListValidator {}, now = { time })
+        val timed = FilterListStore(context, {}, now = { time })
         val preset =
             timed.importFrom(
                 "Preset",
@@ -118,7 +117,7 @@ class FilterListStoreTest {
     fun failedRefreshOrSourceChangeRetainsThePreviousTimeAndRules() {
         val context = RuntimeEnvironment.getApplication()
         var time = 1_000L
-        val timed = FilterListStore(context, FilterListValidator {}, now = { time })
+        val timed = FilterListStore(context, {}, now = { time })
         val item =
             timed.importFrom(
                 "Remote",
@@ -150,7 +149,7 @@ class FilterListStoreTest {
     fun legacyListsKeepAnUnknownTimeUntilRefreshed() {
         val context = RuntimeEnvironment.getApplication()
         var time = 1_000L
-        val timed = FilterListStore(context, FilterListValidator {}, now = { time })
+        val timed = FilterListStore(context, {}, now = { time })
         val item =
             timed.importFrom(
                 "Preset",
@@ -179,7 +178,7 @@ class FilterListStoreTest {
     fun infoCountsOnlyTheRequestedSavedListWithoutChangingItsState() {
         val text =
             "\uFEFF! header\r\n0.0.0.0 ads.example alias.example\n||tracker.example^\n" +
-                "@@||allowed.example^\nsite.example##.広告\n##.ad\n||popup.example^\$popup\n" +
+                $$"@@||allowed.example^\nsite.example##.広告\n##.ad\n||popup.example^$popup\n" +
                 "site.example#?#div:has-text(Sponsored)\n||"
         val item = store.importFrom("Mixed", text.byteInputStream())
         store.setEnabled(item.id, false)
@@ -211,7 +210,7 @@ class FilterListStoreTest {
     fun infoReflectsFileReplacementAndDisabledClones() {
         val item = store.importFrom("Original", "||ads.example^".byteInputStream())
         assertEquals(1, store.info(item.id).networkRules)
-        val text = "##.ad\n||popup.example^\$popup"
+        val text = $$"##.ad\n||popup.example^$popup"
         store.updateFile(item.id, "Changed", text.byteInputStream())
         val updated = store.info(item.id)
         assertEquals(0, updated.networkRules)

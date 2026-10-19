@@ -11,8 +11,10 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.After
@@ -91,7 +93,7 @@ class MqttShutdownTest {
                 // Cancel and join only work created by this fixture; keep the
                 // manager's scope usable.
                 runBlocking {
-                    withTimeout(3_000) {
+                    withTimeout(3.seconds) {
                         while (true) {
                             val jobs =
                                 scopeJob.children
@@ -101,7 +103,7 @@ class MqttShutdownTest {
                                 break
                             }
                             jobs.forEach { it.cancel() }
-                            jobs.forEach { it.join() }
+                            jobs.joinAll()
                         }
                     }
                 }

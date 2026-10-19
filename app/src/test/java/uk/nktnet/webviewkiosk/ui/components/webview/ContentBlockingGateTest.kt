@@ -215,7 +215,7 @@ class ContentBlockingGateTest {
             ContentBlockingService(
                 store,
                 KotlinFilterEngine(),
-                Executor { throw RejectedExecutionException("Loader unavailable") },
+                { throw RejectedExecutionException("Loader unavailable") },
             )
         showPage.value = true
         frames()

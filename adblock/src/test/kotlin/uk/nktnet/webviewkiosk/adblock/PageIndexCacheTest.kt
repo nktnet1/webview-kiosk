@@ -193,17 +193,16 @@ class PageIndexCacheTest {
             val hosts = routing.tables[hostTable]
             val entries = hosts.getValue("site.example")
             assertTrue(entries.size > 1)
-            val malformed =
+            val malformedHosts =
                 listOf(
-                    hostTable to (hosts - "site.example"),
-                    hostTable to (hosts + ("wrong.example" to entries)),
-                    hostTable to
-                        (hosts + ("site.example" to entries.reversedArray())),
-                    hostTable to
-                        (hosts +
-                            ("site.example" to intArrayOf(entries[0], entries[0]))),
-                    exceptionTable to emptyMap(),
+                    hosts - "site.example",
+                    hosts + ("wrong.example" to entries),
+                    hosts + ("site.example" to entries.reversedArray()),
+                    hosts + ("site.example" to intArrayOf(entries[0], entries[0])),
                 )
+            val malformed =
+                malformedHosts.map { hostTable to it } +
+                    (exceptionTable to emptyMap())
             for ((table, values) in malformed) {
                 val tables =
                     routing.tables.toMutableList().apply { this[table] = values }

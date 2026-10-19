@@ -34,7 +34,7 @@ class FilterSettingsJsonTest {
     fun skipsUnknownKeysAndMalformedFilterElements() {
         val settings = JSONObject().put("enabled", true).put("count", 42)
         val filters =
-            arrayOf<JsonElement>(
+            arrayOf(
                 JsonPrimitive("enabled"),
                 buildJsonObject { put("key", "count") },
                 JsonPrimitive("unknown"),

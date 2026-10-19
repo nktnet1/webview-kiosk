@@ -22,7 +22,7 @@ class DefaultListRestoreBenchmarkTest {
         listOf(
             (0 until 70_000).joinToString("\n") { "||ads$it.example^" },
             (0 until 40_000).joinToString("\n") {
-                "||cdn$it.example/advert\$script,domain=site$it.example"
+                $$"||cdn$$it.example/advert$script,domain=site$$it.example"
             },
             (0 until 70_000).joinToString("\n") { "site$it.example##.advert" },
             (0 until 1_000).joinToString("\n") {
@@ -110,10 +110,10 @@ class DefaultListRestoreBenchmarkTest {
         val lists =
             listOf(
                 (0 until 70_000).joinToString("\n") {
-                    "||ads$it.example/track\$script,domain=site$it.example"
+                    $$"||ads$$it.example/track$script,domain=site$$it.example"
                 },
                 (0 until 40_000).joinToString("\n") {
-                    "||cdn$it.example/banner\$image"
+                    $$"||cdn$$it.example/banner$image"
                 },
                 (0 until 70_000).joinToString("\n") { "site$it.example##.advert" },
                 (0 until 1_000).joinToString("\n") {

@@ -1,3 +1,5 @@
+@file:Suppress("UsePropertyAccessSyntax")
+
 package uk.nktnet.webviewkiosk.config
 
 import android.content.Context
@@ -5,7 +7,6 @@ import android.content.Intent
 import android.content.RestrictionsManager
 import android.os.Bundle
 import android.os.Looper
-import java.util.concurrent.Executor
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -111,7 +112,7 @@ class ContentBlockingSettingsTest {
             ContentBlockingService(
                 store,
                 KotlinFilterEngine(),
-                Executor { it.run() },
+                { it.run() },
             )
         service.bindSettings(context).use {
             service.start()

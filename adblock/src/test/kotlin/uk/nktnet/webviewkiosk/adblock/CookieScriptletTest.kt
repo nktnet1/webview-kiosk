@@ -146,7 +146,7 @@ class CookieScriptletTest {
                 "token, value, , , unknown, 1",
                 "bad;name, value",
                 "bad=name, value",
-                "token, \$unknown\$",
+                $$"token, $unknown$",
             )) {
             assertNull(
                 arguments,
@@ -155,7 +155,7 @@ class CookieScriptletTest {
         }
         assertNotNull(
             ScriptletParser.parse(
-                "+js(trusted-set-cookie, token, \$now\$-\$currentDate\$-\$currentISODate\$, 1day)",
+                $$"+js(trusted-set-cookie, token, $now$-$currentDate$-$currentISODate$, 1day)",
                 true,
             )
         )

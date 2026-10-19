@@ -66,14 +66,14 @@ class KotlinFilterEngineTest {
     @Test
     fun importantBlocksOverrideOrdinaryExceptionsAndBadfilterDisablesAcrossLists() {
         val rules =
-            "||ads.example^\n@@||ads.example/allowed\n||ads.example/important\$important"
+            $$"||ads.example^\n@@||ads.example/allowed\n||ads.example/important$important"
         val engine = engine(rules)
         assertFalse(blocked(engine, "https://ads.example/allowed"))
         assertTrue(blocked(engine, "https://ads.example/important"))
         val disabled =
             engine(
                 rules,
-                "||ads.example^\$badfilter\n||ads.example/important\$badfilter,important",
+                $$"||ads.example^$badfilter\n||ads.example/important$badfilter,important",
             )
         assertFalse(blocked(disabled, "https://ads.example/anything"))
         assertFalse(blocked(disabled, "https://ads.example/important"))
@@ -83,8 +83,8 @@ class KotlinFilterEngineTest {
     fun badfilterIdentityUsesParsedOptionsAndNormalizedDomains() {
         val engine =
             engine(
-                "||ads.example^\$script,domain=publisher.example|other.example,third-party",
-                "||ADS.EXAMPLE^\$3p,domain=other.example|publisher.example,script,badfilter",
+                $$"||ads.example^$script,domain=publisher.example|other.example,third-party",
+                "||ADS.EXAMPLE^$3p,domain=other.example|publisher.example,script,badfilter",
             )
         assertFalse(blocked(engine, "https://ads.example/a.js", type = "script"))
     }
@@ -93,8 +93,8 @@ class KotlinFilterEngineTest {
     fun unknownModifiersDiscardTheWholeRuleIncludingExceptions() {
         val engine =
             engine(
-                "||cdn.example^\$script,future-option\n" +
-                    "@@||ads.example^\$future-option\n||ads.example^"
+                $$"||cdn.example^$script,future-option\n" +
+                    $$"@@||ads.example^$future-option\n||ads.example^"
             )
         assertFalse(blocked(engine, "https://cdn.example/image.png", type = "image"))
         assertFalse(blocked(engine, "https://cdn.example/a.js", type = "script"))
@@ -104,7 +104,7 @@ class KotlinFilterEngineTest {
 
     @Test
     fun publicSuffixesPrivateSuffixesAndIpAddressesDeterminePartyCorrectly() {
-        val engine = engine("*\$third-party")
+        val engine = engine($$"*$third-party")
         assertFalse(
             blocked(
                 engine,
@@ -227,7 +227,7 @@ class KotlinFilterEngineTest {
 
     @Test
     fun optionsOnlyRulesKeepTypePartyDomainAndHidingRestrictions() {
-        val rules = "\$third-party,xmlhttprequest,domain=site.example"
+        val rules = $$"$third-party,xmlhttprequest,domain=site.example"
         val engine = engine(rules)
         engine.validate(rules)
         assertTrue(
@@ -264,9 +264,9 @@ class KotlinFilterEngineTest {
         )
         val hiding =
             engine(
-                "##.ad\nsite.example##.sponsor\n@@\$generichide,domain=site.example"
+                $$"##.ad\nsite.example##.sponsor\n@@$generichide,domain=site.example"
             )
-        hiding.validate("@@\$generichide,domain=site.example")
+        hiding.validate($$"@@$generichide,domain=site.example")
         assertEquals(
             listOf(".sponsor"),
             hiding.cosmeticSelectors(
@@ -283,12 +283,12 @@ class KotlinFilterEngineTest {
                 emptyList(),
             ),
         )
-        val unknown = engine("\$image,future-option")
+        val unknown = engine($$"$image,future-option")
         assertFalse(blocked(unknown, "https://cdn.example/a", type = "image"))
         assertEquals(1, unknown.unsupportedRuleCount())
         assertThrows(IllegalArgumentException::class.java) { engine.validate("@@") }
         assertThrows(IllegalArgumentException::class.java) {
-            engine.validate("\$domain=")
+            engine.validate($$"$domain=")
         }
     }
 
@@ -351,8 +351,8 @@ class KotlinFilterEngineTest {
         val engine =
             engine(
                 "##.ad\npublisher.example##.sponsor\n" +
-                    "@@||publisher.example/no-generic\$generichide\n" +
-                    "@@||publisher.example/no-hiding\$elemhide"
+                    $$"@@||publisher.example/no-generic$generichide\n" +
+                    $$"@@||publisher.example/no-hiding$elemhide"
             )
         assertEquals(
             setOf(".sponsor"),
@@ -375,8 +375,8 @@ class KotlinFilterEngineTest {
         )
         val disabled =
             engine(
-                "##.ad\n@@||publisher.example^\$generichide\n" +
-                    "@@||publisher.example^\$badfilter,generichide"
+                $$"##.ad\n@@||publisher.example^$generichide\n" +
+                    $$"@@||publisher.example^$badfilter,generichide"
             )
         assertEquals(
             listOf(".ad"),
@@ -535,9 +535,9 @@ class KotlinFilterEngineTest {
     fun destinationRestrictionsProtectExcludedDomains() {
         val engine =
             engine(
-                "*\$script,3p,from=publisher.example," +
+                $$"*$script,3p,from=publisher.example," +
                     "denyallow=trusted.example|another.example\n" +
-                    "\$image,to=allowed.example|~private.allowed.example"
+                    $$"$image,to=allowed.example|~private.allowed.example"
             )
         assertTrue(
             blocked(
@@ -583,11 +583,11 @@ class KotlinFilterEngineTest {
     fun safeLocalRedirectsWorkWithoutTreatingUnknownResourcesAsBlocks() {
         val engine =
             engine(
-                "||ads.example^\$script,redirect=noopjs:5\n" +
-                    "||css.example^\$stylesheet,redirect=noopcss\n" +
-                    "||html.example^\$subdocument,redirect=noophtml\n" +
-                    "||plain.example^\$empty\n" +
-                    "||special.example^\$script,redirect=unlisted-shim.js"
+                $$"||ads.example^$script,redirect=noopjs:5\n" +
+                    $$"||css.example^$stylesheet,redirect=noopcss\n" +
+                    $$"||html.example^$subdocument,redirect=noophtml\n" +
+                    $$"||plain.example^$empty\n" +
+                    $$"||special.example^$script,redirect=unlisted-shim.js"
             )
         assertEquals(
             BlockingResponse.EMPTY_SCRIPT,
@@ -636,7 +636,7 @@ class KotlinFilterEngineTest {
         )
         assertEquals(1, engine.unsupportedRuleCount())
         val sharedHost =
-            engine("||ads.example^\n||ads.example^\$script,redirect=noopjs")
+            engine($$"||ads.example^\n||ads.example^$script,redirect=noopjs")
         assertEquals(
             BlockingResponse.EMPTY_SCRIPT,
             sharedHost.responseFor(
@@ -648,7 +648,7 @@ class KotlinFilterEngineTest {
         )
         val exceptions =
             engine(
-                "||ads.example^\$script,redirect=noopjs\n@@||ads.example/ok.js\$script"
+                $$"||ads.example^$script,redirect=noopjs\n@@||ads.example/ok.js$script"
             )
         assertEquals(
             BlockingResponse.ALLOW,
@@ -755,7 +755,7 @@ class KotlinFilterEngineTest {
 
     @Test
     fun redirectRuleRequiresAnIndependentBlockAndRespectsExceptions() {
-        val only = engine("*\$script,redirect-rule=noopjs,domain=site.example")
+        val only = engine($$"*$script,redirect-rule=noopjs,domain=site.example")
         assertEquals(
             BlockingResponse.ALLOW,
             only.responseFor(
@@ -767,9 +767,9 @@ class KotlinFilterEngineTest {
         )
         val withBlock =
             engine(
-                "||ads.example^\$script\n" +
-                    "*\$script,redirect-rule=noopjs,domain=site.example\n" +
-                    "@@||ads.example/allowed.js\$script"
+                $$"||ads.example^$script\n" +
+                    $$"*$script,redirect-rule=noopjs,domain=site.example\n" +
+                    $$"@@||ads.example/allowed.js$script"
             )
         assertEquals(
             BlockingResponse.EMPTY_SCRIPT,
@@ -789,7 +789,7 @@ class KotlinFilterEngineTest {
                 "GET",
             ),
         )
-        val image = engine("||ads.example^\$image,redirect=1x1.gif")
+        val image = engine($$"||ads.example^$image,redirect=1x1.gif")
         assertEquals(
             BlockingResponse.TRANSPARENT_GIF,
             image.responseFor(
@@ -831,7 +831,7 @@ class KotlinFilterEngineTest {
         val error =
             assertThrows(IllegalArgumentException::class.java) {
                 engine.validate(
-                    "\uFEFF! header\r\n\n||ads.example^\$domain=\n" +
+                    $$"\uFEFF! header\r\n\n||ads.example^$domain=\n" +
                         (0 until 100).joinToString("\n") { "||" }
                 )
             }
@@ -861,7 +861,7 @@ class KotlinFilterEngineTest {
         for (text in
             listOf(
                 "site.example##+js(set, foo, bar)",
-                "||ads.example^\$future-option",
+                $$"||ads.example^$future-option",
                 "/(?=ads)ads/",
             )) {
             assertTrue(
@@ -872,7 +872,7 @@ class KotlinFilterEngineTest {
                     .contains("no supported")
             )
         }
-        engine.validate("||ads.example^\n||cdn.example^\$future-option")
+        engine.validate($$"||ads.example^\n||cdn.example^$future-option")
         engine.validate("site.example##.ad\nsite.example#@#.ad")
         engine.validate("@@||allowed.example^")
     }
@@ -883,7 +883,7 @@ class KotlinFilterEngineTest {
         // Different conditions make these unique despite sharing an unindexable
         // pattern.
         val oversized =
-            (0..2048).joinToString("\n") { "ad\$method=M" + "X".repeat(it + 1) }
+            (0..2048).joinToString("\n") { $$"ad$method=M" + "X".repeat(it + 1) }
         assertThrows(IllegalArgumentException::class.java) {
             engine.replace(listOf(oversized))
         }

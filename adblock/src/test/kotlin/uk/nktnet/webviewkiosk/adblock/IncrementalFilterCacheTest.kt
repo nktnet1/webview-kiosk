@@ -31,7 +31,7 @@ class IncrementalFilterCacheTest {
         engine.replace(listOf("||ads.example^", "##.new-banner"), stages::add)
         assertEquals(1, stages.count { it == RuleLoadStage.COMPILING })
         assertEquals(1, stages.count { it == RuleLoadStage.RESTORING })
-        assertEquals(1000L, previous.filter { it.exists() }.single().lastModified())
+        assertEquals(1000L, previous.single { it.exists() }.lastModified())
         assertEquals(2, directory.listFiles()!!.size)
         stages.clear()
         engine.replace(listOf("##.new-banner", "||ads.example^"), stages::add)
@@ -44,7 +44,7 @@ class IncrementalFilterCacheTest {
         val file = File(folder.root, "rules.bin")
         val base = "||ads.example^\nsite.example##+js(set, flag, false)"
         val override =
-            "||ads.example^\$badfilter\nsite.example#@#+js(set, flag, false)"
+            $$"||ads.example^$badfilter\nsite.example#@#+js(set, flag, false)"
         val engine = KotlinFilterEngine(file)
         engine.replace(listOf(base, "##.banner"))
         engine.replace(listOf(base, override))

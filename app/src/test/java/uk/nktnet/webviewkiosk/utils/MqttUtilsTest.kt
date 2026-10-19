@@ -13,7 +13,7 @@ class MqttUtilsTest {
                 "/",
                 "kiosk//status",
                 "kiosk/",
-                "\$SYS/status",
+                $$"$SYS/status",
                 "设备/状态",
             )) {
             assertTrue(topic, isValidMqttPublishTopic(topic))

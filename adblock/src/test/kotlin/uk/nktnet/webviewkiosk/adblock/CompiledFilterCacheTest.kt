@@ -25,7 +25,7 @@ class CompiledFilterCacheTest {
         val file = File(folder.root, "index-timings.bin")
         val lists =
             listOf(
-                "||ads.example^\$script,domain=site.example\n" +
+                $$"||ads.example^$script,domain=site.example\n" +
                     "site.example##.advert\n" +
                     "site.example##+js(json-prune-fetch-response, ads)"
             )
@@ -109,12 +109,13 @@ class CompiledFilterCacheTest {
         val lists =
             listOf(
                 "||ads.example^\n@@||ads.example/allowed\n" +
-                    "||tracker.example^\$script,third-party," +
+                    $$"||tracker.example^$script,third-party," +
                     "domain=site.example|~safe.site.example,method=GET|~POST\n" +
-                    "||important.example^\$important,match-case\n@@||page.example^\$generichide\n" +
+                    $$"||important.example^$important,match-case\n@@||page.example^$generichide\n" +
                     "##.ad\nsite.example,~safe.site.example##.sponsor\nsite.example#@#.ad\n" +
-                    "||unsupported.example^\$redirect=noop\n0.0.0.0 hosts.example\n||例子.测试^",
-                "||ads.example^\$badfilter\n##.ad",
+                    $$"||unsupported.example^$redirect=noop\n" +
+                    "0.0.0.0 hosts.example\n||例子.测试^",
+                $$"||ads.example^$badfilter\n##.ad",
             )
         val file = File(folder.root, "compiled.bin")
         val cache = CompiledFilterCache(file)
@@ -188,8 +189,8 @@ class CompiledFilterCacheTest {
     fun cachePreservesEntityDestinationsProceduresAndSurrogates() {
         val lists =
             listOf(
-                "||ads.example^\$script,redirect=noopjs,to=ads.example\n" +
-                    "*\$image,from=publisher.*,denyallow=trusted.example\n" +
+                $$"||ads.example^$script,redirect=noopjs,to=ads.example\n" +
+                    $$"*$image,from=publisher.*,denyallow=trusted.example\n" +
                     "publisher.*##.ad:has-text(Sponsored)\n" +
                     "publisher.*#@#.ad:has-text(Sponsored)\n" +
                     "publisher.*##.banner:remove()"
@@ -233,8 +234,8 @@ class CompiledFilterCacheTest {
     fun cacheRestoresStyleAttributeRemovalAndRedirectOnlyRules() {
         val lists =
             listOf(
-                "||ads.example^\$script\n" +
-                    "*\$script,redirect-rule=noopjs,domain=site.example\n" +
+                $$"||ads.example^$script\n" +
+                    $$"*$script,redirect-rule=noopjs,domain=site.example\n" +
                     "site.example##.ad:style(height: 1px !important)\n" +
                     "site.example##a:remove-attr(href)\n" +
                     "site.example##.sponsor:upward(.container > div)"
