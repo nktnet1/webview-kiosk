@@ -1,6 +1,8 @@
 package uk.nktnet.webviewkiosk.adblock
 
 import java.io.File
+import java.nio.ByteBuffer
+import java.util.zip.CRC32
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -377,6 +379,99 @@ class CompiledFilterCacheTest {
         file.writeBytes(intact + byteArrayOf(1))
         assertNull(cache.read(key, onTimings = restoreTimings::add))
         assertEquals(1, restoreTimings.size)
+    }
+
+    @Test
+    fun previousSchemaRecompilesAggregateAndSourceShardsOnlyOnce() {
+        val file = File(folder.root, "schema.bin")
+        val lists =
+            listOf(
+                "||ads.example^\nsite.example##.advert",
+                "site.example##+js(set, marker, false)",
+            )
+        val original = KotlinFilterEngine(file)
+        original.replace(lists)
+        val current = ByteBuffer.wrap(file.readBytes()).getInt(4)
+        assertTrue(current > 18)
+        val shards = File(folder.root, "${file.name}.sources")
+        val files = shards.listFiles()!!.filter { it.extension == "bin" } + file
+        assertEquals(3, files.size)
+        for (snapshot in files) {
+            val bytes = snapshot.readBytes()
+            // The schema is rejected before records are read, regardless of their
+            // layout. Repair CRC32 so a checksum failure cannot mask that check.
+            ByteBuffer.wrap(bytes).putInt(4, 18)
+            repairChecksum(bytes)
+            snapshot.writeBytes(bytes)
+        }
+        val stages = mutableListOf<RuleLoadStage>()
+        val rebuilt = KotlinFilterEngine(file)
+        rebuilt.replace(lists, stages::add)
+        assertTrue(RuleLoadStage.COMPILING in stages)
+        assertTrue(RuleLoadStage.SAVING_CACHE in stages)
+        for (snapshot in files) {
+            assertEquals(current, ByteBuffer.wrap(snapshot.readBytes()).getInt(4))
+        }
+        stages.clear()
+        val warm = KotlinFilterEngine(file)
+        warm.replace(lists, stages::add)
+        assertTrue(RuleLoadStage.RESTORING in stages)
+        assertFalse(RuleLoadStage.COMPILING in stages)
+        assertFalse(RuleLoadStage.SAVING_CACHE in stages)
+        assertTrue(
+            warm.shouldBlock(
+                "https://ads.example/pixel",
+                "https://site.example/",
+                "image",
+                "GET",
+            )
+        )
+        assertEquals(
+            original.cosmeticSelectors(
+                "https://site.example/",
+                emptyList(),
+                emptyList(),
+            ),
+            warm.cosmeticSelectors(
+                "https://site.example/",
+                emptyList(),
+                emptyList(),
+            ),
+        )
+        assertEquals(original.scriptletInjection(), warm.scriptletInjection())
+    }
+
+    @Test
+    fun checksumCorrectInvalidStringReferencesAndLengthsAreRejected() {
+        val file = File(folder.root, "invalid-string.bin")
+        val cache = CompiledFilterCache(file)
+        val lists = listOf("||ads.example^")
+        val key = cache.key(lists)
+        cache.write(key, FilterCompiler.parse(lists))
+        val valid = file.readBytes()
+        // Header: magic/schema/salt/key + total/skipped/network counts, then the
+        // first network's disabled byte, string ID and tagged string length.
+        val stringId = 3 * Int.SIZE_BYTES + 32 + 3 * Int.SIZE_BYTES + 1
+        for (reference in listOf(-1, 1, Int.MAX_VALUE)) {
+            val bytes = valid.copyOf()
+            ByteBuffer.wrap(bytes).putInt(stringId, reference)
+            repairChecksum(bytes)
+            file.writeBytes(bytes)
+            assertNull(cache.read(key))
+        }
+        for (tag in listOf(8193, 0x8000 or 8193, 0xffff)) {
+            val bytes = valid.copyOf()
+            ByteBuffer.wrap(bytes).putShort(stringId + Int.SIZE_BYTES, tag.toShort())
+            repairChecksum(bytes)
+            file.writeBytes(bytes)
+            assertNull(cache.read(key))
+        }
+    }
+
+    private fun repairChecksum(bytes: ByteArray) {
+        val size = bytes.size - Long.SIZE_BYTES
+        val checksum = CRC32().apply { update(bytes, 0, size) }.value
+        ByteBuffer.wrap(bytes).putLong(size, checksum)
     }
 
     @Test

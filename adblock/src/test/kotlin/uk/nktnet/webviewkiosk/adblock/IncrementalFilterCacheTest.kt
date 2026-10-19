@@ -13,6 +13,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import uk.nktnet.webviewkiosk.adblock.engine.CompiledFilterCache
 import uk.nktnet.webviewkiosk.adblock.engine.FilterCompiler
+import uk.nktnet.webviewkiosk.adblock.engine.FilterSourceCache
 import uk.nktnet.webviewkiosk.adblock.engine.RecoverableCacheFile
 
 class IncrementalFilterCacheTest {
@@ -99,6 +100,25 @@ class IncrementalFilterCacheTest {
         assertEquals(1, stages.count { it == RuleLoadStage.COMPILING })
         assertEquals(1, stages.count { it == RuleLoadStage.RESTORING })
         assertNotNull(CompiledFilterCache(shard).read(key))
+    }
+
+    @Test
+    fun shardProgressStartsBeforeRestoringEvenWhenItsChecksumFails() {
+        val cache = FilterSourceCache(File(folder.root, "progress.bin"), 0)
+        val sources = listOf(FilterSource("||ads.example^"))
+        val entries = cache.load(sources) {}
+        cache.save(entries)
+        val file = entries.single().file
+        val bytes = file.readBytes()
+        bytes[bytes.lastIndex] = (bytes.last().toInt() xor 1).toByte()
+        file.writeBytes(bytes)
+        val stages = mutableListOf<RuleLoadStage>()
+        val rebuilt = cache.load(sources, stages::add)
+        assertEquals(
+            listOf(RuleLoadStage.RESTORING, RuleLoadStage.COMPILING),
+            stages,
+        )
+        assertFalse(rebuilt.single().restored)
     }
 
     @Test

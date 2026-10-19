@@ -84,7 +84,11 @@ abstract class GenerateScriptletSuffixes : DefaultTask() {
                                             it == '.'
                                     }
                             )
-                            if (wildcard) "*.$host" else host
+                            if (wildcard) {
+                                "*.$host"
+                            } else {
+                                host
+                            }
                         }
                         .distinct()
                         .sorted()

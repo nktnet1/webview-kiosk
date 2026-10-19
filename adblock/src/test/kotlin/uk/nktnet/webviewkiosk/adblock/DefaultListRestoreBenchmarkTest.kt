@@ -43,8 +43,16 @@ class DefaultListRestoreBenchmarkTest {
             cache.write(
                 key,
                 rules,
-                if (mode == "normalized") null else indexed.networkIndexes,
-                if (mode == "page") indexed.pageIndexes else null,
+                if (mode == "normalized") {
+                    null
+                } else {
+                    indexed.networkIndexes
+                },
+                if (mode == "page") {
+                    indexed.pageIndexes
+                } else {
+                    null
+                },
             )
             repeat(2) { run ->
                 var restored: CompiledRuleSet? = null
@@ -65,6 +73,34 @@ class DefaultListRestoreBenchmarkTest {
                         "build_ms=${buildNs / 1_000_000.0}"
                 )
             }
+        }
+    }
+
+    @Test
+    fun profileAggregateWarmCacheRestoration() {
+        assumeTrue(System.getenv("FILTER_CACHE_BENCHMARK") == "1")
+        val lists = sampleLists()
+        val cache = CompiledFilterCache(File(folder.root, "warm.bin"))
+        val key = cache.key(lists)
+        val rules = FilterCompiler.parse(lists)
+        val indexed = rules.build()
+        cache.write(key, rules, indexed.networkIndexes, indexed.pageIndexes)
+        repeat(7) { round ->
+            var restored: CompiledRuleSet? = null
+            var phases = ""
+            val readNs = measureNanoTime {
+                restored = cache.read(key, onTimings = { phases = it })
+            }
+            val buildNs = measureNanoTime {
+                val snapshot = requireNotNull(restored).build()
+                assertTrue(snapshot.restoredNetworkIndexes)
+                assertTrue(snapshot.restoredPageIndexes)
+            }
+            println(
+                "WARM_CACHE_RESTORE round=$round " +
+                    "read_ms=${readNs / 1_000_000.0} " +
+                    "build_ms=${buildNs / 1_000_000.0} $phases"
+            )
         }
     }
 

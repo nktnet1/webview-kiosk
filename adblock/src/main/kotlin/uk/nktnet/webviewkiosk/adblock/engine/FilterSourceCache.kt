@@ -32,13 +32,13 @@ internal class FilterSourceCache(file: File, private val version: Int) {
             val name = key.joinToString("") { "%02x".format(it) } + ".bin"
             val target = File(directory, name)
             val saved =
-                CompiledFilterCache(target, version).read(
-                    key,
-                    source.trusted,
-                    FilterCompiler.MAX_RULES - total,
-                ) {
-                    onProgress(RuleLoadStage.RESTORING)
-                }
+                CompiledFilterCache(target, version)
+                    .read(
+                        key,
+                        source.trusted,
+                        FilterCompiler.MAX_RULES - total,
+                        onRestore = { onProgress(RuleLoadStage.RESTORING) },
+                    )
             val rules =
                 saved
                     ?: run {

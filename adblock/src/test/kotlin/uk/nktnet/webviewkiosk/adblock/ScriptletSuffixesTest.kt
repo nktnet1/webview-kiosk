@@ -25,7 +25,11 @@ class ScriptletSuffixesTest {
                         val wildcard = suffix.startsWith("*.")
                         val rawHost = suffix.removePrefix("*.")
                         val canonical = checkNotNull(normalizedHost(rawHost))
-                        if (wildcard) "*.$canonical" else canonical
+                        if (wildcard) {
+                            "*.$canonical"
+                        } else {
+                            canonical
+                        }
                     }
                     .distinct()
                     .sorted()

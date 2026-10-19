@@ -3,12 +3,9 @@ package uk.nktnet.webviewkiosk.adblock.engine
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.File
-import java.io.FilterInputStream
 import java.io.IOException
-import java.io.InputStream
 import java.security.MessageDigest
 import java.util.zip.CRC32
-import java.util.zip.CheckedInputStream
 import java.util.zip.CheckedOutputStream
 import uk.nktnet.webviewkiosk.adblock.BlockingResponse
 import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
@@ -65,14 +62,7 @@ internal class CompiledFilterCache(
             }
             val checksum = CRC32()
             file.inputStream().use { source ->
-                // The checksum must exclude the trailing long. Limiting the input
-                // allows buffering *outside* CheckedInputStream, so CRC32 is
-                // updated in blocks instead of once per readInt/readByte byte.
-                val payload = LimitedInputStream(source, size - CHECKSUM_BYTES)
-                val input =
-                    DataInputStream(
-                        CheckedInputStream(payload, checksum).buffered(BUFFER_SIZE)
-                    )
+                val input = CacheDataInput(source, size - CHECKSUM_BYTES, checksum)
                 input.use {
                     if (
                         input.readInt() != MAGIC ||
@@ -630,13 +620,14 @@ internal class CompiledFilterCache(
 
     private class StringWriter(private val output: DataOutputStream) {
         private val strings = HashMap<String, Int>()
+        private val encoding = CacheStringWriter(output)
 
         fun write(value: String) {
             val previous = strings[value]
             output.writeInt(previous ?: strings.size)
             if (previous == null) {
                 strings[value] = strings.size
-                output.writeUTF(value)
+                encoding.write(value)
             }
         }
 
@@ -653,7 +644,7 @@ internal class CompiledFilterCache(
         }
     }
 
-    private class StringReader(private val input: DataInputStream) {
+    private class StringReader(private val input: CacheDataInput) {
         private val values = ArrayList<String>()
 
         val size: Int
@@ -662,8 +653,7 @@ internal class CompiledFilterCache(
         fun read(): String {
             val index = input.count(minOf(values.size, 2_000_000))
             if (index == values.size) {
-                val value = input.readUTF()
-                require(value.length <= 8192)
+                val value = input.readString()
                 values += value
             }
             return values[index]
@@ -702,40 +692,14 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 18
+        private const val VERSION = 19
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
         private const val CHECKSUM_BYTES = Long.SIZE_BYTES.toLong()
 
-        private fun DataInputStream.count(max: Int): Int =
+        private fun CacheDataInput.count(max: Int): Int =
             readInt().also {
                 require(it in 0..max)
             }
     }
-}
-
-/** Exposes precisely the payload bytes, leaving the trailing CRC32 long unread. */
-private class LimitedInputStream(input: InputStream, private var remaining: Long) :
-    FilterInputStream(input) {
-    override fun read(): Int {
-        if (remaining == 0L) return -1
-        val result = `in`.read()
-        if (result >= 0) remaining--
-        return result
-    }
-
-    override fun read(bytes: ByteArray, offset: Int, length: Int): Int {
-        if (length == 0) return 0
-        if (remaining == 0L) return -1
-        val result =
-            `in`.read(bytes, offset, minOf(length.toLong(), remaining).toInt())
-        if (result > 0) remaining -= result
-        return result
-    }
-
-    override fun available(): Int =
-        minOf(remaining, `in`.available().toLong()).toInt()
-
-    override fun skip(n: Long): Long =
-        `in`.skip(minOf(n, remaining)).also { remaining -= it }
 }
