@@ -16,10 +16,14 @@ dispatcher is generated from validated records. Its public-suffix data is
 normalised from the pinned OkHttp list at build time and bundled as inert JSON,
 so startup does not repeat hostname canonicalisation for every suffix.
 
-Android reports a second `Rule index revision` log after each load. It breaks
-`INDEXING` into scriptlet routing, scriptlet injection generation, cosmetic
-routing, network partitioning, network routing and other work. Routing timings
-include validation of saved indexes; they do not imply indexes were rebuilt.
+Android reports `Rule restore revision` on successful aggregate cache hits,
+splitting `RESTORING` into network, cosmetic and scriptlet records, saved
+network and page buckets, and checksum/footer verification. It includes record,
+string and byte counts without logging rule contents. `Rule index revision`
+breaks `INDEXING` into scriptlet routing, scriptlet injection generation,
+cosmetic routing, network partitioning, network routing and other work. Routing
+timings include validation of saved indexes; they do not imply indexes were
+rebuilt.
 
 The aggregate cache is invalidated by list content, order, trust provenance or
 schema changes. Unchanged lists can reuse SHA-256-keyed source shards under

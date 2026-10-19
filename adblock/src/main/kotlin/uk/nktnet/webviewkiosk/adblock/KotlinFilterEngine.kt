@@ -21,6 +21,11 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
 
     @Volatile private var compiled = CompiledFilters.EMPTY
 
+    /** Most recent successful cache restoration breakdown. */
+    @Volatile
+    var lastRestoreTimings: String? = null
+        private set
+
     /** Most recent index preparation breakdown, for Android startup diagnostics. */
     @Volatile
     var lastIndexTimings: String? = null
@@ -35,15 +40,19 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
         sources: List<FilterSource>,
         onProgress: (RuleLoadStage) -> Unit,
     ) {
+        lastRestoreTimings = null
         lastIndexTimings = null
         onProgress(RuleLoadStage.CHECKING_CACHE)
         val trusted = sources.indices.filter { sources[it].trusted }.toSet()
         val key = cache?.key(sources.map { it.text }, trusted)
         val saved =
             if (key != null) {
-                cache.read(key, trusted.isNotEmpty()) {
-                    onProgress(RuleLoadStage.RESTORING)
-                }
+                cache.read(
+                    key,
+                    trusted.isNotEmpty(),
+                    onRestore = { onProgress(RuleLoadStage.RESTORING) },
+                    onTimings = { lastRestoreTimings = it },
+                )
             } else {
                 null
             }
@@ -93,6 +102,7 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
     }
 
     override fun clear() {
+        lastRestoreTimings = null
         lastIndexTimings = null
         compiled = CompiledFilters.EMPTY
     }

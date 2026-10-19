@@ -239,8 +239,13 @@ internal class ContentBlockingService(
                             "superseded=${revision != generation.get()}",
                     )
                     if (sourceCount > 0) {
-                        (engine as? KotlinFilterEngine)?.lastIndexTimings?.let {
-                            Log.i(TAG, "Rule index revision $revision $it")
+                        (engine as? KotlinFilterEngine)?.let { filter ->
+                            filter.lastRestoreTimings?.let {
+                                Log.i(TAG, "Rule restore revision $revision $it")
+                            }
+                            filter.lastIndexTimings?.let {
+                                Log.i(TAG, "Rule index revision $revision $it")
+                            }
                         }
                     }
                 }

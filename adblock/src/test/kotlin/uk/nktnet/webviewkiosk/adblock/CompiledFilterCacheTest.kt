@@ -46,8 +46,27 @@ class CompiledFilterCacheTest {
                 Regex("$phase=\\d+ms").containsMatchIn(timings),
             )
         }
+        val restoreTimings = requireNotNull(restored.lastRestoreTimings)
+        for (phase in
+            listOf(
+                "NETWORK_RULES",
+                "COSMETIC_RULES",
+                "SCRIPTLET_RULES",
+                "NETWORK_BUCKETS",
+                "PAGE_BUCKETS",
+                "FOOTER",
+            )) {
+            assertTrue(
+                "Missing $phase from $restoreTimings",
+                Regex("$phase=\\d+ms").containsMatchIn(restoreTimings),
+            )
+        }
+        assertTrue("Missing record count", "records=" in restoreTimings)
+        assertTrue("Missing string count", "strings=" in restoreTimings)
+        assertTrue("Missing cache byte count", "bytes=" in restoreTimings)
         restored.clear()
         assertNull(restored.lastIndexTimings)
+        assertNull(restored.lastRestoreTimings)
     }
 
     @Test
@@ -341,7 +360,11 @@ class CompiledFilterCacheTest {
         val indexed = rules.build()
         cache.write(key, rules, indexed.networkIndexes, indexed.pageIndexes)
         assertTrue(file.length() > 64 * 1024)
-        assertTrue(requireNotNull(cache.read(key)).build().restoredNetworkIndexes)
+        val restoreTimings = mutableListOf<String>()
+        val validated =
+            requireNotNull(cache.read(key, onTimings = restoreTimings::add))
+        assertTrue(validated.build().restoredNetworkIndexes)
+        assertEquals(1, restoreTimings.size)
 
         val intact = file.readBytes()
         file.writeBytes(
@@ -349,10 +372,11 @@ class CompiledFilterCacheTest {
                 this[lastIndex] = (this[lastIndex].toInt() xor 1).toByte()
             }
         )
-        assertNull(cache.read(key))
+        assertNull(cache.read(key, onTimings = restoreTimings::add))
 
         file.writeBytes(intact + byteArrayOf(1))
-        assertNull(cache.read(key))
+        assertNull(cache.read(key, onTimings = restoreTimings::add))
+        assertEquals(1, restoreTimings.size)
     }
 
     @Test

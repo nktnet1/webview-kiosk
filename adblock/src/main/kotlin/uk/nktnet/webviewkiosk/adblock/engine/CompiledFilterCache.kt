@@ -55,6 +55,7 @@ internal class CompiledFilterCache(
         allowTrusted: Boolean = false,
         maxRules: Int = FilterCompiler.MAX_RULES,
         onRestore: () -> Unit = {},
+        onTimings: (String) -> Unit = {},
     ): CompiledRuleSet? {
         return try {
             storage.recover()
@@ -85,6 +86,7 @@ internal class CompiledFilterCache(
                         return null
                     }
                     onRestore()
+                    val restoreStartedAt = System.nanoTime()
                     val strings = StringReader(input)
                     val total = input.count(maxRules)
                     val skipped = input.count(total)
@@ -185,6 +187,7 @@ internal class CompiledFilterCache(
                             networks += identity
                         }
                     }
+                    val networksDoneAt = System.nanoTime()
                     val cosmetics =
                         List(input.count(total - skipped - networkCount)) {
                             val selector = strings.read()
@@ -220,6 +223,7 @@ internal class CompiledFilterCache(
                                     )
                                 }
                         }
+                    val cosmeticsDoneAt = System.nanoTime()
                     val scriptlets =
                         List(
                             input.count(
@@ -306,6 +310,7 @@ internal class CompiledFilterCache(
                                 }
                             ScriptletRule(instruction, scope, exception, targets)
                         }
+                    val scriptletsDoneAt = System.nanoTime()
                     val indexBytes = input.available()
                     var remainingReferences =
                         minOf(FilterCompiler.MAX_RULES * 8, indexBytes / 4)
@@ -354,6 +359,7 @@ internal class CompiledFilterCache(
                         } else {
                             null
                         }
+                    val networkBucketsDoneAt = System.nanoTime()
                     fun pageRouting(maxCount: Int, tableCount: Int): RuleBuckets {
                         val count = input.count(maxCount)
                         require(input.count(tableCount) == tableCount)
@@ -377,6 +383,7 @@ internal class CompiledFilterCache(
                         } else {
                             null
                         }
+                    val pageBucketsDoneAt = System.nanoTime()
                     if (input.read() != -1) {
                         return null
                     }
@@ -388,16 +395,33 @@ internal class CompiledFilterCache(
                         total >=
                             networkCount + cosmetics.size + scriptlets.size + skipped
                     )
-                    CompiledRuleSet(
-                        networks,
-                        cosmetics,
-                        skipped,
-                        scriptlets,
-                        disabledNetworks,
-                        networkIndexes = indexes,
-                        pageIndexes = pageIndexes,
-                        totalRules = total,
+                    val restored =
+                        CompiledRuleSet(
+                            networks,
+                            cosmetics,
+                            skipped,
+                            scriptlets,
+                            disabledNetworks,
+                            networkIndexes = indexes,
+                            pageIndexes = pageIndexes,
+                            totalRules = total,
+                        )
+                    val restoredAt = System.nanoTime()
+                    fun elapsed(start: Long, end: Long): Long =
+                        (end - start) / 1_000_000
+                    val networkBucketMs =
+                        elapsed(scriptletsDoneAt, networkBucketsDoneAt)
+                    onTimings(
+                        "NETWORK_RULES=${elapsed(restoreStartedAt, networksDoneAt)}ms " +
+                            "COSMETIC_RULES=${elapsed(networksDoneAt, cosmeticsDoneAt)}ms " +
+                            "SCRIPTLET_RULES=${elapsed(cosmeticsDoneAt, scriptletsDoneAt)}ms " +
+                            "NETWORK_BUCKETS=${networkBucketMs}ms " +
+                            "PAGE_BUCKETS=${elapsed(networkBucketsDoneAt, pageBucketsDoneAt)}ms " +
+                            "FOOTER=${elapsed(pageBucketsDoneAt, restoredAt)}ms " +
+                            "records=${networkCount + cosmetics.size + scriptlets.size} " +
+                            "strings=${strings.size} bytes=$size"
                     )
+                    restored
                 }
             }
         } catch (_: IOException) {
@@ -630,16 +654,19 @@ internal class CompiledFilterCache(
     }
 
     private class StringReader(private val input: DataInputStream) {
-        private val strings = ArrayList<String>()
+        private val values = ArrayList<String>()
+
+        val size: Int
+            get() = values.size
 
         fun read(): String {
-            val index = input.count(minOf(strings.size, 2_000_000))
-            if (index == strings.size) {
+            val index = input.count(minOf(values.size, 2_000_000))
+            if (index == values.size) {
                 val value = input.readUTF()
                 require(value.length <= 8192)
-                strings += value
+                values += value
             }
-            return strings[index]
+            return values[index]
         }
 
         fun set(): Set<String> {
