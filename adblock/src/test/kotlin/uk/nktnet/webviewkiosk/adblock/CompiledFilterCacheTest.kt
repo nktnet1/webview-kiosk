@@ -12,6 +12,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import uk.nktnet.webviewkiosk.adblock.engine.CompiledFilterCache
+import uk.nktnet.webviewkiosk.adblock.engine.CompiledRuleSet
+import uk.nktnet.webviewkiosk.adblock.engine.CosmeticRule
+import uk.nktnet.webviewkiosk.adblock.engine.DomainScope
 import uk.nktnet.webviewkiosk.adblock.engine.FilterCompiler
 
 class CompiledFilterCacheTest {
@@ -352,6 +355,75 @@ class CompiledFilterCacheTest {
     }
 
     @Test
+    fun compactScopesRoundTripEveryDomainAndEntityCombination() {
+        val file = File(folder.root, "scope-masks.bin")
+        val cache = CompiledFilterCache(file)
+        val key = cache.key(listOf("scope-mask-test"))
+        val original =
+            (0..15).map { mask ->
+                fun field(bit: Int, value: String): Set<String> =
+                    if (mask and bit != 0) {
+                        setOf(value)
+                    } else {
+                        emptySet()
+                    }
+                CosmeticRule(
+                    ".selector$mask",
+                    DomainScope(
+                        included = field(1, "site.example"),
+                        excluded = field(2, "not.site.example"),
+                        includedEntities = field(4, "publisher"),
+                        excludedEntities = field(8, "blocked"),
+                    ),
+                    exception = false,
+                )
+            }
+        cache.write(key, CompiledRuleSet(emptyList(), original, 0))
+        val restored = requireNotNull(cache.read(key))
+        assertEquals(original, restored.cosmetics.toList())
+        assertTrue(restored.cosmetics.first().domains === DomainScope.ANY)
+    }
+
+    @Test
+    fun invalidScopeMaskWithCorrectChecksumIsRejected() {
+        val file = File(folder.root, "scope-invalid.bin")
+        val cache = CompiledFilterCache(file)
+        val key = cache.key(listOf("||ads.example^"))
+        cache.write(key, FilterCompiler.parse(listOf("||ads.example^")))
+        val bytes = file.readBytes()
+        val input = ByteBuffer.wrap(bytes)
+        input.position(3 * Int.SIZE_BYTES + 32 + 3 * Int.SIZE_BYTES)
+        assertEquals(0, input.get().toInt()) // Enabled network record.
+        var nextStringId = 0
+        fun skipString() {
+            val id = input.int
+            if (id == nextStringId) {
+                nextStringId++
+                val tag = input.short.toInt() and 0xffff
+                val count = tag and 0x7fff
+                input.position(
+                    input.position() +
+                        count *
+                            if (tag and 0x8000 != 0) {
+                                2
+                            } else {
+                                1
+                            }
+                )
+            }
+        }
+        skipString() // Pattern text.
+        input.get() // Pattern flags.
+        skipString() // Indexed hostname.
+        val scopeOffset = input.position()
+        assertEquals(0, bytes[scopeOffset].toInt()) // Unrestricted source scope.
+        bytes[scopeOffset] = 0x80.toByte()
+        repairChecksum(bytes)
+        file.writeBytes(bytes)
+        assertNull(cache.read(key))
+    }
+
+    @Test
     fun checksumRemainsValidAcrossReadBufferBoundariesAndExcludesTrailer() {
         val lists =
             listOf((0 until 12_000).joinToString("\n") { "||ads$it.example.org^" })
@@ -392,7 +464,7 @@ class CompiledFilterCacheTest {
         val original = KotlinFilterEngine(file)
         original.replace(lists)
         val current = ByteBuffer.wrap(file.readBytes()).getInt(4)
-        assertTrue(current > 18)
+        assertTrue(current > 19)
         val shards = File(folder.root, "${file.name}.sources")
         val files = shards.listFiles()!!.filter { it.extension == "bin" } + file
         assertEquals(3, files.size)
@@ -400,7 +472,7 @@ class CompiledFilterCacheTest {
             val bytes = snapshot.readBytes()
             // The schema is rejected before records are read, regardless of their
             // layout. Repair CRC32 so a checksum failure cannot mask that check.
-            ByteBuffer.wrap(bytes).putInt(4, 18)
+            ByteBuffer.wrap(bytes).putInt(4, 19)
             repairChecksum(bytes)
             snapshot.writeBytes(bytes)
         }

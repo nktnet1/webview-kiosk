@@ -637,10 +637,42 @@ internal class CompiledFilterCache(
         }
 
         fun scope(value: DomainScope) {
-            set(value.included)
-            set(value.excluded)
-            set(value.includedEntities)
-            set(value.excludedEntities)
+            // Most rules omit most (or all) scope fields. Store one bit per
+            // non-empty field instead of four usually-zero set counts.
+            val mask =
+                (if (value.included.isNotEmpty()) {
+                    1
+                } else {
+                    0
+                }) or
+                    (if (value.excluded.isNotEmpty()) {
+                        2
+                    } else {
+                        0
+                    }) or
+                    (if (value.includedEntities.isNotEmpty()) {
+                        4
+                    } else {
+                        0
+                    }) or
+                    (if (value.excludedEntities.isNotEmpty()) {
+                        8
+                    } else {
+                        0
+                    })
+            output.writeByte(mask)
+            if (mask and 1 != 0) {
+                set(value.included)
+            }
+            if (mask and 2 != 0) {
+                set(value.excluded)
+            }
+            if (mask and 4 != 0) {
+                set(value.includedEntities)
+            }
+            if (mask and 8 != 0) {
+                set(value.excludedEntities)
+            }
         }
     }
 
@@ -671,20 +703,31 @@ internal class CompiledFilterCache(
         }
 
         fun scope(): DomainScope {
-            val included = set()
-            val excluded = set()
-            val includedEntities = set()
-            val excludedEntities = set()
-            return if (
-                included.isEmpty() &&
-                    excluded.isEmpty() &&
-                    includedEntities.isEmpty() &&
-                    excludedEntities.isEmpty()
-            ) {
-                DomainScope.ANY
-            } else {
-                DomainScope(included, excluded, includedEntities, excludedEntities)
+            val mask = input.readUnsignedByte()
+            require(mask in 0..15)
+            if (mask == 0) {
+                return DomainScope.ANY
             }
+            fun optionalSet(bit: Int): Set<String> =
+                if (mask and bit != 0) {
+                    set()
+                } else {
+                    emptySet()
+                }
+            return DomainScope(
+                    included = optionalSet(1),
+                    excluded = optionalSet(2),
+                    includedEntities = optionalSet(4),
+                    excludedEntities = optionalSet(8),
+                )
+                .also { scope ->
+                    // The mask must describe non-empty sets; a corrupt cache
+                    // cannot smuggle in alternative encodings of the same scope.
+                    require(scope.included.isNotEmpty() == (mask and 1 != 0))
+                    require(scope.excluded.isNotEmpty() == (mask and 2 != 0))
+                    require(scope.includedEntities.isNotEmpty() == (mask and 4 != 0))
+                    require(scope.excludedEntities.isNotEmpty() == (mask and 8 != 0))
+                }
         }
     }
 
@@ -692,7 +735,7 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 19
+        private const val VERSION = 20
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
         private const val CHECKSUM_BYTES = Long.SIZE_BYTES.toLong()

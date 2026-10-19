@@ -1,6 +1,6 @@
 # Compiled filter cache
 
-`CompiledFilterCache` uses disposable WKCF snapshots (schema 19) with source
+`CompiledFilterCache` uses disposable WKCF snapshots (schema 20) with source
 SHA-256 identities, normalized rule records, compact rule-ID indexes and CRC32.
 Network, cosmetic and scriptlet hostname/entity/exception buckets are restored
 directly without duplicating rule text, selectors or arguments.
@@ -13,6 +13,9 @@ per-field stream reads. It never loads the entire snapshot into a byte array.
 String IDs still deduplicate values; new strings have a two-byte tagged character
 count followed by Latin-1 bytes or raw UTF-16BE code units. The latter preserves
 all Unicode, including unpaired surrogates, without lossy charset replacement.
+Domain scopes use a one-byte bitmask for non-empty domain/entity sets;
+empty fields are omitted. This reduces repeated decoding and file size for
+the common unrestricted-scope case.
 Strings remain limited to 8,192 UTF-16 code units. A reusable character buffer is
 needed only for the wide-string path.
 
@@ -34,10 +37,10 @@ timings include validation of saved indexes; they do not imply indexes were
 rebuilt.
 
 The aggregate cache is invalidated by list content, order, trust provenance or
-schema changes. Upgrading from schema 18 intentionally rebuilds the aggregate
+schema changes. Upgrading from prior schemas intentionally rebuilds the aggregate
 and source snapshots once from the saved list text. No subscriptions, settings
 or source files are removed, and no network download is required. Later loads
-reuse schema 19; preserving old disposable files is not a performance constraint.
+reuse schema 20; preserving old disposable files is not a performance constraint.
 Unchanged lists can reuse SHA-256-keyed source shards under
 `compiled-rules.bin.sources`; merge-time badfilters and exceptions are reapplied.
 The engine's optional `cacheVersion` is a compatibility salt, not an app version.
