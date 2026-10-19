@@ -12,7 +12,7 @@
     <string name="settings_web_content_description">Home URL, blacklist, whitelist, files, content blocking</string>
     <string name="settings_web_content_files_description">Import and manage local web files</string>
     <string name="settings_content_blocking_title">Content Blocking</string>
-    <string name="settings_content_blocking_description">Block ads and trackers</string>
+    <string name="settings_content_blocking_description">Block ads, malware and trackers</string>
 
     <string name="settings_web_browsing_title">Web Browsing</string>
     <string name="settings_web_browsing_description">Refresh, navigation, history, bookmark, search provider</string>

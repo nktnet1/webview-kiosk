@@ -4,6 +4,7 @@ import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -13,6 +14,41 @@ import uk.nktnet.webviewkiosk.adblock.engine.FilterCompiler
 
 class CompiledFilterCacheTest {
     @get:Rule val folder = TemporaryFolder()
+
+    @Test
+    fun warmCacheReportsIndexPreparationPhases() {
+        val file = File(folder.root, "index-timings.bin")
+        val lists =
+            listOf(
+                "||ads.example^\$script,domain=site.example\n" +
+                    "site.example##.advert\n" +
+                    "site.example##+js(json-prune-fetch-response, ads)"
+            )
+        KotlinFilterEngine(file).replace(lists)
+        val restored = KotlinFilterEngine(file)
+        val stages = mutableListOf<RuleLoadStage>()
+        restored.replace(lists, stages::add)
+
+        assertTrue(RuleLoadStage.RESTORING in stages)
+        assertFalse(RuleLoadStage.SAVING_CACHE in stages)
+        val timings = requireNotNull(restored.lastIndexTimings)
+        for (phase in
+            listOf(
+                "SCRIPTLET_ROUTING",
+                "SCRIPTLET_INJECTION",
+                "COSMETIC_ROUTING",
+                "NETWORK_PARTITION",
+                "NETWORK_ROUTING",
+                "OTHER",
+            )) {
+            assertTrue(
+                "Missing $phase from $timings",
+                Regex("$phase=\\d+ms").containsMatchIn(timings),
+            )
+        }
+        restored.clear()
+        assertNull(restored.lastIndexTimings)
+    }
 
     @Test
     fun cachedEngineMatchesTheEntireNetworkFixtureCorpusWithoutReparsing() {
@@ -292,6 +328,31 @@ class CompiledFilterCacheTest {
         val stages = mutableListOf<RuleLoadStage>()
         KotlinFilterEngine(file, cacheVersion = 1).replace(lists, stages::add)
         assertTrue(RuleLoadStage.RESTORING in stages)
+    }
+
+    @Test
+    fun checksumRemainsValidAcrossReadBufferBoundariesAndExcludesTrailer() {
+        val lists =
+            listOf((0 until 12_000).joinToString("\n") { "||ads$it.example.org^" })
+        val file = File(folder.root, "buffered.bin")
+        val cache = CompiledFilterCache(file)
+        val key = cache.key(lists)
+        val rules = FilterCompiler.parse(lists)
+        val indexed = rules.build()
+        cache.write(key, rules, indexed.networkIndexes, indexed.pageIndexes)
+        assertTrue(file.length() > 64 * 1024)
+        assertTrue(requireNotNull(cache.read(key)).build().restoredNetworkIndexes)
+
+        val intact = file.readBytes()
+        file.writeBytes(
+            intact.copyOf().apply {
+                this[lastIndex] = (this[lastIndex].toInt() xor 1).toByte()
+            }
+        )
+        assertNull(cache.read(key))
+
+        file.writeBytes(intact + byteArrayOf(1))
+        assertNull(cache.read(key))
     }
 
     @Test

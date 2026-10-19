@@ -21,6 +21,11 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
 
     @Volatile private var compiled = CompiledFilters.EMPTY
 
+    /** Most recent index preparation breakdown, for Android startup diagnostics. */
+    @Volatile
+    var lastIndexTimings: String? = null
+        private set
+
     override fun replace(lists: List<String>) = replace(lists) {}
 
     override fun replace(lists: List<String>, onProgress: (RuleLoadStage) -> Unit) =
@@ -30,6 +35,7 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
         sources: List<FilterSource>,
         onProgress: (RuleLoadStage) -> Unit,
     ) {
+        lastIndexTimings = null
         onProgress(RuleLoadStage.CHECKING_CACHE)
         val trusted = sources.indices.filter { sources[it].trusted }.toSet()
         val key = cache?.key(sources.map { it.text }, trusted)
@@ -64,7 +70,10 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
             }
         val rules = saved ?: FilterCompiler.merge(requireNotNull(sourceRules))
         onProgress(RuleLoadStage.INDEXING)
+        val indexingStartedAt = System.nanoTime()
         val replacement = rules.build()
+        lastIndexTimings =
+            replacement.indexTimingBreakdown(System.nanoTime() - indexingStartedAt)
         if (
             key != null &&
                 (saved == null ||
@@ -84,6 +93,7 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
     }
 
     override fun clear() {
+        lastIndexTimings = null
         compiled = CompiledFilters.EMPTY
     }
 

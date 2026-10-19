@@ -332,9 +332,12 @@ internal class CompiledFilters(
     networkIndexes: NetworkIndexSnapshot? = null,
     pageIndexes: PageIndexSnapshot? = null,
 ) {
+    private val indexingStartedAt = System.nanoTime()
     private val scriptletIndex =
         ScriptletIndex(scriptletRules, pageIndexes?.scriptlets)
+    private val scriptletRoutingEndedAt = System.nanoTime()
     val scriptletInjection: ScriptletInjection? = scriptletIndex.injection()
+    private val scriptletInjectionEndedAt = System.nanoTime()
 
     fun scriptlets(
         url: String,
@@ -357,10 +360,12 @@ internal class CompiledFilters(
     private val hideExceptions: NetworkIndex
     private val parameterRules: NetworkIndex
     private val cosmeticRules = cosmetics.toList()
+    private val cosmeticRoutingStartedAt = System.nanoTime()
     private val cosmeticRouting =
         pageIndexes?.cosmetics?.takeIf {
             CosmeticRouting.validFor(it, cosmeticRules)
         } ?: CosmeticRouting.build(cosmeticRules)
+    private val cosmeticRoutingEndedAt = System.nanoTime()
     private val restoredCosmeticIndexes = cosmeticRouting === pageIndexes?.cosmetics
 
     private fun bucket(kind: CosmeticBucket): Map<String, IntArray> =
@@ -382,8 +387,11 @@ internal class CompiledFilters(
         bucket(CosmeticBucket.GENERIC_EXCEPTION)[""] ?: intArrayOf()
     val hasCosmetics = cosmetics.any { !it.exception }
     private val cosmeticsNeedEntities = cosmetics.any { it.domains.usesEntities }
+    private var networkPartitionNanos = 0L
+    private var networkRoutingNanos = 0L
 
     init {
+        val partitionStartedAt = System.nanoTime()
         val ordinary = mutableListOf<NetworkIdentity>()
         val hiding = mutableListOf<NetworkIdentity>()
         val redirecting = mutableListOf<NetworkIdentity>()
@@ -408,10 +416,31 @@ internal class CompiledFilters(
                 else -> ordinary += rule
             }
         }
+        networkPartitionNanos = System.nanoTime() - partitionStartedAt
+        val routingStartedAt = System.nanoTime()
         requests = NetworkIndex(ordinary, networkIndexes?.requests)
         hideExceptions = NetworkIndex(hiding, networkIndexes?.hiding)
         redirectExceptions = NetworkIndex(redirecting, networkIndexes?.redirects)
         parameterRules = NetworkIndex(parameters, networkIndexes?.parameters)
+        networkRoutingNanos = System.nanoTime() - routingStartedAt
+    }
+
+    /** Diagnostic only: no routing data is omitted or trusted without validation. */
+    internal fun indexTimingBreakdown(totalNanos: Long): String {
+        val phases =
+            listOf(
+                "SCRIPTLET_ROUTING" to (scriptletRoutingEndedAt - indexingStartedAt),
+                "SCRIPTLET_INJECTION" to
+                    (scriptletInjectionEndedAt - scriptletRoutingEndedAt),
+                "COSMETIC_ROUTING" to
+                    (cosmeticRoutingEndedAt - cosmeticRoutingStartedAt),
+                "NETWORK_PARTITION" to networkPartitionNanos,
+                "NETWORK_ROUTING" to networkRoutingNanos,
+            )
+        val other = (totalNanos - phases.sumOf { it.second }).coerceAtLeast(0L)
+        return (phases + ("OTHER" to other)).joinToString(" ") { (name, nanos) ->
+            "$name=${nanos / 1_000_000}ms"
+        }
     }
 
     val pageIndexes: PageIndexSnapshot

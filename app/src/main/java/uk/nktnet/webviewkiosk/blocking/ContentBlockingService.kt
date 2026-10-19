@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
+import android.os.SystemClock
 import android.util.Log
 import androidx.core.content.ContextCompat
 import java.io.File
@@ -186,27 +187,62 @@ internal class ContentBlockingService(
         _status.value = BlockingStatus.LOADING
         try {
             worker.execute {
+                val startedAt = SystemClock.elapsedRealtime()
+                var stageStartedAt = startedAt
+                var sourceCount = 0
+                var currentStage = RuleLoadStage.READING_LISTS
+                val stageDurations = linkedMapOf<RuleLoadStage, Long>()
+
+                fun advanceStage(next: RuleLoadStage) {
+                    if (next != currentStage) {
+                        val now = SystemClock.elapsedRealtime()
+                        stageDurations[currentStage] =
+                            (stageDurations[currentStage] ?: 0L) + now -
+                                stageStartedAt
+                        currentStage = next
+                        stageStartedAt = now
+                    }
+                    updateStage(revision, next)
+                }
+
                 try {
                     if (revision != generation.get()) {
                         return@execute
                     }
                     val sources = store.enabledSources()
+                    sourceCount = sources.size
                     if (revision != generation.get()) {
                         return@execute
                     }
                     if (sources.isEmpty()) {
-                        updateStage(revision, RuleLoadStage.CLEARING)
+                        advanceStage(RuleLoadStage.CLEARING)
                         engine.clear()
                     } else {
-                        engine.replaceSources(sources) { stage ->
-                            updateStage(revision, stage)
-                        }
+                        engine.replaceSources(sources, ::advanceStage)
                     }
                     finishReload(revision, sources.isNotEmpty())
                 } catch (e: Exception) {
                     reportError(revision, e)
                 } catch (e: LinkageError) {
                     reportError(revision, e)
+                } finally {
+                    val now = SystemClock.elapsedRealtime()
+                    stageDurations[currentStage] =
+                        (stageDurations[currentStage] ?: 0L) + now - stageStartedAt
+                    Log.i(
+                        TAG,
+                        "Rule load revision $revision sources=$sourceCount " +
+                            stageDurations.entries.joinToString(" ") {
+                                "${it.key.name}=${it.value}ms"
+                            } +
+                            " total=${now - startedAt}ms " +
+                            "superseded=${revision != generation.get()}",
+                    )
+                    if (sourceCount > 0) {
+                        (engine as? KotlinFilterEngine)?.lastIndexTimings?.let {
+                            Log.i(TAG, "Rule index revision $revision $it")
+                        }
+                    }
                 }
             }
         } catch (e: Exception) {

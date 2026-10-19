@@ -3,7 +3,9 @@ package uk.nktnet.webviewkiosk.adblock.engine
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.File
+import java.io.FilterInputStream
 import java.io.IOException
+import java.io.InputStream
 import java.security.MessageDigest
 import java.util.zip.CRC32
 import java.util.zip.CheckedInputStream
@@ -56,17 +58,21 @@ internal class CompiledFilterCache(
     ): CompiledRuleSet? {
         return try {
             storage.recover()
-            if (!file.isFile || file.length() !in 1..MAX_BYTES) {
+            val size = file.length()
+            if (!file.isFile || size !in (CHECKSUM_BYTES + 1)..MAX_BYTES) {
                 return null
             }
             val checksum = CRC32()
-            DataInputStream(
-                    CheckedInputStream(
-                        file.inputStream().buffered(BUFFER_SIZE),
-                        checksum,
+            file.inputStream().use { source ->
+                // The checksum must exclude the trailing long. Limiting the input
+                // allows buffering *outside* CheckedInputStream, so CRC32 is
+                // updated in blocks instead of once per readInt/readByte byte.
+                val payload = LimitedInputStream(source, size - CHECKSUM_BYTES)
+                val input =
+                    DataInputStream(
+                        CheckedInputStream(payload, checksum).buffered(BUFFER_SIZE)
                     )
-                )
-                .use { input ->
+                input.use {
                     if (
                         input.readInt() != MAGIC ||
                             input.readInt() != VERSION ||
@@ -82,78 +88,86 @@ internal class CompiledFilterCache(
                     val strings = StringReader(input)
                     val total = input.count(maxRules)
                     val skipped = input.count(total)
-                    val networkEntries =
-                        List(input.count(total - skipped)) {
-                            val disabled = input.readBoolean()
-                            val text = strings.read()
-                            val flags = input.readUnsignedByte()
-                            require(flags and 0xe0 == 0)
-                            val host = strings.read().ifEmpty { null }
-                            val pattern =
-                                UrlPattern(
-                                    text,
-                                    flags and 1 != 0,
-                                    flags and 2 != 0,
-                                    flags and 4 != 0,
-                                    flags and 8 != 0,
-                                    host,
-                                    flags and 16 != 0,
-                                )
-                            val domains = strings.scope()
-                            val targets = strings.scope()
-                            val types = input.readInt()
-                            val excludedTypes = input.readInt()
-                            require(types in 0..0xfff && excludedTypes in 0..0xfff)
-                            val party =
-                                when (input.readByte().toInt()) {
-                                    -1 -> null
-                                    0 -> false
-                                    1 -> true
-                                    else ->
-                                        throw IOException(
-                                            "Invalid party restriction"
-                                        )
-                                }
-                            val conditions =
-                                Conditions(
-                                        domains,
-                                        targets,
-                                        types,
-                                        excludedTypes,
-                                        party,
-                                        strings.set(),
-                                        strings.set(),
-                                    )
-                                    .let {
-                                        if (it == Conditions.ANY) {
-                                            Conditions.ANY
-                                        } else {
-                                            it
-                                        }
-                                    }
-                            val exception = input.readBoolean()
-                            val important = input.readBoolean()
-                            val hide = input.count(2)
-                            val response =
-                                input.count(BlockingResponse.entries.size).let {
-                                    if (it == 0) {
-                                        null
-                                    } else {
-                                        BlockingResponse.entries[it - 1]
-                                    }
-                                }
-                            require(response != BlockingResponse.ALLOW)
-                            val redirectOnly = input.readBoolean()
-                            val removeParam =
-                                if (input.readBoolean()) {
-                                    ParameterRemoval(strings.read())
-                                } else {
-                                    null
-                                }
-                            require(
-                                removeParam == null ||
-                                    response == null && !redirectOnly && hide == 0
+                    val networkCount = input.count(total - skipped)
+                    val networks = ArrayList<NetworkIdentity>(networkCount)
+                    val disabledNetworks = ArrayList<NetworkIdentity>()
+                    repeat(networkCount) {
+                        val disabled = input.readBoolean()
+                        val text = strings.read()
+                        val flags = input.readUnsignedByte()
+                        require(flags and 0xe0 == 0)
+                        val host = strings.read().ifEmpty { null }
+                        val pattern =
+                            UrlPattern(
+                                text,
+                                flags and 1 != 0,
+                                flags and 2 != 0,
+                                flags and 4 != 0,
+                                flags and 8 != 0,
+                                host,
+                                flags and 16 != 0,
                             )
+                        val domains = strings.scope()
+                        val targets = strings.scope()
+                        val types = input.readInt()
+                        val excludedTypes = input.readInt()
+                        require(types in 0..0xfff && excludedTypes in 0..0xfff)
+                        val party =
+                            when (input.readByte().toInt()) {
+                                -1 -> null
+                                0 -> false
+                                1 -> true
+                                else ->
+                                    throw IOException("Invalid party restriction")
+                            }
+                        val methods = strings.set()
+                        val excludedMethods = strings.set()
+                        val conditions =
+                            if (
+                                domains === DomainScope.ANY &&
+                                    targets === DomainScope.ANY &&
+                                    types == 0 &&
+                                    excludedTypes == 0 &&
+                                    party == null &&
+                                    methods.isEmpty() &&
+                                    excludedMethods.isEmpty()
+                            ) {
+                                Conditions.ANY
+                            } else {
+                                Conditions(
+                                    domains,
+                                    targets,
+                                    types,
+                                    excludedTypes,
+                                    party,
+                                    methods,
+                                    excludedMethods,
+                                )
+                            }
+                        val exception = input.readBoolean()
+                        val important = input.readBoolean()
+                        val hide = input.count(2)
+                        val response =
+                            input.count(BlockingResponse.entries.size).let {
+                                if (it == 0) {
+                                    null
+                                } else {
+                                    BlockingResponse.entries[it - 1]
+                                }
+                            }
+                        require(response != BlockingResponse.ALLOW)
+                        val redirectOnly = input.readBoolean()
+                        val removeParam =
+                            if (input.readBoolean()) {
+                                ParameterRemoval(strings.read())
+                            } else {
+                                null
+                            }
+                        require(
+                            removeParam == null ||
+                                response == null && !redirectOnly && hide == 0
+                        )
+                        val identity =
                             NetworkIdentity(
                                 pattern,
                                 conditions,
@@ -164,14 +178,15 @@ internal class CompiledFilterCache(
                                 redirectOnly,
                                 removeParam,
                                 partialAll = input.readBoolean(),
-                            ) to disabled
+                            )
+                        if (disabled) {
+                            disabledNetworks += identity
+                        } else {
+                            networks += identity
                         }
-                    val networks =
-                        networkEntries.filterNot { it.second }.map { it.first }
-                    val disabled =
-                        networkEntries.filter { it.second }.map { it.first }
+                    }
                     val cosmetics =
-                        List(input.count(total - skipped - networkEntries.size)) {
+                        List(input.count(total - skipped - networkCount)) {
                             val selector = strings.read()
                             val domains = strings.scope()
                             val exception = input.readBoolean()
@@ -210,10 +225,7 @@ internal class CompiledFilterCache(
                             input.count(
                                 minOf(
                                     ScriptletIndex.MAX_RULES,
-                                    total -
-                                        skipped -
-                                        networkEntries.size -
-                                        cosmetics.size,
+                                    total - skipped - networkCount - cosmetics.size,
                                 )
                             )
                         ) {
@@ -365,28 +377,29 @@ internal class CompiledFilterCache(
                         } else {
                             null
                         }
-                    val actual = checksum.value
-                    if (input.readLong() != actual || input.read() != -1) {
+                    if (input.read() != -1) {
+                        return null
+                    }
+                    val expected = DataInputStream(source).readLong()
+                    if (checksum.value != expected || source.read() != -1) {
                         return null
                     }
                     require(
                         total >=
-                            networkEntries.size +
-                                cosmetics.size +
-                                scriptlets.size +
-                                skipped
+                            networkCount + cosmetics.size + scriptlets.size + skipped
                     )
                     CompiledRuleSet(
                         networks,
                         cosmetics,
                         skipped,
                         scriptlets,
-                        disabled,
+                        disabledNetworks,
                         networkIndexes = indexes,
                         pageIndexes = pageIndexes,
                         totalRules = total,
                     )
                 }
+            }
         } catch (_: IOException) {
             null
         } catch (_: IllegalArgumentException) {
@@ -407,12 +420,12 @@ internal class CompiledFilterCache(
         try {
             storage.write(MAX_BYTES) { fileOutput ->
                 val checksum = CRC32()
+                // Buffer the writes before checksumming, just like the reader.
+                // Otherwise writeInt()/writeUTF() update CRC32 a byte at a time.
                 val output =
                     DataOutputStream(
-                        CheckedOutputStream(
-                            fileOutput.buffered(BUFFER_SIZE),
-                            checksum,
-                        )
+                        CheckedOutputStream(fileOutput, checksum)
+                            .buffered(BUFFER_SIZE)
                     )
                 output.writeInt(MAGIC)
                 output.writeInt(VERSION)
@@ -421,11 +434,10 @@ internal class CompiledFilterCache(
                 val strings = StringWriter(output)
                 output.writeInt(rules.totalRules)
                 output.writeInt(rules.skippedRules)
-                val networks =
-                    rules.networks.map { it to false } +
-                        rules.disabledNetworks.map { it to true }
-                output.writeInt(networks.size)
-                for ((rule, disabled) in networks) {
+                output.writeInt(rules.networks.size + rules.disabledNetworks.size)
+                // Stream each group directly instead of allocating a Pair and
+                // a combined list for every network rule.
+                fun network(rule: NetworkIdentity, disabled: Boolean) {
                     output.writeBoolean(disabled)
                     val (
                         pattern,
@@ -495,6 +507,8 @@ internal class CompiledFilterCache(
                     removeParam?.let { strings.write(it.text) }
                     output.writeBoolean(partialAll)
                 }
+                rules.networks.forEach { network(it, false) }
+                rules.disabledNetworks.forEach { network(it, true) }
                 output.writeInt(rules.cosmetics.size)
                 for ((selector, domains, exception, procedure) in rules.cosmetics) {
                     strings.write(selector)
@@ -579,8 +593,10 @@ internal class CompiledFilterCache(
                     pageRouting(it.cosmetics)
                     pageRouting(it.scriptlets)
                 }
-                output.writeLong(checksum.value)
+                // Flush all payload bytes through CRC32 before writing the footer.
+                // The trailing checksum is not itself part of the checksummed data.
                 output.flush()
+                DataOutputStream(fileOutput).writeLong(checksum.value)
             }
         } catch (_: IOException) {
             // Disposable optimization; the original filter lists remain
@@ -642,19 +658,16 @@ internal class CompiledFilterCache(
             val excluded = set()
             val includedEntities = set()
             val excludedEntities = set()
-            return DomainScope(
-                    included,
-                    excluded,
-                    includedEntities,
-                    excludedEntities,
-                )
-                .let {
-                    if (it == DomainScope.ANY) {
-                        DomainScope.ANY
-                    } else {
-                        it
-                    }
-                }
+            return if (
+                included.isEmpty() &&
+                    excluded.isEmpty() &&
+                    includedEntities.isEmpty() &&
+                    excludedEntities.isEmpty()
+            ) {
+                DomainScope.ANY
+            } else {
+                DomainScope(included, excluded, includedEntities, excludedEntities)
+            }
         }
     }
 
@@ -665,10 +678,37 @@ internal class CompiledFilterCache(
         private const val VERSION = 18
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
+        private const val CHECKSUM_BYTES = Long.SIZE_BYTES.toLong()
 
         private fun DataInputStream.count(max: Int): Int =
             readInt().also {
                 require(it in 0..max)
             }
     }
+}
+
+/** Exposes precisely the payload bytes, leaving the trailing CRC32 long unread. */
+private class LimitedInputStream(input: InputStream, private var remaining: Long) :
+    FilterInputStream(input) {
+    override fun read(): Int {
+        if (remaining == 0L) return -1
+        val result = `in`.read()
+        if (result >= 0) remaining--
+        return result
+    }
+
+    override fun read(bytes: ByteArray, offset: Int, length: Int): Int {
+        if (length == 0) return 0
+        if (remaining == 0L) return -1
+        val result =
+            `in`.read(bytes, offset, minOf(length.toLong(), remaining).toInt())
+        if (result > 0) remaining -= result
+        return result
+    }
+
+    override fun available(): Int =
+        minOf(remaining, `in`.available().toLong()).toInt()
+
+    override fun skip(n: Long): Long =
+        `in`.skip(minOf(n, remaining)).also { remaining -= it }
 }

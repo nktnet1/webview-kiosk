@@ -102,7 +102,9 @@ internal class ScriptletIndex(
                     continue
                 }
                 instructionOffsets[instruction] = length
-                append('[').append(json(instruction.type.name)).append(',')
+                append('[')
+                appendJson(instruction.type.name)
+                append(',')
                 strings(instruction.arguments)
                 append(',').append(module(instruction.type)).append("]\n")
                 require(length <= MAX_ROUTING_BYTES) {
@@ -110,10 +112,11 @@ internal class ScriptletIndex(
                 }
             }
         }
-        val offsets = mutableListOf<Int>()
+        val offsets = IntArray(rules.size)
         val data = buildString {
-            for ((instruction, domains, exception, targets) in rules) {
-                offsets += length
+            for ((ruleIndex, rule) in rules.withIndex()) {
+                val (instruction, domains, exception, targets) = rule
+                offsets[ruleIndex] = length
                 append('[')
                 append(instruction?.let(instructionOffsets::get) ?: -1)
                 append(",null")
@@ -126,8 +129,15 @@ internal class ScriptletIndex(
                     if (index != 0) {
                         append(',')
                     }
-                    append('[').append(json(target.host)).append(',')
-                    append(target.path?.let(::json) ?: "null").append(',')
+                    append('[')
+                    appendJson(target.host)
+                    append(',')
+                    if (target.path == null) {
+                        append("null")
+                    } else {
+                        appendJson(target.path)
+                    }
+                    append(',')
                     append(target.regex)
                         .append(',')
                         .append(target.entity)
@@ -150,11 +160,14 @@ internal class ScriptletIndex(
         fun table(values: Map<String, IntArray>): String = buildString {
             for ((name, indexes) in values.toSortedMap()) {
                 append(name).append('\t')
-                append(
-                    indexes.joinToString(",", "[", "]") {
-                        offsets[it].toString()
+                append('[')
+                indexes.forEachIndexed { index, id ->
+                    if (index != 0) {
+                        append(',')
                     }
-                )
+                    append(offsets[id])
+                }
+                append(']')
                 append('\n')
                 require(length <= MAX_ROUTING_BYTES) {
                     "Scriptlet routing data exceeds 16 MiB"
@@ -319,7 +332,10 @@ internal class ScriptletIndex(
         }
 
         /** JSON only: filter text can never escape into JavaScript source. */
-        internal fun json(value: String): String = buildString {
+        internal fun json(value: String): String =
+            buildString(value.length + 2) { appendJson(value) }
+
+        private fun StringBuilder.appendJson(value: String) {
             append('"')
             value.forEach { char ->
                 when (char) {
@@ -345,7 +361,16 @@ internal class ScriptletIndex(
         }
 
         private fun StringBuilder.strings(values: Collection<String>) {
-            append(values.joinToString(",", "[", "]", transform = ::json))
+            append('[')
+            var first = true
+            for (value in values) {
+                if (!first) {
+                    append(',')
+                }
+                appendJson(value)
+                first = false
+            }
+            append(']')
         }
     }
 }
