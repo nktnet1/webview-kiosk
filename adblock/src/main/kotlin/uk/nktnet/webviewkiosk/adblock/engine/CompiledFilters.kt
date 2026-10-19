@@ -347,14 +347,7 @@ internal class CompiledFilters(
     private val blockedHosts = HashSet<String>()
     private val allowedHosts = HashSet<String>()
     private val importantHosts = HashSet<String>()
-    private val unknownInitiatorExceptions = networks.filter {
-        it.exception &&
-            !it.redirectOnly &&
-            it.hide == 0 &&
-            it.removeParam == null &&
-            (it.conditions.domains != DomainScope.ANY ||
-                it.conditions.thirdParty != null)
-    }
+    private val unknownInitiatorExceptions: List<NetworkIdentity>
     private val requests: NetworkIndex
     private val redirectExceptions: NetworkIndex
     private val hideExceptions: NetworkIndex
@@ -396,7 +389,20 @@ internal class CompiledFilters(
         val hiding = mutableListOf<NetworkIdentity>()
         val redirecting = mutableListOf<NetworkIdentity>()
         val parameters = mutableListOf<NetworkIdentity>()
+        val contextualExceptions = mutableListOf<NetworkIdentity>()
         for (rule in networks) {
+            // Collect these alongside the main partitions instead of scanning
+            // every network rule again before building the indexes.
+            if (
+                rule.exception &&
+                    !rule.redirectOnly &&
+                    rule.hide == 0 &&
+                    rule.removeParam == null &&
+                    (rule.conditions.domains != DomainScope.ANY ||
+                        rule.conditions.thirdParty != null)
+            ) {
+                contextualExceptions += rule
+            }
             val host = rule.pattern.plainHost
             when {
                 rule.removeParam != null -> parameters += rule
@@ -416,6 +422,7 @@ internal class CompiledFilters(
                 else -> ordinary += rule
             }
         }
+        unknownInitiatorExceptions = contextualExceptions
         networkPartitionNanos = System.nanoTime() - partitionStartedAt
         val routingStartedAt = System.nanoTime()
         requests = NetworkIndex(ordinary, networkIndexes?.requests)

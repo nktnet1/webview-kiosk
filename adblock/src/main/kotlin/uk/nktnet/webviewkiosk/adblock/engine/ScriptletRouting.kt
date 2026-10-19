@@ -22,16 +22,26 @@ internal object ScriptletRouting {
 
     private fun visit(rules: List<ScriptletRule>, emit: BucketVisitor) {
         for ((index, rule) in rules.withIndex()) {
-            // Several path/regex targets can route the same rule through one
-            // bucket. Store that rule ID once; matches() still checks every scope.
-            val routes = linkedSetOf<Pair<ScriptletBucket, String>>()
+            // Domain sets are already unique within their respective buckets.
+            // Only extended scopes can overlap, so only they need a temporary set.
+            val routes =
+                if (rule.targets.isEmpty()) {
+                    null
+                } else {
+                    linkedSetOf<Pair<ScriptletBucket, String>>()
+                }
+            fun add(bucket: ScriptletBucket, key: String) {
+                if (routes == null) {
+                    emit(bucket.ordinal, key, index)
+                } else {
+                    routes.add(bucket to key)
+                }
+            }
             if (!ScriptletScopes.hasPositive(rule) && rule.exception) {
-                routes += ScriptletBucket.GENERIC_EXCEPTION to ""
+                add(ScriptletBucket.GENERIC_EXCEPTION, "")
             }
-            rule.domains.included.forEach { routes += ScriptletBucket.HOST to it }
-            rule.domains.includedEntities.forEach {
-                routes += ScriptletBucket.ENTITY to it
-            }
+            rule.domains.included.forEach { add(ScriptletBucket.HOST, it) }
+            rule.domains.includedEntities.forEach { add(ScriptletBucket.ENTITY, it) }
             for ((host, _, regex, entity, ancestor, excluded) in rule.targets) {
                 if (excluded) {
                     continue
@@ -44,17 +54,16 @@ internal object ScriptletRouting {
                         entity -> ScriptletBucket.ENTITY
                         else -> ScriptletBucket.HOST
                     }
-                routes +=
-                    bucket to
-                        if (regex) {
-                            ""
-                        } else {
-                            host
-                        }
+                add(
+                    bucket,
+                    if (regex) {
+                        ""
+                    } else {
+                        host
+                    },
+                )
             }
-            for ((bucket, key) in routes) {
-                emit(bucket.ordinal, key, index)
-            }
+            routes?.forEach { (bucket, key) -> emit(bucket.ordinal, key, index) }
         }
     }
 }

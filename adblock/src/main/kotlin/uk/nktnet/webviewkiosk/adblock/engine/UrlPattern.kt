@@ -222,7 +222,13 @@ internal data class UrlPattern(
         }
 
     val plainHost: String?
-        get() = hostIndex?.takeIf { domainAnchor && text == "$it^" && !endAnchor }
+        get() = hostIndex?.takeIf {
+            domainAnchor &&
+                !endAnchor &&
+                text.length == it.length + 1 &&
+                text.endsWith('^') &&
+                text.startsWith(it)
+        }
 
     // Host-anchored filters use the hostname index. Other patterns get a literal
     // substring index, not a word index: "advert" must also match "myadvert.js".

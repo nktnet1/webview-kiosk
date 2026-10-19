@@ -27,6 +27,12 @@ dispatcher is generated from validated records. Its public-suffix data is
 normalised from the pinned OkHttp list at build time and bundled as inert JSON,
 so startup does not repeat hostname canonicalisation for every suffix.
 
+Runtime preparation avoids a second network-rule scan by collecting contextual
+exceptions during partitioning. Host-only pattern checks do not construct temporary
+strings. Domain-only scriptlet scopes already contain unique set members and emit
+routes directly; extended scopes retain ordered deduplication. These changes preserve
+schema 20, rule ordering, generated dispatcher contents and index validation.
+
 Android reports `Rule restore revision` on successful aggregate cache hits,
 splitting `RESTORING` into network, cosmetic and scriptlet records, saved
 network and page buckets, and checksum/footer verification. It includes record,
