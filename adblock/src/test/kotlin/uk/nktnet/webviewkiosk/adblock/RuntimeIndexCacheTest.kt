@@ -70,6 +70,54 @@ class RuntimeIndexCacheTest {
     }
 
     @Test
+    fun contextualExceptionsKeepTheirBehaviourWithoutAnInitiator() {
+        val inputs =
+            listOf(
+                "||domain-exception.example^\n" +
+                    "@@||domain-exception.example^\$script,domain=site.example\n" +
+                    "||party-exception.example^\n" +
+                    "@@||party-exception.example^\$script,third-party\n" +
+                    "||hide.example^\n" +
+                    "@@||hide.example^\$generichide,domain=site.example\n" +
+                    "||redirect.example^\n" +
+                    "@@||redirect.example^\$redirect-rule,domain=site.example\n" +
+                    "||param.example^\n" +
+                    "@@||param.example^\$removeparam=track,domain=site.example"
+            )
+        val file = File(folder.root, "contextual.bin")
+        repeat(2) { run ->
+            val engine = KotlinFilterEngine(file)
+            val stages = mutableListOf<RuleLoadStage>()
+            engine.replace(inputs, stages::add)
+            assertEquals(0, engine.unsupportedRuleCount())
+            if (run == 1) {
+                assertTrue(RuleLoadStage.RESTORING in stages)
+                assertFalse(RuleLoadStage.COMPILING in stages)
+                assertFalse(RuleLoadStage.SAVING_CACHE in stages)
+            }
+            fun blocked(host: String, source: String = "", type: String = "script") =
+                engine.shouldBlock("https://$host/ads.js", source, type, "GET")
+            assertFalse(blocked("domain-exception.example"))
+            assertFalse(blocked("party-exception.example"))
+            assertTrue(blocked("domain-exception.example", type = "image"))
+            assertTrue(blocked("party-exception.example", type = "image"))
+            assertFalse(blocked("domain-exception.example", "https://site.example/"))
+            assertTrue(blocked("domain-exception.example", "https://other.example/"))
+            assertFalse(blocked("party-exception.example", "https://site.example/"))
+            assertTrue(
+                blocked(
+                    "party-exception.example",
+                    "https://party-exception.example/",
+                )
+            )
+            for (host in
+                listOf("hide.example", "redirect.example", "param.example")) {
+                assertTrue(host, blocked(host))
+            }
+        }
+    }
+
+    @Test
     fun normalizedOnlySnapshotsUpgradeWithoutReparsingSourceText() {
         val file = File(folder.root, "normalized.bin")
         val cache = CompiledFilterCache(file)

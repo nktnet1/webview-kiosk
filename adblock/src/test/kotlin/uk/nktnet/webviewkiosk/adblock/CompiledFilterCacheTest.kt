@@ -1,18 +1,78 @@
 package uk.nktnet.webviewkiosk.adblock
 
 import java.io.File
+import java.nio.ByteBuffer
+import java.util.zip.CRC32
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import uk.nktnet.webviewkiosk.adblock.engine.CompiledFilterCache
+import uk.nktnet.webviewkiosk.adblock.engine.CompiledRuleSet
+import uk.nktnet.webviewkiosk.adblock.engine.CosmeticRule
+import uk.nktnet.webviewkiosk.adblock.engine.DomainScope
 import uk.nktnet.webviewkiosk.adblock.engine.FilterCompiler
 
 class CompiledFilterCacheTest {
     @get:Rule val folder = TemporaryFolder()
+
+    @Test
+    fun warmCacheReportsIndexPreparationPhases() {
+        val file = File(folder.root, "index-timings.bin")
+        val lists =
+            listOf(
+                "||ads.example^\$script,domain=site.example\n" +
+                    "site.example##.advert\n" +
+                    "site.example##+js(json-prune-fetch-response, ads)"
+            )
+        KotlinFilterEngine(file).replace(lists)
+        val restored = KotlinFilterEngine(file)
+        val stages = mutableListOf<RuleLoadStage>()
+        restored.replace(lists, stages::add)
+
+        assertTrue(RuleLoadStage.RESTORING in stages)
+        assertFalse(RuleLoadStage.SAVING_CACHE in stages)
+        val timings = requireNotNull(restored.lastIndexTimings)
+        for (phase in
+            listOf(
+                "SCRIPTLET_ROUTING",
+                "SCRIPTLET_INJECTION",
+                "COSMETIC_ROUTING",
+                "NETWORK_PARTITION",
+                "NETWORK_ROUTING",
+                "OTHER",
+            )) {
+            assertTrue(
+                "Missing $phase from $timings",
+                Regex("$phase=\\d+ms").containsMatchIn(timings),
+            )
+        }
+        val restoreTimings = requireNotNull(restored.lastRestoreTimings)
+        for (phase in
+            listOf(
+                "NETWORK_RULES",
+                "COSMETIC_RULES",
+                "SCRIPTLET_RULES",
+                "NETWORK_BUCKETS",
+                "PAGE_BUCKETS",
+                "FOOTER",
+            )) {
+            assertTrue(
+                "Missing $phase from $restoreTimings",
+                Regex("$phase=\\d+ms").containsMatchIn(restoreTimings),
+            )
+        }
+        assertTrue("Missing record count", "records=" in restoreTimings)
+        assertTrue("Missing string count", "strings=" in restoreTimings)
+        assertTrue("Missing cache byte count", "bytes=" in restoreTimings)
+        restored.clear()
+        assertNull(restored.lastIndexTimings)
+        assertNull(restored.lastRestoreTimings)
+    }
 
     @Test
     fun cachedEngineMatchesTheEntireNetworkFixtureCorpusWithoutReparsing() {
@@ -292,6 +352,198 @@ class CompiledFilterCacheTest {
         val stages = mutableListOf<RuleLoadStage>()
         KotlinFilterEngine(file, cacheVersion = 1).replace(lists, stages::add)
         assertTrue(RuleLoadStage.RESTORING in stages)
+    }
+
+    @Test
+    fun compactScopesRoundTripEveryDomainAndEntityCombination() {
+        val file = File(folder.root, "scope-masks.bin")
+        val cache = CompiledFilterCache(file)
+        val key = cache.key(listOf("scope-mask-test"))
+        val original =
+            (0..15).map { mask ->
+                fun field(bit: Int, value: String): Set<String> =
+                    if (mask and bit != 0) {
+                        setOf(value)
+                    } else {
+                        emptySet()
+                    }
+                CosmeticRule(
+                    ".selector$mask",
+                    DomainScope(
+                        included = field(1, "site.example"),
+                        excluded = field(2, "not.site.example"),
+                        includedEntities = field(4, "publisher"),
+                        excludedEntities = field(8, "blocked"),
+                    ),
+                    exception = false,
+                )
+            }
+        cache.write(key, CompiledRuleSet(emptyList(), original, 0))
+        val restored = requireNotNull(cache.read(key))
+        assertEquals(original, restored.cosmetics.toList())
+        assertTrue(restored.cosmetics.first().domains === DomainScope.ANY)
+    }
+
+    @Test
+    fun invalidScopeMaskWithCorrectChecksumIsRejected() {
+        val file = File(folder.root, "scope-invalid.bin")
+        val cache = CompiledFilterCache(file)
+        val key = cache.key(listOf("||ads.example^"))
+        cache.write(key, FilterCompiler.parse(listOf("||ads.example^")))
+        val bytes = file.readBytes()
+        val input = ByteBuffer.wrap(bytes)
+        input.position(3 * Int.SIZE_BYTES + 32 + 3 * Int.SIZE_BYTES)
+        assertEquals(0, input.get().toInt()) // Enabled network record.
+        var nextStringId = 0
+        fun skipString() {
+            val id = input.int
+            if (id == nextStringId) {
+                nextStringId++
+                val tag = input.short.toInt() and 0xffff
+                val count = tag and 0x7fff
+                input.position(
+                    input.position() +
+                        count *
+                            if (tag and 0x8000 != 0) {
+                                2
+                            } else {
+                                1
+                            }
+                )
+            }
+        }
+        skipString() // Pattern text.
+        input.get() // Pattern flags.
+        skipString() // Indexed hostname.
+        val scopeOffset = input.position()
+        assertEquals(0, bytes[scopeOffset].toInt()) // Unrestricted source scope.
+        bytes[scopeOffset] = 0x80.toByte()
+        repairChecksum(bytes)
+        file.writeBytes(bytes)
+        assertNull(cache.read(key))
+    }
+
+    @Test
+    fun checksumRemainsValidAcrossReadBufferBoundariesAndExcludesTrailer() {
+        val lists =
+            listOf((0 until 12_000).joinToString("\n") { "||ads$it.example.org^" })
+        val file = File(folder.root, "buffered.bin")
+        val cache = CompiledFilterCache(file)
+        val key = cache.key(lists)
+        val rules = FilterCompiler.parse(lists)
+        val indexed = rules.build()
+        cache.write(key, rules, indexed.networkIndexes, indexed.pageIndexes)
+        assertTrue(file.length() > 64 * 1024)
+        val restoreTimings = mutableListOf<String>()
+        val validated =
+            requireNotNull(cache.read(key, onTimings = restoreTimings::add))
+        assertTrue(validated.build().restoredNetworkIndexes)
+        assertEquals(1, restoreTimings.size)
+
+        val intact = file.readBytes()
+        file.writeBytes(
+            intact.copyOf().apply {
+                this[lastIndex] = (this[lastIndex].toInt() xor 1).toByte()
+            }
+        )
+        assertNull(cache.read(key, onTimings = restoreTimings::add))
+
+        file.writeBytes(intact + byteArrayOf(1))
+        assertNull(cache.read(key, onTimings = restoreTimings::add))
+        assertEquals(1, restoreTimings.size)
+    }
+
+    @Test
+    fun previousSchemaRecompilesAggregateAndSourceShardsOnlyOnce() {
+        val file = File(folder.root, "schema.bin")
+        val lists =
+            listOf(
+                "||ads.example^\nsite.example##.advert",
+                "site.example##+js(set, marker, false)",
+            )
+        val original = KotlinFilterEngine(file)
+        original.replace(lists)
+        val current = ByteBuffer.wrap(file.readBytes()).getInt(4)
+        assertTrue(current > 19)
+        val shards = File(folder.root, "${file.name}.sources")
+        val files = shards.listFiles()!!.filter { it.extension == "bin" } + file
+        assertEquals(3, files.size)
+        for (snapshot in files) {
+            val bytes = snapshot.readBytes()
+            // The schema is rejected before records are read, regardless of their
+            // layout. Repair CRC32 so a checksum failure cannot mask that check.
+            ByteBuffer.wrap(bytes).putInt(4, 19)
+            repairChecksum(bytes)
+            snapshot.writeBytes(bytes)
+        }
+        val stages = mutableListOf<RuleLoadStage>()
+        val rebuilt = KotlinFilterEngine(file)
+        rebuilt.replace(lists, stages::add)
+        assertTrue(RuleLoadStage.COMPILING in stages)
+        assertTrue(RuleLoadStage.SAVING_CACHE in stages)
+        for (snapshot in files) {
+            assertEquals(current, ByteBuffer.wrap(snapshot.readBytes()).getInt(4))
+        }
+        stages.clear()
+        val warm = KotlinFilterEngine(file)
+        warm.replace(lists, stages::add)
+        assertTrue(RuleLoadStage.RESTORING in stages)
+        assertFalse(RuleLoadStage.COMPILING in stages)
+        assertFalse(RuleLoadStage.SAVING_CACHE in stages)
+        assertTrue(
+            warm.shouldBlock(
+                "https://ads.example/pixel",
+                "https://site.example/",
+                "image",
+                "GET",
+            )
+        )
+        assertEquals(
+            original.cosmeticSelectors(
+                "https://site.example/",
+                emptyList(),
+                emptyList(),
+            ),
+            warm.cosmeticSelectors(
+                "https://site.example/",
+                emptyList(),
+                emptyList(),
+            ),
+        )
+        assertEquals(original.scriptletInjection(), warm.scriptletInjection())
+    }
+
+    @Test
+    fun checksumCorrectInvalidStringReferencesAndLengthsAreRejected() {
+        val file = File(folder.root, "invalid-string.bin")
+        val cache = CompiledFilterCache(file)
+        val lists = listOf("||ads.example^")
+        val key = cache.key(lists)
+        cache.write(key, FilterCompiler.parse(lists))
+        val valid = file.readBytes()
+        // Header: magic/schema/salt/key + total/skipped/network counts, then the
+        // first network's disabled byte, string ID and tagged string length.
+        val stringId = 3 * Int.SIZE_BYTES + 32 + 3 * Int.SIZE_BYTES + 1
+        for (reference in listOf(-1, 1, Int.MAX_VALUE)) {
+            val bytes = valid.copyOf()
+            ByteBuffer.wrap(bytes).putInt(stringId, reference)
+            repairChecksum(bytes)
+            file.writeBytes(bytes)
+            assertNull(cache.read(key))
+        }
+        for (tag in listOf(8193, 0x8000 or 8193, 0xffff)) {
+            val bytes = valid.copyOf()
+            ByteBuffer.wrap(bytes).putShort(stringId + Int.SIZE_BYTES, tag.toShort())
+            repairChecksum(bytes)
+            file.writeBytes(bytes)
+            assertNull(cache.read(key))
+        }
+    }
+
+    private fun repairChecksum(bytes: ByteArray) {
+        val size = bytes.size - Long.SIZE_BYTES
+        val checksum = CRC32().apply { update(bytes, 0, size) }.value
+        ByteBuffer.wrap(bytes).putLong(size, checksum)
     }
 
     @Test

@@ -1,3 +1,7 @@
+import java.io.ByteArrayInputStream
+import java.io.DataInputStream
+import java.net.IDN
+import java.util.Locale
 import java.util.zip.ZipFile
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -28,6 +32,7 @@ dependencies {
 abstract class GenerateScriptletSuffixes : DefaultTask() {
     @get:Classpath abstract val suffixClasspath: ConfigurableFileCollection
     @get:OutputFile abstract val destination: RegularFileProperty
+    @get:OutputFile abstract val serializedDestination: RegularFileProperty
 
     @TaskAction
     fun generate() {
@@ -49,7 +54,57 @@ abstract class GenerateScriptletSuffixes : DefaultTask() {
         require(lists.size == 1) { "Expected one OkHttp public suffix resource" }
         val output = destination.get().asFile
         output.parentFile.mkdirs()
-        output.writeBytes(lists.single())
+        val source = lists.single()
+        output.writeBytes(source)
+        // Prepare the public suffix data at build time instead of normalising
+        // thousands of hostnames on every Android process start.
+        val serialized =
+            DataInputStream(ByteArrayInputStream(source)).use { input ->
+                fun readList(): String {
+                    val length = input.readInt()
+                    require(length in 0..1024 * 1024)
+                    val bytes = ByteArray(length)
+                    input.readFully(bytes)
+                    return bytes
+                        .toString(Charsets.UTF_8)
+                        .lineSequence()
+                        .filter { it.isNotEmpty() }
+                        .map { suffix ->
+                            val wildcard = suffix.startsWith("*.")
+                            val host =
+                                IDN.toASCII(suffix.removePrefix("*."))
+                                    .lowercase(Locale.ROOT)
+                            require(
+                                host.isNotEmpty() &&
+                                    host.length <= 253 &&
+                                    host.all {
+                                        it in 'a'..'z' ||
+                                            it in '0'..'9' ||
+                                            it == '-' ||
+                                            it == '.'
+                                    }
+                            )
+                            if (wildcard) {
+                                "*.$host"
+                            } else {
+                                host
+                            }
+                        }
+                        .distinct()
+                        .sorted()
+                        .joinToString("\n", postfix = "\n")
+                }
+                val rules = readList()
+                val exceptions = readList()
+                require(input.read() == -1) { "Unexpected public suffix data" }
+                // Normalised hosts contain only safe ASCII characters. Match the
+                // runtime JSON encoder's newline escaping exactly.
+                fun json(value: String) = "\"${value.replace("\n", "\\u000a")}\""
+                "[${json(rules)},${json(exceptions)}]"
+            }
+        val dispatcher = serializedDestination.get().asFile
+        dispatcher.parentFile.mkdirs()
+        dispatcher.writeText(serialized, Charsets.UTF_8)
     }
 }
 
@@ -60,6 +115,9 @@ val generateScriptletSuffixes =
         description = "Extract OkHttp's public suffix list for scriptlet routing."
         suffixClasspath.from(configurations.runtimeClasspath)
         destination.set(suffixResources.map { it.file("adblock/publicsuffix.list") })
+        serializedDestination.set(
+            suffixResources.map { it.file("adblock/publicsuffix-serialized.json") }
+        )
     }
 
 sourceSets.main { resources.srcDir(suffixResources) }

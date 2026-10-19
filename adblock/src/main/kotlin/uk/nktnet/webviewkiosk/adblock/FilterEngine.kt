@@ -66,7 +66,7 @@ enum class RuleLoadStage(val description: String) {
     CHECKING_CACHE("Checking for saved compiled rules…"),
     RESTORING("Loading compiled rules into memory…"),
     COMPILING("Compiling rules for the enabled lists…"),
-    INDEXING("Building rule indexes in memory…"),
+    INDEXING("Preparing rule indexes in memory…"),
     SAVING_CACHE("Saving compiled rules for faster startup…"),
     CLEARING("Disabling filter rules…"),
 }
