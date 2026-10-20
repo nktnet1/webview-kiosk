@@ -100,7 +100,15 @@ class HomeAssistantCatalogTest {
         assertEquals(17, commandNames.size)
         assertEquals(5, requestNames.size)
         assertTrue(
-            components.keys.containsAll(commandNames - setOf("lock", "unlock"))
+            components.keys.containsAll(
+                (commandNames - setOf("lock", "unlock")).map {
+                    when (it) {
+                        "toast" -> "toast_message"
+                        "notify" -> "notification_message"
+                        else -> it
+                    }
+                }
+            )
         )
         assertTrue(components.containsKey("kiosk_lock"))
         assertTrue(components.keys.containsAll(requestNames))

@@ -561,9 +561,18 @@ class MqttServiceConnectionTest {
         settings.mqttHomeAssistantDeviceName = "Kitchen kiosk"
         val connection = connect()
         val ha = homeAssistant()
-        val announcement = awaitPublication(connection, ha.configTopic)
+        val announcement = awaitDiscovery(connection, ha)
         val device = JSONObject(announcement.payload)
 
+        val removal = connection.publications.first { it.topic == ha.configTopic }
+        assertTrue(removal.retain)
+        assertEquals(ha.notifierRemovalPayload().toString(), removal.payload)
+        assertEquals(
+            listOf(removal.payload, announcement.payload),
+            connection.publications
+                .filter { it.topic == ha.configTopic }
+                .map { it.payload },
+        )
         assertTrue(announcement.retain)
         assertEquals(
             "Kitchen kiosk",
@@ -621,7 +630,11 @@ class MqttServiceConnectionTest {
 
         connection.publish(ha.birthTopic, "online")
 
-        assertTrue(awaitPublication(connection, ha.configTopic).retain)
+        assertTrue(awaitDiscovery(connection, ha).retain)
+        assertEquals(
+            ha.notifierRemovalPayload().toString(),
+            connection.publications.first { it.topic == ha.configTopic }.payload,
+        )
         assertTrue(awaitPublication(connection, ha.stateTopic).retain)
         assertEquals(
             "online",
@@ -712,8 +725,7 @@ class MqttServiceConnectionTest {
         settings.mqttHomeAssistantEnabled = true
         val first = connect()
         val previous = homeAssistant()
-        val oldConfig =
-            JSONObject(awaitPublication(first, previous.configTopic).payload)
+        val oldConfig = JSONObject(awaitDiscovery(first, previous).payload)
         awaitPublication(first, previous.availabilityTopic, "online")
         settings.mqttHomeAssistantDiscoveryPrefix = "another/prefix"
 
@@ -724,8 +736,7 @@ class MqttServiceConnectionTest {
         val current = homeAssistant()
 
         assertTrue(awaitPublication(second, previous.configTopic, "").retain)
-        val newConfig =
-            JSONObject(awaitPublication(second, current.configTopic).payload)
+        val newConfig = JSONObject(awaitDiscovery(second, current).payload)
         assertEquals(
             oldConfig.getJSONObject("components").toString(),
             newConfig.getJSONObject("components").toString(),
@@ -748,7 +759,7 @@ class MqttServiceConnectionTest {
         awaitCondition { second.subscriptions.size == 7 }
 
         assertSame(originalClient, field("client").get(MqttManager))
-        assertTrue(awaitPublication(second, ha.configTopic).retain)
+        assertTrue(awaitDiscovery(second, ha).retain)
         assertEquals(
             "online",
             awaitPublication(second, ha.availabilityTopic).payload,
@@ -756,7 +767,7 @@ class MqttServiceConnectionTest {
         assertEquals(7, second.subscriptionCount.get())
         second.publications.clear()
         second.publish(ha.birthTopic, "online")
-        awaitPublication(second, ha.configTopic)
+        awaitDiscovery(second, ha)
     }
 
     @Test
@@ -919,7 +930,7 @@ class MqttServiceConnectionTest {
         val connection = connect()
         val ha = homeAssistant()
         val components =
-            JSONObject(awaitPublication(connection, ha.configTopic).payload)
+            JSONObject(awaitDiscovery(connection, ha).payload)
                 .getJSONObject("components")
         HomeAssistantDiscovery.requestNames.keys.forEach { request ->
             connection.publications.clear()
@@ -970,16 +981,27 @@ class MqttServiceConnectionTest {
             settings.mqttHomeAssistantStatusTopic,
         )
 
+    private fun awaitDiscovery(
+        connection: LoopbackMqttBroker.Connection,
+        discovery: HomeAssistantDiscovery,
+    ) =
+        awaitPublication(connection, discovery.configTopic) {
+            JSONObject(it.payload).getJSONObject("components").has("battery")
+        }
+
     private fun awaitPublication(
         connection: LoopbackMqttBroker.Connection,
         topic: String,
         payload: String? = null,
+        matches: (LoopbackMqttBroker.Publication) -> Boolean = { true },
     ): LoopbackMqttBroker.Publication {
         var result: LoopbackMqttBroker.Publication? = null
         awaitCondition {
             result =
                 connection.publications.firstOrNull {
-                    it.topic == topic && (payload == null || it.payload == payload)
+                    it.topic == topic &&
+                        (payload == null || it.payload == payload) &&
+                        matches(it)
                 }
             result != null
         }

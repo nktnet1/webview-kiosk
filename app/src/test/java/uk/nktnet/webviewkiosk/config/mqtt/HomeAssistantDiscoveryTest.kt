@@ -20,7 +20,7 @@ class HomeAssistantDiscoveryTest {
         val renamed = discovery.payload("Hallway", "Example", "Tablet", "2.0")
         val components = first.getValue("components").jsonObject
 
-        assertEquals(40, components.size)
+        assertEquals(37, components.size)
         assertEquals(
             "Webview Kiosk",
             first.getValue("origin").jsonObject["name"]?.jsonPrimitive?.content,
@@ -46,6 +46,81 @@ class HomeAssistantDiscoveryTest {
             "homeassistant/device/webview_kiosk_instance-a/config",
             discovery.configTopic,
         )
+    }
+
+    @Test
+    fun onlyTheRetiredNotifiersAreIncludedInTheRemovalMessage() {
+        val removal = discovery.notifierRemovalPayload()
+        val removed = removal.getValue("components").jsonObject
+        val current = discovery.payload("", "", "", "1")
+        val components = current.getValue("components").jsonObject
+
+        assertEquals(
+            setOf(
+                "toast",
+                "notify",
+                "command_json",
+                "settings_json",
+                "request_json",
+            ),
+            removed.keys,
+        )
+        removed.values.forEach {
+            // A platform-only entry explicitly removes a device component in HA.
+            assertEquals(setOf("platform"), it.jsonObject.keys)
+            assertEquals(
+                "notify",
+                it.jsonObject.getValue("platform").jsonPrimitive.content,
+            )
+        }
+        assertEquals(
+            current.getValue("device").jsonObject.getValue("identifiers"),
+            removal.getValue("device").jsonObject.getValue("identifiers"),
+        )
+        assertTrue(components.keys.intersect(removed.keys).isEmpty())
+        assertTrue(
+            components.values.none {
+                it.jsonObject.getValue("platform").jsonPrimitive.content == "notify"
+            }
+        )
+    }
+
+    @Test
+    fun toastAndNotificationAreBlankTextControlsWithFixedCommandEnvelopes() {
+        val components =
+            discovery.payload("", "", "", "1")["components"]!!.jsonObject
+        listOf(
+                Triple("toast_message", "toast", "message"),
+                Triple("notification_message", "notify", "contentText"),
+            )
+            .forEach { (key, command, field) ->
+                val entity = components.getValue(key).jsonObject
+                assertEquals(
+                    "text",
+                    entity.getValue("platform").jsonPrimitive.content,
+                )
+                assertEquals("255", entity.getValue("max").jsonPrimitive.content)
+                assertEquals(
+                    discovery.commandTopic,
+                    entity.getValue("command_topic").jsonPrimitive.content,
+                )
+                assertEquals(
+                    discovery.stateTopic,
+                    entity.getValue("state_topic").jsonPrimitive.content,
+                )
+                assertEquals(
+                    "{{ '' }}",
+                    entity.getValue("value_template").jsonPrimitive.content,
+                )
+                assertEquals(
+                    "false",
+                    entity.getValue("retain").jsonPrimitive.content,
+                )
+                assertEquals(
+                    "{{ {\"command\":\"$command\",\"targetInstances\":[\"instance-a\"],\"data\":{\"$field\":value}} | tojson }}",
+                    entity.getValue("command_template").jsonPrimitive.content,
+                )
+            }
     }
 
     @Test

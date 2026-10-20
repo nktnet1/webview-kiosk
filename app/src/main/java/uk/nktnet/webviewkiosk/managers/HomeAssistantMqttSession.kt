@@ -158,20 +158,32 @@ internal class HomeAssistantMqttSession(
         updateRegistry(ha.configTopic)
         publish(
             ha.configTopic,
-            ha.payload(
-                    config.homeAssistantDeviceName,
-                    Build.MANUFACTURER,
-                    Build.MODEL,
-                    BuildConfig.VERSION_NAME,
-                    settingsCatalog,
-                )
-                .toString(),
-        )
-        scope.launch(Dispatchers.Main) {
-            if (isActive()) {
-                refreshState()
-                refreshSettings()
-                publish(ha.availabilityTopic, "online")
+            ha.notifierRemovalPayload().toString(),
+        ) { success ->
+            if (success) {
+                // HA requires explicit platform-only removal entries, followed
+                // by a retained configuration that omits the removed entities.
+                publish(
+                    ha.configTopic,
+                    ha.payload(
+                            config.homeAssistantDeviceName,
+                            Build.MANUFACTURER,
+                            Build.MODEL,
+                            BuildConfig.VERSION_NAME,
+                            settingsCatalog,
+                        )
+                        .toString(),
+                ) { announced ->
+                    if (announced) {
+                        scope.launch(Dispatchers.Main) {
+                            if (isActive()) {
+                                refreshState()
+                                refreshSettings()
+                                publish(ha.availabilityTopic, "online")
+                            }
+                        }
+                    }
+                }
             }
         }
     }

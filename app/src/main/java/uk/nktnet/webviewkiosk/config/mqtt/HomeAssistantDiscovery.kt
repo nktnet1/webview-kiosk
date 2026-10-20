@@ -33,6 +33,32 @@ class HomeAssistantDiscovery(
 
     fun responseTopic(request: String) = "$baseTopic/response/$request"
 
+    /** Retire the old notify entities before announcing the current controls. */
+    fun notifierRemovalPayload(): JsonObject = buildJsonObject {
+        put(
+            "device",
+            buildJsonObject {
+                put("identifiers", JsonArray(listOf(JsonPrimitive(deviceId))))
+            },
+        )
+        put("origin", buildJsonObject { put("name", "Webview Kiosk") })
+        put(
+            "components",
+            buildJsonObject {
+                listOf(
+                        "toast",
+                        "notify",
+                        "command_json",
+                        "settings_json",
+                        "request_json",
+                    )
+                    .forEach { key ->
+                        put(key, buildJsonObject { put("platform", "notify") })
+                    }
+            },
+        )
+    }
+
     init {
         require(isValidPrefix(discoveryPrefix)) {
             "Invalid Home Assistant discovery prefix."
@@ -217,62 +243,36 @@ class HomeAssistantDiscovery(
                 Triple("launch_package", "Launch package", "packageName"),
             )
             .forEach { (command, name, field) ->
+                // New discovery IDs avoid changing the old notify platform in place.
+                val key =
+                    when (command) {
+                        "toast" -> "toast_message"
+                        "notify" -> "notification_message"
+                        else -> command
+                    }
                 put(
-                    command,
-                    component(
-                        if (command == "notify" || command == "toast") {
-                            "notify"
-                        } else {
-                            "text"
-                        },
-                        command,
-                        name,
-                    ) {
+                    key,
+                    component("text", key, name) {
                         put("command_topic", commandTopic)
                         put(
                             "command_template",
                             "{{ {\"command\":${quote(command)},\"targetInstances\":$target,\"data\":{${quote(field)}:value}} | tojson }}",
                         )
-                        if (command != "notify" && command != "toast") {
-                            put("max", 255)
-                            // Retained state initialises the inputs on discovery.
-                            put("state_topic", stateTopic)
-                            put(
-                                "value_template",
-                                if (command == "go_to_url") {
-                                    "{{ value_json.currentUrl if value_json.currentUrl | length <= 255 else '' }}"
-                                } else {
-                                    "{{ '' }}"
-                                },
-                            )
-                        }
+                        put("max", 255)
+                        // Retained state initialises the inputs on discovery.
+                        put("state_topic", stateTopic)
+                        put(
+                            "value_template",
+                            if (command == "go_to_url") {
+                                "{{ value_json.currentUrl if value_json.currentUrl | length <= 255 else '' }}"
+                            } else {
+                                "{{ '' }}"
+                            },
+                        )
                         put("retain", false)
                     },
                 )
             }
-        put(
-            "settings_json",
-            component("notify", "settings_json", "Settings JSON") {
-                put("command_topic", settingsCommandTopic)
-                put(
-                    "command_template",
-                    "{{ dict(value | from_json, targetInstances=$target) | tojson }}",
-                )
-                put("entity_category", "config")
-                put("retain", false)
-            },
-        )
-        put(
-            "command_json",
-            component("notify", "command_json", "Command JSON") {
-                put("command_topic", commandTopic)
-                put(
-                    "command_template",
-                    "{{ dict(value | from_json, targetInstances=$target) | tojson }}",
-                )
-                put("retain", false)
-            },
-        )
     }
 
     private fun commandButton(
@@ -326,18 +326,6 @@ class HomeAssistantDiscovery(
                 "get_launchable_packages_permitted",
                 buildJsonObject { put("filterLockTaskPermitted", true) },
             ),
-        )
-        put(
-            "request_json",
-            component("notify", "request_json", "Request JSON") {
-                put("command_topic", requestTopic)
-                put(
-                    "command_template",
-                    "{{ dict(value | from_json, targetInstances=$target) | tojson }}",
-                )
-                put("entity_category", "diagnostic")
-                put("retain", false)
-            },
         )
     }
 
