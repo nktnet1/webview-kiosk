@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -13,6 +14,7 @@ import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewRootForTest
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
@@ -155,6 +157,96 @@ class MainActivityWebViewRefreshTest {
         }
         blockingSettings.close()
         blockerField.set(null, previousBlocker)
+    }
+
+    @Test
+    fun oversizedWebViewUrlDoesNotCreateAnUnboundedEditableTextField() {
+        val webView = webView()
+        val longUrl = "https://example.invalid/" + "x".repeat(30_000)
+        webView.loadUrl(longUrl)
+        webView.webViewClient.doUpdateVisitedHistory(webView, longUrl, false)
+        frames()
+
+        val nodes = mutableListOf<androidx.compose.ui.semantics.SemanticsNode>()
+        fun collect(view: View) {
+            if (view is ViewRootForTest) {
+                nodes +=
+                    view.semanticsOwner.getAllSemanticsNodes(mergingEnabled = false)
+                nodes +=
+                    view.semanticsOwner.getAllSemanticsNodes(mergingEnabled = true)
+            }
+            if (view is ViewGroup) {
+                (0 until view.childCount).forEach { collect(view.getChildAt(it)) }
+            }
+        }
+        collect(view)
+
+        assertTrue(
+            "Long URLs should have a copy action instead of requiring editable text layout",
+            nodes.any {
+                it.config
+                    .getOrNull(SemanticsProperties.ContentDescription)
+                    ?.contains("Copy full URL") == true
+            },
+        )
+        assertTrue(
+            "The full URL must not be sent to a Compose text field",
+            nodes.none {
+                it.config.getOrNull(SemanticsProperties.EditableText)?.text ==
+                    longUrl
+            },
+        )
+        assertTrue(
+            "A bounded URL preview should still be visible",
+            nodes.any {
+                it.config.getOrNull(SemanticsProperties.Text)?.any { text ->
+                    text.text.startsWith("https://example.invalid/") &&
+                        text.text.endsWith("\u2026") &&
+                        text.text.length <= 257
+                } == true
+            },
+        )
+
+        // A long URL remains copyable in full even though it is not editable.
+        val copyNode = nodes.first {
+            it.config
+                .getOrNull(SemanticsProperties.ContentDescription)
+                ?.contains("Copy full URL") == true &&
+                it.config.getOrNull(SemanticsActions.OnClick) != null
+        }
+        assertTrue(
+            copyNode.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke() ==
+                true
+        )
+        frames()
+        val clipboard =
+            activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        assertEquals(longUrl, clipboard.primaryClip?.getItemAt(0)?.text?.toString())
+
+        // Tapping the preview offers an empty replacement field, not a huge
+        // CoreTextField that would immediately repeat the expensive measurement.
+        val preview = nodes.first {
+            it.config.getOrNull(SemanticsActions.OnClick)?.label ==
+                "Enter a replacement URL"
+        }
+        assertTrue(
+            preview.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke() ==
+                true
+        )
+        frames()
+        nodes.clear()
+        collect(view)
+        assertTrue(
+            nodes.any {
+                it.config.getOrNull(SemanticsProperties.EditableText)?.text == ""
+            }
+        )
+        assertTrue(
+            nodes.none {
+                it.config.getOrNull(SemanticsProperties.EditableText)?.text ==
+                    longUrl
+            }
+        )
     }
 
     @Test
