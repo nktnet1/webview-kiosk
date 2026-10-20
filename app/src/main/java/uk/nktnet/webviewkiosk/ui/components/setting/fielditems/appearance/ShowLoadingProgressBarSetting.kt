@@ -19,12 +19,11 @@ fun ShowLoadingProgressBarSetting() {
         label = stringResource(R.string.appearance_show_loading_progress_bar_title),
         infoText =
             """
-            Show a progress bar at the top of the WebView while content is loading.
+            Show a progress bar at the top of the WebView while the main page loads.
 
-            Disable this for signage pages where background iframe loads make
-            the bar appear even when the visible content is unchanged.
+            Background iframe loads after the page finishes do not reopen the bar.
 
-            This only controls the bar's visibility. Page loading is unaffected.
+            Disable this to hide the bar during all page loads.
             """
                 .trimIndent(),
         settingKey = settingKey,

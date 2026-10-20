@@ -174,7 +174,7 @@ fun WebviewScreen(navController: NavController) {
 
     var linkToOpen by remember { mutableStateOf<String?>(null) }
     var imageToOpen by remember { mutableStateOf<String?>(null) }
-    var progress by remember { mutableIntStateOf(0) }
+    var progress by remember { mutableIntStateOf(100) }
 
     val showAddressBar =
         when (userSettings.addressBarMode) {

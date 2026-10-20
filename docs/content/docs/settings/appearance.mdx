@@ -184,11 +184,14 @@ Customise the position of the address bar. Select one of:
 
 ## 10. Show Loading Progress Bar
 
-Show a progress bar at the top of the WebView while content is loading.
+Show a progress bar at the top of the WebView while the main page loads.
 
-Disable this for kiosk or signage pages where background iframe loads make
-the bar appear even when the visible content is unchanged. This only controls
-the bar's visibility; page loading, navigation and refresh behaviour are unaffected.
+Only a main-frame page load starts the bar. After the load completes, later
+iframe loads do not reopen it. The percentage during the initial page load
+can still include iframe and other resource loading reported by WebView.
+
+Disable this to hide the bar during all page loads, including navigation and
+refreshes, for kiosk or signage pages.
 
 The setting applies in both locked and unlocked modes. It is also available
 through managed configuration and settings import/export using
