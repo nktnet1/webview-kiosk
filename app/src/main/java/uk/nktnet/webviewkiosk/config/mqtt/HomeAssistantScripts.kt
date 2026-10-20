@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.config.mqtt
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
@@ -115,7 +114,6 @@ object HomeAssistantScripts {
         val example: String,
     )
 
-    @OptIn(ExperimentalSerializationApi::class)
     private fun variants(descriptor: SerialDescriptor): Set<String> {
         val types = descriptor.getElementDescriptor(1)
         return (0 until types.elementsCount)
