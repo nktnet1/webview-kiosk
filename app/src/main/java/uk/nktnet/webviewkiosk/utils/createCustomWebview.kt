@@ -1351,7 +1351,6 @@ fun createCustomWebview(
                                 config.setLastErrorUrl(failingUrl)
                             }
 
-                            @Suppress("DeprecatedCallableAddReplaceWith")
                             @Deprecated("For API < 23")
                             override fun onReceivedError(
                                 view: WebView?,
