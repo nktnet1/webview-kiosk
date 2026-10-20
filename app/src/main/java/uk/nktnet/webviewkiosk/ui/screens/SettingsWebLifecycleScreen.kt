@@ -20,6 +20,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.DimS
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.LockOnLaunchSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.RefreshOnLoadingErrorIntervalSecondsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.RefreshOnNetworkAvailableSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.ResetActionsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.ResetOnInactivitySecondsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.ResetOnLaunchSetting
 
@@ -44,6 +45,7 @@ fun SettingsWebLifecycleScreen(navController: NavController) {
             LockOnLaunchSetting()
             ResetOnLaunchSetting()
             ResetOnInactivitySecondsSetting()
+            ResetActionsSetting()
             DimScreenOnInactivitySecondsSetting()
             RefreshOnNetworkAvailableSetting()
             RefreshOnLoadingErrorIntervalSecondsSetting()

@@ -171,6 +171,7 @@ data class WebViewConfig(
     val onImageLongClick: (url: String) -> Unit,
     val onPdfUrlRequested: (webView: WebView, url: String) -> Unit,
     val onRenderProcessGone: () -> Unit,
+    val onMainFrameLoadFinished: (webView: WebView) -> Unit = {},
 )
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -805,6 +806,7 @@ fun createCustomWebview(
                                             )
                                         }
                                         systemSettings.urlBeforeNavigation = ""
+                                        config.onMainFrameLoadFinished(this@apply)
                                     }
                                 }
                             }

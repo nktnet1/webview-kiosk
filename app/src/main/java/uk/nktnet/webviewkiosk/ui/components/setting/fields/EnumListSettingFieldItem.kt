@@ -45,6 +45,7 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
     settingKey: String,
     restricted: Boolean,
     onSave: (List<T>) -> Unit,
+    reorderable: Boolean = true,
 ) {
     var items by remember { mutableStateOf(initialValue) }
     var savedItems by remember { mutableStateOf(initialValue) }
@@ -57,7 +58,12 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
         value = JSONArray(savedItems.map { it.name }).toString(),
         settingKey = settingKey,
         restricted = restricted,
-        onDismissCallback = {},
+        onDismissCallback = {
+            if (!reorderable) {
+                items = savedItems
+            }
+            addExpanded = false
+        },
         onSave = {
             onSave(items)
             savedItems = items
@@ -67,43 +73,24 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                 modifier =
                     Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
             ) {
-                ReorderableColumn(
-                    list = items,
-                    onSettle = { from, to ->
-                        items =
-                            items.toMutableList().apply { add(to, removeAt(from)) }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { index, item, _ ->
-                    key(item.name) {
-                        ReorderableItem {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier =
-                                    Modifier.fillMaxWidth().heightIn(min = 32.dp),
-                            ) {
-                                if (!restricted) {
-                                    IconButton(
-                                        onClick = {
-                                            items =
-                                                items.toMutableList().apply {
-                                                    remove(item)
-                                                }
-                                        },
-                                        modifier = Modifier.offset((-10).dp),
-                                    ) {
-                                        Icon(
-                                            painter =
-                                                painterResource(
-                                                    R.drawable.baseline_clear_24
-                                                ),
-                                            contentDescription = "Remove",
-                                            tint = MaterialTheme.colorScheme.error,
-                                        )
-                                    }
+                if (reorderable) {
+                    ReorderableColumn(
+                        list = items,
+                        onSettle = { from, to ->
+                            items =
+                                items.toMutableList().apply {
+                                    add(to, removeAt(from))
                                 }
-                                Text(getLabel(item), modifier = Modifier.weight(1f))
-                                if (!restricted) {
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { _, item, _ ->
+                        key(item.name) {
+                            ReorderableItem {
+                                EnumListSelectedItem(
+                                    label = getLabel(item),
+                                    restricted = restricted,
+                                    onRemove = { items = items - item },
+                                ) {
                                     Icon(
                                         painter =
                                             painterResource(
@@ -114,6 +101,16 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                                     )
                                 }
                             }
+                        }
+                    }
+                } else {
+                    items.forEach { item ->
+                        key(item.name) {
+                            EnumListSelectedItem(
+                                label = getLabel(item),
+                                restricted = restricted,
+                                onRemove = { items = items - item },
+                            )
                         }
                     }
                 }
@@ -170,4 +167,34 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
             }
         },
     )
+}
+
+@Composable
+private fun EnumListSelectedItem(
+    label: String,
+    restricted: Boolean,
+    onRemove: () -> Unit,
+    trailingContent: @Composable () -> Unit = {},
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 32.dp),
+    ) {
+        if (!restricted) {
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier.offset((-10).dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_clear_24),
+                    contentDescription = "Remove",
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
+        Text(label, modifier = Modifier.weight(1f))
+        if (!restricted) {
+            trailingContent()
+        }
+    }
 }
