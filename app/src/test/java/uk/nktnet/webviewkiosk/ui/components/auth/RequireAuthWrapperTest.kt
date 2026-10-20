@@ -298,7 +298,7 @@ class RequireAuthWrapperTest {
 
     @Test
     fun noDeviceCredentialsCreateAValidSessionAndRenderProtectedContent() {
-        setDeviceSecure(false)
+        setDeviceInsecure()
         owner.registry.currentState = Lifecycle.State.RESUMED
         composeWrapper()
 
@@ -312,7 +312,7 @@ class RequireAuthWrapperTest {
 
     @Test
     fun anExpiredUnsecuredSessionCannotRenderUntilStartEstablishesANewSession() {
-        setDeviceSecure(false)
+        setDeviceInsecure()
         manager.showAuthenticationPrompt("Test", "Test")
         time += 300_000
         composeWrapper()
@@ -482,10 +482,10 @@ class RequireAuthWrapperTest {
         assertTrue(manager.hasValidSession())
     }
 
-    private fun setDeviceSecure(secure: Boolean) {
+    private fun setDeviceInsecure() {
         val keyguard =
             activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-        shadowOf(keyguard).setIsDeviceSecure(secure)
+        shadowOf(keyguard).setIsDeviceSecure(false)
     }
 
     private fun assertProtectedContent() {

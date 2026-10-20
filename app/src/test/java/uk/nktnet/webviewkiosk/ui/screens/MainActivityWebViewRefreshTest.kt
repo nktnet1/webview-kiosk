@@ -116,11 +116,7 @@ class MainActivityWebViewRefreshTest {
         val store = FilterListStore(context)
         store.remove(store.list().map { it.id }.toSet())
         val blocker =
-            ContentBlockingService(
-                store,
-                KotlinFilterEngine(),
-                { it.run() },
-            )
+            ContentBlockingService(store, KotlinFilterEngine()) { it.run() }
         blockingSettings = blocker.bindSettings(context)
         blockerField.set(null, blocker)
         activityController =

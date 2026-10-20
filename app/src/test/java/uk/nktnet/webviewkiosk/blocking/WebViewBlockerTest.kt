@@ -46,9 +46,10 @@ class WebViewBlockerTest {
                 ) = true
             }
         service =
-            ContentBlockingService(store, engine, { it.run() }).also {
-                it.start()
-            }
+            ContentBlockingService(store, engine) { it.run() }
+                .also {
+                    it.start()
+                }
     }
 
     @Test
@@ -123,11 +124,7 @@ class WebViewBlockerTest {
                 .byteInputStream(),
         )
         val blocker =
-            ContentBlockingService(
-                    store,
-                    KotlinFilterEngine(),
-                    { it.run() },
-                )
+            ContentBlockingService(store, KotlinFilterEngine()) { it.run() }
                 .also { it.start() }
         val script =
             WebViewBlocker.intercept(
@@ -230,11 +227,7 @@ class WebViewBlockerTest {
                 .byteInputStream(),
         )
         val blocker =
-            ContentBlockingService(
-                    store,
-                    KotlinFilterEngine(),
-                    { it.run() },
-                )
+            ContentBlockingService(store, KotlinFilterEngine()) { it.run() }
                 .also { it.start() }
         val gif =
             WebViewBlocker.intercept(
@@ -365,11 +358,7 @@ class WebViewBlockerTest {
         val store = FilterListStore(RuntimeEnvironment.getApplication())
         store.remove(store.list().map { it.id }.toSet())
         store.importFrom("documents.txt", text.byteInputStream())
-        return ContentBlockingService(
-                store,
-                KotlinFilterEngine(),
-                { it.run() },
-            )
+        return ContentBlockingService(store, KotlinFilterEngine()) { it.run() }
             .also {
                 it.start()
                 assertEquals(

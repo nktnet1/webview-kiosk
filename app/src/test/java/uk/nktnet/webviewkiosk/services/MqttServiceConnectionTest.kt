@@ -333,9 +333,9 @@ class MqttServiceConnectionTest {
     }
 
     @Test
-    fun theColdServiceAppliesTcpSettingsAndEmitsTheSourceAndMessageId() =
+    fun theColdServiceAppliesTcpSettingsAndEmitsTheSourceAndMessageId() {
+        val connection = connect()
         runBlocking {
-            val connection = connect()
             val applied =
                 async(Dispatchers.Unconfined, start = CoroutineStart.UNDISPATCHED) {
                     RemoteMessageManager.settingsAppliedFlow.first {
@@ -374,6 +374,7 @@ class MqttServiceConnectionTest {
                 applied.cancel()
             }
         }
+    }
 
     @Test
     fun aTcpRequestReturnsAResponseOnItsRequestedTopic() {

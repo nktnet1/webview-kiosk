@@ -212,11 +212,9 @@ class ContentBlockingGateTest {
     @Test
     fun aLoadFailureReleasesThePageAndKeepsTheErrorAvailable() {
         blocker =
-            ContentBlockingService(
-                store,
-                KotlinFilterEngine(),
-                { throw RejectedExecutionException("Loader unavailable") },
-            )
+            ContentBlockingService(store, KotlinFilterEngine()) {
+                throw RejectedExecutionException("Loader unavailable")
+            }
         showPage.value = true
         frames()
 

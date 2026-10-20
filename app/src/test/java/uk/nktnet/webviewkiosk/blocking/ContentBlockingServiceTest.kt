@@ -278,13 +278,9 @@ class ContentBlockingServiceTest {
     @Test
     fun rejectedLoaderReleasesTheStartupGate() = runBlocking {
         val rejected =
-            ContentBlockingService(
-                store,
-                engine,
-                {
-                    throw java.util.concurrent.RejectedExecutionException("closed")
-                },
-            )
+            ContentBlockingService(store, engine) {
+                throw java.util.concurrent.RejectedExecutionException("closed")
+            }
         rejected.awaitInitialLoad()
         assertEquals(BlockingStatus.ERROR, rejected.status.value)
         assertFalse(rejected.hasActiveRules)
@@ -388,13 +384,9 @@ class ContentBlockingServiceTest {
     @Test
     fun rejectedReloadCompletesItsWaiterWithAnError() = runBlocking {
         val rejected =
-            ContentBlockingService(
-                store,
-                engine,
-                {
-                    throw java.util.concurrent.RejectedExecutionException("closed")
-                },
-            )
+            ContentBlockingService(store, engine) {
+                throw java.util.concurrent.RejectedExecutionException("closed")
+            }
         val revision = rejected.reload()
         assertTrue(runCatching { rejected.awaitReload(revision) }.isFailure)
         assertEquals(BlockingStatus.ERROR, rejected.status.value)

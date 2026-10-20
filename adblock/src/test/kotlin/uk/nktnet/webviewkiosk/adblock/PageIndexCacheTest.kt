@@ -200,6 +200,8 @@ class PageIndexCacheTest {
                     hosts + ("site.example" to entries.reversedArray()),
                     hosts + ("site.example" to intArrayOf(entries[0], entries[0])),
                 )
+            // Both page-index formats deliberately place HOST at ordinal zero.
+            //noinspection KotlinConstantConditions
             val malformed =
                 malformedHosts.map { hostTable to it } +
                     (exceptionTable to emptyMap())

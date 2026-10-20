@@ -49,9 +49,10 @@ class ServiceWorkerBlockerTest {
                 }
             }
         service =
-            ContentBlockingService(store, engine, { it.run() }).also {
-                it.start()
-            }
+            ContentBlockingService(store, engine) { it.run() }
+                .also {
+                    it.start()
+                }
     }
 
     @Test

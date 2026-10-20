@@ -109,11 +109,7 @@ class ContentBlockingSettingsTest {
                 "||ads.example^\nsite.example##.sponsor".byteInputStream(),
             )
         val service =
-            ContentBlockingService(
-                store,
-                KotlinFilterEngine(),
-                { it.run() },
-            )
+            ContentBlockingService(store, KotlinFilterEngine()) { it.run() }
         service.bindSettings(context).use {
             service.start()
             assertFalse(service.enabled.value)
