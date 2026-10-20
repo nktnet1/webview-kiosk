@@ -62,6 +62,7 @@ import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
 import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.config.option.RefreshOnNetworkAvailableOption
+import uk.nktnet.webviewkiosk.config.option.ResetActionOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundErrorCommand
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundGoBackCommand
@@ -113,6 +114,7 @@ import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import uk.nktnet.webviewkiosk.utils.webview.clearSelectedResetData
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.handlers.registerPdfSource
 import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
@@ -232,6 +234,8 @@ fun WebviewScreen(navController: NavController) {
 
     var suggestions by remember { mutableStateOf(listOf<String>()) }
     var webViewRecreationKey by remember { mutableIntStateOf(0) }
+    var pendingResetHomeUrl by remember { mutableStateOf<String?>(null) }
+    var clearHistoryAfterReset by remember { mutableStateOf(false) }
     val creationKey = webViewRecreationKey
     var mqttLastPublishedUrlJob by
         remember(creationKey) { mutableStateOf<Job?>(null) }
@@ -360,6 +364,12 @@ fun WebviewScreen(navController: NavController) {
                     onPdfUrlRequested = ::handlePdfUrlRendering,
                     onRenderProcessGone = {
                         webViewRecreationKey++
+                    },
+                    onMainFrameLoadFinished = { finishedWebView ->
+                        if (clearHistoryAfterReset && isCurrentWebView()) {
+                            finishedWebView.clearHistory()
+                            clearHistoryAfterReset = false
+                        }
                     },
                 ),
             recreationKey = webViewRecreationKey,
@@ -636,9 +646,11 @@ fun WebviewScreen(navController: NavController) {
             key(webView) {
                 AndroidView(
                     factory = { ctx ->
-                        var initialUrl = lastVisitedUrl
+                        var initialUrl = pendingResetHomeUrl ?: lastVisitedUrl
 
-                        if (systemSettings.intentUrl.isNotEmpty()) {
+                        if (pendingResetHomeUrl != null) {
+                            pendingResetHomeUrl = null
+                        } else if (systemSettings.intentUrl.isNotEmpty()) {
                             initialUrl = systemSettings.intentUrl
                             systemSettings.intentUrl = ""
                         } else if (systemSettings.isFreshLaunch) {
@@ -778,7 +790,22 @@ fun WebviewScreen(navController: NavController) {
             userSettings.resetOnInactivitySeconds >=
                 Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
     ) {
-        ResetOnInactivityTimeoutHandler(::customLoadUrl, ::isCurrentWebView)
+        ResetOnInactivityTimeoutHandler(
+            onReset = {
+                val actions = userSettings.resetActions
+                clearSelectedResetData(webView, systemSettings, actions)
+                if (isCurrentWebView()) {
+                    if (ResetActionOption.RECREATE_WEBVIEW in actions) {
+                        pendingResetHomeUrl = userSettings.homeUrl
+                        webViewRecreationKey++
+                    } else {
+                        clearHistoryAfterReset = ResetActionOption.HISTORY in actions
+                        customLoadUrl(userSettings.homeUrl)
+                    }
+                }
+            },
+            canHandleEvents = ::isCurrentWebView,
+        )
     }
 
     if (

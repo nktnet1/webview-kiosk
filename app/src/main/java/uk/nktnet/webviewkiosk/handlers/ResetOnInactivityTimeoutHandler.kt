@@ -13,7 +13,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -26,8 +28,8 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.max
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 
@@ -35,14 +37,15 @@ const val RESET_TIMEOUT_INT = -1
 
 @Composable
 fun ResetOnInactivityTimeoutHandler(
-    customLoadUrl: (newUrl: String) -> Unit,
+    onReset: suspend () -> Unit,
     canHandleEvents: () -> Boolean,
 ) {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val systemSettings = remember { SystemSettings(context) }
-    val currentLoadUrl by rememberUpdatedState(customLoadUrl)
+    val currentOnReset by rememberUpdatedState(onReset)
     val currentCanHandleEvents by rememberUpdatedState(canHandleEvents)
+    val resetScope = rememberCoroutineScope()
+    var isResetting by remember { mutableStateOf(false) }
 
     val timeoutDuration =
         max(
@@ -58,10 +61,17 @@ fun ResetOnInactivityTimeoutHandler(
         UserInteractionStateSingleton.lastInteractionState.collectAsState()
 
     val handleTimeoutReached = {
-        if (currentCanHandleEvents()) {
-            systemSettings.clearHistory()
-            currentLoadUrl(userSettings.homeUrl)
-            UserInteractionStateSingleton.onUserInteraction()
+        if (currentCanHandleEvents() && !isResetting) {
+            isResetting = true
+            // Keep cleanup alive if another touch restarts the inactivity timer.
+            resetScope.launch {
+                try {
+                    currentOnReset()
+                } finally {
+                    isResetting = false
+                    UserInteractionStateSingleton.onUserInteraction()
+                }
+            }
         }
     }
 

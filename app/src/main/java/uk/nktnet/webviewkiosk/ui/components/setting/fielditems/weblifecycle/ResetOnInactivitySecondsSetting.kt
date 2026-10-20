@@ -28,7 +28,7 @@ fun ResetOnInactivitySecondsSetting() {
 
             User interactions with the screen reset the timer.
 
-            The navigation history will be cleared when resetting.
+            Choose which browsing data to clear using Reset Actions.
 
             Minimum: ${Constants.MIN_INACTIVITY_TIMEOUT_SECONDS}
 

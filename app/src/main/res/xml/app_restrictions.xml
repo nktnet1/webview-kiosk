@@ -329,6 +329,14 @@
         android:description="@string/web_lifecycle_reset_on_inactivity_seconds_description"
     />
     <restriction
+        android:key="web_lifecycle.reset_actions"
+        android:restrictionType="multi-select"
+        android:entries="@array/entries_reset_action_option"
+        android:entryValues="@array/entry_values_reset_action_option"
+        android:title="@string/web_lifecycle_reset_actions_title"
+        android:description="@string/web_lifecycle_reset_actions_description"
+    />
+    <restriction
         android:key="web_lifecycle.dim_screen_on_inactivity_seconds"
         android:restrictionType="integer"
         android:title="@string/web_lifecycle_dim_screen_on_inactivity_seconds_title"

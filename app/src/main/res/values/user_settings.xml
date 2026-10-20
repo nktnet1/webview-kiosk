@@ -159,6 +159,9 @@
     <string name="web_lifecycle_reset_on_inactivity_seconds_title">Reset on Inactivity (seconds)</string>
     <string name="web_lifecycle_reset_on_inactivity_seconds_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
 
+    <string name="web_lifecycle_reset_actions_title">Reset Actions</string>
+    <string name="web_lifecycle_reset_actions_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
+
     <string name="web_lifecycle_dim_screen_on_inactivity_seconds_title">Dim Screen on Inactivity (seconds)</string>
     <string name="web_lifecycle_dim_screen_on_inactivity_seconds_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
 

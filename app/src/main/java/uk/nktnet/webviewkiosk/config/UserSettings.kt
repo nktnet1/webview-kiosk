@@ -26,6 +26,7 @@ import uk.nktnet.webviewkiosk.config.option.MixedContentModeOption
 import uk.nktnet.webviewkiosk.config.option.OverScrollModeOption
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.option.RefreshOnNetworkAvailableOption
+import uk.nktnet.webviewkiosk.config.option.ResetActionOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
@@ -440,6 +441,14 @@ class UserSettings(val context: Context) {
             0,
             min = 0,
             max = Constants.MAX_INT_SETTING,
+        )
+    var resetActions by
+        enumListPref(
+            getRestrictions,
+            prefs = prefs,
+            key = UserSettingsKeys.WebLifecycle.RESET_ACTIONS,
+            default = ResetActionOption.defaults(),
+            itemFromString = ResetActionOption::fromString,
         )
     var dimScreenOnInactivitySeconds by
         intPref(
@@ -1343,6 +1352,10 @@ class UserSettings(val context: Context) {
                     resetOnInactivitySeconds,
                 )
                 put(
+                    UserSettingsKeys.WebLifecycle.RESET_ACTIONS,
+                    JSONArray(resetActions.map { it.name }),
+                )
+                put(
                     UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS,
                     dimScreenOnInactivitySeconds,
                 )
@@ -1906,6 +1919,15 @@ class UserSettings(val context: Context) {
                     UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS,
                     resetOnInactivitySeconds,
                 )
+            json.optJSONArray(UserSettingsKeys.WebLifecycle.RESET_ACTIONS)?.let {
+                actions ->
+                resetActions =
+                    (0 until actions.length())
+                        .mapNotNull {
+                            ResetActionOption.fromString(actions.optString(it))
+                        }
+                        .distinct()
+            }
             dimScreenOnInactivitySeconds =
                 json.optInt(
                     UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS,

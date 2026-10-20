@@ -165,6 +165,25 @@
         <item>UNLOCK</item>
     </string-array>
 
+    <string-array name="entries_reset_action_option">
+        <item>Browsing History</item>
+        <item>Cookies</item>
+        <item>Website Storage (localStorage, IndexedDB)</item>
+        <item>Cache</item>
+        <item>Form Data</item>
+        <item>SSL Preferences</item>
+        <item>Recreate WebView</item>
+    </string-array>
+    <string-array name="entry_values_reset_action_option">
+        <item>HISTORY</item>
+        <item>COOKIES</item>
+        <item>WEB_STORAGE</item>
+        <item>CACHE</item>
+        <item>FORM_DATA</item>
+        <item>SSL_PREFERENCES</item>
+        <item>RECREATE_WEBVIEW</item>
+    </string-array>
+
     <string-array name="entries_webview_inset_option">
         <item>None</item>
         <item>Status Bars</item>
