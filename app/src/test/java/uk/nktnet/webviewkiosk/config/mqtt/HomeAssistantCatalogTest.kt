@@ -2,7 +2,6 @@ package uk.nktnet.webviewkiosk.config.mqtt
 
 import android.content.RestrictionEntry
 import java.io.File
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -154,7 +153,6 @@ class HomeAssistantCatalogTest {
             }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     private fun variants(descriptor: SerialDescriptor): Set<String> {
         val types = descriptor.getElementDescriptor(1)
         return (0 until types.elementsCount)

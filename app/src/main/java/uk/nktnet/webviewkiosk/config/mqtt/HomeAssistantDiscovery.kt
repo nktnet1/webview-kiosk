@@ -16,7 +16,7 @@ import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
  */
 class HomeAssistantDiscovery(
     val appInstanceId: String,
-    val discoveryPrefix: String,
+    discoveryPrefix: String,
     val birthTopic: String = "homeassistant/status",
 ) {
     val deviceId = "webview_kiosk_$appInstanceId"

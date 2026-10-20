@@ -1,9 +1,11 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.content.ClipData
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -11,18 +13,26 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.HomeAssistantDiscovery
+import uk.nktnet.webviewkiosk.config.mqtt.HomeAssistantScripts
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -35,6 +45,8 @@ import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
 fun SettingsMqttHomeAssistantScreen(navController: NavController) {
     val context = LocalContext.current
     val settings = remember { UserSettings(context) }
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     val enabledKey = UserSettingsKeys.Mqtt.HomeAssistant.ENABLED
     val prefixKey = UserSettingsKeys.Mqtt.HomeAssistant.DISCOVERY_PREFIX
     val nameKey = UserSettingsKeys.Mqtt.HomeAssistant.DEVICE_NAME
@@ -120,6 +132,44 @@ fun SettingsMqttHomeAssistantScreen(navController: NavController) {
                 isMultiline = false,
                 onSave = { settings.mqttHomeAssistantStatusTopic = it },
             )
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            Text(
+                "Toast and Notification use Home Assistant's notify.send_message " +
+                    "action. Select the individual entity and enter a message. " +
+                    "Opening its details shows history, not a message editor. " +
+                    "Unknown means no last-send time is recorded.",
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+            Text(
+                "For advanced commands, settings, and requests, copy this kiosk's " +
+                    "three scripts into Home Assistant's scripts.yaml and reload " +
+                    "scripts. They appear as named actions with a Payload editor. " +
+                    "MQTT and discovery must be enabled. Existing JSON notifiers " +
+                    "remain available for existing automations.",
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+            OutlinedButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    val scripts =
+                        HomeAssistantScripts.create(
+                            HomeAssistantDiscovery(
+                                SystemSettings(context).appInstanceId,
+                                "homeassistant",
+                            ),
+                            settings.mqttHomeAssistantDeviceName,
+                        )
+                    scope.launch {
+                        clipboard.setClipEntry(
+                            ClipData.newPlainText("Home Assistant scripts", scripts)
+                                .toClipEntry()
+                        )
+                        ToastManager.show(context, "Home Assistant scripts copied.")
+                    }
+                },
+            ) {
+                Text("Copy Home Assistant scripts")
+            }
             Spacer(Modifier.height(8.dp))
         }
         MqttDebugLogsButton(navController)

@@ -366,7 +366,7 @@ object MqttManager {
                         } else {
                             "offline"
                         })
-                        .toByteArray(Charsets.UTF_8)
+                        .toByteArray(UTF_8)
                 )
                 .userProperties()
                 .add("username", config.username)

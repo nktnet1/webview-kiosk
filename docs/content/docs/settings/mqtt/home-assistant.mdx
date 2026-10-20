@@ -17,6 +17,67 @@ Discovery is disabled by default. Changes to these settings take effect after
 reconnecting MQTT. The existing MQTT command, settings, request, response, and
 event interfaces continue to work.
 
+## Advanced actions
+
+For commands with optional fields, long settings values, and filtered requests,
+use the kiosk's generated Home Assistant scripts:
+
+1. In {APP_NAME}, open **MQTT → Home Assistant → Copy Home Assistant scripts**.
+2. Merge the copied entries into Home Assistant's `scripts.yaml`, keeping existing
+   scripts. These entries go directly in `scripts.yaml`, without a `script:` wrapper.
+   Home Assistant must load that file, normally through
+   `script: !include scripts.yaml` in `configuration.yaml`.
+3. In Home Assistant's **Tools → Actions** (or **Developer tools → Actions**),
+   run `script.reload`.
+4. Select the new **Send command**, **Update settings**, or **Request data** action
+   for your kiosk. Its **Payload** editor accepts the full JSON or YAML envelope.
+
+MQTT discovery does not install scripts, so this is a one-time setup per kiosk.
+The copied scripts already contain the correct control topics and instance target;
+no broker credentials are included. MQTT and Home Assistant discovery must be
+enabled in the app. The scripts do not depend on the discovery prefix or device name.
+
+| Action | Script ID suffix | Payload |
+| --- | --- | --- |
+| Send command | `_command` | Full command envelope, including optional fields |
+| Update settings | `_settings` | Full settings envelope containing `data.settings` |
+| Request data | `_request` | Full request envelope, including filters and correlation data |
+
+Script IDs start with `webview_kiosk_`, followed by the complete app instance ID
+with hyphens replaced by underscores. Names use the configured device name.
+Renaming the kiosk does not change the script IDs; copy and merge again if you
+want the script names to follow the new display name. A different app instance,
+such as a reinstallation, needs its own scripts.
+
+The scripts validate envelope structure and command/request names before
+publishing. They always replace `targetInstances` with this kiosk's instance ID
+and publish at QoS 1 with `retain: false`. All other envelope fields are preserved;
+the app's existing handlers validate their types, required command data, and
+permissions. Scripts accept objects or strings containing JSON and have no
+255-character text-entity limit, subject to Home Assistant and broker limits.
+Script completion confirms MQTT publication, not execution on Android. Request
+results still arrive in the existing diagnostic sensors.
+
+The three **Command JSON**, **Settings JSON**, and **Request JSON** notify entities
+remain available with their existing IDs and behaviour for compatibility. Existing
+automations continue to work. After migrating to scripts, you can hide these
+three entities in HA's entity settings to keep the device page tidy.
+
+## Notifications and toast messages
+
+**Toast** displays a brief Android popup. **Notification** creates an Android
+notification. To send either, open **Tools → Actions**, choose
+`notify.send_message`, select the individual Toast or Notification entity, enter
+**Message**, and select **Perform action**. You can use the same action in an
+automation or script. Select the specific entity, rather than the entire device,
+to choose which message operation runs.
+
+Opening a notifier's details shows its status and history, not a message editor.
+Its state is the last-send timestamp recorded by Home Assistant; `Unknown` means
+no timestamp is recorded. A send timestamp does not acknowledge execution by
+the Android app. Notification titles and other command options can be sent with
+the **Send command** script described above.
+
 ## Commands
 
 All 17 remote command types have discovered controls:
@@ -35,7 +96,7 @@ All 17 remote command types have discovered controls:
 | `notify` | Notify action containing the notification body; other fields use the command defaults |
 | `launch_package` | Text input containing the Android package name |
 
-Use the **Command JSON** notify entity to send optional command fields, such as
+Use the **Send command** script to send optional command fields, such as
 `wakeScreen`, `interact`, a notification title/priority, or a launch activity.
 For example:
 
@@ -43,18 +104,16 @@ For example:
 {"command":"notify","data":{"contentTitle":"Door","contentText":"Visitor","silent":true},"wakeScreen":true}
 ```
 
-Call Home Assistant's `notify.send_message` action with the entity as its target
-and the complete JSON as `message`. The template targets this app instance
-automatically. Notify actions support messages and JSON longer than 255 characters,
-subject to Home Assistant's template and broker packet limits. For **Notification**, the action's
-message becomes `contentText`; use **Command JSON** for a custom notification
+Pass the complete JSON as the script's `payload`. The script targets this app
+instance automatically. For **Notification**, the notify action's
+message becomes `contentText`; use **Send command** for a custom notification
 title or other options.
 
 The dedicated URL, search, and package text inputs are limited to 255 characters.
 Go to URL shows the current page URL when it fits within that limit; longer URLs
 leave its input blank. Search and launch-package inputs start blank. Their state
 is initialised from the retained kiosk state, so a new input is not `Unknown`.
-Use **Command JSON** for longer arguments.
+Use **Send command** for longer arguments.
 
 Controls use the existing remote handlers and permissions. Navigation requires
 an active WebView. The kiosk lock switch controls the app's kiosk mode. Lock
@@ -90,15 +149,15 @@ preference changes, on connection/Home Assistant birth, and every 30 seconds.
 Home Assistant text entities accept at most 255 characters. If an existing
 string or encoded action list is longer, its text state is blank and its full
 value is available in the entity's `value` attribute. You can submit a shorter
-replacement. For longer values, use the **Settings JSON** notify entity and
-call `notify.send_message` with the existing settings envelope as `message`, for
+replacement. For longer values, use the **Update settings** script with the
+existing settings envelope as `payload`, for
 example:
 
 ```json
 {"showToast":false,"data":{"settings":{"appearance.custom_block_page_html":"<h1>Welcome</h1>"}}}
 ```
 
-Settings JSON supports all settings, optional `reloadActivity`/`showToast` fields,
+Update settings supports all settings, optional `reloadActivity`/`showToast` fields,
 and values longer than 255 characters, subject to Home Assistant and broker limits. Both a
 text input and the JSON action replace each supplied setting's entire value,
 including multiline lists and scripts.
@@ -107,7 +166,7 @@ The MQTT password and custom unlock password always report a blank input and
 have no readable credential values or value attributes. They are omitted from
 all Home Assistant settings snapshots and
 request results. Password inputs can replace or clear a password within the
-255-character limit; **Settings JSON** accepts longer passwords. Other
+255-character limit; **Update settings** accepts longer passwords. Other
 configuration values, including URLs and scripts, are published as configured.
 
 ## Status and requests
@@ -140,14 +199,14 @@ in its `result` attribute, avoiding the entity state length limit.
 | `get_lock_task_packages` | Permitted lock-task package names, on Android 8 and later |
 
 A second launchable-packages button requests only lock-task-permitted packages.
-Both variants update the same launchable-packages result. The **Request JSON**
-notify entity supports request options, such as selecting settings:
+Both variants update the same launchable-packages result. The **Request data**
+script supports request options, such as selecting settings:
 
 ```json
 {"requestType":"get_settings","data":{"settings":["device.brightness","appearance.theme"]}}
 ```
 
-Call `notify.send_message` on **Request JSON**, passing the JSON as `message`.
+Call **Request data**, passing the JSON as `payload`.
 It accepts filters and envelopes longer than 255 characters. The app targets
 the request to this instance and routes the result to its dedicated Home Assistant result topic;
 a supplied response topic is overridden. Failed requests report an `error`

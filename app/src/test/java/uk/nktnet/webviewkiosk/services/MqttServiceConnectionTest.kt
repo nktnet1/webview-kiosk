@@ -866,6 +866,7 @@ class MqttServiceConnectionTest {
         val restrictions =
             context.getSystemService(Context.RESTRICTIONS_SERVICE)
                 as RestrictionsManager
+        @Suppress("UsePropertyAccessSyntax")
         shadowOf(restrictions)
             .setApplicationRestrictions(
                 Bundle().apply { putInt("device.brightness", 19) }
@@ -891,6 +892,7 @@ class MqttServiceConnectionTest {
             shadowOf(Looper.getMainLooper()).idleFor(1, TimeUnit.SECONDS)
             assertEquals(19, settings.brightness)
         } finally {
+            @Suppress("UsePropertyAccessSyntax")
             shadowOf(restrictions).setApplicationRestrictions(Bundle())
         }
     }

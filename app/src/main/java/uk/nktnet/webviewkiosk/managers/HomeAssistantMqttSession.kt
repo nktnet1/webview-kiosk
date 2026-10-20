@@ -10,6 +10,7 @@ import com.hivemq.client.mqtt.datatypes.MqttQos
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PayloadFormatIndicator
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -100,7 +101,7 @@ internal class HomeAssistantMqttSession(
             if (settingsUpdate?.isActive != true && isActive()) {
                 settingsUpdate =
                     scope.launch(Dispatchers.Main) {
-                        delay(100)
+                        delay(100.milliseconds)
                         refreshSettings()
                     }
             }
@@ -131,7 +132,7 @@ internal class HomeAssistantMqttSession(
         polling =
             scope.launch(Dispatchers.Main) {
                 while (isActive()) {
-                    delay(30_000)
+                    delay(30_000.milliseconds)
                     refreshState()
                     refreshSettings()
                 }
@@ -142,7 +143,7 @@ internal class HomeAssistantMqttSession(
         birthAnnouncement?.cancel()
         birthAnnouncement = scope.launch {
             // Spread announcements when many kiosks share a broker.
-            delay(Random.nextLong(1_000))
+            delay(Random.nextLong(1_000).milliseconds)
             announce()
         }
     }
