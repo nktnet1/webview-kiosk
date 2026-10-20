@@ -22,13 +22,13 @@ class WebViewCompatibilityTest {
     @Test
     fun allMatchesEveryNativeTypeAndFullDocumentPathsWithExceptionsAndBadfilters() {
         val engine = KotlinFilterEngine()
-        assertEquals(1, inspectFilterList("||site.example^\$all").partialRules)
-        assertEquals(0, inspectFilterList("||site.example^\$script").partialRules)
+        assertEquals(1, inspectFilterList($$"||site.example^$all").partialRules)
+        assertEquals(0, inspectFilterList($$"||site.example^$script").partialRules)
         engine.replace(
             listOf(
-                "||site.example/blocked\$all\n" +
-                    "@@||site.example/blocked/safe\$all\n" +
-                    "||site.example/disabled\$all\n||site.example/disabled\$all,badfilter"
+                $$"||site.example/blocked$all\n" +
+                    $$"@@||site.example/blocked/safe$all\n" +
+                    $$"||site.example/disabled$all\n||site.example/disabled$all,badfilter"
             )
         )
         for (type in
@@ -93,10 +93,10 @@ class WebViewCompatibilityTest {
             assertEquals(
                 option,
                 1,
-                inspectFilterList("||site.example^\$$option").unsupportedRules,
+                inspectFilterList($$"||site.example^$$$option").unsupportedRules,
             )
         }
-        engine.replace(listOf("||site.example/blocked\$all,~document"))
+        engine.replace(listOf($$"||site.example/blocked$all,~document"))
         assertFalse(
             engine.shouldBlock("https://site.example/blocked", "", "document", "GET")
         )
@@ -205,10 +205,10 @@ class WebViewCompatibilityTest {
                 "v2:$.items[*]{,2};$.ads",
                 "v2:$.items[*]{3,};$.missing{0};$.ads",
                 "v2:$../^ad/",
-                "v2:$.items[?@.kind=/^AD\$/i]",
+                "v2:$.items[?@.kind=/^AD$/i]",
                 "v2:$.numbers[?@>=2]",
-                "v2:$.items[?@.kind=/^ad\$/];$.ads",
-                "$.numbers./^[12]\$/",
+                "v2:$.items[?@.kind=/^ad$/];$.ads",
+                "$.numbers./^[12]$/",
             )
         val rules = queries.map {
             "site.example##+js(json-edit, '${it.replace("'", "\\'")}')"
@@ -235,7 +235,7 @@ class WebViewCompatibilityTest {
                 "$.x[unquoted]",
                 "v2:$.x[/^ad/]",
                 "$.x[/^ad/]",
-                "v2:$.x[?!@.kind=/^ad\$/]",
+                "v2:$.x[?!@.kind=/^ad$/]",
                 "v2:$.x{0,0};$.ads",
             )) {
             assertNull(query, JsonEditing.compile(query))
@@ -285,9 +285,9 @@ class WebViewCompatibilityTest {
         engine.replace(
             listOf(
                 "||ads.example^\n" +
-                    "||context.example^\$third-party\n" +
-                    "||scoped.example^\$domain=publisher.example\n" +
-                    "@@||ads.example/login\$domain=publisher.example"
+                    $$"||context.example^$third-party\n" +
+                    $$"||scoped.example^$domain=publisher.example\n" +
+                    $$"@@||ads.example/login$domain=publisher.example"
             )
         )
         assertTrue(
@@ -314,10 +314,12 @@ class WebViewCompatibilityTest {
 
     @Test
     fun listenerOptionsAreCanonicalBoundedAndRevalidatedAfterCacheRestoration() {
-        val basic = ScriptletParser.parse("+js(aeld, click)")!!
+        val expectedBasic = ScriptletParser.parse("+js(aeld, click)")!!
+        // The canonical parsed form is expected; the option-rich form is actual.
+        //noinspection KotlinMisorderedAssertEqualsArguments
         assertEquals(
-            basic,
             ScriptletParser.parse("+js(aeld, click, , runAt, loading)"),
+            expectedBasic,
         )
         val text =
             "site.example##+js(aeld, click, advert, protect, 1, " +
@@ -365,8 +367,8 @@ class WebViewCompatibilityTest {
     fun newShimsRetainTheirRedirectAndInjectionEligibility() {
         val text =
             "site.example##+js(google-ima3)\n" +
-                "||ima.example^\$script,redirect=google-ima3\n" +
-                "||piano.example^\$script,redirect=piano-analytics.js\n" +
+                $$"||ima.example^$script,redirect=google-ima3\n" +
+                $$"||piano.example^$script,redirect=piano-analytics.js\n" +
                 "site.example##+js(piano-analytics)"
         val engine = KotlinFilterEngine()
         engine.replace(listOf(text))
@@ -399,11 +401,11 @@ class WebViewCompatibilityTest {
             FilterCompiler.parse(
                 listOf(
                     "||ads.example^\n" +
-                        "||cdn.example/ad\$script\n/api-ad\$xhr,domain=site.example\n" +
-                        "banner-token\$image\n@@/api-ad\$xhr,domain=safe.site.example\n" +
-                        "||cdn.example/redirect\$redirect=noop.js\n" +
-                        "@@||cdn.example/redirect\$redirect-rule\n" +
-                        "||cdn.example^\$removeparam=track"
+                        $$"||cdn.example/ad$script\n/api-ad$xhr,domain=site.example\n" +
+                        $$"banner-token$image\n@@/api-ad$xhr,domain=safe.site.example\n" +
+                        $$"||cdn.example/redirect$redirect=noop.js\n" +
+                        $$"@@||cdn.example/redirect$redirect-rule\n" +
+                        $$"||cdn.example^$removeparam=track"
                 )
             )
         val cache = CompiledFilterCache(File(folder.root, "index.bin"))

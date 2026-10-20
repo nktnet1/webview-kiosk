@@ -10,8 +10,10 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
@@ -80,7 +82,7 @@ class MqttOperationStateTest {
             // Join only this test's log-emission jobs before restoring singleton
             // fields.
             runBlocking {
-                withTimeout(3_000) {
+                withTimeout(3.seconds) {
                     while (true) {
                         val jobs =
                             scopeJob.children.filterNot { it in savedJobs }.toList()
@@ -88,7 +90,7 @@ class MqttOperationStateTest {
                             break
                         }
                         jobs.forEach { it.cancel() }
-                        jobs.forEach { it.join() }
+                        jobs.joinAll()
                     }
                 }
             }
@@ -122,7 +124,7 @@ class MqttOperationStateTest {
     @Test
     fun everyNonConnectedStateSkipsOperations() {
         val client = installClient()
-        for (state in MqttClientState.values().filterNot { it.isConnected }) {
+        for (state in MqttClientState.entries.filterNot { it.isConnected }) {
             client.state.set(state)
 
             assertOperationsAreSkipped(client, state.name)
@@ -163,7 +165,7 @@ class MqttOperationStateTest {
     fun cancellationOrDisconnectStartedDuringTheStateReadSkipsOperations() {
         val client = installClient()
         val transitions =
-            listOf<Pair<String, () -> Unit>>(
+            listOf(
                 "cancel" to { cancellation().set(true) },
                 "disconnect" to { setPendingDisconnect(client) },
             )

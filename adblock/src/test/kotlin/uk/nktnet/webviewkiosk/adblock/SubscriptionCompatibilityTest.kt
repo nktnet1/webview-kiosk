@@ -75,7 +75,7 @@ class SubscriptionCompatibilityTest {
             }
         assertEquals(
             0,
-            inspectFilterList("||malware.example^\$all").unsupportedRules,
+            inspectFilterList($$"||malware.example^$all").unsupportedRules,
         )
     }
 
@@ -83,8 +83,8 @@ class SubscriptionCompatibilityTest {
     fun publishedUrlhausNavigationFormatBlocksOnlyMatchingNavigations() {
         // Maintainer's Vivaldi/Brave variant retains specific malicious paths.
         val text =
-            "||malware.example^\$document\n" +
-                "||shared.example/uploads/malware.exe^\$document"
+            $$"||malware.example^$document\n" +
+                $$"||shared.example/uploads/malware.exe^$document"
         val engine = KotlinFilterEngine()
         engine.validate(text)
         engine.replace(listOf(text))

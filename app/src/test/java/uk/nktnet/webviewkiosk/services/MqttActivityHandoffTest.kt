@@ -15,6 +15,8 @@ import androidx.lifecycle.Lifecycle
 import com.hivemq.client.mqtt.MqttClientState
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -788,7 +790,10 @@ class MqttActivityHandoffTest {
                 .all { it.source == RemoteMessage.Source.MQTT }
         )
         assertEquals("https://example.test/${ids.last()}", settings.homeUrl)
-        assertEquals(toastCount + 1, ShadowToast.shownToastCount())
+        val expectedToastCount = toastCount + 1
+        // The saved pre-action count determines the expected post-action count.
+        @Suppress("KotlinMisorderedAssertEqualsArguments")
+        assertEquals(expectedToastCount, ShadowToast.shownToastCount())
         assertTrue(ShadowToast.showedToast("$prefix-toast"))
     }
 
@@ -809,7 +814,7 @@ class MqttActivityHandoffTest {
                     .put("data", JSONObject().put("message", id))
                     .toString(),
             )
-            awaitCondition { dispatched.isCompleted }
+            awaitConditionSuspending { dispatched.isCompleted }
             assertEquals(RemoteMessage.Source.MQTT, dispatched.await().source)
             pumpFrames()
         } finally {
@@ -834,7 +839,7 @@ class MqttActivityHandoffTest {
                     ),
                     source,
                 )
-                awaitCondition { dispatched.isCompleted }
+                awaitConditionSuspending { dispatched.isCompleted }
                 assertEquals(source, dispatched.await().source)
             } finally {
                 dispatched.cancel()
@@ -954,15 +959,17 @@ class MqttActivityHandoffTest {
         }
     }
 
-    private fun awaitCondition(condition: () -> Boolean) {
+    private fun awaitCondition(condition: () -> Boolean) = runBlocking {
+        awaitConditionSuspending(condition)
+    }
+
+    private suspend fun awaitConditionSuspending(condition: () -> Boolean) {
         try {
-            runBlocking {
-                withTimeout(5_000) {
-                    while (!condition()) {
-                        broker.assertHealthy()
-                        pumpFrames()
-                        delay(1)
-                    }
+            withTimeout(5.seconds) {
+                while (!condition()) {
+                    broker.assertHealthy()
+                    pumpFrames()
+                    delay(1.milliseconds)
                 }
             }
         } catch (e: TimeoutCancellationException) {

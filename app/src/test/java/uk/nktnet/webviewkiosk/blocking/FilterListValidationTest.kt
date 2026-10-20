@@ -10,7 +10,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import uk.nktnet.webviewkiosk.adblock.FilterListValidator
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 
 /**
@@ -40,11 +39,10 @@ class FilterListValidationTest {
         store =
             FilterListStore(
                 context,
-                validator =
-                    FilterListValidator { text ->
-                        validated += text
-                        failure?.let { throw it }
-                    },
+                validator = { text ->
+                    validated += text
+                    failure?.let { throw it }
+                },
                 now = { currentTime },
             )
     }
@@ -55,13 +53,13 @@ class FilterListValidationTest {
         val item =
             realStore.importFrom(
                 "Working",
-                "||ads.example^\n||cdn.example^\$future-option".byteInputStream(),
+                $$"||ads.example^\n||cdn.example^$future-option".byteInputStream(),
             )
         assertThrows(IllegalArgumentException::class.java) {
             realStore.updateFile(
                 item.id,
                 "Changed",
-                "||ads.example^\$domain=".byteInputStream(),
+                $$"||ads.example^$domain=".byteInputStream(),
             )
         }
         assertEquals(listOf(item), realStore.list())
@@ -105,7 +103,7 @@ class FilterListValidationTest {
             assertThrows(IllegalArgumentException::class.java) {
                 store.importFrom(
                     "bad.txt",
-                    "! header\n\n||bad.example^\$redirect=".byteInputStream(),
+                    $$"! header\n\n||bad.example^$redirect=".byteInputStream(),
                 )
             }
         assertEquals(failure!!.message, error.message)
@@ -163,7 +161,7 @@ class FilterListValidationTest {
             store.updateFile(
                 item.id,
                 "Changed name",
-                "||bad.example^\$redirect=".byteInputStream(),
+                $$"||bad.example^$redirect=".byteInputStream(),
             )
         }
         assertEquals(original, store.list().single())
@@ -186,16 +184,15 @@ class FilterListValidationTest {
         val updatingStore =
             FilterListStore(
                 RuntimeEnvironment.getApplication(),
-                validator =
-                    FilterListValidator { text ->
-                        // Inspect the saved state while validation is actually
-                        // running, before
-                        // the replacement (including its new name) has been
-                        // committed.
-                        assertEquals(listOf(item), store.list())
-                        assertEquals(listOf("||old.example^"), store.enabledTexts())
-                        validated += text
-                    },
+                validator = { text ->
+                    // Inspect the saved state while validation is actually
+                    // running, before
+                    // the replacement (including its new name) has been
+                    // committed.
+                    assertEquals(listOf(item), store.list())
+                    assertEquals(listOf("||old.example^"), store.enabledTexts())
+                    validated += text
+                },
             )
         val updated =
             updatingStore.updateFile(
@@ -224,7 +221,7 @@ class FilterListValidationTest {
             store.updateFile(
                 copy.id,
                 "Changed",
-                "||bad.example^\$redirect=".byteInputStream(),
+                $$"||bad.example^$redirect=".byteInputStream(),
             )
         }
         assertEquals(listOf(item, copy), store.list())
@@ -276,7 +273,7 @@ class FilterListValidationTest {
     @Test
     fun invalidLegacyFileCannotBeClonedAndOriginalIsRetained() {
         val item = store.importFrom("Legacy", "||old.example^".byteInputStream())
-        val invalid = "||bad.example^\$redirect="
+        val invalid = $$"||bad.example^$redirect="
         File(directory, "${item.id}.txt").writeText(invalid)
         failure =
             IllegalArgumentException(
@@ -325,14 +322,14 @@ class FilterListValidationTest {
                 item.sourceUrl!!,
                 "https://example.org/new.txt",
                 "Changed",
-                "||bad.example^\$redirect=".byteInputStream(),
+                $$"||bad.example^$redirect=".byteInputStream(),
             )
         }
         assertThrows(IllegalArgumentException::class.java) {
             store.replaceFromSource(
                 item.id,
                 item.sourceUrl!!,
-                "||bad.example^\$redirect=".byteInputStream(),
+                $$"||bad.example^$redirect=".byteInputStream(),
             )
         }
         assertEquals(listOf(item), store.list())
@@ -390,7 +387,7 @@ class FilterListValidationTest {
             IllegalArgumentException("Invalid filter syntax:\nLine 1: parser error")
         val candidates =
             listOf(
-                "filters.txt" to "||bad.example^\$redirect=",
+                "filters.txt" to $$"||bad.example^$redirect=",
                 "settings.json" to "{}",
                 "settings.txt" to "{}",
                 "document.xml" to "<rules/>",

@@ -13,8 +13,8 @@ import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.ComposeView
 import androidx.navigation.NavHostController
-import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -116,11 +116,7 @@ class MainActivityWebViewRefreshTest {
         val store = FilterListStore(context)
         store.remove(store.list().map { it.id }.toSet())
         val blocker =
-            ContentBlockingService(
-                store,
-                KotlinFilterEngine(),
-                Executor { it.run() },
-            )
+            ContentBlockingService(store, KotlinFilterEngine()) { it.run() }
         blockingSettings = blocker.bindSettings(context)
         blockerField.set(null, blocker)
         activityController =
@@ -157,7 +153,7 @@ class MainActivityWebViewRefreshTest {
 
     @Test
     fun directLoadsAndHeaderLoadsApplyDocumentRulesBeforeLoading() {
-        documentRules("||blocked.example^\$doc\n@@||blocked.example/safe\$document")
+        documentRules($$"||blocked.example^$doc\n@@||blocked.example/safe$document")
         val webView = webView()
         val before = shadowOf(webView).lastLoadedUrl
         webView.loadUrl("https://blocked.example/")
@@ -177,7 +173,7 @@ class MainActivityWebViewRefreshTest {
 
     @Test
     fun appPostUsesPostMethodAndCustomBlockPageWithoutBecomingAGet() {
-        documentRules("||forms.example^\$document,method=POST")
+        documentRules($$"||forms.example^$document,method=POST")
         val url = "https://forms.example/submit"
         val webView = webView()
         webView.loadUrl(url)
@@ -196,7 +192,7 @@ class MainActivityWebViewRefreshTest {
     @Test
     @Suppress("DEPRECATION")
     fun nativeNavigationUsesFrameMetadataAndLegacyRequestsAreIntercepted() {
-        documentRules("||blocked.example^\$document\n@@||blocked.example/safe\$doc")
+        documentRules($$"||blocked.example^$document\n@@||blocked.example/safe$doc")
         val webView = webView()
         val client = webView.webViewClient
         assertTrue(
@@ -244,7 +240,7 @@ class MainActivityWebViewRefreshTest {
 
     @Test
     fun nativeMainFrameInterceptionCoversPostReloadsAndKeepsSubframesSeparate() {
-        documentRules("||forms.example^\$document,method=POST")
+        documentRules($$"||forms.example^$document,method=POST")
         val webView = webView()
         val client = webView.webViewClient
         val url = "https://forms.example/submit"
@@ -276,7 +272,7 @@ class MainActivityWebViewRefreshTest {
 
     @Test
     fun nativeDocumentBlockingRespectsSilentActionAndGlobalDisable() {
-        documentRules("||blocked.example^\$document")
+        documentRules($$"||blocked.example^$document")
         val webView = webView()
         val client = webView.webViewClient
         val before = shadowOf(webView).lastLoadDataWithBaseURL
@@ -302,7 +298,7 @@ class MainActivityWebViewRefreshTest {
 
     @Test
     fun externalPdfWrapperIsCheckedAgainstItsOriginalDocumentUrl() {
-        documentRules("||blocked.example/report.pdf\$doc")
+        documentRules($$"||blocked.example/report.pdf$doc")
         val source = "https://blocked.example/report.pdf"
         val wrapper =
             "${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=${Uri.encode(source)}"
@@ -315,7 +311,7 @@ class MainActivityWebViewRefreshTest {
     @Test
     fun parameterRemovalCleansAppLoadsAndRetainsHeadersExceptionsAndDisable() {
         documentRules(
-            "*\$removeparam=track\n@@||site.example/safe\$removeparam=track"
+            $$"*$removeparam=track\n@@||site.example/safe$removeparam=track"
         )
         val webView = webView()
         val headers = mapOf("X-Test" to "kept")
@@ -341,7 +337,7 @@ class MainActivityWebViewRefreshTest {
     @Test
     @Suppress("DEPRECATION")
     fun parameterRemovalReplaysOnlyKnownMainFrameGetCallbacks() {
-        documentRules("*\$removeparam=track")
+        documentRules($$"*$removeparam=track")
         val webView = webView()
         val client = webView.webViewClient
         val url = "https://site.example/?track=1&keep=2"
@@ -379,9 +375,9 @@ class MainActivityWebViewRefreshTest {
     @Test
     fun parameterRemovalCannotBypassOriginalOrCleanedDocumentBlocks() {
         documentRules(
-            "*\$removeparam=track\n" +
-                "||blocked.example/?track=\$doc\n" +
-                "|https://cleaned.example/|\$doc"
+            $$"*$removeparam=track\n" +
+                $$"||blocked.example/?track=$doc\n" +
+                $$"|https://cleaned.example/|$doc"
         )
         val webView = webView()
         webView.loadUrl("https://blocked.example/?track=1")
@@ -399,7 +395,7 @@ class MainActivityWebViewRefreshTest {
 
     @Test
     fun externalLoadsCleanParametersBeforePdfRoutingAndCheckOriginalUrlPolicy() {
-        documentRules("*\$removeparam=track")
+        documentRules($$"*$removeparam=track")
         // Only routing is exercised here: JavaScript stays disabled. The real
         // source fetch and redirect URLs are covered by the HTTP server tests.
         val assets = java.io.File(activity.filesDir, Constants.PDF_JS_ASSETS_DIR)
@@ -451,7 +447,7 @@ class MainActivityWebViewRefreshTest {
 
     private fun reloadDocumentRules() = runBlocking {
         val service = ContentBlockingService.get(activity)
-        withTimeout(10_000) { service.awaitReload(service.reload()) }
+        withTimeout(10.seconds) { service.awaitReload(service.reload()) }
     }
 
     private fun assertBlockedDocument(webView: WebView, url: String) {

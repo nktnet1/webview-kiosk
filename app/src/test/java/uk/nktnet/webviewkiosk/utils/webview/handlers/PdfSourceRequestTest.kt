@@ -1475,7 +1475,7 @@ class PdfSourceRequestTest {
         }
         val engine =
             KotlinFilterEngine().also {
-                it.replace(listOf("|$url\$doc"))
+                it.replace(listOf($$"|$$url$doc"))
             }
         assertStatus(
             403,
@@ -1501,7 +1501,7 @@ class PdfSourceRequestTest {
             respond(exchange, 200, "PDF")
         }
         val url = "$remote/blocked.pdf"
-        val rule = "|$url\$document"
+        val rule = $$"|$$url$document"
         val engine = KotlinFilterEngine().also { it.replace(listOf(rule)) }
         val isBlocked: (String) -> Boolean = {
             engine.shouldBlock(it, "", "document", "GET")
@@ -1509,7 +1509,7 @@ class PdfSourceRequestTest {
         val token = register("$remote/entry")
         assertStatus(403, load(token, isDocumentBlocked = isBlocked))
         assertEquals(listOf("entry"), requests)
-        engine.replace(listOf(rule, "@@|$url\$doc"))
+        engine.replace(listOf(rule, $$"@@|$$url$doc"))
         val response = load(token, isDocumentBlocked = isBlocked)!!
         assertEquals(200, response.statusCode)
         assertEquals("PDF", response.data.bufferedReader().use { it.readText() })
@@ -1534,7 +1534,7 @@ class PdfSourceRequestTest {
         }
         val engine =
             KotlinFilterEngine().also {
-                it.replace(listOf("*\$removeparam=track"))
+                it.replace(listOf($$"*$removeparam=track"))
             }
         val token = register("$remote/entry?track=initial&keep=%2f")
         val clean: (String) -> String = {
@@ -1543,7 +1543,7 @@ class PdfSourceRequestTest {
         assertStatus(200, load(token, documentUrl = clean))
         assertEquals(listOf("/entry?keep=%2f", "/final.pdf?id=7"), requests)
         engine.replace(
-            listOf("*\$removeparam=track\n" + "@@|$remote/entry\$removeparam=track")
+            listOf($$"*$removeparam=track\n@@|$$remote/entry$removeparam=track")
         )
         requests.clear()
         assertStatus(200, load(token, documentUrl = clean))
@@ -1563,7 +1563,7 @@ class PdfSourceRequestTest {
         val url = "$remote/blocked.pdf?track=1"
         val engine =
             KotlinFilterEngine().also {
-                it.replace(listOf("*\$removeparam=track"))
+                it.replace(listOf($$"*$removeparam=track"))
             }
         val clean: (String) -> String = {
             engine.removeQueryParameters(it, "", "document", "GET")
@@ -1585,7 +1585,7 @@ class PdfSourceRequestTest {
                 documentUrl = clean,
             ),
         )
-        engine.replace(listOf("*\$removeparam=track\n|$remote/blocked.pdf|\$doc"))
+        engine.replace(listOf($$"*$removeparam=track\n|$$remote/blocked.pdf|$doc"))
         assertStatus(
             403,
             load(
@@ -1706,8 +1706,8 @@ class PdfSourceRequestTest {
         body: String,
         vararg headers: Pair<String, String>,
     ) {
-        exchange.responseHeaders.set("Content-Type", "application/pdf")
-        for ((name, value) in headers) exchange.responseHeaders.set(name, value)
+        exchange.responseHeaders["Content-Type"] = "application/pdf"
+        for ((name, value) in headers) exchange.responseHeaders[name] = value
         val bytes = body.toByteArray()
         exchange.sendResponseHeaders(code, bytes.size.toLong())
         exchange.responseBody.use { it.write(bytes) }

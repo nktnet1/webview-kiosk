@@ -27,13 +27,13 @@ class ParameterRemovalTest {
     @Test
     fun removalDoesNotBlockAndExceptionsDoNotWhitelistRequests() {
         val url = "https://site.example/?track=1"
-        val engine = engine("*\$removeparam=track")
+        val engine = engine($$"*$removeparam=track")
         assertEquals(
             BlockingResponse.ALLOW,
             engine.responseFor(url, "", "doc", "GET"),
         )
         assertEquals("https://site.example/", clean(engine, url))
-        engine.replace(listOf("||site.example^\$doc", "@@*\$removeparam=track"))
+        engine.replace(listOf($$"||site.example^$doc", $$"@@*$removeparam=track"))
         assertEquals(
             BlockingResponse.BLOCK,
             engine.responseFor(url, "", "doc", "GET"),
@@ -43,7 +43,7 @@ class ParameterRemovalTest {
 
     @Test
     fun literalRemovalPreservesRetainedBytesOrderDuplicatesAndFragment() {
-        val engine = engine("*\$removeparam=track")
+        val engine = engine($$"*$removeparam=track")
         assertEquals(
             "https://site.example/?sig=a%2fb+z&empty=&dup=1&dup=2#?track=kept",
             clean(
@@ -72,7 +72,7 @@ class ParameterRemovalTest {
         assertEquals(
             "https://site.example/?keep=1",
             clean(
-                engine("*\$removeparam=跟踪参数"),
+                engine($$"*$removeparam=跟踪参数"),
                 "https://site.example/?跟踪参数=2&keep=1",
             ),
         )
@@ -82,10 +82,10 @@ class ParameterRemovalTest {
     fun regularExpressionsMatchRawKeysAndDecodedValuesWithFlagsAndDollarAnchors() {
         val engine =
             engine(
-                "*\$removeparam=/^utm_/i\n" +
-                    "*\$removeparam=/^ref=hello world\$/\n" +
-                    "*\$removeparam=/^code=[0-9]{2\\,3}\$/\n" +
-                    "*\$removeparam=/^plus=a\\+b\$/"
+                $$"*$removeparam=/^utm_/i\n" +
+                    $$"*$removeparam=/^ref=hello world$/\n" +
+                    $$"*$removeparam=/^code=[0-9]{2\\,3}$/\n" +
+                    $$"*$removeparam=/^plus=a\\+b$/"
             )
         assertEquals(0, engine.unsupportedRuleCount())
         assertEquals(
@@ -105,21 +105,24 @@ class ParameterRemovalTest {
         val url = "https://site.example/?keep=1&track=2&UTM_source=3#x"
         assertEquals(
             "https://site.example/?keep=1#x",
-            clean(engine("*\$removeparam=~keep"), url),
+            clean(engine($$"*$removeparam=~keep"), url),
         )
         assertEquals(
             "https://site.example/?keep=1#x",
-            clean(engine("*\$removeparam=~/^keep=/"), url),
+            clean(engine($$"*$removeparam=~/^keep=/"), url),
         )
         assertEquals(
             "https://site.example/?keep=1&track=2#x",
-            clean(engine("*\$queryprune=|utm_"), url),
+            clean(engine($$"*$queryprune=|utm_"), url),
         )
-        assertEquals("https://site.example/#x", clean(engine("*\$removeparam"), url))
+        assertEquals(
+            "https://site.example/#x",
+            clean(engine($$"*$removeparam"), url),
+        )
         assertEquals(
             "https://site.example/?",
             clean(
-                engine("*\$removeparam"),
+                engine($$"*$removeparam"),
                 "https://site.example/?",
             ),
         )
@@ -131,21 +134,24 @@ class ParameterRemovalTest {
         val cases =
             listOf(
                 listOf(
-                    "*\$removeparam=a",
-                    "*\$removeparam=b",
-                    "@@*\$removeparam=a",
+                    $$"*$removeparam=a",
+                    $$"*$removeparam=b",
+                    $$"@@*$removeparam=a",
                 ) to "https://site.example/?a=1&c=3",
-                listOf("*\$removeparam=a", "*\$removeparam=b", "@@*\$removeparam") to
-                    url,
-                listOf("*\$removeparam=a,important", "@@*\$removeparam=a") to
+                listOf(
+                    $$"*$removeparam=a",
+                    $$"*$removeparam=b",
+                    $$"@@*$removeparam",
+                ) to url,
+                listOf($$"*$removeparam=a,important", $$"@@*$removeparam=a") to
                     "https://site.example/?b=2&c=3",
                 listOf(
-                    "*\$removeparam=a,important",
-                    "*\$removeparam=b",
-                    "@@*\$removeparam",
+                    $$"*$removeparam=a,important",
+                    $$"*$removeparam=b",
+                    $$"@@*$removeparam",
                 ) to "https://site.example/?b=2&c=3",
                 // A name exception cancels that modifier, not a different regex.
-                listOf("*\$removeparam=/^[ab]=/", "@@*\$removeparam=a") to
+                listOf($$"*$removeparam=/^[ab]=/", $$"@@*$removeparam=a") to
                     "https://site.example/?c=3",
             )
         for ((rules, expected) in cases) {
@@ -163,9 +169,9 @@ class ParameterRemovalTest {
     fun conditionsUseDestinationContextForDocumentsAndActualResourceTypes() {
         val engine =
             engine(
-                "||site.example/path\$doc,removeparam=track,domain=site.example," +
+                $$"||site.example/path$doc,removeparam=track,domain=site.example," +
                     "~third-party,method=GET\n" +
-                    "||site.example/other\$script,removeparam=track"
+                    $$"||site.example/other$script,removeparam=track"
             )
         val url = "https://site.example/path?track=1&keep=2"
         assertEquals("https://site.example/path?keep=2", clean(engine, url))
@@ -197,8 +203,8 @@ class ParameterRemovalTest {
     fun networkRegexAndModifierRegexHaveIndependentDelimiters() {
         val engine =
             engine(
-                "/site\\.example\\/path/\$removeparam=/^track=[0-9]\$/,_\n" +
-                    "/ad-\$removeparam=/^foo=bar\\d\$/,_"
+                $$"/site\\.example\\/path/$removeparam=/^track=[0-9]$/,_\n" +
+                    $$"/ad-$removeparam=/^foo=bar\\d$/,_"
             )
         assertEquals(0, engine.unsupportedRuleCount())
         assertEquals(
@@ -215,14 +221,14 @@ class ParameterRemovalTest {
     fun unsupportedModifiersAndRegexesDiscardTheWholeRule() {
         val rules =
             listOf(
-                "*\$removeparam=track,unknown",
-                "*\$removeparam=track,redirect=noopjs",
-                "@@*\$removeparam=track,elemhide",
-                "*\$removeparam=track,removeparam=other",
-                "*\$~removeparam=track",
-                "*\$removeparam=/(a)\\1/",
-                "*\$removeparam=/a{999999}/",
-                "*\$removeparam=a|b",
+                $$"*$removeparam=track,unknown",
+                $$"*$removeparam=track,redirect=noopjs",
+                $$"@@*$removeparam=track,elemhide",
+                $$"*$removeparam=track,removeparam=other",
+                "*$~removeparam=track",
+                $$"*$removeparam=/(a)\\1/",
+                $$"*$removeparam=/a{999999}/",
+                $$"*$removeparam=a|b",
             )
         val engine = engine(*rules.toTypedArray())
         assertEquals(rules.size, engine.unsupportedRuleCount())
@@ -233,7 +239,7 @@ class ParameterRemovalTest {
 
     @Test
     fun globalLiteralRulesAreIndexedAndMatchingLimitsFailOpen() {
-        val rules = (0 until 3000).joinToString("\n") { "*\$removeparam=param$it" }
+        val rules = (0 until 3000).joinToString("\n") { $$"*$removeparam=param$$it" }
         assertEquals(
             "https://site.example/?keep=2",
             clean(
@@ -241,22 +247,23 @@ class ParameterRemovalTest {
                 "https://site.example/?param2500=1&keep=2",
             ),
         )
-        val expensive = engine("*\$removeparam=/" + "a".repeat(2000) + "/")
+        val expensive = engine($$"*$removeparam=/" + "a".repeat(2000) + "/")
         val url = "https://site.example/?track=" + "a".repeat(8000)
         assertEquals(url, clean(expensive, url))
         val tooMany =
             "https://site.example/?" + (0..1024).joinToString("&") { "a=$it" }
-        assertEquals(tooMany, clean(engine("*\$removeparam"), tooMany))
+        assertEquals(tooMany, clean(engine($$"*$removeparam"), tooMany))
         val tooLong = "https://site.example/?a=" + "x".repeat(32768)
-        assertEquals(tooLong, clean(engine("*\$removeparam"), tooLong))
+        assertEquals(tooLong, clean(engine($$"*$removeparam"), tooLong))
     }
 
     @Test
     fun warmAndIncrementalCachesPreserveModifiersExceptionsAndBadfilter() {
         val file = File(folder.root, "rules.bin")
-        val base = "*\$removeparam=/^utm_/\n*\$removeparam=track\n*\$removeparam=old"
+        val base = $$"*$removeparam=/^utm_/\n*$removeparam=track\n*$removeparam=old"
         val exceptions =
-            "@@||site.example^\$removeparam=track\n" + "*\$removeparam=old,badfilter"
+            $$"@@||site.example^$removeparam=track\n" +
+                $$"*$removeparam=old,badfilter"
         val lists = listOf(base, exceptions)
         KotlinFilterEngine(file).replace(lists)
         val restored = KotlinFilterEngine(file)
@@ -274,7 +281,7 @@ class ParameterRemovalTest {
     @Test
     fun schemaTenRecordsAreRecompiledInAggregateAndPerListCaches() {
         val file = File(folder.root, "rules.bin")
-        val lists = listOf("*\$removeparam=track")
+        val lists = listOf($$"*$removeparam=track")
         KotlinFilterEngine(file).replace(lists)
         (listOf(file) + File(folder.root, "rules.bin.sources").listFiles().orEmpty())
             .filter { it.isFile }

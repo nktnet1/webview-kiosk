@@ -11,9 +11,11 @@ import org.robolectric.annotation.Implements
 @Implements(Os::class)
 class ShadowOsWithRename {
     companion object {
+        // Robolectric invokes this implementation reflectively.
+        @Suppress("unused")
         @JvmStatic
         @Implementation
-        protected fun rename(oldPath: String, newPath: String) {
+        fun rename(oldPath: String, newPath: String) {
             Files.move(
                 File(oldPath).toPath(),
                 File(newPath).toPath(),

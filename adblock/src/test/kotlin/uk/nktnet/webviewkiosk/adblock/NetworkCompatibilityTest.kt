@@ -20,9 +20,9 @@ class NetworkCompatibilityTest {
     @Test
     fun regexFiltersKeepAnchorsOptionsExceptionsCaseAndCacheIdentity() {
         val text =
-            "/^https:\\/\\/ads[0-9]+\\.example\\/pixel/\$image,third-party\n" +
-                "@@/allowed[0-9]+/\$image\n" +
-                "/CaseSensitive/\$script,match-case"
+            $$"/^https:\\/\\/ads[0-9]+\\.example\\/pixel/$image,third-party\n" +
+                $$"@@/allowed[0-9]+/$image\n" +
+                $$"/CaseSensitive/$script,match-case"
         val file = File(folder.root, "rules.bin")
         KotlinFilterEngine(file).replace(listOf(text))
         val engine = KotlinFilterEngine(file)
@@ -41,7 +41,7 @@ class NetworkCompatibilityTest {
     @Test
     fun unsupportedRegexFeaturesAreSkippedAndNestedRepeatsDoNotBacktrack() {
         val engine = KotlinFilterEngine()
-        engine.replace(listOf("/(?=ads)ads/\n/(a+)\\1/\n/(a+)+b\$/\n/(a{64}){64}/"))
+        engine.replace(listOf("/(?=ads)ads/\n/(a+)\\1/\n/(a+)+b$/\n/(a{64}){64}/"))
         assertEquals(3, engine.unsupportedRuleCount())
         assertFalse(blocked(engine, "https://cdn.example/" + "a".repeat(8000)))
         assertTrue(blocked(engine, "https://cdn.example/aaaaab"))
@@ -78,9 +78,9 @@ class NetworkCompatibilityTest {
     @Test
     fun badwareHostPrefixesCanEndInHyphensButCompleteHostnameLabelsCannot() {
         val rules =
-            "||air-bnb.check-\$doc\n" +
-                "||chrome-chrome-\$doc\n" +
-                "||claude-code-\$doc,to=edgeone.app|pages.dev|squarespace.com"
+            $$"||air-bnb.check-$doc\n" +
+                $$"||chrome-chrome-$doc\n" +
+                $$"||claude-code-$doc,to=edgeone.app|pages.dev|squarespace.com"
         val file = File(folder.root, "badware-prefix.bin")
         val source = FilterSource(rules, trusted = true)
         val engine = KotlinFilterEngine(file)
@@ -110,7 +110,7 @@ class NetworkCompatibilityTest {
             blocked(restored, "https://site.example/air-bnb.check-fake", "document")
         )
         try {
-            engine.validate("||invalid-.example^\$doc")
+            engine.validate($$"||invalid-.example^$doc")
             throw AssertionError(
                 "An incomplete non-final hostname label must be rejected"
             )
@@ -125,8 +125,8 @@ class NetworkCompatibilityTest {
         engine.replace(
             listOf(
                 "||ads.example^\n" +
-                    "||ads.example^\$script,redirect-rule=noopjs\n" +
-                    "@@||ads.example/excepted\$script,redirect-rule"
+                    $$"||ads.example^$script,redirect-rule=noopjs\n" +
+                    $$"@@||ads.example/excepted$script,redirect-rule"
             )
         )
         assertEquals(0, engine.unsupportedRuleCount())
@@ -157,7 +157,7 @@ class NetworkCompatibilityTest {
         engine.replace(
             listOf(
                 "www.google.*##.advert\nwww.google.*#@#.excepted\n" +
-                    "google.*##.excepted\n*\$script,domain=read.amazon.*"
+                    $$"google.*##.excepted\n*$script,domain=read.amazon.*"
             )
         )
         assertEquals(0, engine.unsupportedRuleCount())

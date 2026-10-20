@@ -1,3 +1,5 @@
+@file:Suppress("UsePropertyAccessSyntax")
+
 package uk.nktnet.webviewkiosk.ui.components.auth
 
 import android.app.KeyguardManager
@@ -13,7 +15,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.semantics.SemanticsActions
@@ -297,7 +298,7 @@ class RequireAuthWrapperTest {
 
     @Test
     fun noDeviceCredentialsCreateAValidSessionAndRenderProtectedContent() {
-        setDeviceSecure(false)
+        setDeviceInsecure()
         owner.registry.currentState = Lifecycle.State.RESUMED
         composeWrapper()
 
@@ -311,7 +312,7 @@ class RequireAuthWrapperTest {
 
     @Test
     fun anExpiredUnsecuredSessionCannotRenderUntilStartEstablishesANewSession() {
-        setDeviceSecure(false)
+        setDeviceInsecure()
         manager.showAuthenticationPrompt("Test", "Test")
         time += 300_000
         composeWrapper()
@@ -481,10 +482,10 @@ class RequireAuthWrapperTest {
         assertTrue(manager.hasValidSession())
     }
 
-    private fun setDeviceSecure(secure: Boolean) {
+    private fun setDeviceInsecure() {
         val keyguard =
             activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-        shadowOf(keyguard).setIsDeviceSecure(secure)
+        shadowOf(keyguard).setIsDeviceSecure(false)
     }
 
     private fun assertProtectedContent() {
@@ -526,7 +527,6 @@ class RequireAuthWrapperTest {
         pumpFrames()
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     private fun nodes(): List<SemanticsNode> {
         val root = view.getChildAt(0) as ViewRootForTest
         root.measureAndLayoutForTest()

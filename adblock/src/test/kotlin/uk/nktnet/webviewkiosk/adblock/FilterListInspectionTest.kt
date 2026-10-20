@@ -8,23 +8,23 @@ class FilterListInspectionTest {
     fun reasonsCountWholeSkippedRulesAndExcludeCommentsAndInactiveBranches() {
         val text =
             listOf(
-                    "! ignored comment with \$popup",
+                    $$"! ignored comment with $popup",
                     "!#if cap_html_filtering",
                     "site.example##^script:has-text(ignore)",
                     "!#endif",
                     "||ad.example^",
                     "site.example##.ad",
                     "site.*##+js(set, marker, false)",
-                    "||popup.example^\$popup,third-party",
-                    "@@||popup.example^\$popunder",
-                    "||ad.example^\$csp=script-src 'none'",
+                    $$"||popup.example^$popup,third-party",
+                    $$"@@||popup.example^$popunder",
+                    $$"||ad.example^$csp=script-src 'none'",
                     "site.example##^script:has-text(tracker)",
                     "site.example##.heading:xpath(//span)",
                     "/(a+)+$/##+js(set, marker, false)",
                     "site.example##+js(unimplemented-json-editor, ..ads)",
                     "site.example##+js(aost, marker, /(?=ad)/)",
                     "site.example##+js(trusted-set, marker, true)",
-                    "||ad.example^\$unknown-option",
+                    $$"||ad.example^$unknown-option",
                     "a".repeat(8193),
                     "||",
                 )

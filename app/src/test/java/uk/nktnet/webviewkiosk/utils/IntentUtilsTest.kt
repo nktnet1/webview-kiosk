@@ -111,7 +111,7 @@ class IntentUtilsTest {
     @Test
     fun malformedExtrasFailClosedInsteadOfCrashingOnTypeMismatch() {
         val badText =
-            object : Intent(Intent.ACTION_SEND) {
+            object : Intent(ACTION_SEND) {
                     override fun getStringExtra(name: String): String? {
                         throw ClassCastException("EXTRA_TEXT is not a string")
                     }

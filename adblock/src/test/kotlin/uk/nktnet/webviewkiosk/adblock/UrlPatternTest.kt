@@ -8,7 +8,14 @@ import uk.nktnet.webviewkiosk.adblock.engine.UrlPattern
 
 class UrlPatternTest {
     private fun pattern(host: String, text: String = "$host^") =
-        UrlPattern(text, true, false, false, false, host)
+        UrlPattern(
+            text = text,
+            domainAnchor = true,
+            startAnchor = false,
+            endAnchor = false,
+            matchCase = false,
+            hostIndex = host,
+        )
 
     @Test
     fun plainHostReturnsTheExistingHostForAnExactDomainPattern() {

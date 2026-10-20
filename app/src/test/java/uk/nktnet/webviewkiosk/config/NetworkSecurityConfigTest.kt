@@ -66,7 +66,7 @@ class NetworkSecurityConfigTest {
     private fun parseNetworkSecurityConfig(): ParsedConfig {
         val resources = RuntimeEnvironment.getApplication().resources
         val parser = resources.getXml(R.xml.network_security_config)
-        try {
+        return parser.use {
             var inBaseConfig = false
             var inTrustAnchors = false
             var baseConfigCount = 0
@@ -116,7 +116,7 @@ class NetworkSecurityConfigTest {
                 }
                 parser.next()
             }
-            return ParsedConfig(
+            ParsedConfig(
                 baseConfigCount,
                 cleartextTrafficPermitted,
                 baseTrustAnchors,
@@ -124,8 +124,6 @@ class NetworkSecurityConfigTest {
                 hasDomainConfig,
                 hasDebugOverrides,
             )
-        } finally {
-            parser.close()
         }
     }
 }

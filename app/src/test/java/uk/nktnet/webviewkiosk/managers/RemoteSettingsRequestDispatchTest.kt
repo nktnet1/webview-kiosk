@@ -1,13 +1,14 @@
 package uk.nktnet.webviewkiosk.managers
 
 import java.util.Collections
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -95,7 +96,7 @@ class RemoteSettingsRequestDispatchTest {
                     InboundSettingsMessage(messageId = "blocked"),
                     Source.MQTT,
                 )
-                withTimeout(5_000) { settingsStarted.await() }
+                withTimeout(5.seconds) { settingsStarted.await() }
                 RemoteMessageManager.emitRequest(
                     InboundStatusRequest(messageId = "request"),
                     Source.MQTT,
@@ -104,7 +105,7 @@ class RemoteSettingsRequestDispatchTest {
                     InboundSettingsMessage(messageId = "applied"),
                     Source.UNIFIEDPUSH,
                 )
-                withTimeout(5_000) {
+                withTimeout(5.seconds) {
                     requestCollector.join()
                     appliedCollector.join()
                 }
@@ -116,7 +117,7 @@ class RemoteSettingsRequestDispatchTest {
                 assertEquals(Source.UNIFIEDPUSH, applied.single().source)
             } finally {
                 releaseSettings.complete(Unit)
-                withTimeout(5_000) { settingsCollector.join() }
+                withTimeout(5.seconds) { settingsCollector.join() }
                 settingsCollector.cancelAndJoin()
                 requestCollector.cancelAndJoin()
                 appliedCollector.cancelAndJoin()
@@ -144,11 +145,11 @@ class RemoteSettingsRequestDispatchTest {
             }
         try {
             emit(0)
-            withTimeout(5_000) { firstStarted.await() }
+            withTimeout(5.seconds) { firstStarted.await() }
             // More than 100 deliveries forces the producer's FIFO queue to suspend.
             for (index in 1 until count) emit(index)
             releaseFirst.complete(Unit)
-            withTimeout(5_000) { collector.join() }
+            withTimeout(5.seconds) { collector.join() }
 
             assertEquals((0 until count).map { it.toString() }, observed)
         } finally {
@@ -179,7 +180,7 @@ class RemoteSettingsRequestDispatchTest {
             }
         try {
             for (index in 0 until count) emit(index)
-            withTimeout(5_000) { collectors.forEach { it.join() } }
+            withTimeout(5.seconds) { collectors.joinAll() }
 
             assertEquals(count, claimed.size)
             assertEquals(

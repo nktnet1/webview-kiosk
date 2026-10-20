@@ -27,10 +27,10 @@ class DocumentFilteringTest {
         // Forms used in uAssets badware.txt and the URLHaus navigation variant.
         val engine =
             engine(
-                "||malware.example^\$document\n" +
-                    "||01net.com/telecharger/\$doc\n" +
-                    "@@||01net.com/telecharger/safe\$doc\n" +
-                    "||cdn.example^\$script\n||frames.example^\$subdocument"
+                $$"||malware.example^$document\n" +
+                    $$"||01net.com/telecharger/$doc\n" +
+                    $$"@@||01net.com/telecharger/safe$doc\n" +
+                    $$"||cdn.example^$script\n||frames.example^$subdocument"
             )
         assertEquals(0, engine.unsupportedRuleCount())
         assertTrue(blocked(engine, "https://malware.example/"))
@@ -73,7 +73,7 @@ class DocumentFilteringTest {
                 Triple("/ads/", "https://site.example/ads/", false),
                 Triple("||site.example/ads/", "https://site.example/ads/", false),
                 Triple(
-                    "||site.example/ads/\$important",
+                    $$"||site.example/ads/$important",
                     "https://site.example/ads/",
                     false,
                 ),
@@ -91,7 +91,7 @@ class DocumentFilteringTest {
                 ),
                 Triple("*", "https://site.example/", false),
                 Triple("/^/", "https://site.example/", false),
-                Triple("*\$document", "https://site.example/", true),
+                Triple($$"*$document", "https://site.example/", true),
             )
         cases.forEach { (rule, url, expected) ->
             assertEquals("$rule on $url", expected, blocked(engine(rule), url))
@@ -109,7 +109,8 @@ class DocumentFilteringTest {
 
     @Test
     fun strictMatchingHandlesHostBoundariesCredentialsPortsIdnAndFqdn() {
-        val engine = engine("||ads.example^\$method=GET\n||例子.测试^\n||[2001:db8::1]^")
+        val engine =
+            engine($$"||ads.example^$method=GET\n||例子.测试^\n||[2001:db8::1]^")
         listOf(
                 "https://ads.example./a",
                 "https://ADS.EXAMPLE:8443/a",
@@ -140,23 +141,25 @@ class DocumentFilteringTest {
         val url = "https://ads.example/path"
         val cases =
             listOf(
-                listOf("||ads.example^", "@@||ads.example^\$document") to false,
-                listOf("||ads.example^\$document", "@@||ads.example/path") to false,
+                listOf("||ads.example^", $$"@@||ads.example^$document") to false,
+                listOf($$"||ads.example^$document", "@@||ads.example/path") to false,
                 listOf(
-                    "||ads.example^\$document",
-                    "@@||ads.example/path\$document",
+                    $$"||ads.example^$document",
+                    $$"@@||ads.example/path$document",
                 ) to false,
-                listOf("||ads.example^\$important", "@@||ads.example^\$document") to
-                    true,
                 listOf(
-                    "||ads.example^\$document,important",
+                    $$"||ads.example^$important",
+                    $$"@@||ads.example^$document",
+                ) to true,
+                listOf(
+                    $$"||ads.example^$document,important",
                     "@@||ads.example/path",
                 ) to true,
-                listOf("||ads.example^", "@@||ads.example/path\$script") to true,
-                listOf("||ads.example^", "@@||ads.example/path\$~image") to true,
+                listOf("||ads.example^", $$"@@||ads.example/path$script") to true,
+                listOf("||ads.example^", "@@||ads.example/path$~image") to true,
                 listOf(
-                    "||ads.example/path\$important",
-                    "@@||ads.example^\$document",
+                    $$"||ads.example/path$important",
+                    $$"@@||ads.example^$document",
                 ) to false,
             )
         for ((rules, expected) in cases) {
@@ -174,11 +177,11 @@ class DocumentFilteringTest {
     fun documentsUseTheirOwnFirstPartyContextAndActualMethod() {
         val engine =
             engine(
-                "||ads.example^\$document,domain=ads.example,~third-party,method=POST\n" +
-                    "||third.example^\$document,third-party\n" +
-                    "||excluded.example^\$~document\n" +
-                    "||negated.example^\$~image\n" +
-                    "||explicit.example/path\$doc,~image"
+                $$"||ads.example^$document,domain=ads.example,~third-party,method=POST\n" +
+                    $$"||third.example^$document,third-party\n" +
+                    "||excluded.example^$~document\n" +
+                    "||negated.example^$~image\n" +
+                    $$"||explicit.example/path$doc,~image"
             )
         assertTrue(blocked(engine, "https://ads.example/a", "post", "about:blank"))
         assertFalse(blocked(engine, "https://ads.example/a", "GET"))
@@ -200,10 +203,10 @@ class DocumentFilteringTest {
     fun redirectsNeverSupplySurrogatesToDocumentsAndRedirectOnlyDoesNotBlock() {
         val engine =
             engine(
-                "||ads.example^\$document,redirect=noopjs\n" +
-                    "@@||ads.example^\$redirect-rule\n" +
-                    "||redirect-only.example^\$document,redirect-rule=noophtml\n" +
-                    "@@||ads.example/safe\$document"
+                $$"||ads.example^$document,redirect=noopjs\n" +
+                    $$"@@||ads.example^$redirect-rule\n" +
+                    $$"||redirect-only.example^$document,redirect-rule=noophtml\n" +
+                    $$"@@||ads.example/safe$document"
             )
         assertEquals(
             BlockingResponse.BLOCK,
@@ -215,16 +218,16 @@ class DocumentFilteringTest {
 
     @Test
     fun exhaustedMatchingBudgetFailsOpenForDocuments() {
-        val engine = engine("/" + "a".repeat(2000) + "/\$document")
+        val engine = engine("/" + "a".repeat(2000) + $$"/$document")
         assertFalse(blocked(engine, "https://site.example/" + "a".repeat(8000)))
     }
 
     @Test
     fun cacheRoundTripsKeepDocumentSemanticsAndCrossListBadfilter() {
         val file = File(folder.root, "rules.bin")
-        val base = "||ads.example^\$doc\n/ads/\n||bad.example^\$document"
+        val base = $$"||ads.example^$doc\n/ads/\n||bad.example^$document"
         val exception =
-            "@@||ads.example/safe\$document\n||bad.example^\$document,badfilter"
+            $$"@@||ads.example/safe$document\n||bad.example^$document,badfilter"
         val lists = listOf(base, exception)
         KotlinFilterEngine(file).replace(lists)
         val restored = KotlinFilterEngine(file)
@@ -243,7 +246,7 @@ class DocumentFilteringTest {
     @Test
     fun schemaNineIsRecompiledOnceIncludingIndependentSourceCaches() {
         val file = File(folder.root, "rules.bin")
-        val lists = listOf("||ads.example^\$doc", "/ads/")
+        val lists = listOf($$"||ads.example^$doc", "/ads/")
         KotlinFilterEngine(file).replace(lists)
         (listOf(file) + File(folder.root, "rules.bin.sources").listFiles().orEmpty())
             .filter { it.isFile }

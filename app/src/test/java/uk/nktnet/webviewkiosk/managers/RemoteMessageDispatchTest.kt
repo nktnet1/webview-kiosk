@@ -1,10 +1,11 @@
 package uk.nktnet.webviewkiosk.managers
 
 import android.os.Looper
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -361,14 +362,14 @@ class RemoteMessageDispatchTest {
         }
 
     private suspend fun awaitDispatch(collector: Job) {
-        withTimeout(5_000) {
+        withTimeout(5.seconds) {
             // Each command may resume the next mutex waiter on a background
             // dispatcher.
             // Pump the main looper repeatedly so queued follow-up commands cannot
             // stall.
             while (!collector.isCompleted) {
                 shadowOf(Looper.getMainLooper()).idle()
-                delay(10)
+                delay(10.milliseconds)
             }
             collector.join()
         }

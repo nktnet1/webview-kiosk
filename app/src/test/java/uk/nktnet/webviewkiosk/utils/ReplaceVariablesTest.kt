@@ -9,7 +9,7 @@ class ReplaceVariablesTest {
         assertEquals(
             "kiosk/alpha/alpha  beta",
             replaceVariables(
-                "  kiosk/\${instance}/\${instance}  \${name}\n",
+                $$"  kiosk/${instance}/${instance}  ${name}\n",
                 mapOf("instance" to "alpha", "name" to "beta"),
             ),
         )
@@ -18,19 +18,19 @@ class ReplaceVariablesTest {
     @Test
     fun preservesUnknownAndMalformedPlaceholders() {
         assertEquals(
-            "\${missing}/\${}/\${open",
-            replaceVariables("\${missing}/\${}/\${open"),
+            $$"${missing}/${}/${open",
+            replaceVariables($$"${missing}/${}/${open"),
         )
     }
 
     @Test
     fun treatsReplacementValuesLiterallyWithoutRecursiveExpansion() {
         assertEquals(
-            "\${second}/$1\\path",
+            $$"${second}/$1\\path",
             replaceVariables(
-                "\${first}/\${literal}",
+                $$"${first}/${literal}",
                 mapOf(
-                    "first" to "\${second}",
+                    "first" to $$"${second}",
                     "second" to "expanded",
                     "literal" to "$1\\path",
                 ),
@@ -41,8 +41,8 @@ class ReplaceVariablesTest {
     @Test
     fun distinguishesAnEmptyReplacementFromAnUnknownVariable() {
         assertEquals(
-            "/\${unknown}",
-            replaceVariables("\${empty}/\${unknown}", mapOf("empty" to "")),
+            $$"/${unknown}",
+            replaceVariables($$"${empty}/${unknown}", mapOf("empty" to "")),
         )
     }
 }

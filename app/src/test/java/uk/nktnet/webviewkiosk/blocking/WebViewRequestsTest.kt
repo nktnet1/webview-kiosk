@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.blocking
 
 import java.io.File
-import java.util.concurrent.Executor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -30,17 +29,18 @@ class WebViewRequestsTest {
         val store = FilterListStore(context)
         store.importFrom(
             "requests.txt",
-            ("||ads.example^\$websocket,domain=frame.example\n" +
-                    "||beacon.example^\$ping,third-party\n" +
-                    "@@||beacon.example/safe\$ping")
+            ($$"||ads.example^$websocket,domain=frame.example\n" +
+                    $$"||beacon.example^$ping,third-party\n" +
+                    $$"@@||beacon.example/safe$ping")
                 .byteInputStream(),
         )
         service =
             ContentBlockingService(
                     store,
                     KotlinFilterEngine(),
-                    Executor { it.run() },
-                )
+                ) {
+                    it.run()
+                }
                 .also { it.start() }
         rules = WebViewRequests.Rules(service)
     }
@@ -141,9 +141,9 @@ class WebViewRequestsTest {
         store.remove(store.list().map { it.id }.toSet())
         store.importFrom(
             "opaque.txt",
-            ("||blocked.example^\$ping\n" +
-                    "||scoped.example^\$ping,domain=frame.example\n" +
-                    "||party.example^\$ping,third-party")
+            ($$"||blocked.example^$ping\n" +
+                    $$"||scoped.example^$ping,domain=frame.example\n" +
+                    $$"||party.example^$ping,third-party")
                 .byteInputStream(),
         )
         service.reload()

@@ -146,8 +146,8 @@ class ResponseScriptletTest {
                 "trusted-set, callback, json:{\"safe\":true}, as, callback, runAt, 2",
                 "trusted-set, promise, false, runAt, idle, as, resolved",
                 "trusted-set, rejected, null, as, rejected",
-                "trusted-set-local-storage-item, stamp, \$now\$/\$currentISODate\$",
-                "trusted-set-session-storage-item, date, \$currentDate\$",
+                $$"trusted-set-local-storage-item, stamp, $now$/$currentISODate$",
+                $$"trusted-set-session-storage-item, date, $currentDate$",
                 "trusted-replace-fetch-response, /ad/g, safe",
                 "trusted-replace-xhr-response, /ad/gi, safe, url:/api",
             )
@@ -183,7 +183,7 @@ class ResponseScriptletTest {
                 "trusted-set, x, false, runAt, later",
                 "trusted-set, x, false, runAt, loading, runAt, complete",
                 "trusted-set, x, json:{\"constructor\":{}}",
-                "trusted-set-local-storage-item, x, \$unknown\$",
+                $$"trusted-set-local-storage-item, x, $unknown$",
             )) {
             assertNull(expression, ScriptletParser.parse("+js($expression)", true))
         }
@@ -208,7 +208,7 @@ class ResponseScriptletTest {
                 "trusted-replace-fetch-response, /ad/gg, text",
                 "trusted-replace-xhr-response, /(a+)+/, text",
                 "trusted-set-cookie, key, value, /path",
-                "trusted-set-local-storage-item, key, \$unknown\$",
+                $$"trusted-set-local-storage-item, key, $unknown$",
                 "trusted-set, value, json:{invalid}",
                 "trusted-set-attr, a, href, https://example.com",
                 "trusted-set-attr, a, onclick, alert(1)",

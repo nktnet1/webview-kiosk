@@ -17,17 +17,17 @@ class RoadmapCompatibilityTest {
 
     @Test
     fun trustedMutationsAreRecompiledAndNeverGrantedToCustomLists() {
-        for (query in listOf("\$.x[?\$.y]", "\$.x['quoted']", "\$.x./^ad/")) {
+        for (query in listOf("$.x[?$.y]", "$.x['quoted']", "$.x./^ad/")) {
             assertNotNull(query, JsonEditing.compile(query))
         }
         val queries =
             listOf(
-                "\$.ads=false",
-                "\$.settings+={\"enabled\":false}",
-                "\$.label=repl({\"regex\":\"ad\",\"flags\":\"g\",\"replacement\":\"ok\"})",
-                "\$.label=call([\"\${obj}\",\"mark\",\"\${key}\",\"\${val}\"])",
-                "\$={\"replaced\":true}",
-                "\$.missing=null",
+                "$.ads=false",
+                "$.settings+={\"enabled\":false}",
+                "$.label=repl({\"regex\":\"ad\",\"flags\":\"g\",\"replacement\":\"ok\"})",
+                $$"$.label=call([\"${obj}\",\"mark\",\"${key}\",\"${val}\"])",
+                "$={\"replaced\":true}",
+                "$.missing=null",
             )
         for (query in queries) {
             assertNull(query, JsonEditing.compile(query))
@@ -54,10 +54,10 @@ class RoadmapCompatibilityTest {
         val cases =
             (queries +
                     listOf(
-                        "\$.items[0]['advert']",
-                        "\$.items[0]./^ad/",
-                        "v2:\$.items[?\$.ads==1]",
-                        "v2:\$.items[*]{3};\$.ads=false",
+                        "$.items[0]['advert']",
+                        "$.items[0]./^ad/",
+                        "v2:$.items[?$.ads==1]",
+                        "v2:$.items[*]{3};$.ads=false",
                     ))
                 .map { query ->
                     val engine = KotlinFilterEngine()
@@ -76,10 +76,10 @@ class RoadmapCompatibilityTest {
         export("json-mutations.json", cases.joinToString(",", "[", "]"))
         for (query in
             listOf(
-                "\$.x={\"__proto__\":{}}",
-                "\$.x+=[]",
-                "\$.x=call([null,\"constructor\"])",
-                "\$.x=run(1)",
+                "$.x={\"__proto__\":{}}",
+                "$.x+=[]",
+                "$.x=call([null,\"constructor\"])",
+                "$.x=run(1)",
             )) {
             assertNull(query, JsonEditing.compile(query, true))
         }
@@ -89,27 +89,27 @@ class RoadmapCompatibilityTest {
     fun objectAndRequestEditorsRestoreCanonicalArgumentsAndProvenance() {
         val entries =
             listOf(
-                "edit-outbound-object, app.read, \$.ads",
-                "edit-inbound-object, app.write, -1, \$.ads",
-                "edit-this-object, app.next, \$.ads, after",
-                "edit-object-on-getter, app.state, \$.ads",
-                "edit-object-on-setter, app.state, \$.ads",
-                "trusted-edit-outbound-object, app.read, \$.ads=false",
-                "trusted-edit-inbound-object, app.write, 0, \$.ads=false",
-                "trusted-edit-this-object, app.next, \$.ads=false",
-                "trusted-edit-object-on-getter, app.state, \$.ads=false",
-                "trusted-edit-object-on-setter, app.state, \$.ads=false",
-                "json-edit-fetch-request, \$.ads, propsToMatch, method:POST",
-                "json-edit-xhr-request, \$.ads",
-                "trusted-json-edit-fetch-request, \$.ads=false",
-                "trusted-json-edit-xhr-request, \$.ads=false",
-                "trusted-json-edit-fetch-response, \$.ads=false",
-                "trusted-json-edit-xhr-response, \$.ads=false",
-                "trusted-jsonl-edit-fetch-response, \$.ads=false",
-                "trusted-jsonl-edit-xhr-response, \$.ads=false",
-                "edit-element-object, .ad, \$.ads, 500",
-                "trusted-edit-element-object, .ad, \$.ads=false, 500",
-                "trusted-edit-inbound-element, app.element, this, .ad, \$.ads=false",
+                "edit-outbound-object, app.read, $.ads",
+                "edit-inbound-object, app.write, -1, $.ads",
+                "edit-this-object, app.next, $.ads, after",
+                "edit-object-on-getter, app.state, $.ads",
+                "edit-object-on-setter, app.state, $.ads",
+                "trusted-edit-outbound-object, app.read, $.ads=false",
+                "trusted-edit-inbound-object, app.write, 0, $.ads=false",
+                "trusted-edit-this-object, app.next, $.ads=false",
+                "trusted-edit-object-on-getter, app.state, $.ads=false",
+                "trusted-edit-object-on-setter, app.state, $.ads=false",
+                "json-edit-fetch-request, $.ads, propsToMatch, method:POST",
+                "json-edit-xhr-request, $.ads",
+                "trusted-json-edit-fetch-request, $.ads=false",
+                "trusted-json-edit-xhr-request, $.ads=false",
+                "trusted-json-edit-fetch-response, $.ads=false",
+                "trusted-json-edit-xhr-response, $.ads=false",
+                "trusted-jsonl-edit-fetch-response, $.ads=false",
+                "trusted-jsonl-edit-xhr-response, $.ads=false",
+                "edit-element-object, .ad, $.ads, 500",
+                "trusted-edit-element-object, .ad, $.ads=false, 500",
+                "trusted-edit-inbound-element, app.element, this, .ad, $.ads=false",
                 "trusted-prune-inbound-object, app.write, 1, ads, , dontOverwrite, 1",
                 "trusted-prune-outbound-object, app.read, ads",
             )
@@ -131,12 +131,10 @@ class RoadmapCompatibilityTest {
             second.unsupportedRuleCount(),
         )
         assertNull(
-            ScriptletParser.parse(
-                "+js(edit-inbound-object, app.write, nope, \$.ads)"
-            )
+            ScriptletParser.parse("+js(edit-inbound-object, app.write, nope, $.ads)")
         )
         assertNull(
-            ScriptletParser.parse("+js(edit-this-object, app.next, \$.ads, before)")
+            ScriptletParser.parse("+js(edit-this-object, app.next, $.ads, before)")
         )
         export("objects.js", first.scriptletInjection()!!.source)
     }
@@ -188,7 +186,7 @@ class RoadmapCompatibilityTest {
         }
         for (selector in
             listOf(
-                ".card:has-text(/(a+)+\$/):remove()",
+                ".card:has-text(/(a+)+$/):remove()",
                 ".card:has-text(Ads):style(background: url(https://bad.example/))",
                 ".card:remove():has-text(Ads)",
             )) {
@@ -214,10 +212,10 @@ class RoadmapCompatibilityTest {
         val engine = KotlinFilterEngine()
         engine.replace(
             listOf(
-                "|wss://ads.example/socket|\$websocket,domain=frame.example\n" +
-                    "||beacon.example^\$ping,third-party\n" +
-                    "@@||beacon.example/safe\$ping\n" +
-                    "||ws.example^\$websocket,important"
+                $$"|wss://ads.example/socket|$websocket,domain=frame.example\n" +
+                    $$"||beacon.example^$ping,third-party\n" +
+                    $$"@@||beacon.example/safe$ping\n" +
+                    $$"||ws.example^$websocket,important"
             )
         )
         assertTrue(
@@ -275,7 +273,7 @@ class RoadmapCompatibilityTest {
         val engine = KotlinFilterEngine()
         for (name in listOf("google-ima-dai", "google-ima3-dai")) {
             val script = "site.example##+js($name)"
-            val redirect = "||ads.example^\$redirect=$name.js"
+            val redirect = $$"||ads.example^$redirect=$$name.js"
             assertEquals(1, inspectFilterList(script).unsupportedRules)
             assertEquals(1, inspectFilterList(redirect).unsupportedRules)
             engine.replaceSources(
@@ -300,7 +298,8 @@ class RoadmapCompatibilityTest {
             assertNull(ScriptletParser.parse("+js($name)"))
             assertEquals(
                 1,
-                inspectFilterList("||ads.example^\$redirect=$name.js").networkRules,
+                inspectFilterList($$"||ads.example^$redirect=$$name.js")
+                    .networkRules,
             )
         }
         assertNotNull(ScriptletParser.parse("+js(googlesyndication-adsbygoogle)"))

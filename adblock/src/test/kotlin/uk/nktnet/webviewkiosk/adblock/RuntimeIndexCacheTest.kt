@@ -17,15 +17,15 @@ class RuntimeIndexCacheTest {
 
     private val lists =
         listOf(
-            "||ads.example/track\$script\n" +
-                "||ads.example/pixel\$image\n" +
-                "||cdn.example/banner\$image\n" +
-                "tracking-token\$xhr\n" +
-                "/ad\$xhr,domain=site.example|other.example\n" +
-                "*\$ping,domain=publisher.*\n" +
-                "@@||site.example^\$generichide\n" +
-                "@@||ads.example/track\$redirect-rule\n" +
-                "||site.example^\$removeparam=track"
+            $$"||ads.example/track$script\n" +
+                $$"||ads.example/pixel$image\n" +
+                $$"||cdn.example/banner$image\n" +
+                $$"tracking-token$xhr\n" +
+                $$"/ad$xhr,domain=site.example|other.example\n" +
+                $$"*$ping,domain=publisher.*\n" +
+                $$"@@||site.example^$generichide\n" +
+                $$"@@||ads.example/track$redirect-rule\n" +
+                $$"||site.example^$removeparam=track"
         )
 
     @Test
@@ -74,15 +74,15 @@ class RuntimeIndexCacheTest {
         val inputs =
             listOf(
                 "||domain-exception.example^\n" +
-                    "@@||domain-exception.example^\$script,domain=site.example\n" +
+                    $$"@@||domain-exception.example^$script,domain=site.example\n" +
                     "||party-exception.example^\n" +
-                    "@@||party-exception.example^\$script,third-party\n" +
+                    $$"@@||party-exception.example^$script,third-party\n" +
                     "||hide.example^\n" +
-                    "@@||hide.example^\$generichide,domain=site.example\n" +
+                    $$"@@||hide.example^$generichide,domain=site.example\n" +
                     "||redirect.example^\n" +
-                    "@@||redirect.example^\$redirect-rule,domain=site.example\n" +
+                    $$"@@||redirect.example^$redirect-rule,domain=site.example\n" +
                     "||param.example^\n" +
-                    "@@||param.example^\$removeparam=track,domain=site.example"
+                    $$"@@||param.example^$removeparam=track,domain=site.example"
             )
         val file = File(folder.root, "contextual.bin")
         repeat(2) { run ->
