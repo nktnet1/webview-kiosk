@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -1005,6 +1006,13 @@ object MqttManager {
         responseMessage: OutboundResponseMessage,
         requestMessage: InboundRequestMessage,
     ) {
+        if (
+            homeAssistantSession
+                ?.takeIf { it.client === c }
+                ?.onResponse(responseMessage, requestMessage) == true
+        ) {
+            return
+        }
         val topic =
             mqttVariableReplacement(
                 requestMessage.responseTopic.takeIf { !it.isNullOrEmpty() }
@@ -1125,23 +1133,32 @@ object MqttManager {
                         ?.onHomeAssistantBirth()
                 }
             }
-            subscribeTopic(
-                subscribingClient,
-                epoch,
-                ha.commandTopic,
-                MqttQosOption.AT_LEAST_ONCE,
-                MqttRetainHandlingOption.DO_NOT_SEND,
-                true,
-            ) { publish, payload ->
-                // Retained control messages must not execute after a reconnect.
-                if (!publish.isRetain) {
-                    handleCommandMessage(publish, payload)
+            ha.controlTopics.forEach { topic ->
+                subscribeTopic(
+                    subscribingClient,
+                    epoch,
+                    topic,
+                    MqttQosOption.AT_LEAST_ONCE,
+                    MqttRetainHandlingOption.DO_NOT_SEND,
+                    true,
+                ) { publish, payload ->
+                    // Retained control messages must not execute after a reconnect.
+                    if (!publish.isRetain) {
+                        when (topic) {
+                            ha.commandTopic -> handleCommandMessage(publish, payload)
+                            ha.settingsCommandTopic ->
+                                handleSettingsMessage(publish, payload)
+                            ha.requestTopic ->
+                                handleRequestMessage(publish, payload, ha)
+                        }
+                    }
                 }
             }
         }
-        val haCommandTopic = homeAssistantSession?.discovery?.commandTopic
+        val haControlTopics =
+            homeAssistantSession?.discovery?.controlTopics.orEmpty()
         if (
-            mqttVariableReplacement(config.subscribeCommandTopic) != haCommandTopic
+            mqttVariableReplacement(config.subscribeCommandTopic) !in haControlTopics
         ) {
             subscribeTopic(
                 subscribingClient,
@@ -1153,159 +1170,191 @@ object MqttManager {
             ) { publish, payload ->
                 // A wildcard command subscription can also match the dedicated
                 // HA topic. Its protected callback owns that delivery.
-                if (publish.topic.toString() != haCommandTopic) {
+                if (publish.topic.toString() !in haControlTopics) {
                     handleCommandMessage(publish, payload)
                 }
             }
         }
 
-        subscribeTopic(
-            subscribingClient,
-            epoch = epoch,
-            topic = config.subscribeSettingsTopic,
-            qos = config.subscribeSettingsQos,
-            retainHandling = config.subscribeSettingsRetainHandling,
-            retainAsPublished = config.subscribeSettingsRetainAsPublished,
-            onMessage = { publish, payloadStr ->
-                val settingsMessage = runCatching {
-                    BaseJson.decodeFromString<InboundSettingsMessage>(payloadStr)
+        if (
+            mqttVariableReplacement(config.subscribeSettingsTopic) !in
+                haControlTopics
+        ) {
+            subscribeTopic(
+                subscribingClient,
+                epoch,
+                config.subscribeSettingsTopic,
+                config.subscribeSettingsQos,
+                config.subscribeSettingsRetainHandling,
+                config.subscribeSettingsRetainAsPublished,
+            ) { publish, payload ->
+                if (publish.topic.toString() !in haControlTopics) {
+                    handleSettingsMessage(publish, payload)
                 }
-                    .getOrElse { e ->
-                        addDebugLog(
-                            "settings error",
-                            e.message,
-                            messageId =
-                                getValueFromPrimitiveJson(payloadStr, "messageId"),
-                        )
-                        return@subscribeTopic
-                    }
-
-                val targetInstances = settingsMessage.targetInstances
-                val targetUsernames = settingsMessage.targetUsernames
-                if (
-                    (targetInstances.isNullOrEmpty() ||
-                        targetInstances.contains(config.appInstanceId)) &&
-                        (targetUsernames.isNullOrEmpty() ||
-                            targetUsernames.contains(config.username))
-                ) {
-                    addDebugLog(
-                        "settings received",
-                        "topic: ${publish.topic}",
-                        messageId = settingsMessage.messageId,
-                    )
-                    RemoteMessageManager.emitSettings(
-                        settingsMessage,
-                        RemoteMessageManager.RemoteMessage.Source.MQTT,
-                    )
-                } else {
-                    addDebugLog(
-                        "settings received (ignored)",
-                        "topic: ${publish.topic}",
-                        messageId = settingsMessage.messageId,
-                    )
+            }
+        }
+        if (
+            mqttVariableReplacement(config.subscribeRequestTopic) !in haControlTopics
+        ) {
+            subscribeTopic(
+                subscribingClient,
+                epoch,
+                config.subscribeRequestTopic,
+                config.subscribeRequestQos,
+                config.subscribeRequestRetainHandling,
+                config.subscribeRequestRetainAsPublished,
+            ) { publish, payload ->
+                if (publish.topic.toString() !in haControlTopics) {
+                    handleRequestMessage(publish, payload)
                 }
-            },
-        )
+            }
+        }
+    }
 
-        subscribeTopic(
-            subscribingClient,
-            epoch = epoch,
-            topic = config.subscribeRequestTopic,
-            qos = config.subscribeRequestQos,
-            retainHandling = config.subscribeRequestRetainHandling,
-            retainAsPublished = config.subscribeRequestRetainAsPublished,
-            onMessage = { publish, payloadStr ->
-                @SuppressLint("NewApi")
-                val responseTopic =
-                    publish.responseTopic.takeIf { it.isPresent }?.get()?.toString()
-                @SuppressLint("NewApi")
-                val correlationData =
-                    publish.correlationData
-                        .takeIf { it.isPresent }
-                        ?.let { buf ->
-                            val bytes =
-                                ByteArray(buf.get().remaining()).also {
-                                    buf.get().get(it)
-                                }
-                            String(bytes, UTF_8)
+    private fun handleSettingsMessage(publish: Mqtt5Publish, payloadStr: String) {
+        val settingsMessage = runCatching {
+            BaseJson.decodeFromString<InboundSettingsMessage>(payloadStr)
+        }
+            .getOrElse { e ->
+                addDebugLog(
+                    "settings error",
+                    e.message,
+                    messageId = getValueFromPrimitiveJson(payloadStr, "messageId"),
+                )
+                return
+            }
+
+        val targetInstances = settingsMessage.targetInstances
+        val targetUsernames = settingsMessage.targetUsernames
+        if (
+            (targetInstances.isNullOrEmpty() ||
+                targetInstances.contains(config.appInstanceId)) &&
+                (targetUsernames.isNullOrEmpty() ||
+                    targetUsernames.contains(config.username))
+        ) {
+            addDebugLog(
+                "settings received",
+                "topic: ${publish.topic}",
+                messageId = settingsMessage.messageId,
+            )
+            RemoteMessageManager.emitSettings(
+                settingsMessage,
+                RemoteMessageManager.RemoteMessage.Source.MQTT,
+            )
+        } else {
+            addDebugLog(
+                "settings received (ignored)",
+                "topic: ${publish.topic}",
+                messageId = settingsMessage.messageId,
+            )
+        }
+    }
+
+    private fun handleRequestMessage(
+        publish: Mqtt5Publish,
+        payloadStr: String,
+        homeAssistant: HomeAssistantDiscovery? = null,
+    ) {
+        @SuppressLint("NewApi")
+        val responseTopic =
+            publish.responseTopic.takeIf { it.isPresent }?.get()?.toString()
+        @SuppressLint("NewApi")
+        val correlationData =
+            publish.correlationData
+                .takeIf { it.isPresent }
+                ?.let { buf ->
+                    val bytes =
+                        ByteArray(buf.get().remaining()).also {
+                            buf.get().get(it)
                         }
-
-                try {
-                    val request =
-                        InboundRequestJsonParser.decodeFromString<
-                            InboundRequestMessage
-                        >(
-                            payloadStr
-                        )
-
-                    val targetInstances = request.targetInstances
-                    val targetUsernames = request.targetUsernames
-                    if (
-                        (targetInstances.isNullOrEmpty() ||
-                            targetInstances.contains(config.appInstanceId)) &&
-                            (targetUsernames.isNullOrEmpty() ||
-                                targetUsernames.contains(config.username))
-                    ) {
-                        request.responseTopic =
-                            responseTopic ?: request.responseTopic
-                        request.correlationData =
-                            correlationData ?: request.correlationData
-
-                        addDebugLog(
-                            "request received",
-                            "topic: ${publish.topic}\nrequest: $request",
-                            request.messageId,
-                        )
-                        RemoteMessageManager.emitRequest(
-                            request,
-                            RemoteMessageManager.RemoteMessage.Source.MQTT,
-                        )
-                    } else {
-                        addDebugLog(
-                            "request received (ignored)",
-                            "topic: ${publish.topic}\nrequest: $request",
-                            request.messageId,
-                        )
-                    }
-                } catch (e: Exception) {
-                    val messageId =
-                        getValueFromPrimitiveJson(payloadStr, "messageId")
-                    val errorRequest =
-                        InboundErrorRequest(
-                            messageId = messageId,
-                            responseTopic =
-                                responseTopic
-                                    ?: getValueFromPrimitiveJson(
-                                        payloadStr,
-                                        "responseTopic",
-                                    ),
-                            correlationData =
-                                correlationData
-                                    ?: getValueFromPrimitiveJson(
-                                        payloadStr,
-                                        "correlationData",
-                                    ),
-                            targetInstances = runCatching {
-                                    Json.parseToJsonElement(payloadStr)
-                                        .jsonObject["targetInstances"]
-                                        ?.jsonArray
-                                        ?.mapNotNull {
-                                            it.jsonPrimitive.contentOrNull
-                                        }
-                                        ?.toSet()
-                                }
-                                    .getOrNull(),
-                            payloadStr = payloadStr,
-                            error = e.message ?: e.toString(),
-                        )
-                    RemoteMessageManager.emitRequest(
-                        errorRequest,
-                        RemoteMessageManager.RemoteMessage.Source.MQTT,
-                    )
-                    addDebugLog("request error", e.message, messageId)
+                    String(bytes, UTF_8)
                 }
-            },
-        )
+
+        try {
+            val request =
+                InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(
+                    payloadStr
+                )
+
+            val targetInstances = request.targetInstances
+            val targetUsernames = request.targetUsernames
+            if (
+                (targetInstances.isNullOrEmpty() ||
+                    targetInstances.contains(config.appInstanceId)) &&
+                    (targetUsernames.isNullOrEmpty() ||
+                        targetUsernames.contains(config.username))
+            ) {
+                request.responseTopic =
+                    if (homeAssistant == null) {
+                        responseTopic ?: request.responseTopic
+                    } else {
+                        val requestType =
+                            InboundRequestJsonParser.encodeToJsonElement<
+                                    InboundRequestMessage
+                                >(
+                                    request
+                                )
+                                .jsonObject
+                                .getValue("requestType")
+                                .jsonPrimitive
+                                .content
+                        homeAssistant.responseTopic(requestType)
+                    }
+                request.correlationData = correlationData ?: request.correlationData
+
+                addDebugLog(
+                    "request received",
+                    "topic: ${publish.topic}\nrequest: $request",
+                    request.messageId,
+                )
+                RemoteMessageManager.emitRequest(
+                    request,
+                    RemoteMessageManager.RemoteMessage.Source.MQTT,
+                )
+            } else {
+                addDebugLog(
+                    "request received (ignored)",
+                    "topic: ${publish.topic}\nrequest: $request",
+                    request.messageId,
+                )
+            }
+        } catch (e: Exception) {
+            val messageId = getValueFromPrimitiveJson(payloadStr, "messageId")
+            val errorRequest =
+                InboundErrorRequest(
+                    messageId = messageId,
+                    responseTopic =
+                        homeAssistant?.responseTopic("error")
+                            ?: responseTopic
+                            ?: getValueFromPrimitiveJson(
+                                payloadStr,
+                                "responseTopic",
+                            ),
+                    correlationData =
+                        correlationData
+                            ?: getValueFromPrimitiveJson(
+                                payloadStr,
+                                "correlationData",
+                            ),
+                    targetInstances = runCatching {
+                            Json.parseToJsonElement(payloadStr)
+                                .jsonObject["targetInstances"]
+                                ?.jsonArray
+                                ?.mapNotNull {
+                                    it.jsonPrimitive.contentOrNull
+                                }
+                                ?.toSet()
+                        }
+                            .getOrNull(),
+                    payloadStr = payloadStr,
+                    error = e.message ?: e.toString(),
+                )
+            RemoteMessageManager.emitRequest(
+                errorRequest,
+                RemoteMessageManager.RemoteMessage.Source.MQTT,
+            )
+            addDebugLog("request error", e.message, messageId)
+        }
     }
 
     private fun handleCommandMessage(publish: Mqtt5Publish, payloadStr: String) {

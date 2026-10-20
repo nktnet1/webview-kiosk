@@ -17,27 +17,142 @@ Discovery is disabled by default. Changes to these settings take effect after
 reconnecting MQTT. The existing MQTT command, settings, request, response, and
 event interfaces continue to work.
 
-## Entities
+## Commands
 
-| Entity | Type | Behaviour |
-| --- | --- | --- |
-| Battery | Sensor | Battery percentage |
-| Current URL | Sensor | Current page URL, limited to 255 characters |
-| Screen | Binary sensor | Whether the device is interactive |
-| Kiosk lock | Switch | Read and change the app's kiosk lock state |
-| Go home | Button | Navigate to the configured home page |
-| Refresh | Button | Reload the current page |
-| Go back | Button | Navigate backwards |
-| Go forward | Button | Navigate forwards |
+All 17 remote command types have discovered controls:
 
-Controls use the existing remote command handlers and their permissions.
-Navigation requires an active WebView. Kiosk lock controls use the app's kiosk
-mode, rather than the Android device screen lock.
+| Commands | Home Assistant control |
+| --- | --- |
+| `go_back`, `go_forward`, `go_home`, `refresh` | Navigation buttons |
+| `clear_history`, `clear_cache` | Clear buttons |
+| `lock`, `unlock` | Kiosk lock switch |
+| `reconnect` | Reconnect MQTT button |
+| `lock_device` | Lock device button |
+| `page_up`, `page_down` | Page buttons, plus top/bottom buttons using `absolute: true` |
+| `go_to_url` | Text input containing the destination URL |
+| `search` | Text input containing the query |
+| `toast` | Notify action containing the toast message |
+| `notify` | Notify action containing the notification body; other fields use the command defaults |
+| `launch_package` | Text input containing the Android package name |
+
+Use the **Command JSON** notify entity to send optional command fields, such as
+`wakeScreen`, `interact`, a notification title/priority, or a launch activity.
+For example:
+
+```json
+{"command":"notify","data":{"contentTitle":"Door","contentText":"Visitor","silent":true},"wakeScreen":true}
+```
+
+Call Home Assistant's `notify.send_message` action with the entity as its target
+and the complete JSON as `message`. The template targets this app instance
+automatically. Notify actions support messages and JSON longer than 255 characters,
+subject to Home Assistant's template and broker packet limits. For **Notification**, the action's
+message becomes `contentText`; use **Command JSON** for a custom notification
+title or other options.
+
+The dedicated URL, search, and package text inputs are limited to 255 characters.
+Go to URL shows the current page URL when it fits within that limit; longer URLs
+leave its input blank. Search and launch-package inputs start blank. Their state
+is initialised from the retained kiosk state, so a new input is not `Unknown`.
+Use **Command JSON** for longer arguments.
+
+Controls use the existing remote handlers and permissions. Navigation requires
+an active WebView. The kiosk lock switch controls the app's kiosk mode. Lock
+device requires device owner permission; notifications require the app's
+notification setting and Android permission.
+
+## Configuration controls
+
+Discovery includes a control for every one of the app's 153 configurable settings,
+generated from the managed configuration catalogue:
+
+| Setting type | Home Assistant control |
+| --- | --- |
+| Boolean | Switch |
+| Integer | Number with the app's supported range |
+| Enum | Select using the app's accepted enum values |
+| String | Text |
+| Ordered list of actions | Text containing a JSON array, for example `["HISTORY","CACHE"]` |
+| Password | Write-only text in password mode |
+
+All discovered entities are **enabled by default**, including configuration
+controls, JSON actions, result sensors, and the request error sensor. Configuration
+controls use the same settings import handler as the normal remote API. Changes
+request the usual WebView/device settings reload.
+MQTT connection and discovery changes require the **Reconnect MQTT** button;
+changing MQTT enablement or credentials can interrupt remote access.
+
+Non-password controls report the effective setting and a `managed` attribute.
+An administrator-managed control is unavailable for editing, and managed policy
+continues to override any attempted remote change. Setting state refreshes after
+preference changes, on connection/Home Assistant birth, and every 30 seconds.
+
+Home Assistant text entities accept at most 255 characters. If an existing
+string or encoded action list is longer, its text state is blank and its full
+value is available in the entity's `value` attribute. You can submit a shorter
+replacement. For longer values, use the **Settings JSON** notify entity and
+call `notify.send_message` with the existing settings envelope as `message`, for
+example:
+
+```json
+{"showToast":false,"data":{"settings":{"appearance.custom_block_page_html":"<h1>Welcome</h1>"}}}
+```
+
+Settings JSON supports all settings, optional `reloadActivity`/`showToast` fields,
+and values longer than 255 characters, subject to Home Assistant and broker limits. Both a
+text input and the JSON action replace each supplied setting's entire value,
+including multiline lists and scripts.
+
+The MQTT password and custom unlock password always report a blank input and
+have no readable credential values or value attributes. They are omitted from
+all Home Assistant settings snapshots and
+request results. Password inputs can replace or clear a password within the
+255-character limit; **Settings JSON** accepts longer passwords. Other
+configuration values, including URLs and scripts, are published as configured.
+
+## Status and requests
+
+Status entities cover battery percentage, current URL, screen interactivity,
+kiosk lock, lock type, last interaction time, app brightness, and system
+brightness. Current URL has a 255-character state and a full `url` attribute.
+Brightness values follow the existing status API: app brightness can be `-1`
+when no activity window is available, and system brightness uses Android's
+0–255 scale.
 
 State is published on connection, when Home Assistant announces `online`, and
 every 30 seconds while connected. URL, screen, and kiosk lock events also update
 state immediately. Each app instance has stable device and entity identifiers,
 independent of its display name, MQTT username, and MQTT client ID.
+
+Each request has a **Refresh** button and a corresponding enabled diagnostic
+result sensor. Press a request button to populate its result; until then its
+response time is unknown. The request error sensor populates only after a failed
+or malformed request routed to its topic. The sensor state is the response time,
+and the complete response data is
+in its `result` attribute, avoiding the entity state length limit.
+
+| Request | Result |
+| --- | --- |
+| `get_status` | All status fields; also refreshes the status entities |
+| `get_settings` | Exported settings excluding the two passwords; also refreshes configuration controls |
+| `get_system_info` | Complete app and device metadata |
+| `get_launchable_packages` | Launchable package names |
+| `get_lock_task_packages` | Permitted lock-task package names, on Android 8 and later |
+
+A second launchable-packages button requests only lock-task-permitted packages.
+Both variants update the same launchable-packages result. The **Request JSON**
+notify entity supports request options, such as selecting settings:
+
+```json
+{"requestType":"get_settings","data":{"settings":["device.brightness","appearance.theme"]}}
+```
+
+Call `notify.send_message` on **Request JSON**, passing the JSON as `message`.
+It accepts filters and envelopes longer than 255 characters. The app targets
+the request to this instance and routes the result to its dedicated Home Assistant result topic;
+a supplied response topic is overridden. Failed requests report an `error`
+attribute; malformed requests use the **Request error** diagnostic entity.
+The existing raw MQTT API keeps its original request/response format.
 
 ## Settings
 
@@ -66,6 +181,19 @@ a custom birth topic, enter it here, independently of the discovery prefix.
 Optional display name, such as `Kitchen kiosk`. If blank, the app uses
 `Webview Kiosk <app-instance-id>`. Renaming preserves entity IDs and automations.
 
+## Upgrading from disabled-by-default discovery
+
+After installing the update, restart the kiosk's MQTT connection to republish
+its retained discovery configuration. The new default applies to newly registered
+entities. Home Assistant keeps an existing entity's registry enable/disable choice;
+changing `enabled_by_default` does not override it.
+
+For entities registered by the earlier version, open **Settings → Devices &
+services → Entities**, filter to the kiosk's MQTT device and disabled entities,
+select them, and enable them. Also check the MQTT integration's **Enable newly
+added entities** preference if freshly discovered entities are still disabled.
+Entity unique IDs stay the same, so existing names and automations are preserved.
+
 ## Topics and broker permissions
 
 | Topic | App access | Retained |
@@ -75,10 +203,15 @@ Optional display name, such as `Kitchen kiosk`. If blank, the app uses
 | `wk/<app-instance-id>/ha/state` | Publish JSON state | Yes |
 | `wk/<app-instance-id>/ha/availability` | Publish `online` / `offline` | Yes |
 | `wk/<app-instance-id>/ha/command` | Subscribe to JSON commands | No |
+| `wk/<app-instance-id>/ha/settings/set` | Subscribe to JSON settings updates | No |
+| `wk/<app-instance-id>/ha/settings` | Publish effective settings and managed flags | Yes |
+| `wk/<app-instance-id>/ha/request` | Subscribe to JSON requests | No |
+| `wk/<app-instance-id>/ha/response/<request-type>` | Publish request result and response time | Yes |
 
 Allow these topics in broker ACLs for the kiosk and Home Assistant. Commands are
 targeted to the app instance and are never retained by the discovered controls.
-Retained messages on the dedicated command topic are ignored.
+Retained messages on all three dedicated control topics are ignored, including
+when a normal wildcard subscription also matches them.
 
 The app republishes discovery on reconnect and Home Assistant restart. If you
 disable discovery or change its prefix, reconnect to the same broker to remove

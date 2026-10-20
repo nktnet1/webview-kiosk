@@ -65,8 +65,9 @@ fun SettingsMqttHomeAssistantScreen(navController: NavController) {
                 label = stringResource(R.string.mqtt_home_assistant_enabled_title),
                 infoText =
                     "Publish the kiosk as a Home Assistant MQTT device. " +
-                        "Includes battery, current URL, screen state, kiosk lock, " +
-                        "and navigation controls. Reconnect MQTT after changing this setting.",
+                        "Includes status, all remote commands, configuration controls, " +
+                        "and request results. All discovered entities are enabled by default. " +
+                        "Reconnect MQTT after changing this setting.",
                 initialValue = settings.mqttHomeAssistantEnabled,
                 settingKey = enabledKey,
                 restricted = settings.isRestricted(enabledKey),

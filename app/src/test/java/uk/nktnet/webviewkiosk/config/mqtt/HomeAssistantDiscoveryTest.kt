@@ -15,12 +15,12 @@ class HomeAssistantDiscoveryTest {
     private val discovery = HomeAssistantDiscovery("instance-a", "homeassistant")
 
     @Test
-    fun deviceDiscoveryGroupsEightEntitiesWithStableUniqueIds() {
+    fun deviceDiscoveryGroupsEntitiesWithStableUniqueIds() {
         val first = discovery.payload("Kitchen", "Example", "Tablet", "1.0")
         val renamed = discovery.payload("Hallway", "Example", "Tablet", "2.0")
         val components = first.getValue("components").jsonObject
 
-        assertEquals(8, components.size)
+        assertEquals(40, components.size)
         assertEquals(
             "Webview Kiosk",
             first.getValue("origin").jsonObject["name"]?.jsonPrimitive?.content,
@@ -54,6 +54,12 @@ class HomeAssistantDiscoveryTest {
             discovery.payload("", "", "", "1")["components"]!!.jsonObject
         components.values.forEach { component ->
             val entity = component.jsonObject
+            if (
+                entity["command_topic"]?.jsonPrimitive?.content !=
+                    discovery.commandTopic
+            ) {
+                return@forEach
+            }
             listOf("payload_on", "payload_off", "payload_press").forEach payload@{
                 key ->
                 val payload = entity[key]?.jsonPrimitive?.content ?: return@payload

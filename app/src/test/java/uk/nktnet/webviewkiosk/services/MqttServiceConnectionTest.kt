@@ -3,7 +3,9 @@ package uk.nktnet.webviewkiosk.services
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
+import android.content.RestrictionsManager
 import android.os.BatteryManager
+import android.os.Bundle
 import android.os.Looper
 import com.hivemq.client.mqtt.MqttClientState
 import java.io.ByteArrayOutputStream
@@ -566,8 +568,11 @@ class MqttServiceConnectionTest {
             "Kitchen kiosk",
             device.getJSONObject("device").getString("name"),
         )
-        assertEquals(8, device.getJSONObject("components").length())
-        assertEquals(ha.availabilityTopic, device.getString("availability_topic"))
+        assertEquals(193, device.getJSONObject("components").length())
+        assertEquals(
+            ha.availabilityTopic,
+            device.getJSONArray("availability").getJSONObject(0).getString("topic"),
+        )
         val state = awaitPublication(connection, ha.stateTopic)
         assertTrue(state.retain)
         assertEquals(
@@ -585,9 +590,7 @@ class MqttServiceConnectionTest {
         assertTrue(will.retain)
         assertNull(will.messageExpiryInterval)
         assertTrue(
-            connection.subscriptions.containsAll(
-                setOf(ha.birthTopic, ha.commandTopic)
-            )
+            connection.subscriptions.containsAll(ha.controlTopics + ha.birthTopic)
         )
     }
 
@@ -609,7 +612,7 @@ class MqttServiceConnectionTest {
             "online",
             awaitPublication(connection, ha.availabilityTopic).payload,
         )
-        assertEquals(5, connection.subscriptionCount.get())
+        assertEquals(7, connection.subscriptionCount.get())
     }
 
     @Test
@@ -702,7 +705,7 @@ class MqttServiceConnectionTest {
         MqttManager.restart(context, DisconnectCause.USER_INITIATED_RESTART)
         val second = broker.awaitConnection()
         second.acknowledgeConnect()
-        awaitCondition { second.subscriptions.size == 5 }
+        awaitCondition { second.subscriptions.size == 7 }
         val current = homeAssistant()
 
         assertTrue(awaitPublication(second, previous.configTopic, "").retain)
@@ -727,7 +730,7 @@ class MqttServiceConnectionTest {
         first.close()
         val second = broker.awaitConnection()
         second.acknowledgeConnect()
-        awaitCondition { second.subscriptions.size == 5 }
+        awaitCondition { second.subscriptions.size == 7 }
 
         assertSame(originalClient, field("client").get(MqttManager))
         assertTrue(awaitPublication(second, ha.configTopic).retain)
@@ -735,7 +738,7 @@ class MqttServiceConnectionTest {
             "online",
             awaitPublication(second, ha.availabilityTopic).payload,
         )
-        assertEquals(5, second.subscriptionCount.get())
+        assertEquals(7, second.subscriptionCount.get())
         second.publications.clear()
         second.publish(ha.birthTopic, "online")
         awaitPublication(second, ha.configTopic)
@@ -783,6 +786,166 @@ class MqttServiceConnectionTest {
         )
     }
 
+    @Test
+    fun homeAssistantSettingsApplyAndPublishAuthoritativeStateWithoutPasswords() {
+        settings.mqttHomeAssistantEnabled = true
+        settings.mqttPassword = "broker-secret"
+        settings.customAuthPassword = "unlock-secret"
+        val connection = connect()
+        val ha = homeAssistant()
+        val initial = awaitPublication(connection, ha.settingsStateTopic)
+        assertTrue(initial.retain)
+        assertFalse(initial.payload.contains("broker-secret"))
+        assertFalse(initial.payload.contains("unlock-secret"))
+        connection.publications.clear()
+        connection.publish(
+            ha.settingsCommandTopic,
+            """{"showToast":false,"reloadActivity":false,"data":{"settings":{"device.brightness":24,"web_engine.enable_javascript":false,"appearance.theme":"DARK","web_lifecycle.reset_actions":["CACHE"],"device.custom_auth_password":"new-secret"}}}""",
+        )
+        awaitCondition {
+            settings.brightness == 24 && settings.customAuthPassword == "new-secret"
+        }
+        assertFalse(settings.enableJavaScript)
+        shadowOf(Looper.getMainLooper()).idleFor(200, TimeUnit.MILLISECONDS)
+        val state =
+            JSONObject(awaitPublication(connection, ha.settingsStateTopic).payload)
+                .getJSONObject("settings")
+        assertEquals(24, state.getInt("device.brightness"))
+        assertFalse(state.getBoolean("web_engine.enable_javascript"))
+        assertEquals("DARK", state.getString("appearance.theme"))
+        assertEquals(
+            "CACHE",
+            state.getJSONArray("web_lifecycle.reset_actions").getString(0),
+        )
+        assertFalse(state.has("device.custom_auth_password"))
+        assertFalse(state.has("mqtt.connection.password"))
+    }
+
+    @Test
+    fun homeAssistantRetainedControlsAndForeignTargetsDoNotApplySettingsOrRequests() {
+        settings.mqttHomeAssistantEnabled = true
+        val connection = connect()
+        val ha = homeAssistant()
+        awaitPublication(connection, ha.availabilityTopic, "online")
+        val original = settings.brightness
+        connection.publish(
+            ha.settingsCommandTopic,
+            """{"data":{"settings":{"device.brightness":33}}}""",
+            retain = true,
+        )
+        connection.publish(
+            ha.settingsCommandTopic,
+            """{"targetInstances":["elsewhere"],"data":{"settings":{"device.brightness":34}}}""",
+        )
+        connection.publish(
+            ha.requestTopic,
+            """{"requestType":"get_status","messageId":"retained-ha"}""",
+            retain = true,
+        )
+        connection.publish(
+            ha.requestTopic,
+            """{"requestType":"get_status","messageId":"foreign-ha","targetInstances":["elsewhere"]}""",
+        )
+        awaitCondition {
+            MqttManager.debugLogHistory.any {
+                it.tag == "request received (ignored)" &&
+                    it.messageId == "foreign-ha"
+            }
+        }
+        assertEquals(original, settings.brightness)
+        assertFalse(
+            connection.publications.any {
+                it.topic == ha.responseTopic("get_status")
+            }
+        )
+    }
+
+    @Test
+    fun homeAssistantManagedSettingsStayEnforcedAndAreMarkedUnavailable() {
+        settings.mqttHomeAssistantEnabled = true
+        val restrictions =
+            context.getSystemService(Context.RESTRICTIONS_SERVICE)
+                as RestrictionsManager
+        shadowOf(restrictions)
+            .setApplicationRestrictions(
+                Bundle().apply { putInt("device.brightness", 19) }
+            )
+        try {
+            val connection = connect()
+            val ha = homeAssistant()
+            val state =
+                JSONObject(
+                    awaitPublication(connection, ha.settingsStateTopic).payload
+                )
+            assertTrue(
+                state.getJSONObject("managed").getBoolean("device.brightness")
+            )
+            connection.publications.clear()
+            connection.publish(
+                ha.settingsCommandTopic,
+                """{"showToast":false,"reloadActivity":false,"data":{"settings":{"device.brightness":68}}}""",
+            )
+            awaitCondition {
+                MqttManager.debugLogHistory.any { it.tag == "settings received" }
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(1, TimeUnit.SECONDS)
+            assertEquals(19, settings.brightness)
+        } finally {
+            shadowOf(restrictions).setApplicationRestrictions(Bundle())
+        }
+    }
+
+    @Test
+    fun homeAssistantRequestButtonsReturnEachResultOnItsDedicatedTopic() {
+        settings.mqttHomeAssistantEnabled = true
+        settings.customAuthPassword = "private-setting"
+        val connection = connect()
+        val ha = homeAssistant()
+        val components =
+            JSONObject(awaitPublication(connection, ha.configTopic).payload)
+                .getJSONObject("components")
+        HomeAssistantDiscovery.requestNames.keys.forEach { request ->
+            connection.publications.clear()
+            connection.publish(
+                ha.requestTopic,
+                components.getJSONObject(request).getString("payload_press"),
+            )
+            val response = awaitPublication(connection, ha.responseTopic(request))
+            assertTrue(response.retain)
+            val result = JSONObject(response.payload)
+            assertTrue(result.has("result"))
+            assertTrue(result.has("updatedAt"))
+            assertFalse(response.payload.contains("private-setting"))
+        }
+    }
+
+    @Test
+    fun homeAssistantRequestOptionsAndErrorResultsUseProtectedResponseTopics() {
+        settings.mqttHomeAssistantEnabled = true
+        val connection = connect()
+        val ha = homeAssistant()
+        connection.publish(
+            ha.requestTopic,
+            """{"requestType":"get_settings","responseTopic":"unrelated/topic","data":{"settings":["device.brightness","device.custom_auth_password"]}}""",
+        )
+        val result =
+            JSONObject(
+                    awaitPublication(connection, ha.responseTopic("get_settings"))
+                        .payload
+                )
+                .getJSONObject("result")
+                .getJSONObject("settings")
+        assertEquals(setOf("device.brightness"), result.keys().asSequence().toSet())
+        assertFalse(connection.publications.any { it.topic == "unrelated/topic" })
+        connection.publish(ha.requestTopic, """{"requestType":"invalid"}""")
+        assertTrue(
+            JSONObject(
+                    awaitPublication(connection, ha.responseTopic("error")).payload
+                )
+                .has("error")
+        )
+    }
+
     private fun homeAssistant() =
         HomeAssistantDiscovery(
             systemSettings.appInstanceId,
@@ -812,7 +975,7 @@ class MqttServiceConnectionTest {
         connection.acknowledgeConnect()
         val count =
             if (settings.mqttHomeAssistantEnabled) {
-                5
+                7
             } else {
                 3
             }
