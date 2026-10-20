@@ -174,7 +174,7 @@ fun WebviewScreen(navController: NavController) {
 
     var linkToOpen by remember { mutableStateOf<String?>(null) }
     var imageToOpen by remember { mutableStateOf<String?>(null) }
-    var progress by remember { mutableIntStateOf(0) }
+    var progress by remember { mutableIntStateOf(100) }
 
     val showAddressBar =
         when (userSettings.addressBarMode) {
@@ -707,7 +707,7 @@ fun WebviewScreen(navController: NavController) {
             Box(modifier = Modifier.weight(1f)) {
                 composableWebView()
 
-                if (progress < 100) {
+                if (userSettings.showLoadingProgressBar && progress < 100) {
                     LinearProgressIndicator(
                         progress = { progress / 100f },
                         modifier =

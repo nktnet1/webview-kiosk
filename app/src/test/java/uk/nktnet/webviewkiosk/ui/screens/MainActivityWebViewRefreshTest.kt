@@ -12,7 +12,13 @@ import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewRootForTest
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getAllSemanticsNodes
+import androidx.compose.ui.semantics.getOrNull
 import androidx.navigation.NavHostController
+import androidx.webkit.WebResourceErrorCompat
+import androidx.webkit.WebViewClientCompat
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
@@ -149,6 +155,155 @@ class MainActivityWebViewRefreshTest {
         }
         blockingSettings.close()
         blockerField.set(null, previousBlocker)
+    }
+
+    @Test
+    fun iframeProgressCannotShowTheBarBeforeOrAfterAMainFrameLoad() {
+        val webView = webView()
+        val client = webView.webViewClient
+        val chrome = requireNotNull(webView.webChromeClient)
+        chrome.onProgressChanged(webView, 10)
+        frames()
+        assertTrue(loadingProgress().isEmpty())
+
+        val url = "https://example.invalid/signage"
+        webView.loadUrl(url)
+        client.onPageStarted(webView, url, null)
+        chrome.onProgressChanged(webView, 40)
+        frames()
+        assertEquals(listOf(0.4f), loadingProgress())
+
+        chrome.onProgressChanged(webView, 100)
+        frames()
+        assertTrue(loadingProgress().isEmpty())
+        // The page-finished callback may be delayed while iframe loads continue.
+        for (progress in listOf(5, 60, 20)) {
+            chrome.onProgressChanged(webView, progress)
+            frames()
+            assertTrue(loadingProgress().isEmpty())
+        }
+        client.onPageFinished(webView, url)
+        chrome.onProgressChanged(webView, 15)
+        frames()
+        assertTrue(loadingProgress().isEmpty())
+    }
+
+    @Test
+    fun mainFrameFinishHidesProgressAndReloadingTheSameUrlShowsItAgain() {
+        val webView = webView()
+        val client = webView.webViewClient
+        val chrome = requireNotNull(webView.webChromeClient)
+        val url = "https://example.invalid/signage"
+        webView.loadUrl(url)
+        client.onPageStarted(webView, url, null)
+        chrome.onProgressChanged(webView, 45)
+        frames()
+        assertEquals(listOf(0.45f), loadingProgress())
+
+        // Some providers finish the main frame before reporting 100% progress.
+        client.onPageFinished(webView, url)
+        chrome.onProgressChanged(webView, 15)
+        frames()
+        assertTrue(loadingProgress().isEmpty())
+
+        webView.reload()
+        client.onPageStarted(webView, url, null)
+        chrome.onProgressChanged(webView, 35)
+        frames()
+        assertEquals(listOf(0.35f), loadingProgress())
+    }
+
+    @Test
+    fun anOlderPageFinishCannotHideANewerMainFrameLoad() {
+        val webView = webView()
+        val client = webView.webViewClient
+        val chrome = requireNotNull(webView.webChromeClient)
+        val first = "https://example.invalid/first"
+        val second = "https://example.invalid/second"
+        webView.loadUrl(first)
+        client.onPageStarted(webView, first, null)
+        webView.loadUrl(second)
+        client.onPageStarted(webView, second, null)
+        chrome.onProgressChanged(webView, 60)
+        client.onPageFinished(webView, first)
+        frames()
+        assertEquals(listOf(0.6f), loadingProgress())
+
+        client.onPageFinished(webView, second)
+        frames()
+        assertTrue(loadingProgress().isEmpty())
+    }
+
+    @Test
+    fun subframeErrorsKeepProgressWhileMainFrameErrorsHideIt() {
+        val webView = webView()
+        val client = webView.webViewClient as WebViewClientCompat
+        val chrome = requireNotNull(webView.webChromeClient)
+        val url = "https://example.invalid/signage"
+        val error =
+            object : WebResourceErrorCompat() {
+                override fun getErrorCode(): Int = -2
+
+                override fun getDescription(): CharSequence = "Unable to connect"
+            }
+        webView.loadUrl(url)
+        client.onPageStarted(webView, url, null)
+        chrome.onProgressChanged(webView, 45)
+        client.onReceivedError(
+            webView,
+            documentRequest("https://example.invalid/frame", mainFrame = false),
+            error,
+        )
+        frames()
+        assertEquals(listOf(0.45f), loadingProgress())
+
+        client.onReceivedError(webView, documentRequest(url), error)
+        chrome.onProgressChanged(webView, 20)
+        frames()
+        assertTrue(loadingProgress().isEmpty())
+    }
+
+    @Test
+    fun stoppingALoadPreventsLaterProgressFromShowingTheBar() {
+        val webView = webView()
+        val chrome = requireNotNull(webView.webChromeClient)
+        val url = "https://example.invalid/signage"
+        webView.loadUrl(url)
+        webView.webViewClient.onPageStarted(webView, url, null)
+        chrome.onProgressChanged(webView, 40)
+        frames()
+        assertEquals(listOf(0.4f), loadingProgress())
+
+        webView.stopLoading()
+        chrome.onProgressChanged(webView, 20)
+        frames()
+        assertTrue(loadingProgress().isEmpty())
+    }
+
+    @Test
+    fun theVisibilitySettingStillHidesProgressDuringMainFrameLoads() {
+        val settings = UserSettings(activity)
+        settings.showLoadingProgressBar = false
+        val webView = webView()
+        val chrome = requireNotNull(webView.webChromeClient)
+        val url = "https://example.invalid/signage"
+        webView.loadUrl(url)
+        webView.webViewClient.onPageStarted(webView, url, null)
+        chrome.onProgressChanged(webView, 40)
+        frames()
+        assertTrue(loadingProgress().isEmpty())
+
+        settings.showLoadingProgressBar = true
+        navigateToWebViewScreen(controller())
+        frames()
+        val enabledWebView = webView()
+        assertNotSame(webView, enabledWebView)
+        enabledWebView.loadUrl(url)
+        enabledWebView.webViewClient.onPageStarted(enabledWebView, url, null)
+        requireNotNull(enabledWebView.webChromeClient)
+            .onProgressChanged(enabledWebView, 50)
+        frames()
+        assertEquals(listOf(0.5f), loadingProgress())
     }
 
     @Test
@@ -553,6 +708,8 @@ class MainActivityWebViewRefreshTest {
         val currentHistory = listOf(HistoryEntry(url = currentUrl))
         settings.historyStack = currentHistory
         settings.historyIndex = 0
+        after.webViewClient.onPageStarted(after, currentUrl, null)
+        requireNotNull(after.webChromeClient).onProgressChanged(after, 40)
         oldClient.onPageStarted(before, "https://example.invalid/retired", null)
         oldClient.doUpdateVisitedHistory(
             before,
@@ -566,6 +723,7 @@ class MainActivityWebViewRefreshTest {
         assertEquals(currentHistory, settings.historyStack)
         assertEquals(0, settings.historyIndex)
         assertEquals(currentUrl, shadowOf(after).lastLoadedUrl)
+        assertEquals(listOf(0.4f), loadingProgress())
     }
 
     @Test
@@ -659,6 +817,26 @@ class MainActivityWebViewRefreshTest {
         }
         collect(view)
         return found
+    }
+
+    private fun loadingProgress(): List<Float> {
+        val progress = mutableListOf<Float>()
+        fun collect(view: View) {
+            if (view is ViewRootForTest) {
+                view.semanticsOwner
+                    .getAllSemanticsNodes(mergingEnabled = true)
+                    .mapNotNullTo(progress) {
+                        it.config
+                            .getOrNull(SemanticsProperties.ProgressBarRangeInfo)
+                            ?.current
+                    }
+            }
+            if (view is ViewGroup) {
+                (0 until view.childCount).forEach { collect(view.getChildAt(it)) }
+            }
+        }
+        collect(view)
+        return progress
     }
 
     private fun awaitCondition(condition: () -> Boolean) {

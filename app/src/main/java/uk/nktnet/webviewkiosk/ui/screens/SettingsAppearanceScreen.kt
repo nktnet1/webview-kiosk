@@ -25,6 +25,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.Blocke
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.CustomBlockPageHtmlSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.FloatingToolbarModeSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.ImmersiveModeSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.ShowLoadingProgressBarSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.ThemeSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.WebViewInsetSetting
 
@@ -55,6 +56,7 @@ fun SettingsAppearanceScreen(navController: NavController) {
             AddressBarModeSetting()
             AddressBarSizeSetting()
             AddressBarPositionSetting()
+            ShowLoadingProgressBarSetting()
 
             Spacer(modifier = Modifier.height(16.dp))
         }

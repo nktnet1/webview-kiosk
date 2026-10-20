@@ -337,6 +337,15 @@ fun createCustomWebview(
             }
         var hideFullscreen: () -> Unit = {}
         val navigation = WebViewNavigationSession(config.isActive)
+        // Only a main-frame start can reopen progress after completion.
+        // WebChromeClient also reports later iframe activity.
+        var trackLoadingProgress = false
+
+        fun finishLoadingProgress() {
+            trackLoadingProgress = false
+            config.onProgressChanged(100)
+        }
+
         var cosmetics: WebViewCosmetics? = null
         var scriptlets: WebViewScriptlets? = null
         var requests: WebViewRequests? = null
@@ -453,6 +462,13 @@ fun createCustomWebview(
                         // reloaded POST. WebView does not expose it here.
                         url?.let { beginLoad(it) }
                         super.reload()
+                    }
+
+                    override fun stopLoading() {
+                        if (navigation.isActive()) {
+                            finishLoadingProgress()
+                        }
+                        super.stopLoading()
                     }
 
                     override fun loadDataWithBaseURL(
@@ -673,6 +689,8 @@ fun createCustomWebview(
                                 url?.let {
                                     navigation.pageStarted(it)
                                 }
+                                trackLoadingProgress = true
+                                config.onProgressChanged(0)
                                 awaitingPdfPageStart = false
                                 config.setLastErrorUrl("")
                                 config.onHttpAuthRequest(null)
@@ -739,6 +757,7 @@ fun createCustomWebview(
                                         url,
                                         this@apply.url,
                                     ) ?: return
+                                finishLoadingProgress()
                                 config.finishSwipeRefresh()
                                 if (cosmetics == null) {
                                     cosmetics =
@@ -1325,6 +1344,7 @@ fun createCustomWebview(
                                 ) {
                                     return
                                 }
+                                finishLoadingProgress()
                                 if (isLocalNetworkPermissionError(error)) {
                                     config.onLocalNetworkPermissionMissing()
                                 }
@@ -1348,6 +1368,7 @@ fun createCustomWebview(
                                         ) &&
                                         !failingUrl.isNullOrEmpty()
                                 ) {
+                                    finishLoadingProgress()
                                     config.setLastErrorUrl(failingUrl)
                                 }
                             }
@@ -1383,6 +1404,9 @@ fun createCustomWebview(
                                 val wasActive = navigation.isActive()
                                 if (!navigation.dispose()) {
                                     return true
+                                }
+                                if (wasActive) {
+                                    finishLoadingProgress()
                                 }
                                 Log.e(
                                     Constants.APP_SCHEME,
@@ -1423,8 +1447,13 @@ fun createCustomWebview(
                                 view: WebView?,
                                 newProgress: Int,
                             ) {
-                                if (navigation.isActive()) {
-                                    config.onProgressChanged(newProgress)
+                                if (navigation.isActive() && trackLoadingProgress) {
+                                    if (newProgress >= 100) {
+                                        trackLoadingProgress = false
+                                    }
+                                    config.onProgressChanged(
+                                        newProgress.coerceIn(0, 100)
+                                    )
                                 }
                             }
 
