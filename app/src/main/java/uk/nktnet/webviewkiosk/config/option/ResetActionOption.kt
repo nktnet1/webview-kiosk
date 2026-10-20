@@ -2,9 +2,9 @@ package uk.nktnet.webviewkiosk.config.option
 
 /** Actions that run before returning to the home URL on an inactivity reset. */
 enum class ResetActionOption(val label: String) {
-    HISTORY("Browsing History"),
+    HISTORY("History"),
     COOKIES("Cookies"),
-    WEB_STORAGE("Website Storage (localStorage, IndexedDB)"),
+    WEB_STORAGE("Web Storage"),
     CACHE("Cache"),
     FORM_DATA("Form Data"),
     SSL_PREFERENCES("SSL Preferences"),
