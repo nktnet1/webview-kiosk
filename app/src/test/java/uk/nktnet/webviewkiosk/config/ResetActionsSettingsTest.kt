@@ -94,6 +94,24 @@ class ResetActionsSettingsTest {
     }
 
     @Test
+    fun reorderedActionsPersistAndRoundTripJsonInOrder() {
+        settings.resetActions =
+            listOf(ResetActionOption.HISTORY, ResetActionOption.CACHE)
+        val reordered = listOf(ResetActionOption.CACHE, ResetActionOption.HISTORY)
+        settings.resetActions = reordered
+
+        assertEquals(reordered, UserSettings(context).resetActions)
+
+        val exported = settings.exportJson()
+        assertEquals("CACHE", exported.getJSONArray(key).getString(0))
+        assertEquals("HISTORY", exported.getJSONArray(key).getString(1))
+
+        settings.resetActions = emptyList()
+        assertTrue(settings.importJson(exported.toString()))
+        assertEquals(reordered, settings.resetActions)
+    }
+
+    @Test
     fun missingImportKeyDoesNotChangeExistingSelection() {
         settings.resetActions = listOf(ResetActionOption.FORM_DATA)
         assertTrue(settings.importJson("{}"))

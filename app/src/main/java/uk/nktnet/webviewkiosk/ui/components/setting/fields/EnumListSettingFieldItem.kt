@@ -45,7 +45,6 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
     settingKey: String,
     restricted: Boolean,
     onSave: (List<T>) -> Unit,
-    reorderable: Boolean = true,
 ) {
     var items by remember { mutableStateOf(initialValue) }
     var savedItems by remember { mutableStateOf(initialValue) }
@@ -59,9 +58,7 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
         settingKey = settingKey,
         restricted = restricted,
         onDismissCallback = {
-            if (!reorderable) {
-                items = savedItems
-            }
+            items = savedItems
             addExpanded = false
         },
         onSave = {
@@ -73,44 +70,32 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                 modifier =
                     Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
             ) {
-                if (reorderable) {
-                    ReorderableColumn(
-                        list = items,
-                        onSettle = { from, to ->
-                            items =
-                                items.toMutableList().apply {
-                                    add(to, removeAt(from))
-                                }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { _, item, _ ->
-                        key(item.name) {
-                            ReorderableItem {
-                                EnumListSelectedItem(
-                                    label = getLabel(item),
-                                    restricted = restricted,
-                                    onRemove = { items = items - item },
-                                ) {
-                                    Icon(
-                                        painter =
-                                            painterResource(
-                                                R.drawable.drag_indicator_24
-                                            ),
-                                        contentDescription = "Drag Handle",
-                                        modifier = Modifier.draggableHandle(),
-                                    )
-                                }
+                ReorderableColumn(
+                    list = items,
+                    onSettle = { from, to ->
+                        items =
+                            items.toMutableList().apply {
+                                add(to, removeAt(from))
                             }
-                        }
-                    }
-                } else {
-                    items.forEach { item ->
-                        key(item.name) {
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { _, item, _ ->
+                    key(item.name) {
+                        ReorderableItem {
                             EnumListSelectedItem(
                                 label = getLabel(item),
                                 restricted = restricted,
                                 onRemove = { items = items - item },
-                            )
+                            ) {
+                                Icon(
+                                    painter =
+                                        painterResource(
+                                            R.drawable.drag_indicator_24
+                                        ),
+                                    contentDescription = "Drag Handle",
+                                    modifier = Modifier.draggableHandle(),
+                                )
+                            }
                         }
                     }
                 }

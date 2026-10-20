@@ -1,6 +1,6 @@
 ---
 title: Web Lifecycle
-description: Lock on launch, reset on launch, reset on inactivity
+description: Lock on launch, reset on launch, reset on inactivity, reset actions
 ---
 
 ## 1. Lock on Launch
@@ -28,7 +28,8 @@ Number of seconds of inactivity before the app resets to the home URL.
 When there is 5 seconds left, a warning countdown will be shown on
 the screen. User interactions with the screen reset the timer.
 
-The navigation history will be cleared when resetting.
+The navigation history is cleared when `History` is selected under
+`Reset Actions` (enabled by default).
 
 To disable, use the value `0`.
 
@@ -36,7 +37,34 @@ To disable, use the value `0`.
 
 **Default:** 0
 
-## 4. Dim Screen On Inactivity (seconds)
+## 4. Reset Actions
+
+Choose which browsing data to clear when the inactivity timer resets the app
+to the Home URL. Use `Add` to select more actions, remove any unwanted actions,
+or drag the handle at the end of a row to rearrange them.
+
+The app returns to the Home URL even if no actions are selected.
+
+| Action           | Description |
+|------------------|-------------|
+| History          | Clears the browsing history and back/forward navigation history. |
+| Cookies          | Removes all WebView cookies, including login sessions. |
+| Web Storage      | Deletes HTML5 website storage, including localStorage and IndexedDB. |
+| Cache            | Clears cached website resources from disk. |
+| Form Data        | Clears saved form inputs and autofill data. |
+| SSL Preferences  | Clears remembered SSL certificate decisions. |
+| Recreate WebView | Replaces the current WebView to end the in-memory page session. |
+
+Selected cleanup actions run in the configured order. `Recreate WebView`
+always runs after the other actions, before loading the Home URL.
+
+Cookies and Web Storage are shared across websites in the app. Clearing them
+may sign you out of multiple websites. App settings, bookmarks, and local files
+are not removed.
+
+**Default:** `["History"]`
+
+## 5. Dim Screen On Inactivity (seconds)
 
 Number of seconds of inactivity before the screen is dimmed (brightness = 0).
 
@@ -47,7 +75,7 @@ your `device -> brightness` setting upon new user interactions.
 
 **Default:** 0
 
-## 5. Refresh on Network Available
+## 6. Refresh on Network Available
 
 Select when the page should automatically refresh when network connectivity
 is restored.
@@ -58,7 +86,7 @@ is restored.
 
 **Default:** On Page Error
 
-## 6. Refresh on Loading Error Interval (seconds)
+## 7. Refresh on Loading Error Interval (seconds)
 
 Interval in seconds between automatic refresh attempts when a page fails
 to load. This usually indicates a connection failure, such as when the

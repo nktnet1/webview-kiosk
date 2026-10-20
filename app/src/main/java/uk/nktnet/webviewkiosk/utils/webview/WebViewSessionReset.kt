@@ -15,35 +15,37 @@ suspend fun clearSelectedResetData(
     systemSettings: SystemSettings,
     actions: Collection<ResetActionOption>,
 ) {
-    if (ResetActionOption.HISTORY in actions) {
-        systemSettings.clearHistory()
-        webView.clearHistory()
-    }
-    if (ResetActionOption.COOKIES in actions) {
-        val cookieManager = CookieManager.getInstance()
-        // Deletion is asynchronous; do not load home before its completion.
-        suspendCancellableCoroutine { continuation ->
-            cookieManager.removeAllCookies {
-                if (continuation.isActive) {
-                    continuation.resume(Unit)
-                }
+    for (action in actions) {
+        when (action) {
+            ResetActionOption.HISTORY -> {
+                systemSettings.clearHistory()
+                webView.clearHistory()
             }
+            ResetActionOption.COOKIES -> {
+                val cookieManager = CookieManager.getInstance()
+                // Deletion is asynchronous; do not load home before its completion.
+                suspendCancellableCoroutine { continuation ->
+                    cookieManager.removeAllCookies {
+                        if (continuation.isActive) {
+                            continuation.resume(Unit)
+                        }
+                    }
+                }
+                cookieManager.flush()
+            }
+            ResetActionOption.WEB_STORAGE -> {
+                WebStorage.getInstance().deleteAllData()
+            }
+            ResetActionOption.CACHE -> webView.clearCache(true)
+            ResetActionOption.FORM_DATA -> {
+                webView.clearFormData()
+                @Suppress("DEPRECATION")
+                WebViewDatabase.getInstance(webView.context).clearFormData()
+            }
+            ResetActionOption.SSL_PREFERENCES -> webView.clearSslPreferences()
+            // The host recreates the WebView after all cleanup and before loading
+            // home.
+            ResetActionOption.RECREATE_WEBVIEW -> Unit
         }
-        cookieManager.flush()
     }
-    if (ResetActionOption.WEB_STORAGE in actions) {
-        WebStorage.getInstance().deleteAllData()
-    }
-    if (ResetActionOption.CACHE in actions) {
-        webView.clearCache(true)
-    }
-    if (ResetActionOption.FORM_DATA in actions) {
-        webView.clearFormData()
-        @Suppress("DEPRECATION")
-        WebViewDatabase.getInstance(webView.context).clearFormData()
-    }
-    if (ResetActionOption.SSL_PREFERENCES in actions) {
-        webView.clearSslPreferences()
-    }
-    // RECREATE_WEBVIEW is handled by the WebviewScreen host after cleanup.
 }

@@ -55,6 +55,28 @@ class WebViewSessionResetTest {
     }
 
     @Test
+    fun cleanupRunsInConfiguredOrder() = runBlocking {
+        val calls = mutableListOf<ResetActionOption>()
+        val recordingWebView =
+            object : WebView(context) {
+                override fun clearCache(includeDiskFiles: Boolean) {
+                    calls += ResetActionOption.CACHE
+                    super.clearCache(includeDiskFiles)
+                }
+
+                override fun clearHistory() {
+                    calls += ResetActionOption.HISTORY
+                    super.clearHistory()
+                }
+            }
+
+        val selected = listOf(ResetActionOption.CACHE, ResetActionOption.HISTORY)
+        clearSelectedResetData(recordingWebView, systemSettings, selected)
+
+        assertEquals(selected, calls)
+    }
+
+    @Test
     fun recreatingWebViewAloneDoesNotClearHistory() = runBlocking {
         clearSelectedResetData(
             webView,

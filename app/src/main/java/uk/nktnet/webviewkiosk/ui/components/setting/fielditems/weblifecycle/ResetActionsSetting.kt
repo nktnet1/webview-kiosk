@@ -24,6 +24,11 @@ fun ResetActionsSetting() {
 
             Returning home always happens, even when no actions are selected.
 
+            Use the drag handle at the end to reorder the items.
+
+            Actions run in the selected order, except WebView recreation,
+            which always happens after the other actions.
+
             Cookies and website storage are shared across all websites in the app.
             Clearing them may sign users out of websites.
 
@@ -37,6 +42,5 @@ fun ResetActionsSetting() {
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.resetActions = it },
-        reorderable = false,
     )
 }
