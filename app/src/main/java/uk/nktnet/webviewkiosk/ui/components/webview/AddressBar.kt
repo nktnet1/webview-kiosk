@@ -1,8 +1,10 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
+import android.content.ClipData
 import android.webkit.WebView
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -30,25 +32,32 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -58,9 +67,55 @@ import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
+import uk.nktnet.webviewkiosk.utils.requestFocusWhenPlaced
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+
+// A URL can be a data: URI or contain an arbitrarily large query/fragment. Never
+// hand those strings to Compose's single-line text intrinsics during normal
+// WebView drawing. Retain the original string for navigation and clipboard use.
+internal const val MAX_ADDRESS_BAR_EDITABLE_LENGTH = 2_048
+private const val MAX_ADDRESS_BAR_PREVIEW_LENGTH = 256
+
+internal fun boundedAddressBarPreview(value: String): String {
+    if (value.length <= MAX_ADDRESS_BAR_PREVIEW_LENGTH) {
+        return value
+    }
+    val end =
+        if (Character.isHighSurrogate(value[MAX_ADDRESS_BAR_PREVIEW_LENGTH - 1])) {
+            MAX_ADDRESS_BAR_PREVIEW_LENGTH - 1
+        } else {
+            MAX_ADDRESS_BAR_PREVIEW_LENGTH
+        }
+    return value.substring(0, end) + "\u2026"
+}
+
+@Composable
+private fun AddressBarCopyButton(iconSize: Dp, onCopy: () -> Unit) {
+    IconButton(onClick = onCopy, modifier = Modifier.size(iconSize)) {
+        Icon(
+            painter = painterResource(R.drawable.baseline_content_copy_24),
+            contentDescription = "Copy full URL",
+            modifier = Modifier.fillMaxSize().padding(6.dp),
+        )
+    }
+}
+
+@Composable
+private fun AddressBarSearchButton(
+    onSearch: () -> Unit,
+    iconSize: Dp,
+    iconPadding: Dp,
+) {
+    IconButton(modifier = Modifier.size(iconSize), onClick = onSearch) {
+        Icon(
+            painter = painterResource(R.drawable.baseline_search_24),
+            contentDescription = "Search",
+            modifier = Modifier.fillMaxSize().padding(iconPadding),
+        )
+    }
+}
 
 @Composable
 private fun AddressBarMenuItem(
@@ -101,6 +156,23 @@ fun AddressBar(
     val context = LocalContext.current
     val activity = LocalActivity.current
     val focusManager = LocalFocusManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+    val focusRequester = remember { FocusRequester() }
+    var replacingOversizedUrl by remember { mutableStateOf(false) }
+    var replacementHadFocus by remember { mutableStateOf(false) }
+    var pastedOversizedUrl by remember { mutableStateOf(false) }
+    val oversizedUrl = urlBarText.text.length > MAX_ADDRESS_BAR_EDITABLE_LENGTH
+    // Avoid comparing very large URL keys on every recomposition.
+    val urlPreview = boundedAddressBarPreview(urlBarText.text)
+    val copyFullUrl: () -> Unit = {
+        val currentUrl = urlBarText.text
+        scope.launch {
+            clipboard.setClipEntry(
+                ClipData.newPlainText("Page URL", currentUrl).toClipEntry()
+            )
+        }
+    }
 
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
@@ -117,7 +189,7 @@ fun AddressBar(
     }
 
     LaunchedEffect(hasFocus) {
-        if (hasFocus && urlBarText.selection.collapsed) {
+        if (hasFocus && !oversizedUrl && urlBarText.selection.collapsed) {
             onUrlBarTextChange(
                 urlBarText.copy(
                     selection =
@@ -389,89 +461,166 @@ fun AddressBar(
                 .fillMaxWidth()
                 .focusProperties { canFocus = allowFocus },
     ) {
-        BasicTextField(
-            value = urlBarText,
-            onValueChange = { onUrlBarTextChange(it) },
-            singleLine = true,
-            textStyle =
-                LocalTextStyle.current.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = userSettings.addressBarSize.fontSizeSp,
-                ),
-            modifier =
-                Modifier.fillMaxWidth()
-                    .weight(1f)
-                    .onFocusChanged(onFocusChanged)
-                    .focusProperties { canFocus = allowFocus },
-            keyboardOptions =
-                KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
-            keyboardActions =
-                KeyboardActions(
-                    onSearch = {
-                        if (urlBarText.text.isNotBlank()) {
-                            addressBarSearch(urlBarText.text)
-                        }
-                    }
-                ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            decorationBox = { innerTextField ->
-                Row(
+        if (oversizedUrl && !replacingOversizedUrl) {
+            Row(
+                modifier =
+                    Modifier.weight(1f)
+                        .height(userSettings.addressBarSize.heightDp)
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            RoundedCornerShape(50),
+                        )
+                        .padding(start = 16.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
                     modifier =
-                        Modifier.fillMaxWidth()
-                            .height(userSettings.addressBarSize.heightDp)
-                            .border(
-                                1.dp,
-                                MaterialTheme.colorScheme.onSurface.copy(
-                                    alpha = 0.5f
-                                ),
-                                RoundedCornerShape(50),
-                            )
-                            .padding(start = 16.dp, end = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                        Modifier.weight(1f).fillMaxHeight().clickable(
+                            onClickLabel = "Enter a replacement URL"
+                        ) {
+                            pastedOversizedUrl = false
+                            replacingOversizedUrl = true
+                        },
+                    contentAlignment = Alignment.CenterStart,
                 ) {
-                    Box(
-                        modifier = Modifier.weight(1f).padding(end = 0.dp),
-                        contentAlignment = Alignment.CenterStart,
-                    ) {
-                        if (urlBarText.text.isEmpty()) {
-                            Text(
-                                text = "Search",
-                                style =
-                                    LocalTextStyle.current.copy(
-                                        color =
-                                            MaterialTheme.colorScheme.onSurface.copy(
-                                                alpha = 0.3f
-                                            ),
-                                        fontSize =
-                                            userSettings.addressBarSize.fontSizeSp,
-                                        fontStyle = FontStyle.Italic,
+                    Text(
+                        text = urlPreview,
+                        style =
+                            LocalTextStyle.current.copy(
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = userSettings.addressBarSize.fontSizeSp,
+                            ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                AddressBarCopyButton(
+                    iconSize = userSettings.addressBarSize.searchIconSizeDp,
+                    onCopy = copyFullUrl,
+                )
+                AddressBarSearchButton(
+                    onSearch = { addressBarSearch(urlBarText.text) },
+                    iconSize = userSettings.addressBarSize.searchIconSizeDp,
+                    iconPadding = userSettings.addressBarSize.searchIconPaddingDp,
+                )
+            }
+        } else {
+            BasicTextField(
+                // For oversized URLs, offer a replacement field rather than
+                // passing the entire URL to CoreTextField's intrinsic measurer.
+                // Pasted long addresses still live in urlBarText for Search.
+                value =
+                    when {
+                        oversizedUrl -> TextFieldValue("")
+                        else -> urlBarText
+                    },
+                onValueChange = { value ->
+                    onUrlBarTextChange(value)
+                    if (value.text.length > MAX_ADDRESS_BAR_EDITABLE_LENGTH) {
+                        replacingOversizedUrl = true
+                        pastedOversizedUrl = true
+                    }
+                },
+                singleLine = true,
+                textStyle =
+                    LocalTextStyle.current.copy(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = userSettings.addressBarSize.fontSizeSp,
+                    ),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .weight(1f)
+                        .requestFocusWhenPlaced(
+                            focusRequester,
+                            enabled = replacingOversizedUrl && allowFocus,
+                            requestKey = replacingOversizedUrl,
+                        )
+                        .onFocusChanged {
+                            if (replacingOversizedUrl) {
+                                if (it.isFocused) {
+                                    replacementHadFocus = true
+                                } else if (replacementHadFocus) {
+                                    replacingOversizedUrl = false
+                                    replacementHadFocus = false
+                                    pastedOversizedUrl = false
+                                }
+                            }
+                            onFocusChanged(it)
+                        }
+                        .focusProperties { canFocus = allowFocus },
+                keyboardOptions =
+                    KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
+                keyboardActions =
+                    KeyboardActions(
+                        onSearch = {
+                            if (urlBarText.text.isNotBlank()) {
+                                addressBarSearch(urlBarText.text)
+                            }
+                        }
+                    ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                decorationBox = { innerTextField ->
+                    Row(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .height(userSettings.addressBarSize.heightDp)
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.onSurface.copy(
+                                        alpha = 0.5f
                                     ),
+                                    RoundedCornerShape(50),
+                                )
+                                .padding(start = 16.dp, end = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            if (oversizedUrl || urlBarText.text.isEmpty()) {
+                                Text(
+                                    text =
+                                        when {
+                                            oversizedUrl && pastedOversizedUrl ->
+                                                "Long URL ready — press Search"
+                                            oversizedUrl -> "Enter a replacement URL"
+                                            else -> "Search"
+                                        },
+                                    style =
+                                        LocalTextStyle.current.copy(
+                                            color =
+                                                MaterialTheme.colorScheme.onSurface
+                                                    .copy(alpha = 0.3f),
+                                            fontSize =
+                                                userSettings.addressBarSize
+                                                    .fontSizeSp,
+                                            fontStyle = FontStyle.Italic,
+                                        ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            innerTextField()
+                        }
+                        if (oversizedUrl) {
+                            AddressBarCopyButton(
+                                iconSize =
+                                    userSettings.addressBarSize.searchIconSizeDp,
+                                onCopy = copyFullUrl,
                             )
                         }
-                        innerTextField()
-                    }
-
-                    IconButton(
-                        modifier =
-                            Modifier.size(
-                                userSettings.addressBarSize.searchIconSizeDp
-                            ),
-                        onClick = { addressBarSearch(urlBarText.text) },
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_search_24),
-                            contentDescription = "Search",
-                            modifier =
-                                Modifier.fillMaxSize()
-                                    .padding(
-                                        userSettings.addressBarSize
-                                            .searchIconPaddingDp
-                                    ),
+                        AddressBarSearchButton(
+                            onSearch = { addressBarSearch(urlBarText.text) },
+                            iconSize = userSettings.addressBarSize.searchIconSizeDp,
+                            iconPadding =
+                                userSettings.addressBarSize.searchIconPaddingDp,
                         )
                     }
-                }
-            },
-        )
+                },
+            )
+        }
 
         val enabledActions =
             remember(userSettings, isLocked) {
