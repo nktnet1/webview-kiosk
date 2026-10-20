@@ -48,6 +48,7 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.HomeAssistantDiscovery
+import uk.nktnet.webviewkiosk.config.mqtt.HomeAssistantSetting
 import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent.DisconnectCause
 import uk.nktnet.webviewkiosk.managers.CustomNotificationChannel
@@ -568,7 +569,21 @@ class MqttServiceConnectionTest {
             "Kitchen kiosk",
             device.getJSONObject("device").getString("name"),
         )
-        assertEquals(193, device.getJSONObject("components").length())
+        val expectedSettingKeys =
+            settings.exportJson().keys().asSequence().toSet() +
+                HomeAssistantSetting.passwordKeys
+        val settingControls =
+            device
+                .getJSONObject("components")
+                .keys()
+                .asSequence()
+                .filter { it.startsWith("setting_") }
+                .toSet()
+        assertEquals(expectedSettingKeys.size, settingControls.size)
+        assertEquals(
+            expectedSettingKeys.map { "setting_${it.replace('.', '_')}" }.toSet(),
+            settingControls,
+        )
         assertEquals(
             ha.availabilityTopic,
             device.getJSONArray("availability").getJSONObject(0).getString("topic"),

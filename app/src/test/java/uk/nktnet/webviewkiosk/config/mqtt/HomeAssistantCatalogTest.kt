@@ -40,14 +40,21 @@ class HomeAssistantCatalogTest {
     fun everyExportedSettingHasATypedControlWithTheRealEnumValues() {
         val settings = HomeAssistantSetting.load(context)
         val exported = UserSettings(context).exportJson()
-        assertEquals(153, settings.size)
+        val expectedSettingKeys =
+            exported.keys().asSequence().toSet() + HomeAssistantSetting.passwordKeys
+        assertEquals(expectedSettingKeys.size, settings.size)
         assertEquals(
-            exported.keys().asSequence().toSet() + HomeAssistantSetting.passwordKeys,
+            expectedSettingKeys,
             settings.map { it.key }.toSet(),
         )
         val payload = payload()
         val components = payload.getValue("components").jsonObject
-        assertEquals(193, components.size)
+        val settingControls = components.filterKeys { it.startsWith("setting_") }
+        assertEquals(expectedSettingKeys.size, settingControls.size)
+        assertEquals(
+            expectedSettingKeys.map { "setting_${it.replace('.', '_')}" }.toSet(),
+            settingControls.keys,
+        )
         val ids =
             components.values.map {
                 it.jsonObject.getValue("unique_id").jsonPrimitive.content
