@@ -93,7 +93,7 @@ class WebViewCompatibilityTest {
             assertEquals(
                 option,
                 1,
-                inspectFilterList("||site.example^\$$option").unsupportedRules,
+                inspectFilterList($$"||site.example^$$$option").unsupportedRules,
             )
         }
         engine.replace(listOf($$"||site.example/blocked$all,~document"))
@@ -318,8 +318,8 @@ class WebViewCompatibilityTest {
         // The canonical parsed form is expected; the option-rich form is actual.
         //noinspection KotlinMisorderedAssertEqualsArguments
         assertEquals(
-            expectedBasic,
             ScriptletParser.parse("+js(aeld, click, , runAt, loading)"),
+            expectedBasic,
         )
         val text =
             "site.example##+js(aeld, click, advert, protect, 1, " +

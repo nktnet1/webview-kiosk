@@ -792,7 +792,7 @@ class MqttActivityHandoffTest {
         assertEquals("https://example.test/${ids.last()}", settings.homeUrl)
         val expectedToastCount = toastCount + 1
         // The saved pre-action count determines the expected post-action count.
-        //noinspection KotlinMisorderedAssertEqualsArguments
+        @Suppress("KotlinMisorderedAssertEqualsArguments")
         assertEquals(expectedToastCount, ShadowToast.shownToastCount())
         assertTrue(ShadowToast.showedToast("$prefix-toast"))
     }

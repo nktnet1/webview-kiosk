@@ -185,8 +185,9 @@ class WebViewBlockerTest {
             ContentBlockingService(
                     store,
                     engine,
-                    { it.run() },
-                )
+                ) {
+                    it.run()
+                }
                 .also { it.start() }
         // Exercise response bytes independently of the loader's provenance tests.
         engine.replaceSources(listOf(FilterSource(text, trusted = true))) {}

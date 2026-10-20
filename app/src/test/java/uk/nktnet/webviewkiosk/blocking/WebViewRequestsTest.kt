@@ -38,8 +38,9 @@ class WebViewRequestsTest {
             ContentBlockingService(
                     store,
                     KotlinFilterEngine(),
-                    { it.run() },
-                )
+                ) {
+                    it.run()
+                }
                 .also { it.start() }
         rules = WebViewRequests.Rules(service)
     }
