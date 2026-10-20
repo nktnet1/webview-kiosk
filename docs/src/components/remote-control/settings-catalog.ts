@@ -299,6 +299,15 @@ const OPTIONS = {
     "LOCK",
     "UNLOCK",
   ],
+  "web_lifecycle.reset_actions": [
+    "HISTORY",
+    "COOKIES",
+    "WEB_STORAGE",
+    "CACHE",
+    "FORM_DATA",
+    "SSL_PREFERENCES",
+    "RECREATE_WEBVIEW",
+  ],
 } as const;
 
 /** Text-based settings that use multiline editors in the Android app. */
@@ -317,6 +326,7 @@ const MULTILINE_SETTING_KEYS = new Set<string>([
 const MULTI_SELECT_KEYS = new Set<string>([
   "web_browsing.address_bar_actions",
   "web_browsing.kiosk_control_panel_actions",
+  "web_lifecycle.reset_actions",
 ]);
 
 const ACRONYMS = new Set([
