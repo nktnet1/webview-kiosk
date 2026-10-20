@@ -558,7 +558,7 @@ export function RemoteMessageEditor({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="command">Command</SelectItem>
-                      <SelectItem value="settings">Settings update</SelectItem>
+                      <SelectItem value="settings">Settings</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
