@@ -707,7 +707,7 @@ fun WebviewScreen(navController: NavController) {
             Box(modifier = Modifier.weight(1f)) {
                 composableWebView()
 
-                if (progress < 100) {
+                if (userSettings.showLoadingProgressBar && progress < 100) {
                     LinearProgressIndicator(
                         progress = { progress / 100f },
                         modifier =

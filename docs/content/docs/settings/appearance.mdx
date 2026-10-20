@@ -1,6 +1,6 @@
 ---
 title: Appearance
-description: Theme, address bar, insets, immersive, blocked message
+description: Theme, address bar, insets, immersive, blocked message, loading progress bar
 ---
 
 import { Wrench } from 'lucide-react';
@@ -181,3 +181,17 @@ Customise the position of the address bar. Select one of:
 1. Bottom
 
 **Default:** Top
+
+## 10. Show Loading Progress Bar
+
+Show a progress bar at the top of the WebView while content is loading.
+
+Disable this for kiosk or signage pages where background iframe loads make
+the bar appear even when the visible content is unchanged. This only controls
+the bar's visibility; page loading, navigation and refresh behaviour are unaffected.
+
+The setting applies in both locked and unlocked modes. It is also available
+through managed configuration and settings import/export using
+`appearance.show_loading_progress_bar`.
+
+**Default:** true
