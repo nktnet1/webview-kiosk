@@ -1,0 +1,90 @@
+---
+title: Home Assistant
+description: Discover, monitor, and control your kiosk over MQTT
+---
+
+## Setup
+
+1. Configure Home Assistant's [MQTT integration](https://www.home-assistant.io/integrations/mqtt/).
+2. Enable **MQTT** in {APP_NAME}, and configure **MQTT → Connection** to use
+   the same broker.
+3. Open **MQTT → Home Assistant**, turn on **Enable Discovery**, and optionally
+   enter a **Device Name**.
+4. Restart the MQTT connection using the restart button in MQTT settings.
+5. Find the kiosk under Home Assistant's **Settings → Devices & services → MQTT**.
+
+Discovery is disabled by default. Changes to these settings take effect after
+reconnecting MQTT. The existing MQTT command, settings, request, response, and
+event interfaces continue to work.
+
+## Entities
+
+| Entity | Type | Behaviour |
+| --- | --- | --- |
+| Battery | Sensor | Battery percentage |
+| Current URL | Sensor | Current page URL, limited to 255 characters |
+| Screen | Binary sensor | Whether the device is interactive |
+| Kiosk lock | Switch | Read and change the app's kiosk lock state |
+| Go home | Button | Navigate to the configured home page |
+| Refresh | Button | Reload the current page |
+| Go back | Button | Navigate backwards |
+| Go forward | Button | Navigate forwards |
+
+Controls use the existing remote command handlers and their permissions.
+Navigation requires an active WebView. Kiosk lock controls use the app's kiosk
+mode, rather than the Android device screen lock.
+
+State is published on connection, when Home Assistant announces `online`, and
+every 30 seconds while connected. URL, screen, and kiosk lock events also update
+state immediately. Each app instance has stable device and entity identifiers,
+independent of its display name, MQTT username, and MQTT client ID.
+
+## Settings
+
+### Enable Discovery
+
+Publish a retained MQTT device discovery configuration. **Default:** false.
+
+While enabled, the connection uses a dedicated, retained `offline` Last Will for
+Home Assistant availability. MQTT allows one Last Will per connection, so the
+custom settings under **MQTT → Will** apply when discovery is disabled.
+An explicit disconnect also publishes `offline` before closing the connection.
+
+### Discovery Prefix
+
+Match the discovery prefix configured in Home Assistant. **Default:** `homeassistant`.
+This setting is independent of Home Assistant's status topic.
+
+### Status Topic
+
+Match Home Assistant's MQTT birth/status topic. **Default:** `homeassistant/status`.
+An `online` message triggers discovery and state updates. If Home Assistant uses
+a custom birth topic, enter it here, independently of the discovery prefix.
+
+### Device Name
+
+Optional display name, such as `Kitchen kiosk`. If blank, the app uses
+`Webview Kiosk <app-instance-id>`. Renaming preserves entity IDs and automations.
+
+## Topics and broker permissions
+
+| Topic | App access | Retained |
+| --- | --- | --- |
+| `<prefix>/device/webview_kiosk_<app-instance-id>/config` | Publish discovery | Yes |
+| Configured status topic (default `homeassistant/status`) | Subscribe to Home Assistant birth | Controlled by Home Assistant |
+| `wk/<app-instance-id>/ha/state` | Publish JSON state | Yes |
+| `wk/<app-instance-id>/ha/availability` | Publish `online` / `offline` | Yes |
+| `wk/<app-instance-id>/ha/command` | Subscribe to JSON commands | No |
+
+Allow these topics in broker ACLs for the kiosk and Home Assistant. Commands are
+targeted to the app instance and are never retained by the discovered controls.
+Retained messages on the dedicated command topic are ignored.
+
+The app republishes discovery on reconnect and Home Assistant restart. If you
+disable discovery or change its prefix, reconnect to the same broker to remove
+the previous retained configuration and its entities. Cleanup is remembered
+across app restarts, separately for each broker. If you change brokers, the old
+broker must be reachable again before its previous configuration can be removed.
+
+For background monitoring, enable **MQTT → Use Foreground Service** and follow
+the [battery optimisation guidance](/docs/settings/mqtt#52-use-foreground-service).

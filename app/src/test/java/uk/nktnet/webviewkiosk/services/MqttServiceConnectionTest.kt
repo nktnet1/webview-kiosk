@@ -3,10 +3,12 @@ package uk.nktnet.webviewkiosk.services
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
+import android.os.BatteryManager
 import android.os.Looper
 import com.hivemq.client.mqtt.MqttClientState
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -25,6 +27,7 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -42,6 +45,7 @@ import uk.nktnet.webviewkiosk.config.HistoryEntry
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.mqtt.HomeAssistantDiscovery
 import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent.DisconnectCause
 import uk.nktnet.webviewkiosk.managers.CustomNotificationChannel
@@ -84,18 +88,30 @@ class MqttServiceConnectionTest {
                     "pendingDisconnect",
                     "disconnectRequestId",
                     "reconnectCancellation",
+                    "homeAssistantSession",
                 )
                 .associateWith { field(it).get(MqttManager) }
         savedCancellation =
             (field("pendingCancelConnect").get(MqttManager) as AtomicBoolean)
                 .getAndSet(false)
-        listOf("client", "config", "configurationError", "pendingDisconnect")
+        listOf(
+                "client",
+                "config",
+                "configurationError",
+                "pendingDisconnect",
+                "homeAssistantSession",
+            )
             .forEach { field(it).set(MqttManager, null) }
         field("disconnectRequestId").set(MqttManager, 0L)
         field("reconnectCancellation").let {
             it.set(MqttManager, it.type.getConstructor().newInstance())
         }
         MqttManager.clearLogs()
+        context
+            .getSharedPreferences("mqtt_home_assistant", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
         broker = LoopbackMqttBroker()
         settings =
             UserSettings(context).apply {
@@ -536,17 +552,278 @@ class MqttServiceConnectionTest {
         )
     }
 
+    @Test
+    fun discoveryPublishesRetainedDeviceStateAndADedicatedAvailabilityWill() {
+        settings.mqttHomeAssistantEnabled = true
+        settings.mqttHomeAssistantDeviceName = "Kitchen kiosk"
+        val connection = connect()
+        val ha = homeAssistant()
+        val announcement = awaitPublication(connection, ha.configTopic)
+        val device = JSONObject(announcement.payload)
+
+        assertTrue(announcement.retain)
+        assertEquals(
+            "Kitchen kiosk",
+            device.getJSONObject("device").getString("name"),
+        )
+        assertEquals(8, device.getJSONObject("components").length())
+        assertEquals(ha.availabilityTopic, device.getString("availability_topic"))
+        val state = awaitPublication(connection, ha.stateTopic)
+        assertTrue(state.retain)
+        assertEquals(
+            systemSettings.currentUrl,
+            JSONObject(state.payload).getString("currentUrl"),
+        )
+        assertTrue(
+            awaitPublication(connection, ha.availabilityTopic, "online").retain
+        )
+
+        val will = requireNotNull(connection.will)
+        assertEquals(ha.availabilityTopic, will.topic)
+        assertEquals("offline", will.payload)
+        assertEquals(1, will.qos)
+        assertTrue(will.retain)
+        assertNull(will.messageExpiryInterval)
+        assertTrue(
+            connection.subscriptions.containsAll(
+                setOf(ha.birthTopic, ha.commandTopic)
+            )
+        )
+    }
+
+    @Test
+    fun homeAssistantBirthResendsDiscoveryStateAndAvailability() {
+        settings.mqttHomeAssistantEnabled = true
+        settings.mqttHomeAssistantDiscoveryPrefix = "custom/discovery"
+        settings.mqttHomeAssistantStatusTopic = "custom/ha-status"
+        val connection = connect()
+        val ha = homeAssistant()
+        awaitPublication(connection, ha.availabilityTopic, "online")
+        connection.publications.clear()
+
+        connection.publish(ha.birthTopic, "online")
+
+        assertTrue(awaitPublication(connection, ha.configTopic).retain)
+        assertTrue(awaitPublication(connection, ha.stateTopic).retain)
+        assertEquals(
+            "online",
+            awaitPublication(connection, ha.availabilityTopic).payload,
+        )
+        assertEquals(5, connection.subscriptionCount.get())
+    }
+
+    @Test
+    fun homeAssistantStateUpdatesImmediatelyFromKioskEvents() {
+        settings.mqttHomeAssistantEnabled = true
+        val connection = connect()
+        val ha = homeAssistant()
+        awaitPublication(connection, ha.availabilityTopic, "online")
+        connection.publications.clear()
+
+        MqttManager.publishUrlChangedEvent("https://example.com/changed")
+
+        val state = awaitPublication(connection, ha.stateTopic)
+        assertEquals(
+            "https://example.com/changed",
+            JSONObject(state.payload).getString("currentUrl"),
+        )
+        connection.publications.clear()
+        MqttManager.publishScreenOffEvent()
+        assertFalse(
+            JSONObject(awaitPublication(connection, ha.stateTopic).payload)
+                .getBoolean("isDeviceInteractive")
+        )
+    }
+
+    @Test
+    fun dedicatedCommandsIgnoreRetainedMessagesAndOtherInstances() {
+        settings.mqttHomeAssistantEnabled = true
+        val connection = connect()
+        val ha = homeAssistant()
+        val command =
+            JSONObject()
+                .put("command", "clear_history")
+                .put("interact", false)
+                .put(
+                    "targetInstances",
+                    org.json.JSONArray().put(systemSettings.appInstanceId),
+                )
+        connection.publish(ha.commandTopic, command.toString(), retain = true)
+        connection.publish(
+            ha.commandTopic,
+            command
+                .put("targetInstances", org.json.JSONArray().put("another-instance"))
+                .toString(),
+        )
+        connection.publish(
+            "test/requests",
+            """{"requestType":"get_settings","messageId":"ha-ignored-barrier"}""",
+        )
+        awaitResponse(connection, "ha-ignored-barrier")
+        assertEquals(2, systemSettings.historyStack.size)
+
+        // Await the command completion event as well as its native side effect.
+        // Otherwise an unfinished main-thread handoff can hold the shared command
+        // mutex after Robolectric tears down this test's looper.
+        publishCommandAndAwait(connection, "ha-command", ha.commandTopic)
+        assertEquals(1, systemSettings.historyStack.size)
+        assertEquals("second", systemSettings.historyStack.single().id)
+    }
+
+    @Test
+    fun disablingDiscoveryRemovesTheRetainedConfigAndRestoresTheCustomWill() {
+        settings.mqttHomeAssistantEnabled = true
+        val first = connect()
+        val ha = homeAssistant()
+        awaitPublication(first, ha.availabilityTopic, "online")
+        settings.mqttHomeAssistantEnabled = false
+
+        MqttManager.restart(context, DisconnectCause.USER_INITIATED_RESTART)
+        val second = broker.awaitConnection()
+        second.acknowledgeConnect()
+        awaitCondition { second.subscriptions.size == 3 }
+
+        assertTrue(awaitPublication(first, ha.availabilityTopic, "offline").retain)
+        assertTrue(awaitPublication(second, ha.configTopic, "").retain)
+        assertEquals("wk/will", second.will?.topic)
+        assertFalse(second.subscriptions.contains(ha.birthTopic))
+    }
+
+    @Test
+    fun changingDiscoveryPrefixRemovesTheOldConfigWithoutChangingEntityIds() {
+        settings.mqttHomeAssistantEnabled = true
+        val first = connect()
+        val previous = homeAssistant()
+        val oldConfig =
+            JSONObject(awaitPublication(first, previous.configTopic).payload)
+        awaitPublication(first, previous.availabilityTopic, "online")
+        settings.mqttHomeAssistantDiscoveryPrefix = "another/prefix"
+
+        MqttManager.restart(context, DisconnectCause.USER_INITIATED_RESTART)
+        val second = broker.awaitConnection()
+        second.acknowledgeConnect()
+        awaitCondition { second.subscriptions.size == 5 }
+        val current = homeAssistant()
+
+        assertTrue(awaitPublication(second, previous.configTopic, "").retain)
+        val newConfig =
+            JSONObject(awaitPublication(second, current.configTopic).payload)
+        assertEquals(
+            oldConfig.getJSONObject("components").toString(),
+            newConfig.getJSONObject("components").toString(),
+        )
+        assertTrue(second.subscriptions.contains(current.birthTopic))
+    }
+
+    @Test
+    fun automaticReconnectReannouncesDiscoveryWithoutDuplicatingSubscriptions() {
+        settings.mqttHomeAssistantEnabled = true
+        settings.mqttAutomaticReconnect = true
+        val first = connect()
+        val ha = homeAssistant()
+        awaitPublication(first, ha.availabilityTopic, "online")
+        val originalClient = field("client").get(MqttManager)
+
+        first.close()
+        val second = broker.awaitConnection()
+        second.acknowledgeConnect()
+        awaitCondition { second.subscriptions.size == 5 }
+
+        assertSame(originalClient, field("client").get(MqttManager))
+        assertTrue(awaitPublication(second, ha.configTopic).retain)
+        assertEquals(
+            "online",
+            awaitPublication(second, ha.availabilityTopic).payload,
+        )
+        assertEquals(5, second.subscriptionCount.get())
+        second.publications.clear()
+        second.publish(ha.birthTopic, "online")
+        awaitPublication(second, ha.configTopic)
+    }
+
+    @Test
+    fun batteryStateIsRefreshedPeriodicallyAndPollingStopsOnDisconnect() {
+        settings.mqttHomeAssistantEnabled = true
+        val connection = connect()
+        val ha = homeAssistant()
+        awaitPublication(connection, ha.availabilityTopic, "online")
+        connection.publications.clear()
+        shadowOf(context.getSystemService(BatteryManager::class.java))
+            .setIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY, 76)
+
+        shadowOf(Looper.getMainLooper()).idleFor(31, TimeUnit.SECONDS)
+
+        assertEquals(
+            76,
+            JSONObject(awaitPublication(connection, ha.stateTopic).payload)
+                .getInt("batteryPercentage"),
+        )
+        MqttManager.disconnect(DisconnectCause.USER_INITIATED_DISCONNECT)
+        awaitCondition { MqttManager.getState() == MqttClientState.DISCONNECTED }
+        connection.publications.clear()
+        shadowOf(Looper.getMainLooper()).idleFor(31, TimeUnit.SECONDS)
+        assertTrue(connection.publications.isEmpty())
+    }
+
+    @Test
+    fun shutdownTimeoutStillRequestsTheOfflineAvailabilityWill() {
+        settings.mqttHomeAssistantEnabled = true
+        val connection = connect()
+        awaitPublication(connection, homeAssistant().availabilityTopic, "online")
+        connection.acknowledgePublishes = false
+
+        MqttManager.disconnect(DisconnectCause.USER_INITIATED_DISCONNECT)
+
+        assertTrue(connection.disconnected.await(8, TimeUnit.SECONDS))
+        assertEquals(0x04, connection.disconnectReason)
+        assertTrue(
+            MqttManager.debugLogHistory.any {
+                it.tag == "disconnect event timed out"
+            }
+        )
+    }
+
+    private fun homeAssistant() =
+        HomeAssistantDiscovery(
+            systemSettings.appInstanceId,
+            settings.mqttHomeAssistantDiscoveryPrefix,
+            settings.mqttHomeAssistantStatusTopic,
+        )
+
+    private fun awaitPublication(
+        connection: LoopbackMqttBroker.Connection,
+        topic: String,
+        payload: String? = null,
+    ): LoopbackMqttBroker.Publication {
+        var result: LoopbackMqttBroker.Publication? = null
+        awaitCondition {
+            result =
+                connection.publications.firstOrNull {
+                    it.topic == topic && (payload == null || it.payload == payload)
+                }
+            result != null
+        }
+        return requireNotNull(result)
+    }
+
     private fun connect(): LoopbackMqttBroker.Connection {
         assertEquals(Service.START_STICKY, start())
         val connection = broker.awaitConnection()
         connection.acknowledgeConnect()
-        awaitCondition { connection.subscriptions.size == 3 }
+        val count =
+            if (settings.mqttHomeAssistantEnabled) {
+                5
+            } else {
+                3
+            }
+        awaitCondition { connection.subscriptions.size == count }
         return connection
     }
 
     private fun publishCommandAndAwait(
         connection: LoopbackMqttBroker.Connection,
         id: String,
+        topic: String = "test/commands",
     ) = runBlocking {
         val dispatched =
             async(Dispatchers.Unconfined, start = CoroutineStart.UNDISPATCHED) {
@@ -556,7 +833,7 @@ class MqttServiceConnectionTest {
             }
         try {
             connection.publish(
-                "test/commands",
+                topic,
                 """{"command":"clear_history","messageId":"$id","interact":false}""",
             )
             awaitConditionSuspending { dispatched.isCompleted }
@@ -575,8 +852,10 @@ class MqttServiceConnectionTest {
             val publication = connection.publications.poll()
             if (
                 publication != null &&
-                    JSONObject(publication.payload).optString("requestMessageId") ==
-                        id
+                    runCatching {
+                        JSONObject(publication.payload).optString("requestMessageId")
+                    }
+                        .getOrNull() == id
             ) {
                 response = publication
             }

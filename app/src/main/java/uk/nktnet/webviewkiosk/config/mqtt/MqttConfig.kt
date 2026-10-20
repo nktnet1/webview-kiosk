@@ -49,4 +49,8 @@ data class MqttConfig(
     val restrictionsSendTopicAliasMaximum: Int,
     val restrictionsRequestProblemInformation: Boolean,
     val restrictionsRequestResponseInformation: Boolean,
+    val homeAssistantEnabled: Boolean = false,
+    val homeAssistantDiscoveryPrefix: String = "homeassistant",
+    val homeAssistantDeviceName: String = "",
+    val homeAssistantStatusTopic: String = "homeassistant/status",
 )

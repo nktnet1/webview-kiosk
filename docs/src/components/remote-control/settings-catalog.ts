@@ -76,6 +76,7 @@ const KEYS = {
     "js_scripts.enable_dark_reader",
     "js_scripts.enable_eruda_console",
     "mqtt.enabled",
+    "mqtt.home_assistant.enabled",
     "mqtt.use_foreground_service",
     "mqtt.connection.use_tls",
     "mqtt.connection.clean_start",
@@ -94,6 +95,9 @@ const KEYS = {
     "unifiedpush.store_endpoint_credentials",
   ],
   string: [
+    "mqtt.home_assistant.discovery_prefix",
+    "mqtt.home_assistant.device_name",
+    "mqtt.home_assistant.status_topic",
     "web_content.home_url",
     "web_content.website_blacklist",
     "web_content.website_whitelist",

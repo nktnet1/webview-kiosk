@@ -789,6 +789,33 @@ class UserSettings(val context: Context) {
             UserSettingsKeys.Mqtt.USE_FOREGROUND_SERVICE,
             false,
         )
+    var mqttHomeAssistantEnabled by
+        booleanPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.Mqtt.HomeAssistant.ENABLED,
+            false,
+        )
+    var mqttHomeAssistantDiscoveryPrefix by
+        stringPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.Mqtt.HomeAssistant.DISCOVERY_PREFIX,
+            "homeassistant",
+        )
+    var mqttHomeAssistantDeviceName by
+        stringPrefOptional(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.Mqtt.HomeAssistant.DEVICE_NAME,
+        )
+    var mqttHomeAssistantStatusTopic by
+        stringPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.Mqtt.HomeAssistant.STATUS_TOPIC,
+            "homeassistant/status",
+        )
     var mqttServerHost by
         stringPref(
             getRestrictions,
@@ -1484,6 +1511,22 @@ class UserSettings(val context: Context) {
 
                 put(UserSettingsKeys.Mqtt.ENABLED, mqttEnabled)
                 put(
+                    UserSettingsKeys.Mqtt.HomeAssistant.STATUS_TOPIC,
+                    mqttHomeAssistantStatusTopic,
+                )
+                put(
+                    UserSettingsKeys.Mqtt.HomeAssistant.ENABLED,
+                    mqttHomeAssistantEnabled,
+                )
+                put(
+                    UserSettingsKeys.Mqtt.HomeAssistant.DISCOVERY_PREFIX,
+                    mqttHomeAssistantDiscoveryPrefix,
+                )
+                put(
+                    UserSettingsKeys.Mqtt.HomeAssistant.DEVICE_NAME,
+                    mqttHomeAssistantDeviceName,
+                )
+                put(
                     UserSettingsKeys.Mqtt.USE_FOREGROUND_SERVICE,
                     mqttUseForegroundService,
                 )
@@ -2157,6 +2200,26 @@ class UserSettings(val context: Context) {
                 )
 
             mqttEnabled = json.optBoolean(UserSettingsKeys.Mqtt.ENABLED, mqttEnabled)
+            mqttHomeAssistantStatusTopic =
+                json.optString(
+                    UserSettingsKeys.Mqtt.HomeAssistant.STATUS_TOPIC,
+                    mqttHomeAssistantStatusTopic,
+                )
+            mqttHomeAssistantEnabled =
+                json.optBoolean(
+                    UserSettingsKeys.Mqtt.HomeAssistant.ENABLED,
+                    mqttHomeAssistantEnabled,
+                )
+            mqttHomeAssistantDiscoveryPrefix =
+                json.optString(
+                    UserSettingsKeys.Mqtt.HomeAssistant.DISCOVERY_PREFIX,
+                    mqttHomeAssistantDiscoveryPrefix,
+                )
+            mqttHomeAssistantDeviceName =
+                json.optString(
+                    UserSettingsKeys.Mqtt.HomeAssistant.DEVICE_NAME,
+                    mqttHomeAssistantDeviceName,
+                )
             mqttUseForegroundService =
                 json.optBoolean(
                     UserSettingsKeys.Mqtt.USE_FOREGROUND_SERVICE,

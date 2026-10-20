@@ -302,6 +302,15 @@
     <string name="mqtt_use_foreground_service_title">Use Foreground Service</string>
     <string name="mqtt_use_foreground_service_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/</string>
 
+    <!-- MQTT Home Assistant -->
+    <string name="settings_mqtt_home_assistant_title">Home Assistant</string>
+    <string name="settings_mqtt_home_assistant_description">Automatic device discovery, monitoring, and control</string>
+    <string name="mqtt_home_assistant_enabled_title">Enable Discovery</string>
+    <string name="mqtt_home_assistant_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/home-assistant/</string>
+    <string name="mqtt_home_assistant_discovery_prefix_title">Discovery Prefix</string>
+    <string name="mqtt_home_assistant_device_name_title">Device Name</string>
+    <string name="mqtt_home_assistant_status_topic_title">Status Topic</string>
+
     <!-- MQTT Connection -->
     <string name="mqtt_connection_server_host_title">Server Host</string>
     <string name="mqtt_connection_server_host_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>

@@ -96,6 +96,10 @@ internal fun SetupNavHost(
                         SettingsJsScriptsScreen(navController)
                     },
                 Screen.SettingsMqtt.route to { SettingsMqttScreen(navController) },
+                Screen.SettingsMqttHomeAssistant.route to
+                    {
+                        SettingsMqttHomeAssistantScreen(navController)
+                    },
                 Screen.SettingsMqttConnection.route to
                     {
                         SettingsMqttConnectionScreen(navController)

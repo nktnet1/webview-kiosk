@@ -42,6 +42,11 @@ fun SettingsMqttScreen(navController: NavController) {
                 Screen.SettingsMqttTopics.route,
             ),
             Triple(
+                stringResource(R.string.settings_mqtt_home_assistant_title),
+                stringResource(R.string.settings_mqtt_home_assistant_description),
+                Screen.SettingsMqttHomeAssistant.route,
+            ),
+            Triple(
                 stringResource(R.string.settings_mqtt_will_title),
                 stringResource(R.string.settings_mqtt_will_description),
                 Screen.SettingsMqttWill.route,
