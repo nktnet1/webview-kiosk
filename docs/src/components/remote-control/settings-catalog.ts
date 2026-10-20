@@ -53,6 +53,7 @@ const KEYS = {
     "web_engine.request_focus_on_page_start",
     "web_lifecycle.lock_on_launch",
     "web_lifecycle.reset_on_launch",
+    "appearance.show_loading_progress_bar",
     "device.keep_screen_on",
     "device.allow_camera",
     "device.allow_microphone",

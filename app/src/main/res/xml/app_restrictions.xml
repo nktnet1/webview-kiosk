@@ -426,6 +426,13 @@
         android:title="@string/appearance_address_bar_position_title"
         android:description="@string/appearance_address_bar_position_description"
     />
+    <restriction
+        android:key="appearance.show_loading_progress_bar"
+        android:restrictionType="bool"
+        android:defaultValue="true"
+        android:title="@string/appearance_show_loading_progress_bar_title"
+        android:description="@string/appearance_show_loading_progress_bar_description"
+    />
 
     <!-- Device -->
     <restriction

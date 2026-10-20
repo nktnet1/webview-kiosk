@@ -547,6 +547,13 @@ class UserSettings(val context: Context) {
             AddressBarPositionOption.TOP.name,
             fromString = AddressBarPositionOption::fromString,
         )
+    var showLoadingProgressBar by
+        booleanPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.Appearance.SHOW_LOADING_PROGRESS_BAR,
+            true,
+        )
 
     // Device
     var keepScreenOn by
@@ -1420,6 +1427,10 @@ class UserSettings(val context: Context) {
                     UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION,
                     addressBarPosition.name,
                 )
+                put(
+                    UserSettingsKeys.Appearance.SHOW_LOADING_PROGRESS_BAR,
+                    showLoadingProgressBar,
+                )
 
                 put(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
                 put(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name)
@@ -2045,6 +2056,11 @@ class UserSettings(val context: Context) {
                         UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION,
                         addressBarPosition.name,
                     )
+                )
+            showLoadingProgressBar =
+                json.optBoolean(
+                    UserSettingsKeys.Appearance.SHOW_LOADING_PROGRESS_BAR,
+                    showLoadingProgressBar,
                 )
 
             keepScreenOn =

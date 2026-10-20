@@ -24,7 +24,7 @@
     <string name="settings_web_lifecycle_description">Lock on launch, reset on launch, reset on inactivity</string>
 
     <string name="settings_appearance_title">Appearance</string>
-    <string name="settings_appearance_description">Theme, address bar, insets, immersive, blocked message</string>
+    <string name="settings_appearance_description">Theme, address bar, insets, immersive, blocked message, loading progress bar</string>
 
     <string name="settings_device_title">Device</string>
     <string name="settings_device_description">Rotation, camera, microphone, location, unlock controls</string>

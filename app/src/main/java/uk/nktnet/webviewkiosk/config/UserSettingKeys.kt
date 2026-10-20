@@ -94,6 +94,7 @@ object UserSettingsKeys {
         const val ADDRESS_BAR_MODE = "appearance.address_bar_mode"
         const val ADDRESS_BAR_SIZE = "appearance.address_bar_size"
         const val ADDRESS_BAR_POSITION = "appearance.address_bar_position"
+        const val SHOW_LOADING_PROGRESS_BAR = "appearance.show_loading_progress_bar"
     }
 
     object Device {
