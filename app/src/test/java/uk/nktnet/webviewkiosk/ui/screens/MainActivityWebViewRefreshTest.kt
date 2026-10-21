@@ -500,13 +500,14 @@ class MainActivityWebViewRefreshTest {
     }
 
     @Test
-    fun screenWakeRefreshIsOptInAndUsesTheCurrentWebView() {
+    fun screenWakeRefreshIsOptInAndIndependentOfAllowRefresh() {
         val settings = UserSettings(activity)
         val url = "https://example.invalid/signage"
         for ((enabled, allowed, refreshes) in
             listOf(
+                Triple(false, false, false),
                 Triple(false, true, false),
-                Triple(true, false, false),
+                Triple(true, false, true),
                 Triple(true, true, true),
             )) {
             settings.refreshOnScreenWake = enabled

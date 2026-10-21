@@ -24,7 +24,8 @@ fun RefreshOnScreenWakeSetting() {
             that became stale while the device was asleep.
 
             Opening settings, rotating the screen or returning from another app
-            does not trigger a refresh. Requires Allow Refresh to be enabled.
+            does not trigger a refresh. This setting works independently of
+            Allow Refresh.
             """
                 .trimIndent(),
         initialValue = userSettings.refreshOnScreenWake,

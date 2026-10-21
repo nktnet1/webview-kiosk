@@ -515,7 +515,7 @@ fun WebviewScreen(navController: NavController) {
         userSettings.refreshOnScreenWake && isCurrentWebView()
     }
     val refreshOnWake by rememberUpdatedState {
-        WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+        customLoadUrl(systemSettings.currentUrl)
     }
     val refreshOnScreenWake = userSettings.refreshOnScreenWake
     DisposableEffect(webView, lifecycleOwner, activity, refreshOnScreenWake) {
