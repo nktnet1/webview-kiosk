@@ -19,11 +19,13 @@ fun MqttHomeAssistantStatusTopicSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_home_assistant_status_topic_title),
         infoText =
-            "Match Home Assistant's MQTT birth/status topic. " +
-                "Leave the default homeassistant/status unless HA uses " +
-                "a custom topic. An online message triggers discovery and " +
-                "state updates, independently of the discovery prefix. " +
-                "Reconnect MQTT after changing it.",
+            """
+            Match Home Assistant's MQTT birth/status topic.
+            Leave the default homeassistant/status unless HA uses a custom topic.
+            An online message triggers discovery and state updates,
+            independently of the discovery prefix. Reconnect MQTT after changing it.
+            """
+                .trimIndent(),
         placeholder = "homeassistant/status",
         initialValue = userSettings.mqttHomeAssistantStatusTopic,
         validator = ::isValidMqttPublishTopic,

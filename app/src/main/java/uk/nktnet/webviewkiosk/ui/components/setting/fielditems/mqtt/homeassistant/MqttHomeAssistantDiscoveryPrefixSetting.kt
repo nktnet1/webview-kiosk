@@ -19,9 +19,12 @@ fun MqttHomeAssistantDiscoveryPrefixSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_home_assistant_discovery_prefix_title),
         infoText =
-            "Match Home Assistant's MQTT discovery prefix. " +
-                "Leave the default homeassistant unless HA uses a custom " +
-                "prefix. Reconnect MQTT after changing it.",
+            """
+            Match Home Assistant's MQTT discovery prefix.
+            Leave the default homeassistant unless HA uses a custom prefix.
+            Reconnect MQTT after changing it.
+            """
+                .trimIndent(),
         placeholder = "homeassistant",
         initialValue = userSettings.mqttHomeAssistantDiscoveryPrefix,
         validator = HomeAssistantDiscovery::isValidPrefix,

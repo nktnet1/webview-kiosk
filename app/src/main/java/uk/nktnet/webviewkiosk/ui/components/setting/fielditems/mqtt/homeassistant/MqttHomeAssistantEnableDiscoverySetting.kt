@@ -10,7 +10,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun MqttHomeAssistantEnabledSetting() {
+fun MqttHomeAssistantEnableDiscoverySetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val settingKey = UserSettingsKeys.Mqtt.HomeAssistant.ENABLED
@@ -18,13 +18,17 @@ fun MqttHomeAssistantEnabledSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_home_assistant_enabled_title),
         infoText =
-            "Publish the kiosk as a Home Assistant MQTT device. " +
-                "Includes status, all remote commands, configuration controls, " +
-                "and request results. All discovered entities are enabled by default. " +
-                "Enter Toast and Notification messages directly in their text controls. " +
-                "Reconnect MQTT after changing this setting.\n\n" +
-                "Discovery uses its own availability Last Will. Custom Will " +
-                "settings apply when discovery is disabled.",
+            """
+            Publish the kiosk as a Home Assistant MQTT device.
+            Includes status, all remote commands, configuration controls,
+            and request results. All discovered entities are enabled by default.
+            Enter Toast and Notification messages directly in their text controls.
+            Reconnect MQTT after changing this setting.
+
+            Discovery uses its own availability Last Will. Custom Will
+            settings apply when discovery is disabled.
+            """
+                .trimIndent(),
         initialValue = userSettings.mqttHomeAssistantEnabled,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

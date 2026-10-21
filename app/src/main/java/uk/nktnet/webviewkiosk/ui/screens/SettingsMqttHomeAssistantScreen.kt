@@ -24,7 +24,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.homeassistant.MqttHomeAssistantDeviceNameSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.homeassistant.MqttHomeAssistantDiscoveryPrefixSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.homeassistant.MqttHomeAssistantEnabledSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.homeassistant.MqttHomeAssistantEnableDiscoverySetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.homeassistant.MqttHomeAssistantStatusTopicSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
@@ -55,7 +55,7 @@ fun SettingsMqttHomeAssistantScreen(navController: NavController) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             MqttControlButtons()
             HorizontalDivider(Modifier.padding(top = 8.dp))
-            MqttHomeAssistantEnabledSetting()
+            MqttHomeAssistantEnableDiscoverySetting()
             MqttHomeAssistantDeviceNameSetting()
             MqttHomeAssistantDiscoveryPrefixSetting()
             MqttHomeAssistantStatusTopicSetting()

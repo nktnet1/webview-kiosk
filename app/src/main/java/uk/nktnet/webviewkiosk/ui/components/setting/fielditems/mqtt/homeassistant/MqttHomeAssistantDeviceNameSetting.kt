@@ -18,10 +18,13 @@ fun MqttHomeAssistantDeviceNameSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_home_assistant_device_name_title),
         infoText =
-            "Optional display name, such as Home kiosk. " +
-                "Leave blank to use Webview Kiosk and this app's instance ID. " +
-                "Renaming does not change the device or entity identifiers. " +
-                "Reconnect MQTT after changing it.",
+            """
+            Optional display name, such as Home kiosk.
+            Leave blank to use Webview Kiosk and this app's instance ID.
+            Renaming does not change the device or entity identifiers.
+            Reconnect MQTT after changing it.
+            """
+                .trimIndent(),
         placeholder = "Home kiosk",
         initialValue = userSettings.mqttHomeAssistantDeviceName,
         descriptionFormatter = { it.ifBlank { "Automatic" } },
