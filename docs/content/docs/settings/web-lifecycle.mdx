@@ -51,9 +51,15 @@ The app returns to the Home URL even if no actions are selected.
 | Cookies          | Removes all WebView cookies, including login sessions. |
 | Web Storage      | Deletes HTML5 website storage, including localStorage and IndexedDB. |
 | Cache            | Clears cached website resources from disk. |
-| Form Data        | Clears saved form inputs and autofill data. |
+| Form Data        | Clears saved WebView form entries on older Android versions. |
 | SSL Preferences  | Clears remembered SSL certificate decisions. |
 | Recreate WebView | Replaces the current WebView to end the in-memory page session. |
+
+<Callout title="Form Data" type="warning">
+
+This action does not remove saved entries from Android's autofill service.
+
+</Callout>
 
 Selected cleanup actions run in the configured order. `Recreate WebView`
 always runs after the other actions, before loading the Home URL.
@@ -62,10 +68,10 @@ Cookies and Web Storage are shared across websites in the app. Clearing them
 may sign you out of multiple websites. App settings, bookmarks, and local files
 are not removed.
 
-**Default:** 
+**Default:**
 
 ```
-["History"]
+["HISTORY"]
 ```
 
 ## 5. Dim Screen On Inactivity (seconds)
