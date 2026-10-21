@@ -1,0 +1,10 @@
+## Changes
+
+- Added Home Assistant MQTT discovery.
+- Added configurable inactivity reset actions.
+- Added refresh on screen wake.
+- Added main-page HTTP 5xx recovery (Android 6+).
+- Added "show loading progress bar" appearance setting.
+- Fixed progress updates from background frames.
+- Improved content-blocking cache performance.
+- Improved display of very long URLs.
