@@ -78,7 +78,35 @@ internal class LoopbackMqttBroker : AutoCloseable {
         val topic: String,
         val payload: String,
         val properties: ByteArray,
+        val retain: Boolean = false,
     )
+
+    class Will(
+        val topic: String,
+        val payload: String,
+        val qos: Int,
+        val retain: Boolean,
+        val properties: ByteArray,
+    ) {
+        val messageExpiryInterval: Long?
+            get() {
+                val input = DataInputStream(ByteArrayInputStream(properties))
+                while (input.available() > 0) {
+                    when (val property = input.readUnsignedByte()) {
+                        0x01 -> input.readUnsignedByte()
+                        0x02 -> return input.readInt().toLong() and 0xffffffffL
+                        0x03 -> input.readUTF()
+                        0x18 -> input.readInt()
+                        0x26 -> {
+                            input.readUTF()
+                            input.readUTF()
+                        }
+                        else -> error("Unexpected will property: $property")
+                    }
+                }
+                return null
+            }
+    }
 
     fun correlationData(publication: Publication): ByteArray? {
         val input = DataInputStream(ByteArrayInputStream(publication.properties))
@@ -110,6 +138,13 @@ internal class LoopbackMqttBroker : AutoCloseable {
         val subscriptionCount = AtomicInteger()
         val publications = LinkedBlockingQueue<Publication>()
         val disconnected = CountDownLatch(1)
+        @Volatile var acknowledgePublishes: Boolean = true
+        var disconnectReason: Int? = null
+            private set
+
+        var will: Will? = null
+            private set
+
         lateinit var worker: Thread
             private set
 
@@ -129,10 +164,27 @@ internal class LoopbackMqttBroker : AutoCloseable {
                         ) {
                             "The client did not use MQTT 5"
                         }
-                        connected.add(this)
-                        check(connectRelease.await(5, TimeUnit.SECONDS)) {
-                            "CONNACK gate was not released"
+                        val flags = body.readUnsignedByte()
+                        body.readUnsignedShort() // Keep alive.
+                        body.readFully(ByteArray(readVariableInt(body)))
+                        readString(body) // Client identifier.
+                        if (flags and 0x04 != 0) {
+                            val properties =
+                                ByteArray(readVariableInt(body))
+                                    .also(body::readFully)
+                            will =
+                                Will(
+                                    readString(body),
+                                    readString(body),
+                                    (flags shr 3) and 3,
+                                    flags and 0x20 != 0,
+                                    properties,
+                                )
                         }
+                        connected.add(this)
+                        // Activity creation can outlive a short handshake gate.
+                        // The test owns its release; close() also unblocks it.
+                        connectRelease.await()
                         if (closing.get() || socket.isClosed) {
                             return@thread
                         }
@@ -168,9 +220,10 @@ internal class LoopbackMqttBroker : AutoCloseable {
                                                 .readBytes()
                                                 .toString(Charsets.UTF_8),
                                             properties,
+                                            packet.header and 1 != 0,
                                         )
                                     )
-                                    if (packetId != null) {
+                                    if (packetId != null && acknowledgePublishes) {
                                         send(0x40, packetIdBytes(packetId))
                                     }
                                 }
@@ -198,7 +251,15 @@ internal class LoopbackMqttBroker : AutoCloseable {
                                     subscriptionCount.addAndGet(topics.size)
                                 }
                                 12 -> send(0xD0, byteArrayOf())
-                                14 -> return@thread
+                                14 -> {
+                                    disconnectReason =
+                                        if (packetBody.available() > 0) {
+                                            packetBody.readUnsignedByte()
+                                        } else {
+                                            0
+                                        }
+                                    return@thread
+                                }
                                 else ->
                                     error("Unexpected MQTT packet: ${packet.header}")
                             }
@@ -228,6 +289,7 @@ internal class LoopbackMqttBroker : AutoCloseable {
             topic: String,
             payload: String,
             properties: ByteArray = byteArrayOf(),
+            retain: Boolean = false,
         ) {
             val bytes = ByteArrayOutputStream()
             DataOutputStream(bytes).use { body ->
@@ -236,7 +298,14 @@ internal class LoopbackMqttBroker : AutoCloseable {
                 body.write(properties)
                 body.write(payload.toByteArray(Charsets.UTF_8))
             }
-            send(0x30, bytes.toByteArray())
+            send(
+                if (retain) {
+                    0x31
+                } else {
+                    0x30
+                },
+                bytes.toByteArray(),
+            )
         }
 
         @Synchronized

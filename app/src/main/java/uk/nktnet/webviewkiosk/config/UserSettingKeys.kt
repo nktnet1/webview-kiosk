@@ -153,6 +153,13 @@ object UserSettingsKeys {
         const val ENABLED = "mqtt.enabled"
         const val USE_FOREGROUND_SERVICE = "mqtt.use_foreground_service"
 
+        object HomeAssistant {
+            const val ENABLED = "mqtt.home_assistant.enabled"
+            const val DISCOVERY_PREFIX = "mqtt.home_assistant.discovery_prefix"
+            const val DEVICE_NAME = "mqtt.home_assistant.device_name"
+            const val STATUS_TOPIC = "mqtt.home_assistant.status_topic"
+        }
+
         object Connection {
             const val SERVER_HOST = "mqtt.connection.server_host"
             const val SERVER_PORT = "mqtt.connection.server_port"

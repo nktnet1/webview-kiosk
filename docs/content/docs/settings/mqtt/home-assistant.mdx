@@ -1,0 +1,114 @@
+---
+title: Home Assistant
+description: Discover, monitor, and control your kiosk over MQTT
+---
+
+## 1. Settings
+
+Reconnect MQTT after changing these settings.
+
+### 1.1. Enable Discovery
+
+Make the kiosk available in Home Assistant, including its online/offline status.
+
+**Default:** false
+
+### 1.2. Device Name
+
+Optional display name for the kiosk. Leave blank to use {APP_NAME} and the
+app's instance ID.
+
+**Default:** (blank)
+
+### 1.3. Discovery Prefix
+
+Match the MQTT discovery prefix configured in Home Assistant.
+
+**Default:** homeassistant
+
+### 1.4. Status Topic
+
+Match Home Assistant's MQTT birth/status topic.
+
+**Default:** homeassistant/status
+
+## 2. Setup
+
+<Steps>
+
+<Step>
+Configure Home Assistant's
+[MQTT integration](https://www.home-assistant.io/integrations/mqtt/).
+</Step>
+
+<Step>
+Enable **MQTT** in {APP_NAME}, and configure **MQTT → Connection** to use the
+same broker.
+</Step>
+
+<Step>
+
+Open **MQTT → Home Assistant**, turn on **Enable Discovery**, and optionally
+enter a **Device Name**.
+
+</Step>
+
+<Step>
+Connect or restart MQTT using the controls on that screen.
+</Step>
+
+<Step>
+Find the kiosk under Home Assistant's **Settings → Devices & services → MQTT**.
+</Step>
+
+</Steps>
+
+For background monitoring, enable
+[Settings -> MQTT -> Use Foreground Service](/docs/settings/mqtt#52-use-foreground-service).
+
+## 3. Controls
+
+Navigate and scroll the page, clear history or cache, lock the kiosk or device,
+and launch apps from the kiosk's Home Assistant device. Use its text controls
+to open a URL, search, or send a toast message or notification.
+
+Saving a command text field sends its value immediately.
+
+Navigation needs an active WebView. **Lock device** requires device owner
+permission. Notifications require both the app's notification setting and
+Android notification permission.
+
+## 4. App settings
+
+App settings appear as switches, number fields, dropdowns, or text inputs.
+Administrator-managed settings cannot be edited. Password fields stay blank
+and never reveal saved passwords.
+
+<Callout title="Text input limits" type="warning">
+
+Text inputs accept up to 255 characters. Longer existing values leave the input
+blank. Edit longer values in the app. Saving a text or list setting replaces
+its entire value.
+
+</Callout>
+
+## 5. Status
+
+Status sensors report battery level, current URL, screen state, kiosk lock,
+brightness, and last interaction.
+
+Use the **Refresh** buttons to fetch status, app settings, device information,
+or launchable packages.
+
+Each refresh result remains unknown until its button is pressed. Open the result
+sensor's attributes to view its details.
+
+## 6. Troubleshooting
+
+- **Device missing:** check that both systems use the same broker, MQTT discovery
+  is enabled in Home Assistant, and the discovery prefixes match. Restart the
+  kiosk's MQTT connection and check **MQTT → Debug Logs** for failures.
+- **Entities disabled:** enable them under Home Assistant's
+  **Settings → Devices & services → Entities**.
+- **Removing the device:** disable discovery and reconnect to the same broker so
+  the kiosk can remove its entry. If you changed brokers, reconnect to the old one.

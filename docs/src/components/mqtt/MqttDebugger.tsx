@@ -643,7 +643,7 @@ export default function MqttDebugger() {
                         <div className="space-y-2">
                           <div className="flex items-center gap-1">
                             <Label htmlFor="mqtt-port">Port</Label>
-                            <InfoTooltip>WebSocket port (1–65535).</InfoTooltip>
+                            <InfoTooltip>WebSocket port (1-65535).</InfoTooltip>
                           </div>
                           <Input
                             id="mqtt-port"

@@ -162,7 +162,7 @@ export function validateBrokerDomain(raw: string): string {
 export function validateBrokerPort(raw: string): number {
   const result = v.safeParse(BrokerPortSchema, raw.trim());
   if (!result.success) {
-    throw new Error("Port is required (1–65535).");
+    throw new Error("Port is required (1-65535).");
   }
   return result.output;
 }

@@ -646,6 +646,33 @@
         android:description="@string/mqtt_use_foreground_service_description"
     />
 
+    <!-- MQTT Home Assistant -->
+    <restriction
+        android:key="mqtt.home_assistant.enabled"
+        android:restrictionType="bool"
+        android:title="@string/mqtt_home_assistant_enabled_title"
+        android:description="@string/mqtt_home_assistant_description"
+    />
+    <restriction
+        android:key="mqtt.home_assistant.discovery_prefix"
+        android:restrictionType="string"
+        android:title="@string/mqtt_home_assistant_discovery_prefix_title"
+        android:description="@string/mqtt_home_assistant_description"
+    />
+    <restriction
+        android:key="mqtt.home_assistant.device_name"
+        android:restrictionType="string"
+        android:title="@string/mqtt_home_assistant_device_name_title"
+        android:description="@string/mqtt_home_assistant_description"
+    />
+
+    <restriction
+        android:key="mqtt.home_assistant.status_topic"
+        android:restrictionType="string"
+        android:title="@string/mqtt_home_assistant_status_topic_title"
+        android:description="@string/mqtt_home_assistant_description"
+    />
+
     <!-- MQTT Connection -->
     <restriction
         android:key="mqtt.connection.server_host"

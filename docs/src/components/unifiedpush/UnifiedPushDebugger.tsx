@@ -754,7 +754,7 @@ export default function UnifiedPushDebugger() {
                                   </Label>
                                   <InfoTooltip>
                                     How long the push server may retain an
-                                    undelivered notification (0–{MAX_PUSH_TTL}{" "}
+                                    undelivered notification (0-{MAX_PUSH_TTL}{" "}
                                     seconds).
                                   </InfoTooltip>
                                 </div>

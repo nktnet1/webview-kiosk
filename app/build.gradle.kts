@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.android.application)
@@ -113,6 +114,15 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_11
+    }
+}
+
+afterEvaluate {
+    // Apply after built-in Kotlin assigns defaults when creating Android variants.
+    tasks.withType<KotlinCompile>().configureEach {
+        // Avoid corrupt incremental caches and stale declarations in this module.
+        // Gradle up-to-date checks still skip unchanged tasks.
+        incremental = false
     }
 }
 
