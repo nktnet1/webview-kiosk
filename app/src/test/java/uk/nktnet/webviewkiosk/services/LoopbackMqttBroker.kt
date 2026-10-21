@@ -182,9 +182,9 @@ internal class LoopbackMqttBroker : AutoCloseable {
                                 )
                         }
                         connected.add(this)
-                        check(connectRelease.await(5, TimeUnit.SECONDS)) {
-                            "CONNACK gate was not released"
-                        }
+                        // Activity creation can outlive a short handshake gate.
+                        // The test owns its release; close() also unblocks it.
+                        connectRelease.await()
                         if (closing.get() || socket.isClosed) {
                             return@thread
                         }

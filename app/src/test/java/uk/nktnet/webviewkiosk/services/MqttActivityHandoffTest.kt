@@ -140,7 +140,9 @@ class MqttActivityHandoffTest {
                 mqttUseTls = false
                 mqttUseWebSocket = false
                 mqttAutomaticReconnect = false
-                mqttConnectTimeout = 5
+                // CONNACK stays gated until cold activity/Compose setup finishes.
+                // Assertions still have their own short, bounded deadlines.
+                mqttConnectTimeout = 30
                 mqttSocketConnectTimeout = 5
                 mqttPublishEventTopic = "handoff/events"
                 mqttPublishEventQos = MqttQosOption.AT_LEAST_ONCE
