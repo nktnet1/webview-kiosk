@@ -15,10 +15,10 @@ description: Discover, monitor, and control your kiosk over MQTT
 
 Home Assistant automatically discovers the controls, settings, and request
 results. No scripts, YAML edits, or additional HA integration are needed.
-The default screen contains **Enable Discovery** and **Device Name**; leaving the
-name blank displays **Automatic**. Keep the standard prefix and status topic
-unless your HA setup uses custom values. These options are under **Show advanced settings**. Setup help is available
-through the info icons, which open scrollable dialogs.
+The screen shows **Enable Discovery**, **Device Name**, **Discovery Prefix**, and
+**Status Topic** together. Leaving the device name blank displays **Automatic**.
+Keep the standard prefix and status topic unless your HA setup uses custom values.
+Setup help is available through the info icons, which open scrollable dialogs.
 
 Discovery is disabled by default. Changes to these settings take effect after
 reconnecting MQTT. The existing MQTT command, settings, request, response, and
@@ -157,14 +157,10 @@ An explicit disconnect also publishes `offline` before closing the connection.
 
 ### Discovery Prefix
 
-Available under **Show advanced settings**.
-
 Match the discovery prefix configured in Home Assistant. **Default:** `homeassistant`.
 This setting is independent of Home Assistant's status topic.
 
 ### Status Topic
-
-Available under **Show advanced settings**.
 
 Match Home Assistant's MQTT birth/status topic. **Default:** `homeassistant/status`.
 An `online` message triggers discovery and state updates. If Home Assistant uses

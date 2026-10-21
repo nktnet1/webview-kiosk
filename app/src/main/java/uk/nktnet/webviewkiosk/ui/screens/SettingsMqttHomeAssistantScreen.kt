@@ -48,7 +48,6 @@ import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 fun SettingsMqttHomeAssistantScreen(navController: NavController) {
     val context = LocalContext.current
     val settings = remember { UserSettings(context) }
-    var showAdvanced by rememberSaveable { mutableStateOf(false) }
     val enabledKey = UserSettingsKeys.Mqtt.HomeAssistant.ENABLED
     val prefixKey = UserSettingsKeys.Mqtt.HomeAssistant.DISCOVERY_PREFIX
     val nameKey = UserSettingsKeys.Mqtt.HomeAssistant.DEVICE_NAME
@@ -77,8 +76,7 @@ fun SettingsMqttHomeAssistantScreen(navController: NavController) {
                                 "HA integration are needed. Leave the device name blank " +
                                 "for an automatic name.\n\n" +
                                 "Only change the discovery prefix or status topic if " +
-                                "Home Assistant uses custom values. These settings are " +
-                                "under Advanced settings.",
+                                "Home Assistant uses custom values.",
                     )
                     IconButton(
                         onClick = { navigateToWebViewScreen(navController) }
@@ -128,53 +126,40 @@ fun SettingsMqttHomeAssistantScreen(navController: NavController) {
                 isMultiline = false,
                 onSave = { settings.mqttHomeAssistantDeviceName = it },
             )
-            TextButton(onClick = { showAdvanced = !showAdvanced }) {
-                Text(
-                    if (showAdvanced) {
-                        "Hide advanced settings"
-                    } else {
-                        "Show advanced settings"
-                    }
-                )
-            }
-            if (showAdvanced) {
-                TextSettingFieldItem(
-                    label =
-                        stringResource(
-                            R.string.mqtt_home_assistant_discovery_prefix_title
-                        ),
-                    infoText =
-                        "Match Home Assistant's MQTT discovery prefix. " +
-                            "Leave the default homeassistant unless HA uses a custom " +
-                            "prefix. Reconnect MQTT after changing it.",
-                    placeholder = "homeassistant",
-                    initialValue = settings.mqttHomeAssistantDiscoveryPrefix,
-                    validator = HomeAssistantDiscovery::isValidPrefix,
-                    settingKey = prefixKey,
-                    restricted = settings.isRestricted(prefixKey),
-                    isMultiline = false,
-                    onSave = { settings.mqttHomeAssistantDiscoveryPrefix = it },
-                )
-                TextSettingFieldItem(
-                    label =
-                        stringResource(
-                            R.string.mqtt_home_assistant_status_topic_title
-                        ),
-                    infoText =
-                        "Match Home Assistant's MQTT birth/status topic. " +
-                            "Leave the default homeassistant/status unless HA uses " +
-                            "a custom topic. An online message triggers discovery and " +
-                            "state updates, independently of the discovery prefix. " +
-                            "Reconnect MQTT after changing it.",
-                    placeholder = "homeassistant/status",
-                    initialValue = settings.mqttHomeAssistantStatusTopic,
-                    validator = ::isValidMqttPublishTopic,
-                    settingKey = statusKey,
-                    restricted = settings.isRestricted(statusKey),
-                    isMultiline = false,
-                    onSave = { settings.mqttHomeAssistantStatusTopic = it },
-                )
-            }
+            TextSettingFieldItem(
+                label =
+                    stringResource(
+                        R.string.mqtt_home_assistant_discovery_prefix_title
+                    ),
+                infoText =
+                    "Match Home Assistant's MQTT discovery prefix. " +
+                        "Leave the default homeassistant unless HA uses a custom " +
+                        "prefix. Reconnect MQTT after changing it.",
+                placeholder = "homeassistant",
+                initialValue = settings.mqttHomeAssistantDiscoveryPrefix,
+                validator = HomeAssistantDiscovery::isValidPrefix,
+                settingKey = prefixKey,
+                restricted = settings.isRestricted(prefixKey),
+                isMultiline = false,
+                onSave = { settings.mqttHomeAssistantDiscoveryPrefix = it },
+            )
+            TextSettingFieldItem(
+                label =
+                    stringResource(R.string.mqtt_home_assistant_status_topic_title),
+                infoText =
+                    "Match Home Assistant's MQTT birth/status topic. " +
+                        "Leave the default homeassistant/status unless HA uses " +
+                        "a custom topic. An online message triggers discovery and " +
+                        "state updates, independently of the discovery prefix. " +
+                        "Reconnect MQTT after changing it.",
+                placeholder = "homeassistant/status",
+                initialValue = settings.mqttHomeAssistantStatusTopic,
+                validator = ::isValidMqttPublishTopic,
+                settingKey = statusKey,
+                restricted = settings.isRestricted(statusKey),
+                isMultiline = false,
+                onSave = { settings.mqttHomeAssistantStatusTopic = it },
+            )
             Spacer(Modifier.height(8.dp))
         }
         MqttDebugLogsButton(navController)
