@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,19 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -33,7 +25,6 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.HomeAssistantDiscovery
-import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -42,7 +33,6 @@ import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
 import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
-import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 
 @Composable
 fun SettingsMqttHomeAssistantScreen(navController: NavController) {
@@ -63,30 +53,12 @@ fun SettingsMqttHomeAssistantScreen(navController: NavController) {
             navController,
             stringResource(R.string.settings_mqtt_home_assistant_title),
             endIcon = {
-                Row {
-                    HomeAssistantInfoButton(
-                        title = "Home Assistant setup",
-                        infoText =
-                            "Use the same MQTT broker as Home Assistant, enable " +
-                                "discovery, then connect or restart MQTT. Find the " +
-                                "kiosk under Home Assistant's Settings → Devices & " +
-                                "services → MQTT.\n\n" +
-                                "Controls, settings, and request results are discovered " +
-                                "automatically. No scripts, YAML edits, or additional " +
-                                "HA integration are needed. Leave the device name blank " +
-                                "for an automatic name.\n\n" +
-                                "Only change the discovery prefix or status topic if " +
-                                "Home Assistant uses custom values.",
+                IconButton(onClick = { navigateToWebViewScreen(navController) }) {
+                    Icon(
+                        painter =
+                            painterResource(R.drawable.baseline_exit_to_app_24),
+                        contentDescription = "Go to WebView",
                     )
-                    IconButton(
-                        onClick = { navigateToWebViewScreen(navController) }
-                    ) {
-                        Icon(
-                            painter =
-                                painterResource(R.drawable.baseline_exit_to_app_24),
-                            contentDescription = "Go to WebView",
-                        )
-                    }
                 }
             },
         )
@@ -163,31 +135,5 @@ fun SettingsMqttHomeAssistantScreen(navController: NavController) {
             Spacer(Modifier.height(8.dp))
         }
         MqttDebugLogsButton(navController)
-    }
-}
-
-@Composable
-private fun HomeAssistantInfoButton(title: String, infoText: String) {
-    var showInfo by rememberSaveable { mutableStateOf(false) }
-
-    IconButton(onClick = { showInfo = true }) {
-        Icon(
-            painter = painterResource(R.drawable.baseline_info_24),
-            contentDescription = "$title information",
-        )
-    }
-    if (showInfo) {
-        AlertDialog(
-            onDismissRequest = { showInfo = false },
-            title = { Text(title) },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    SelectionContainer { Text(normaliseInfoText(infoText)) }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showInfo = false }) { Text("Close") }
-            },
-        )
     }
 }
