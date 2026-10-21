@@ -19,13 +19,8 @@ fun RefreshOnScreenWakeSetting() {
         label = stringResource(R.string.web_lifecycle_refresh_on_screen_wake_title),
         infoText =
             """
-            Refresh the current page once when the device wakes from sleep and the
-            kiosk returns to the foreground. This can restore dashboard connections
-            that became stale while the device was asleep.
-
-            Opening settings, rotating the screen or returning from another app
-            does not trigger a refresh. This setting works independently of
-            Allow Refresh.
+            Refresh the current page once when the device wakes from sleep.
+            The kiosk page must be in the foreground before and after sleep.
             """
                 .trimIndent(),
         initialValue = userSettings.refreshOnScreenWake,

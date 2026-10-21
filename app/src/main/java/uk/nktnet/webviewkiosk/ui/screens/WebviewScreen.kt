@@ -610,11 +610,7 @@ fun WebviewScreen(navController: NavController) {
                     userSettings.refreshOnLoadingErrorIntervalSeconds >=
                         Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
             ) {
-                WebViewNavigation.refresh(
-                    ::customLoadUrl,
-                    systemSettings,
-                    userSettings,
-                )
+                customLoadUrl(systemSettings.currentUrl)
             }
         }
     }

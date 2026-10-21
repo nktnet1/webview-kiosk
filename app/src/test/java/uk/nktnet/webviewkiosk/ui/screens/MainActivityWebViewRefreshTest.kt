@@ -431,26 +431,51 @@ class MainActivityWebViewRefreshTest {
     }
 
     @Test
-    fun serverErrorRetriesRespectDisabledIntervalAndAllowRefresh() {
+    fun loadingErrorRetriesAreIndependentOfAllowRefreshAndRespectInterval() {
         val settings = UserSettings(activity)
         val webView = webView()
+        val client = webView.webViewClient as WebViewClientCompat
         val url = "https://example.invalid/signage"
-        for ((interval, allowed) in listOf(0 to true, 5 to false)) {
-            settings.refreshOnLoadingErrorIntervalSeconds = interval
-            settings.allowRefresh = allowed
-            loadWithMarker(webView, url)
-            webView.webViewClient.onReceivedHttpError(
-                webView,
-                documentRequest(url),
-                httpError(503),
-            )
-            frames()
-            shadowOf(Looper.getMainLooper()).idleFor(6, TimeUnit.SECONDS)
-            frames()
-            assertLoadMarker(webView, expected = true)
+        val connectionError =
+            object : WebResourceErrorCompat() {
+                override fun getErrorCode(): Int = -2
+
+                override fun getDescription(): CharSequence = "Unable to connect"
+            }
+        for (serverError in listOf(false, true)) {
+            for ((interval, allowed, retries) in
+                listOf(
+                    Triple(0, false, false),
+                    Triple(0, true, false),
+                    Triple(5, false, true),
+                    Triple(5, true, true),
+                )) {
+                settings.refreshOnLoadingErrorIntervalSeconds = interval
+                settings.allowRefresh = allowed
+                loadWithMarker(webView, url)
+                if (serverError) {
+                    client.onReceivedHttpError(
+                        webView,
+                        documentRequest(url),
+                        httpError(503),
+                    )
+                } else {
+                    client.onReceivedError(
+                        webView,
+                        documentRequest(url),
+                        connectionError,
+                    )
+                }
+                frames()
+                assertLoadMarker(webView, expected = true)
+                shadowOf(Looper.getMainLooper()).idleFor(6, TimeUnit.SECONDS)
+                frames()
+                assertLoadMarker(webView, expected = !retries)
+            }
         }
 
-        settings.allowRefresh = true
+        settings.allowRefresh = false
+        settings.refreshOnLoadingErrorIntervalSeconds = 5
         loadWithMarker(webView, url)
         webView.webViewClient.onReceivedHttpError(
             webView,

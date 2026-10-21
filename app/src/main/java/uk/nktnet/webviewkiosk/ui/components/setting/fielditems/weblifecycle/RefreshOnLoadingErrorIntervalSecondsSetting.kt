@@ -28,7 +28,7 @@ fun RefreshOnLoadingErrorIntervalSecondsSetting() {
             Interval in seconds between automatic refresh attempts when a page fails
             to load, including main-page HTTP 5xx server errors on Android 6 and
             newer. HTTP 4xx responses and failed images or iframes do not trigger
-            retries. Requires Allow Refresh to be enabled.
+            retries.
 
             Minimum: ${Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS}
 
