@@ -73,7 +73,6 @@ fun SettingsMqttHomeAssistantScreen(navController: NavController) {
                         "Includes status, all remote commands, configuration controls, " +
                         "and request results. All discovered entities are enabled by default. " +
                         "Enter Toast and Notification messages directly in their text controls. " +
-                        "No scripts or YAML edits are required in Home Assistant. " +
                         "Reconnect MQTT after changing this setting.\n\n" +
                         "Discovery uses its own availability Last Will. Custom Will " +
                         "settings apply when discovery is disabled.",

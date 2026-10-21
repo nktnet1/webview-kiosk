@@ -5,209 +5,148 @@ description: Discover, monitor, and control your kiosk over MQTT
 
 ## Setup
 
-1. Configure Home Assistant's [MQTT integration](https://www.home-assistant.io/integrations/mqtt/).
-2. Enable **MQTT** in {APP_NAME}, and configure **MQTT → Connection** to use
-   the same broker.
-3. Open **MQTT → Home Assistant**, turn on **Enable Discovery**, and optionally
-   enter a **Device Name**.
-4. Restart the MQTT connection using the restart button in MQTT settings.
-5. Find the kiosk under Home Assistant's **Settings → Devices & services → MQTT**.
+<Steps>
 
-Home Assistant automatically discovers the controls, settings, and request
-results. No scripts, YAML edits, or additional HA integration are needed.
-The screen shows **Enable Discovery**, **Device Name**, **Discovery Prefix**, and
-**Status Topic** together. Leaving the device name blank displays **Automatic**.
-Keep the standard prefix and status topic unless your HA setup uses custom values.
-Individual setting help is available through the info icons, which open dialogs.
+<Step>
+Configure Home Assistant's
+[MQTT integration](https://www.home-assistant.io/integrations/mqtt/).
+</Step>
 
-Discovery is disabled by default. Changes to these settings take effect after
-reconnecting MQTT. The existing MQTT command, settings, request, response, and
-event interfaces continue to work.
+<Step>
+Enable **MQTT** in {APP_NAME}, and configure **MQTT → Connection** to use the
+same broker.
+</Step>
 
-## Commands
+<Step>
 
-All 17 remote command types have discovered controls:
+Open **MQTT → Home Assistant**, turn on **Enable Discovery**, and optionally
+enter a **Device Name**.
 
-| Commands | Home Assistant control |
-| --- | --- |
-| `go_back`, `go_forward`, `go_home`, `refresh` | Navigation buttons |
-| `clear_history`, `clear_cache` | Clear buttons |
-| `lock`, `unlock` | Kiosk lock switch |
-| `reconnect` | Reconnect MQTT button |
-| `lock_device` | Lock device button |
-| `page_up`, `page_down` | Page buttons, plus top/bottom buttons using `absolute: true` |
-| `go_to_url` | Text input containing the destination URL |
-| `search` | Text input containing the query |
-| `toast` | Text input containing the toast message |
-| `notify` | Text input containing the notification body; other fields use the command defaults |
-| `launch_package` | Text input containing the Android package name |
+</Step>
 
-Enter a value in **Toast** to display a brief Android popup, or in
-**Notification** to create an Android notification. Saving the text sends the
-message to this kiosk. Both inputs start blank and clear when kiosk state is
-refreshed, so they do not show an unknown last-send timestamp.
+<Step>
+Connect or restart MQTT using the controls on that screen.
+</Step>
 
-The URL, search, message, and package text inputs accept at most 255 characters.
-Go to URL shows the current page URL when it fits within that limit; longer URLs
-leave its input blank. The other command inputs start blank. Their state is
-initialised from the retained kiosk state.
+<Step>
+Find the kiosk under Home Assistant's **Settings → Devices & services → MQTT**.
+</Step>
 
-Controls use the existing remote handlers and permissions. Navigation requires
-an active WebView. The kiosk lock switch controls the app's kiosk mode. Lock
-device requires device owner permission; notifications require the app's
-notification setting and Android permission.
+</Steps>
 
-## Configuration controls
-
-Discovery includes a control for every configurable app setting,
-generated from the managed configuration catalogue:
-
-| Setting type | Home Assistant control |
-| --- | --- |
-| Boolean | Switch |
-| Integer | Number with the app's supported range |
-| Enum | Select using the app's accepted enum values |
-| String | Text |
-| Ordered list of actions | Text containing a JSON array, for example `["HISTORY","CACHE"]` |
-| Password | Write-only text in password mode |
-
-All discovered entities are **enabled by default**, including configuration
-controls, result sensors, and the request error sensor. Configuration
-controls use the same settings import handler as the normal remote API. Changes
-request the usual WebView/device settings reload.
-MQTT connection and discovery changes require the **Reconnect MQTT** button;
-changing MQTT enablement or credentials can interrupt remote access.
-
-Non-password controls report the effective setting and a `managed` attribute.
-An administrator-managed control is unavailable for editing, and managed policy
-continues to override any attempted remote change. Setting state refreshes after
-preference changes, on connection/Home Assistant birth, and every 30 seconds.
-
-Home Assistant text entities accept at most 255 characters. If an existing
-string or encoded action list is longer, its text state is blank and its full
-value is available in the entity's `value` attribute. You can submit a shorter
-replacement. These controls replace each supplied setting's entire value,
-including multiline lists and scripts. Values longer than 255 characters must be
-edited in the app or through the existing remote settings API.
-
-The MQTT password and custom unlock password always report a blank input and
-have no readable credential values or value attributes. They are omitted from
-all Home Assistant settings snapshots and
-request results. Password inputs can replace or clear a password within the
-255-character limit. Other
-configuration values, including URLs and scripts, are published as configured.
-
-## Status and requests
-
-Status entities cover battery percentage, current URL, screen interactivity,
-kiosk lock, lock type, last interaction time, app brightness, and system
-brightness. Current URL has a 255-character state and a full `url` attribute.
-Brightness values follow the existing status API: app brightness can be `-1`
-when no activity window is available, and system brightness uses Android's
-0–255 scale.
-
-State is published on connection, when Home Assistant announces `online`, and
-every 30 seconds while connected. URL, screen, and kiosk lock events also update
-state immediately. Each app instance has stable device and entity identifiers,
-independent of its display name, MQTT username, and MQTT client ID.
-
-Each request has a **Refresh** button and a corresponding enabled diagnostic
-result sensor. Press a request button to populate its result; until then its
-response time is unknown. The request error sensor populates only after a failed
-or malformed request routed to its topic. The sensor state is the response time,
-and the complete response data is
-in its `result` attribute, avoiding the entity state length limit.
-
-| Request | Result |
-| --- | --- |
-| `get_status` | All status fields; also refreshes the status entities |
-| `get_settings` | Exported settings excluding the two passwords; also refreshes configuration controls |
-| `get_system_info` | Complete app and device metadata |
-| `get_launchable_packages` | Launchable package names |
-| `get_lock_task_packages` | Permitted lock-task package names, on Android 8 and later |
-
-A second launchable-packages button requests only lock-task-permitted packages.
-Both variants update the same launchable-packages result. Request buttons use
-the standard request defaults. Failed requests report an `error` attribute;
-malformed requests use the **Request error** diagnostic entity.
-
-## Upgrading from notifier controls
-
-Reconnect MQTT after installing the update. Discovery automatically removes the
-old Toast, Notification, Command JSON, Settings JSON, and Request JSON notify
-entities before publishing the current controls. Toast and Notification now use
-text entities with new identifiers; update any automations that used their old
-notify entities to use `text.set_value` instead.
-
-The integration no longer includes arbitrary JSON actions or script export.
-If you previously copied the generated command, settings, or request scripts into
-Home Assistant, remove those entries from `scripts.yaml` and reload scripts.
-Scripts installed in Home Assistant cannot be removed by MQTT discovery.
-
-## Settings
-
-### Enable Discovery
-
-Publish a retained MQTT device discovery configuration. **Default:** false.
-
-While enabled, the connection uses a dedicated, retained `offline` Last Will for
-Home Assistant availability. MQTT allows one Last Will per connection, so the
-custom settings under **MQTT → Will** apply when discovery is disabled.
-An explicit disconnect also publishes `offline` before closing the connection.
-
-### Discovery Prefix
-
-Match the discovery prefix configured in Home Assistant. **Default:** `homeassistant`.
-This setting is independent of Home Assistant's status topic.
-
-### Status Topic
-
-Match Home Assistant's MQTT birth/status topic. **Default:** `homeassistant/status`.
-An `online` message triggers discovery and state updates. If Home Assistant uses
-a custom birth topic, enter it here, independently of the discovery prefix.
-
-### Device Name
-
-Optional display name, such as `Kitchen kiosk`. If blank, the app uses
-`Webview Kiosk <app-instance-id>`. Renaming preserves entity IDs and automations.
-
-## Upgrading from disabled-by-default discovery
-
-After installing the update, restart the kiosk's MQTT connection to republish
-its retained discovery configuration. The new default applies to newly registered
-entities. Home Assistant keeps an existing entity's registry enable/disable choice;
-changing `enabled_by_default` does not override it.
-
-For entities registered by the earlier version, open **Settings → Devices &
-services → Entities**, filter to the kiosk's MQTT device and disabled entities,
-select them, and enable them. Also check the MQTT integration's **Enable newly
-added entities** preference if freshly discovered entities are still disabled.
-Entity unique IDs stay the same, so existing names and automations are preserved.
-
-## Topics and broker permissions
-
-| Topic | App access | Retained |
-| --- | --- | --- |
-| `<prefix>/device/webview_kiosk_<app-instance-id>/config` | Publish discovery | Yes |
-| Configured status topic (default `homeassistant/status`) | Subscribe to Home Assistant birth | Controlled by Home Assistant |
-| `wk/<app-instance-id>/ha/state` | Publish JSON state | Yes |
-| `wk/<app-instance-id>/ha/availability` | Publish `online` / `offline` | Yes |
-| `wk/<app-instance-id>/ha/command` | Subscribe to JSON commands | No |
-| `wk/<app-instance-id>/ha/settings/set` | Subscribe to JSON settings updates | No |
-| `wk/<app-instance-id>/ha/settings` | Publish effective settings and managed flags | Yes |
-| `wk/<app-instance-id>/ha/request` | Subscribe to JSON requests | No |
-| `wk/<app-instance-id>/ha/response/<request-type>` | Publish request result and response time | Yes |
-
-Allow these topics in broker ACLs for the kiosk and Home Assistant. Commands are
-targeted to the app instance and are never retained by the discovered controls.
-Retained messages on all three dedicated control topics are ignored, including
-when a normal wildcard subscription also matches them.
-
-The app republishes discovery on reconnect and Home Assistant restart. If you
-disable discovery or change its prefix, reconnect to the same broker to remove
-the previous retained configuration and its entities. Cleanup is remembered
-across app restarts, separately for each broker. If you change brokers, the old
-broker must be reachable again before its previous configuration can be removed.
-
+The kiosk appears as one device containing its controls, settings, and sensors.
 For background monitoring, enable **MQTT → Use Foreground Service** and follow
 the [battery optimisation guidance](/docs/settings/mqtt#52-use-foreground-service).
+
+## Controls
+
+| Control | What it does |
+| --- | --- |
+| Go home, Go back, Go forward, Refresh | Navigate or reload the current page |
+| Go to URL, Search | Open a URL or search for the entered text |
+| Page up, Page down, Go to top, Go to bottom | Scroll the page |
+| Clear history, Clear cache | Clear the selected WebView data |
+| Kiosk lock | Lock or unlock the app's kiosk mode |
+| Lock device | Lock Android - requires device owner permission |
+| Launch package | Open the entered Android package name |
+| Toast | Show the entered text as a brief Android popup |
+| Notification | Show the entered text as an Android notification |
+| Reconnect MQTT | Restart the kiosk's MQTT connection |
+
+Saving a command text field sends its value to the kiosk. **Go to URL** shows the
+current URL when it fits within the 255-character input limit. The other command
+text fields start blank and clear when the kiosk next updates its state.
+
+Navigation needs an active WebView. Notifications require both the app's
+notification setting and Android notification permission.
+
+## App settings
+
+Each configurable app setting has a corresponding Home Assistant control:
+
+| Setting type | Control |
+| --- | --- |
+| On/off | Switch |
+| Integer | Number within the supported range |
+| Choice | Dropdown |
+| Text | Text input |
+| Ordered action list | Text input containing an array, such as `["HISTORY","CACHE"]` |
+| Password | Write-only password input |
+
+Changes use the same validation and permissions as the app.
+Administrator-managed settings are shown but unavailable for editing. After
+changing MQTT connection or discovery settings, use **Reconnect MQTT**.
+Changing credentials or disabling MQTT can interrupt remote access.
+
+Text inputs accept up to 255 characters. Longer existing values leave the input
+blank. The full non-password value is available in the entity's `value`
+attribute. Edit longer values in the app. Saving a text or list setting
+replaces its entire value.
+
+Password inputs always stay blank. They can replace or clear a password, but
+passwords are never included in the reported settings or request results.
+
+## Status and refresh buttons
+
+Sensors show battery percentage, current URL, screen state, kiosk lock, lock
+type, last interaction, app brightness, and system brightness. The current URL
+sensor also exposes the full URL in its `url` attribute.
+
+State updates when MQTT connects, when Home Assistant restarts, and every 30
+seconds while connected. URL, screen, and kiosk lock changes update
+immediately. App brightness can show `-1` when no activity window is available;
+system brightness uses Android's 0--255 scale.
+
+Use the **Refresh** buttons to fetch additional information:
+
+| Button | Result |
+| --- | --- |
+| Refresh Status | Current kiosk status; also updates the status sensors |
+| Refresh Settings | Current app settings; also updates the setting controls |
+| Refresh System info | App and Android device information |
+| Refresh Launchable packages | Packages that Android can launch |
+| Refresh permitted launchable packages | Launchable packages permitted in lock-task mode |
+| Refresh Lock task packages | Permitted lock-task package names; Android 8 and later |
+
+Each result sensor shows when the result was last updated. Open its attributes to
+see the returned data. Results remain unknown until the corresponding refresh
+button is used. Failed requests include an `error` attribute.
+
+An unknown **Request error** value is normal until an invalid request is received.
+
+## Discovery settings
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| Enable Discovery | Off | Make the kiosk available in Home Assistant |
+| Device Name | Automatic | Optional display name; renaming preserves existing entities and automations |
+| Discovery Prefix | `homeassistant` | Match Home Assistant's MQTT discovery prefix |
+| Status Topic | `homeassistant/status` | Match Home Assistant's MQTT birth/status topic |
+
+Leave the prefix and status topic at their defaults unless Home Assistant uses
+custom values. Each setting has an info icon for further help. Reconnect MQTT
+after changing discovery settings.
+
+Discovery manages the kiosk's online/offline status, including unexpected
+connection loss. Custom settings under **MQTT → Will** apply when discovery is
+disabled.
+
+## Troubleshooting
+
+- **Device missing:** check that both systems use the same broker, MQTT discovery
+  is enabled in Home Assistant, and the discovery prefixes match. Restart the
+  kiosk's MQTT connection and check **MQTT → Debug Logs** for failures.
+- **Entities disabled:** open Home Assistant's **Settings → Devices & services →
+  Entities**, filter to the kiosk, and enable the desired entities. Check the MQTT
+  integration's **Enable newly added entities** preference. Home Assistant keeps
+  your saved enable/disable choices when discovery updates.
+- **Controls unavailable:** reconnect MQTT. Individual configuration controls also
+  remain unavailable while an administrator manages that setting.
+- **Result unknown:** press its corresponding **Refresh** button.
+- **Removing the device:** disable discovery and reconnect to the same broker so
+  the kiosk can remove its discovery entry. If you changed brokers, reconnect to
+  the old broker to remove its old entry.
+
+If your broker restricts topics, allow the kiosk and Home Assistant to use the
+configured discovery prefix, the configured status topic, and
+`wk/<app-instance-id>/ha/#` for kiosk state and controls.
