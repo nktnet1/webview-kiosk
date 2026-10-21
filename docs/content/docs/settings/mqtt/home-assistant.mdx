@@ -3,7 +3,36 @@ title: Home Assistant
 description: Discover, monitor, and control your kiosk over MQTT
 ---
 
-## Setup
+## 1. Settings
+
+Reconnect MQTT after changing these settings.
+
+### 1.1. Enable Discovery
+
+Make the kiosk available in Home Assistant, including its online/offline status.
+
+**Default:** false
+
+### 1.2. Device Name
+
+Optional display name for the kiosk. Leave blank to use {APP_NAME} and the
+app's instance ID.
+
+**Default:** (blank)
+
+### 1.3. Discovery Prefix
+
+Match the MQTT discovery prefix configured in Home Assistant.
+
+**Default:** homeassistant
+
+### 1.4. Status Topic
+
+Match Home Assistant's MQTT birth/status topic.
+
+**Default:** homeassistant/status
+
+## 2. Setup
 
 <Steps>
 
@@ -34,119 +63,52 @@ Find the kiosk under Home Assistant's **Settings → Devices & services → MQTT
 
 </Steps>
 
-The kiosk appears as one device containing its controls, settings, and sensors.
-For background monitoring, enable **MQTT → Use Foreground Service** and follow
-the [battery optimisation guidance](/docs/settings/mqtt#52-use-foreground-service).
+For background monitoring, enable
+[Settings -> MQTT -> Use Foreground Service](/docs/settings/mqtt#52-use-foreground-service).
 
-## Controls
+## 3. Controls
 
-| Control | What it does |
-| --- | --- |
-| Go home, Go back, Go forward, Refresh | Navigate or reload the current page |
-| Go to URL, Search | Open a URL or search for the entered text |
-| Page up, Page down, Go to top, Go to bottom | Scroll the page |
-| Clear history, Clear cache | Clear the selected WebView data |
-| Kiosk lock | Lock or unlock the app's kiosk mode |
-| Lock device | Lock Android - requires device owner permission |
-| Launch package | Open the entered Android package name |
-| Toast | Show the entered text as a brief Android popup |
-| Notification | Show the entered text as an Android notification |
-| Reconnect MQTT | Restart the kiosk's MQTT connection |
+Navigate and scroll the page, clear history or cache, lock the kiosk or device,
+and launch apps from the kiosk's Home Assistant device. Use its text controls
+to open a URL, search, or send a toast message or notification.
 
-Saving a command text field sends its value to the kiosk. **Go to URL** shows the
-current URL when it fits within the 255-character input limit. The other command
-text fields start blank and clear when the kiosk next updates its state.
+Saving a command text field sends its value immediately.
 
-Navigation needs an active WebView. Notifications require both the app's
-notification setting and Android notification permission.
+Navigation needs an active WebView. **Lock device** requires device owner
+permission. Notifications require both the app's notification setting and
+Android notification permission.
 
-## App settings
+## 4. App settings
 
-Each configurable app setting has a corresponding Home Assistant control:
+App settings appear as switches, number fields, dropdowns, or text inputs.
+Administrator-managed settings cannot be edited. Password fields stay blank
+and never reveal saved passwords.
 
-| Setting type | Control |
-| --- | --- |
-| On/off | Switch |
-| Integer | Number within the supported range |
-| Choice | Dropdown |
-| Text | Text input |
-| Ordered action list | Text input containing an array, such as `["HISTORY","CACHE"]` |
-| Password | Write-only password input |
-
-Changes use the same validation and permissions as the app.
-Administrator-managed settings are shown but unavailable for editing. After
-changing MQTT connection or discovery settings, use **Reconnect MQTT**.
-Changing credentials or disabling MQTT can interrupt remote access.
+<Callout title="Text input limits" type="warning">
 
 Text inputs accept up to 255 characters. Longer existing values leave the input
-blank. The full non-password value is available in the entity's `value`
-attribute. Edit longer values in the app. Saving a text or list setting
-replaces its entire value.
+blank. Edit longer values in the app. Saving a text or list setting replaces
+its entire value.
 
-Password inputs always stay blank. They can replace or clear a password, but
-passwords are never included in the reported settings or request results.
+</Callout>
 
-## Status and refresh buttons
+## 5. Status
 
-Sensors show battery percentage, current URL, screen state, kiosk lock, lock
-type, last interaction, app brightness, and system brightness. The current URL
-sensor also exposes the full URL in its `url` attribute.
+Status sensors report battery level, current URL, screen state, kiosk lock,
+brightness, and last interaction.
 
-State updates when MQTT connects, when Home Assistant restarts, and every 30
-seconds while connected. URL, screen, and kiosk lock changes update
-immediately. App brightness can show `-1` when no activity window is available;
-system brightness uses Android's 0--255 scale.
+Use the **Refresh** buttons to fetch status, app settings, device information,
+or launchable packages.
 
-Use the **Refresh** buttons to fetch additional information:
+Each refresh result remains unknown until its button is pressed. Open the result
+sensor's attributes to view its details.
 
-| Button | Result |
-| --- | --- |
-| Refresh Status | Current kiosk status; also updates the status sensors |
-| Refresh Settings | Current app settings; also updates the setting controls |
-| Refresh System info | App and Android device information |
-| Refresh Launchable packages | Packages that Android can launch |
-| Refresh permitted launchable packages | Launchable packages permitted in lock-task mode |
-| Refresh Lock task packages | Permitted lock-task package names; Android 8 and later |
-
-Each result sensor shows when the result was last updated. Open its attributes to
-see the returned data. Results remain unknown until the corresponding refresh
-button is used. Failed requests include an `error` attribute.
-
-An unknown **Request error** value is normal until an invalid request is received.
-
-## Discovery settings
-
-| Setting | Default | Purpose |
-| --- | --- | --- |
-| Enable Discovery | Off | Make the kiosk available in Home Assistant |
-| Device Name | Automatic | Optional display name; renaming preserves existing entities and automations |
-| Discovery Prefix | `homeassistant` | Match Home Assistant's MQTT discovery prefix |
-| Status Topic | `homeassistant/status` | Match Home Assistant's MQTT birth/status topic |
-
-Leave the prefix and status topic at their defaults unless Home Assistant uses
-custom values. Each setting has an info icon for further help. Reconnect MQTT
-after changing discovery settings.
-
-Discovery manages the kiosk's online/offline status, including unexpected
-connection loss. Custom settings under **MQTT → Will** apply when discovery is
-disabled.
-
-## Troubleshooting
+## 6. Troubleshooting
 
 - **Device missing:** check that both systems use the same broker, MQTT discovery
   is enabled in Home Assistant, and the discovery prefixes match. Restart the
   kiosk's MQTT connection and check **MQTT → Debug Logs** for failures.
-- **Entities disabled:** open Home Assistant's **Settings → Devices & services →
-  Entities**, filter to the kiosk, and enable the desired entities. Check the MQTT
-  integration's **Enable newly added entities** preference. Home Assistant keeps
-  your saved enable/disable choices when discovery updates.
-- **Controls unavailable:** reconnect MQTT. Individual configuration controls also
-  remain unavailable while an administrator manages that setting.
-- **Result unknown:** press its corresponding **Refresh** button.
+- **Entities disabled:** enable them under Home Assistant's
+  **Settings → Devices & services → Entities**.
 - **Removing the device:** disable discovery and reconnect to the same broker so
-  the kiosk can remove its discovery entry. If you changed brokers, reconnect to
-  the old broker to remove its old entry.
-
-If your broker restricts topics, allow the kiosk and Home Assistant to use the
-configured discovery prefix, the configured status topic, and
-`wk/<app-instance-id>/ha/#` for kiosk state and controls.
+  the kiosk can remove its entry. If you changed brokers, reconnect to the old one.
