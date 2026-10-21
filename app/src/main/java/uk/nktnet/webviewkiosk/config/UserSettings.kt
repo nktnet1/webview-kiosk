@@ -477,6 +477,14 @@ class UserSettings(val context: Context) {
             max = Constants.MAX_INT_SETTING,
         )
 
+    var refreshOnScreenWake by
+        booleanPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.WebLifecycle.REFRESH_ON_SCREEN_WAKE,
+            false,
+        )
+
     // Appearance
     var theme by
         stringEnumPref(
@@ -1402,6 +1410,10 @@ class UserSettings(val context: Context) {
                         .REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS,
                     refreshOnLoadingErrorIntervalSeconds,
                 )
+                put(
+                    UserSettingsKeys.WebLifecycle.REFRESH_ON_SCREEN_WAKE,
+                    refreshOnScreenWake,
+                )
 
                 put(UserSettingsKeys.Appearance.THEME, theme.name)
                 put(
@@ -1999,6 +2011,12 @@ class UserSettings(val context: Context) {
                     UserSettingsKeys.WebLifecycle
                         .REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS,
                     refreshOnLoadingErrorIntervalSeconds,
+                )
+
+            refreshOnScreenWake =
+                json.optBoolean(
+                    UserSettingsKeys.WebLifecycle.REFRESH_ON_SCREEN_WAKE,
+                    refreshOnScreenWake,
                 )
 
             theme =

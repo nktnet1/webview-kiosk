@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,6 +96,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.ImageOptionsDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.KioskControlPanel
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.ScreenWakeRefreshController
 import uk.nktnet.webviewkiosk.ui.components.webview.WebViewFindBar
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.placeholders.WebViewUnavailable
@@ -509,6 +511,30 @@ fun WebviewScreen(navController: NavController) {
         webView.loadUrl(url)
     }
 
+    val canRefreshOnWake by rememberUpdatedState {
+        userSettings.refreshOnScreenWake && isCurrentWebView()
+    }
+    val refreshOnWake by rememberUpdatedState {
+        WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+    }
+    val refreshOnScreenWake = userSettings.refreshOnScreenWake
+    DisposableEffect(webView, lifecycleOwner, activity, refreshOnScreenWake) {
+        val controller =
+            activity
+                ?.takeIf { refreshOnScreenWake }
+                ?.let {
+                    ScreenWakeRefreshController(
+                        context,
+                        lifecycleOwner.lifecycle,
+                        it.window.decorView,
+                        canRefresh = { canRefreshOnWake() },
+                        refresh = { refreshOnWake() },
+                    )
+                }
+        controller?.attach()
+        onDispose { controller?.detach() }
+    }
+
     LaunchedEffect(webView, retryAfterLocalNetworkPermission) {
         if (retryAfterLocalNetworkPermission) {
             retryAfterLocalNetworkPermission = false
@@ -570,23 +596,25 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    if (
-        userSettings.refreshOnLoadingErrorIntervalSeconds >=
-            Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
-    ) {
-        LaunchedEffect(webView, lastErrorUrl) {
-            while (lastErrorUrl.isNotEmpty()) {
-                delay(
-                    (userSettings.refreshOnLoadingErrorIntervalSeconds * 1000L)
-                        .milliseconds
+    val loadingErrorInterval = userSettings.refreshOnLoadingErrorIntervalSeconds
+    LaunchedEffect(webView, lastErrorUrl, loadingErrorInterval) {
+        while (lastErrorUrl.isNotEmpty()) {
+            val interval = userSettings.refreshOnLoadingErrorIntervalSeconds
+            if (interval < Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS) {
+                break
+            }
+            delay((interval * 1000L).milliseconds)
+            if (
+                isCurrentWebView() &&
+                    lastErrorUrl.isNotEmpty() &&
+                    userSettings.refreshOnLoadingErrorIntervalSeconds >=
+                        Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
+            ) {
+                WebViewNavigation.refresh(
+                    ::customLoadUrl,
+                    systemSettings,
+                    userSettings,
                 )
-                if (isCurrentWebView()) {
-                    WebViewNavigation.refresh(
-                        ::customLoadUrl,
-                        systemSettings,
-                        userSettings,
-                    )
-                }
             }
         }
     }

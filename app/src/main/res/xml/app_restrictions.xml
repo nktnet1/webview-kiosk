@@ -357,6 +357,13 @@
         android:description="@string/web_lifecycle_refresh_on_loading_error_interval_seconds_description"
     />
 
+    <restriction
+        android:key="web_lifecycle.refresh_on_screen_wake"
+        android:restrictionType="bool"
+        android:title="@string/web_lifecycle_refresh_on_screen_wake_title"
+        android:description="@string/web_lifecycle_refresh_on_screen_wake_description"
+    />
+
     <!-- Appearance -->
     <restriction
         android:key="appearance.theme"
