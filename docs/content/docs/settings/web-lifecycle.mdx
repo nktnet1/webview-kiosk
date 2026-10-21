@@ -1,6 +1,6 @@
 ---
 title: Web Lifecycle
-description: Lock on launch, reset on launch, reset on inactivity, reset actions
+description: Lock and reset behaviour, network and server-error recovery, refresh on screen wake
 ---
 
 ## 1. Lock on Launch
@@ -100,15 +100,33 @@ is restored.
 
 Interval in seconds between automatic refresh attempts when a page fails
 to load. This usually indicates a connection failure, such as when the
-device is offline or the server is unavailable.
+device is offline or the server is unavailable. On Android 6 and newer,
+main-page HTTP 5xx responses (such as 500, 502 and 503) also trigger retries.
+HTTP 4xx responses, including 401, 403 and 404, do not trigger retries.
+Failed images, scripts and iframes do not trigger a page refresh.
 
 This is detected using the Android API:
 [WebViewClient#onReceivedError](https://developer.android.com/reference/android/webkit/WebViewClient#onReceivedError(android.webkit.WebView,%20android.webkit.WebResourceRequest,%20android.webkit.WebResourceError))
 in conjunction with
 [WebResourceRequest#isForMainFrame](https://developer.android.com/reference/android/webkit/WebResourceRequest#isForMainFrame()).
+HTTP server errors are detected using
+[WebViewClient#onReceivedHttpError](https://developer.android.com/reference/android/webkit/WebViewClient#onReceivedHttpError(android.webkit.WebView,%20android.webkit.WebResourceRequest,%20android.webkit.WebResourceResponse)).
+These errors also count as page errors for `Refresh on Network Available`.
+
+Retries honour URL restrictions. The server's response remains visible until the
+next attempt; a successful new load or navigation to another page clears the
+error. On Android 5, connection-error recovery continues to work, but HTTP status
+recovery is unavailable.
 
 To disable, use the value `0`.
 
 **Minimum:** 5
 
 **Default:** 0
+
+## 8. Refresh on Screen Wake
+
+Refresh the current page once when the device wakes from sleep.
+The kiosk page must be in the foreground before and after sleep.
+
+**Default:** false

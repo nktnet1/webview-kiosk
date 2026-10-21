@@ -26,8 +26,9 @@ fun RefreshOnLoadingErrorIntervalSecondsSetting() {
         infoText =
             """
             Interval in seconds between automatic refresh attempts when a page fails
-            to load. This usually indicates a connection failure, such as
-            when the device is offline or the server is unavailable.
+            to load, including main-page HTTP 5xx server errors on Android 6 and
+            newer. HTTP 4xx responses and failed images or iframes do not trigger
+            retries.
 
             Minimum: ${Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS}
 

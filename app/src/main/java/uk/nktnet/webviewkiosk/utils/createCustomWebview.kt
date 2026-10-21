@@ -1329,6 +1329,26 @@ fun createCustomWebview(
                                 )
                             }
 
+                            override fun onReceivedHttpError(
+                                view: WebView,
+                                request: WebResourceRequest,
+                                errorResponse: WebResourceResponse,
+                            ) {
+                                val failingUrl = request.url.toString()
+                                if (
+                                    errorResponse.statusCode !in 500..599 ||
+                                        !navigation.acceptsError(
+                                            failingUrl,
+                                            this@apply.url,
+                                            request.isForMainFrame,
+                                        )
+                                ) {
+                                    return
+                                }
+                                finishLoadingProgress()
+                                config.setLastErrorUrl(failingUrl)
+                            }
+
                             override fun onReceivedError(
                                 view: WebView,
                                 request: WebResourceRequest,

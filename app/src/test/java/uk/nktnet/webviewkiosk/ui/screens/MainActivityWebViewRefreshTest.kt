@@ -5,9 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Looper
+import android.os.PowerManager
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Recomposer
@@ -91,6 +93,10 @@ class MainActivityWebViewRefreshTest {
     @Before
     fun setUp() {
         val context = RuntimeEnvironment.getApplication()
+        shadowOf(context)
+            .grantPermissions(
+                "${context.packageName}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+            )
         context
             .getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
@@ -353,6 +359,254 @@ class MainActivityWebViewRefreshTest {
         chrome.onProgressChanged(webView, 20)
         frames()
         assertTrue(loadingProgress().isEmpty())
+    }
+
+    @Test
+    fun mainFrameServerErrorsRetryAndANewSuccessfulLoadStopsRetries() {
+        val settings = UserSettings(activity)
+        settings.refreshOnLoadingErrorIntervalSeconds = 5
+        val webView = webView()
+        val client = webView.webViewClient
+        val url = "https://example.invalid/signage"
+        for (status in listOf(500, 502, 503, 599)) {
+            loadWithMarker(webView, url)
+            requireNotNull(webView.webChromeClient).onProgressChanged(webView, 45)
+            client.onReceivedHttpError(
+                webView,
+                documentRequest(url),
+                httpError(status),
+            )
+            client.onPageFinished(webView, url)
+            frames()
+            assertTrue(loadingProgress().isEmpty())
+            assertLoadMarker(webView, expected = true)
+
+            shadowOf(Looper.getMainLooper()).idleFor(6, TimeUnit.SECONDS)
+            frames()
+            assertEquals(url, shadowOf(webView).lastLoadedUrl)
+            assertLoadMarker(webView, expected = false)
+
+            loadWithMarker(webView, url)
+            client.onPageFinished(webView, url)
+            frames()
+            shadowOf(Looper.getMainLooper()).idleFor(6, TimeUnit.SECONDS)
+            frames()
+            assertLoadMarker(webView, expected = true)
+        }
+    }
+
+    @Test
+    fun clientErrorsSubresourcesAndSupersededServerErrorsDoNotRetry() {
+        UserSettings(activity).refreshOnLoadingErrorIntervalSeconds = 5
+        val webView = webView()
+        val client = webView.webViewClient
+        val url = "https://example.invalid/signage"
+        for (status in listOf(400, 401, 403, 404, 429, 499)) {
+            loadWithMarker(webView, url)
+            client.onReceivedHttpError(
+                webView,
+                documentRequest(url),
+                httpError(status),
+            )
+            frames()
+            shadowOf(Looper.getMainLooper()).idleFor(6, TimeUnit.SECONDS)
+            frames()
+            assertLoadMarker(webView, expected = true)
+        }
+
+        for (request in
+            listOf(
+                documentRequest(url, mainFrame = false),
+                documentRequest("https://example.invalid/older"),
+            )) {
+            loadWithMarker(webView, url)
+            requireNotNull(webView.webChromeClient).onProgressChanged(webView, 45)
+            client.onReceivedHttpError(webView, request, httpError(503))
+            frames()
+            assertEquals(listOf(0.45f), loadingProgress())
+            shadowOf(Looper.getMainLooper()).idleFor(6, TimeUnit.SECONDS)
+            frames()
+            assertLoadMarker(webView, expected = true)
+        }
+    }
+
+    @Test
+    fun loadingErrorRetriesAreIndependentOfAllowRefreshAndRespectInterval() {
+        val settings = UserSettings(activity)
+        val webView = webView()
+        val client = webView.webViewClient as WebViewClientCompat
+        val url = "https://example.invalid/signage"
+        val connectionError =
+            object : WebResourceErrorCompat() {
+                override fun getErrorCode(): Int = -2
+
+                override fun getDescription(): CharSequence = "Unable to connect"
+            }
+        for (serverError in listOf(false, true)) {
+            for ((interval, allowed, retries) in
+                listOf(
+                    Triple(0, false, false),
+                    Triple(0, true, false),
+                    Triple(5, false, true),
+                    Triple(5, true, true),
+                )) {
+                settings.refreshOnLoadingErrorIntervalSeconds = interval
+                settings.allowRefresh = allowed
+                loadWithMarker(webView, url)
+                if (serverError) {
+                    client.onReceivedHttpError(
+                        webView,
+                        documentRequest(url),
+                        httpError(503),
+                    )
+                } else {
+                    client.onReceivedError(
+                        webView,
+                        documentRequest(url),
+                        connectionError,
+                    )
+                }
+                frames()
+                assertLoadMarker(webView, expected = true)
+                shadowOf(Looper.getMainLooper()).idleFor(6, TimeUnit.SECONDS)
+                frames()
+                assertLoadMarker(webView, expected = !retries)
+            }
+        }
+
+        settings.allowRefresh = false
+        settings.refreshOnLoadingErrorIntervalSeconds = 5
+        loadWithMarker(webView, url)
+        webView.webViewClient.onReceivedHttpError(
+            webView,
+            documentRequest(url),
+            httpError(503),
+        )
+        frames()
+        settings.refreshOnLoadingErrorIntervalSeconds = 0
+        shadowOf(Looper.getMainLooper()).idleFor(6, TimeUnit.SECONDS)
+        frames()
+        assertLoadMarker(webView, expected = true)
+    }
+
+    @Test
+    fun navigationAndLeavingTheWebViewCancelServerErrorRetries() {
+        UserSettings(activity).refreshOnLoadingErrorIntervalSeconds = 5
+        val webView = webView()
+        val failed = "https://example.invalid/failed"
+        loadWithMarker(webView, failed)
+        webView.webViewClient.onReceivedHttpError(
+            webView,
+            documentRequest(failed),
+            httpError(503),
+        )
+        frames()
+        loadWithMarker(webView, "https://example.invalid/recovered")
+        frames()
+        shadowOf(Looper.getMainLooper()).idleFor(6, TimeUnit.SECONDS)
+        frames()
+        assertLoadMarker(webView, expected = true)
+
+        webView.webViewClient.onReceivedHttpError(
+            webView,
+            documentRequest("https://example.invalid/recovered"),
+            httpError(503),
+        )
+        frames()
+        controller().navigate(Screen.SettingsWebLifecycle.route)
+        frames()
+        shadowOf(Looper.getMainLooper()).idleFor(6, TimeUnit.SECONDS)
+        frames()
+        assertEquals(
+            Screen.SettingsWebLifecycle.route,
+            controller().currentDestination?.route,
+        )
+        assertLoadMarker(webView, expected = true)
+    }
+
+    @Test
+    fun screenWakeRefreshIsOptInAndIndependentOfAllowRefresh() {
+        val settings = UserSettings(activity)
+        val url = "https://example.invalid/signage"
+        for ((enabled, allowed, refreshes) in
+            listOf(
+                Triple(false, false, false),
+                Triple(false, true, false),
+                Triple(true, false, true),
+                Triple(true, true, true),
+            )) {
+            settings.refreshOnScreenWake = enabled
+            settings.allowRefresh = allowed
+            // Apply settings through the same WebView replacement used by the UI.
+            navigateToWebViewScreen(controller())
+            frames()
+            activityController.windowFocusChanged(true)
+            val webView = webView()
+            loadWithMarker(webView, url)
+            screenBroadcast(Intent.ACTION_SCREEN_OFF)
+            screenBroadcast(Intent.ACTION_SCREEN_ON)
+            frames()
+            assertLoadMarker(webView, expected = !refreshes)
+            assertEquals(url, shadowOf(webView).lastLoadedUrl)
+        }
+    }
+
+    @Test
+    fun screenWakeCannotRefreshSettingsOrAWebViewReplacedBeforeWake() {
+        UserSettings(activity).refreshOnScreenWake = true
+        navigateToWebViewScreen(controller())
+        frames()
+        val before = webView()
+        loadWithMarker(before, "https://example.invalid/signage")
+        screenBroadcast(Intent.ACTION_SCREEN_OFF)
+        controller().navigate(Screen.SettingsWebLifecycle.route)
+        frames()
+        screenBroadcast(Intent.ACTION_SCREEN_ON)
+        frames()
+        assertEquals(
+            Screen.SettingsWebLifecycle.route,
+            controller().currentDestination?.route,
+        )
+        assertLoadMarker(before, expected = true)
+
+        navigateToWebViewScreen(controller())
+        frames()
+        val after = webView()
+        activityController.windowFocusChanged(true)
+        loadWithMarker(after, "https://example.invalid/new-session")
+        // A new owner cannot inherit the retired owner's sleep transition.
+        screenBroadcast(Intent.ACTION_SCREEN_ON)
+        frames()
+        assertLoadMarker(after, expected = true)
+    }
+
+    private fun httpError(status: Int) =
+        WebResourceResponse("text/html", "UTF-8", status, "Error", emptyMap(), null)
+
+    private fun loadWithMarker(webView: WebView, url: String) {
+        webView.loadUrl(url, mapOf("X-Initial-Load" to "true"))
+        webView.webViewClient.onPageStarted(webView, url, null)
+        webView.webViewClient.doUpdateVisitedHistory(webView, url, false)
+        frames()
+    }
+
+    private fun assertLoadMarker(webView: WebView, expected: Boolean) {
+        assertEquals(
+            expected,
+            shadowOf(webView)
+                .lastAdditionalHttpHeaders
+                ?.containsKey("X-Initial-Load") == true,
+        )
+    }
+
+    @Suppress(
+        "DEPRECATION"
+    ) // Control power state and broadcast delivery separately.
+    private fun screenBroadcast(action: String) {
+        val power = activity.getSystemService(Context.POWER_SERVICE) as PowerManager
+        shadowOf(power).setIsInteractive(action == Intent.ACTION_SCREEN_ON)
+        activity.sendBroadcast(Intent(action))
+        shadowOf(Looper.getMainLooper()).idle()
     }
 
     @Test
@@ -809,6 +1063,11 @@ class MainActivityWebViewRefreshTest {
             false,
         )
         oldClient.onPageFinished(before, "https://example.invalid/retired")
+        oldClient.onReceivedHttpError(
+            before,
+            documentRequest("https://example.invalid/retired"),
+            httpError(503),
+        )
         oldChrome?.onProgressChanged(before, 5)
         frames()
 

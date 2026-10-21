@@ -82,6 +82,7 @@ object UserSettingsKeys {
             "web_lifecycle.refresh_on_network_available"
         const val REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS =
             "web_lifecycle.refresh_on_loading_error_interval_seconds"
+        const val REFRESH_ON_SCREEN_WAKE = "web_lifecycle.refresh_on_screen_wake"
     }
 
     object Appearance {
