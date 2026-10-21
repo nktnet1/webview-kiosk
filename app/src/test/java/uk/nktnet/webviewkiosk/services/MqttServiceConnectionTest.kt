@@ -558,7 +558,7 @@ class MqttServiceConnectionTest {
     @Test
     fun discoveryPublishesRetainedDeviceStateAndADedicatedAvailabilityWill() {
         settings.mqttHomeAssistantEnabled = true
-        settings.mqttHomeAssistantDeviceName = "Kitchen kiosk"
+        settings.mqttHomeAssistantDeviceName = "Home kiosk"
         val connection = connect()
         val ha = homeAssistant()
         val announcement = awaitDiscovery(connection, ha)
@@ -575,7 +575,7 @@ class MqttServiceConnectionTest {
         )
         assertTrue(announcement.retain)
         assertEquals(
-            "Kitchen kiosk",
+            "Home kiosk",
             device.getJSONObject("device").getString("name"),
         )
         val expectedSettingKeys =
