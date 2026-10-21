@@ -21,14 +21,14 @@ fun MqttHomeAssistantStatusTopicSetting() {
         infoText =
             """
             Match Home Assistant's MQTT birth/status topic.
-            Leave the default homeassistant/status unless HA uses a custom topic.
-            An online message triggers discovery and state updates,
-            independently of the discovery prefix. Reconnect MQTT after changing it.
+            Leave homeassistant/status unless Home Assistant uses a custom topic.
+            Reconnect MQTT after changing it.
             """
                 .trimIndent(),
         placeholder = "homeassistant/status",
         initialValue = userSettings.mqttHomeAssistantStatusTopic,
         validator = ::isValidMqttPublishTopic,
+        validationMessage = "Enter a non-empty MQTT topic without + or #.",
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,

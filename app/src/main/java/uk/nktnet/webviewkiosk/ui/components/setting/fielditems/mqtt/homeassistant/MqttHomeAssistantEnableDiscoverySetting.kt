@@ -19,14 +19,12 @@ fun MqttHomeAssistantEnableDiscoverySetting() {
         label = stringResource(R.string.mqtt_home_assistant_enabled_title),
         infoText =
             """
-            Publish the kiosk as a Home Assistant MQTT device.
-            Includes status, all remote commands, configuration controls,
-            and request results. All discovered entities are enabled by default.
-            Enter Toast and Notification messages directly in their text controls.
+            Publish the kiosk's status, controls, and settings in Home Assistant.
             Reconnect MQTT after changing this setting.
 
-            Discovery uses its own availability Last Will. Custom Will
-            settings apply when discovery is disabled.
+            Online/offline status is managed automatically while discovery is
+            enabled.
+            Custom MQTT Will settings apply when discovery is disabled.
             """
                 .trimIndent(),
         initialValue = userSettings.mqttHomeAssistantEnabled,

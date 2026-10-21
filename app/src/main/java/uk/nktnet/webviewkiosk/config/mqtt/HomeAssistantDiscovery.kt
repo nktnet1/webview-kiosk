@@ -289,7 +289,7 @@ class HomeAssistantDiscovery(
 
     private fun requestComponents() = buildJsonObject {
         requestNames.forEach { (request, name) ->
-            put(request, requestButton(request, "Refresh $name"))
+            put(request, requestButton(request, "Refresh ${name.lowercase()}"))
             val key = "${request}_result"
             put(
                 key,

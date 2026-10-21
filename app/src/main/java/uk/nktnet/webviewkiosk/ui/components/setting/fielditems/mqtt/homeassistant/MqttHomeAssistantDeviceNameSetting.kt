@@ -20,7 +20,8 @@ fun MqttHomeAssistantDeviceNameSetting() {
         infoText =
             """
             Optional display name, such as Home kiosk.
-            Leave blank to use Webview Kiosk and this app's instance ID.
+            Leave blank to use ${stringResource(R.string.app_name)} and this app's
+            instance ID.
             Renaming does not change the device or entity identifiers.
             Reconnect MQTT after changing it.
             """
