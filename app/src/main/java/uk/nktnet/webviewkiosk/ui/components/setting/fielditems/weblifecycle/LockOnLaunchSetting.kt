@@ -8,6 +8,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.DeviceOwnerStatusBarPolicy
 
 @Composable
 fun LockOnLaunchSetting() {
@@ -28,6 +29,11 @@ fun LockOnLaunchSetting() {
         initialValue = userSettings.lockOnLaunch,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.lockOnLaunch = it },
+        onSave = {
+            userSettings.lockOnLaunch = it
+            if (!it) {
+                DeviceOwnerStatusBarPolicy.sync(context, false)
+            }
+        },
     )
 }

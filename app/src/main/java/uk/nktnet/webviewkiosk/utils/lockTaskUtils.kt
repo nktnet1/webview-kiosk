@@ -262,15 +262,21 @@ fun tryLockTask(activity: Activity?): Boolean {
     }
 
     applyLockTaskFeatures(activity)
+    val settings = UserSettings(activity)
+    val shouldDisableStatusBar =
+        settings.lockOnLaunch && settings.disableStatusBarOutsideLockTask
+    DeviceOwnerStatusBarPolicy.sync(activity, shouldDisableStatusBar)
     logAndroid6LockAction(activity, "startLockTask")
     return tryLockAction(
         activity,
         lockAction = Activity::startLockTask,
         onSuccess = {
+            LockTaskRecovery.onLockStarted()
             AuthenticationManager.resetAuthentication()
             // Handled MQTT publish in LockStateSingleton
         },
         onFailed = {
+            DeviceOwnerStatusBarPolicy.sync(activity, false)
             ToastManager.show(activity, "Failed to lock: $it")
         },
     )
@@ -281,64 +287,75 @@ fun tryUnlockTask(activity: Activity?): Boolean {
         return false
     }
     logAndroid6LockAction(activity, "stopLockTask")
-    return tryLockAction(
-        activity,
-        lockAction = {
-            if (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-                    DeviceOwnerManager.hasOwnerPermission(activity)
-            ) {
-                try {
-                    val savedPackages =
-                        DeviceOwnerManager.DPM.getLockTaskPackages(
-                            DeviceOwnerManager.DAR
-                        )
-                    val savedFeatures =
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            DeviceOwnerManager.DPM.getLockTaskFeatures(
+    // Suppress recovery before any DevicePolicyManager operations that may end
+    // the session; restore the old state if stopLockTask fails.
+    val previousIntentionalUnlock = LockTaskRecovery.beginIntentionalUnlock()
+    val restoreStatusBarOnFailure = DeviceOwnerStatusBarPolicy.isManaged(activity)
+    DeviceOwnerStatusBarPolicy.sync(activity, false)
+    val succeeded =
+        tryLockAction(
+            activity,
+            lockAction = {
+                if (
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                        DeviceOwnerManager.hasOwnerPermission(activity)
+                ) {
+                    try {
+                        val savedPackages =
+                            DeviceOwnerManager.DPM.getLockTaskPackages(
                                 DeviceOwnerManager.DAR
                             )
-                        } else {
-                            null
-                        }
-                    DeviceOwnerManager.DPM.setLockTaskPackages(
-                        DeviceOwnerManager.DAR,
-                        arrayOf(activity.packageName),
-                    )
-                    DeviceOwnerManager.DPM.setLockTaskPackages(
-                        DeviceOwnerManager.DAR,
-                        savedPackages,
-                    )
-                    if (
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-                            savedFeatures != null
-                    ) {
-                        DeviceOwnerManager.DPM.setLockTaskFeatures(
+                        val savedFeatures =
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                DeviceOwnerManager.DPM.getLockTaskFeatures(
+                                    DeviceOwnerManager.DAR
+                                )
+                            } else {
+                                null
+                            }
+                        DeviceOwnerManager.DPM.setLockTaskPackages(
                             DeviceOwnerManager.DAR,
-                            savedFeatures,
+                            arrayOf(activity.packageName),
+                        )
+                        DeviceOwnerManager.DPM.setLockTaskPackages(
+                            DeviceOwnerManager.DAR,
+                            savedPackages,
+                        )
+                        if (
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                                savedFeatures != null
+                        ) {
+                            DeviceOwnerManager.DPM.setLockTaskFeatures(
+                                DeviceOwnerManager.DAR,
+                                savedFeatures,
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.w(
+                            Constants.APP_SCHEME,
+                            "Lock task packages or features operation failed",
+                            e,
+                        )
+                        ToastManager.show(
+                            activity,
+                            "DPM ${DeviceOwnerManager.status.value.mode}) error: ${e.message}",
                         )
                     }
-                } catch (e: Exception) {
-                    Log.w(
-                        Constants.APP_SCHEME,
-                        "Lock task packages or features operation failed",
-                        e,
-                    )
-                    ToastManager.show(
-                        activity,
-                        "DPM ${DeviceOwnerManager.status.value.mode}) error: ${e.message}",
-                    )
                 }
-            }
-            activity.stopLockTask()
-        },
-        onSuccess = {
-            // Handled MQTT publish in LockStateSingleton
-        },
-        onFailed = {
-            ToastManager.show(activity, "Failed to unlock: $it")
-        },
-    )
+                activity.stopLockTask()
+            },
+            onSuccess = {
+                // Handled MQTT publish in LockStateSingleton
+            },
+            onFailed = {
+                ToastManager.show(activity, "Failed to unlock: $it")
+            },
+        )
+    LockTaskRecovery.completeIntentionalUnlock(succeeded, previousIntentionalUnlock)
+    if (!succeeded && restoreStatusBarOnFailure) {
+        DeviceOwnerStatusBarPolicy.sync(activity, true)
+    }
+    return succeeded
 }
 
 fun setupLockTaskPackage(context: Context): Boolean {
