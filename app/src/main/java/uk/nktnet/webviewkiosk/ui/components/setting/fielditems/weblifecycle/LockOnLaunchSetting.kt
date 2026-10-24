@@ -31,9 +31,7 @@ fun LockOnLaunchSetting() {
         restricted = userSettings.isRestricted(settingKey),
         onSave = {
             userSettings.lockOnLaunch = it
-            if (!it) {
-                DeviceOwnerStatusBarPolicy.sync(context, false)
-            }
+            DeviceOwnerStatusBarPolicy.reconcile(context)
         },
     )
 }

@@ -262,21 +262,25 @@ fun tryLockTask(activity: Activity?): Boolean {
     }
 
     applyLockTaskFeatures(activity)
-    val settings = UserSettings(activity)
-    val shouldDisableStatusBar =
-        settings.lockOnLaunch && settings.disableStatusBarOutsideLockTask
-    DeviceOwnerStatusBarPolicy.sync(activity, shouldDisableStatusBar)
     logAndroid6LockAction(activity, "startLockTask")
     return tryLockAction(
         activity,
         lockAction = Activity::startLockTask,
         onSuccess = {
-            LockTaskRecovery.onLockStarted()
+            if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                    (activity.getSystemService(Context.ACTIVITY_SERVICE)
+                            as ActivityManager)
+                        .lockTaskModeState == ActivityManager.LOCK_TASK_MODE_LOCKED
+            ) {
+                LockTaskRecovery.onLockStarted()
+            }
+            DeviceOwnerStatusBarPolicy.reconcile(activity)
             AuthenticationManager.resetAuthentication()
             // Handled MQTT publish in LockStateSingleton
         },
         onFailed = {
-            DeviceOwnerStatusBarPolicy.sync(activity, false)
+            // Preserve the existing status bar policy after an unexpected exit.
             ToastManager.show(activity, "Failed to lock: $it")
         },
     )
@@ -291,7 +295,17 @@ fun tryUnlockTask(activity: Activity?): Boolean {
     // the session; restore the old state if stopLockTask fails.
     val previousIntentionalUnlock = LockTaskRecovery.beginIntentionalUnlock()
     val restoreStatusBarOnFailure = DeviceOwnerStatusBarPolicy.isManaged(activity)
-    DeviceOwnerStatusBarPolicy.sync(activity, false)
+    if (
+        restoreStatusBarOnFailure &&
+            !DeviceOwnerStatusBarPolicy.sync(activity, false)
+    ) {
+        LockTaskRecovery.completeIntentionalUnlock(false, previousIntentionalUnlock)
+        ToastManager.show(
+            activity,
+            "Failed to restore status bar. Unlock cancelled.",
+        )
+        return false
+    }
     val succeeded =
         tryLockAction(
             activity,

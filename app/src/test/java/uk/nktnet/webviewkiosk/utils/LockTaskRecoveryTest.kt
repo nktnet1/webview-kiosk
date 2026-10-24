@@ -4,12 +4,18 @@ import android.app.ActivityManager
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 class LockTaskRecoveryTest {
+    @Before
+    fun setUp() {
+        LockTaskRecovery.resetForTests()
+    }
+
     @After
     fun tearDown() {
-        LockTaskRecovery.onLockStarted()
+        LockTaskRecovery.resetForTests()
     }
 
     private fun shouldRecover(
@@ -37,6 +43,32 @@ class LockTaskRecoveryTest {
         assertFalse(shouldRecover(allowlisted = false))
         assertFalse(shouldRecover(mode = ActivityManager.LOCK_TASK_MODE_LOCKED))
         assertFalse(shouldRecover(mode = ActivityManager.LOCK_TASK_MODE_PINNED))
+    }
+
+    @Test
+    fun neverObservedFullLockCannotRecover() {
+        assertFalse(shouldRecover())
+        LockTaskRecovery.observeLockTaskState(ActivityManager.LOCK_TASK_MODE_PINNED)
+        assertFalse(shouldRecover())
+    }
+
+    @Test
+    fun screenPinningClearsPreviouslyObservedManagedLock() {
+        LockTaskRecovery.onLockStarted()
+        assertTrue(shouldRecover())
+        LockTaskRecovery.observeLockTaskState(ActivityManager.LOCK_TASK_MODE_PINNED)
+        LockTaskRecovery.observeLockTaskState(ActivityManager.LOCK_TASK_MODE_NONE)
+        assertFalse(shouldRecover())
+        LockTaskRecovery.observeLockTaskState(ActivityManager.LOCK_TASK_MODE_LOCKED)
+        assertTrue(shouldRecover())
+    }
+
+    @Test
+    fun disablingRecoveryDisarmsPreviousLock() {
+        LockTaskRecovery.onLockStarted()
+        assertTrue(shouldRecover())
+        LockTaskRecovery.disarm()
+        assertFalse(shouldRecover())
     }
 
     @Test

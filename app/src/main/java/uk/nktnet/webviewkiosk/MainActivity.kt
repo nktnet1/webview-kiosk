@@ -150,6 +150,7 @@ open class MainActivity : AppCompatActivity() {
                             }
                         }
                         updateDeviceSettings(context)
+                        DeviceOwnerStatusBarPolicy.reconcile(context)
                         userSettings.refreshMutualTlsState()
                         AuthenticationManager.resetAuthentication()
                         AuthenticationManager.hideCustomAuthPrompt()
@@ -205,11 +206,7 @@ open class MainActivity : AppCompatActivity() {
         }
 
         // Reconcile a policy from a previous run even when the option was disabled.
-        DeviceOwnerStatusBarPolicy.sync(
-            this,
-            userSettings.lockOnLaunch &&
-                userSettings.disableStatusBarOutsideLockTask,
-        )
+        DeviceOwnerStatusBarPolicy.reconcile(this)
         LockStateSingleton.startMonitoring(application)
 
         backButtonService = BackButtonManager(lifecycleScope = lifecycleScope)
@@ -296,6 +293,11 @@ open class MainActivity : AppCompatActivity() {
 
             LaunchedEffect(Unit) {
                 RemoteMessageManager.settingsAppliedFlow.collect { settings ->
+                    if (isApplicationEventHost()) {
+                        // The policy must respond to remote settings even when
+                        // reloadActivity is false or the WebView is not visible.
+                        DeviceOwnerStatusBarPolicy.reconcile(this@MainActivity)
+                    }
                     if (
                         isApplicationEventHost() && settings.message.reloadActivity
                     ) {
@@ -620,6 +622,7 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        DeviceOwnerStatusBarPolicy.reconcile(this)
         startLockTaskRecoveryMonitoring()
         backButtonService.onBackPressedCallback.isEnabled = true
         enableNfcForegroundDispatch()
@@ -663,11 +666,14 @@ open class MainActivity : AppCompatActivity() {
                     !userSettings.relockOnUnexpectedExit ||
                         !userSettings.lockOnLaunch
                 ) {
+                    LockTaskRecovery.disarm()
                     retryDelayMs = 2000L
+                    nextAttemptAt = 0L
                     continue
                 }
 
                 val mode = am.lockTaskModeState
+                LockTaskRecovery.observeLockTaskState(mode)
                 if (mode != ActivityManager.LOCK_TASK_MODE_NONE) {
                     // PINNED is deliberately not upgraded: that requires
                     // investigating

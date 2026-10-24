@@ -65,8 +65,9 @@ for requirements and limitations.
 These settings are also available in the
 [MQTT tool](/tools/mqtt) under **Publish → Settings**, and in the
 [UnifiedPush tool](/tools/unifiedpush) using the shared settings editor.
-Use `reloadActivity: true` when changing the status-bar policy remotely so
-that the running activity reconciles the policy. This is the default setting.
+The status-bar policy is reconciled when remote settings are received, even
+with `reloadActivity: false`. Other settings may still require a reload.
+The policy is enabled only after full managed lock task mode is verified.
 
 Example Payloads:
 

@@ -12,6 +12,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,6 +65,15 @@ class UnlockFailureNotificationTest {
                 .start()
                 .resume()
         activity = controller.get()
+        activity
+            .getSharedPreferences(
+                "device_owner_status_bar_policy",
+                Context.MODE_PRIVATE,
+            )
+            .edit()
+            .clear()
+            .commit()
+        LockTaskRecovery.resetForTests()
         UserSettings(activity).unlockAuthRequirement =
             UnlockAuthRequirementOption.OFF
         DeviceOwnerManager.init(activity)
@@ -76,6 +86,7 @@ class UnlockFailureNotificationTest {
 
     @After
     fun tearDown() {
+        LockTaskRecovery.resetForTests()
         observationScope.cancel()
         controller.pause().stop().destroy()
     }
@@ -89,6 +100,22 @@ class UnlockFailureNotificationTest {
 
         assertEquals(1, activity.stopAttempts)
         assertEquals(0, unlockNotifications)
+    }
+
+    @Test
+    fun cannotUnlockIfManagedStatusBarCannotBeRestored() {
+        activity
+            .getSharedPreferences(
+                "device_owner_status_bar_policy",
+                Context.MODE_PRIVATE,
+            )
+            .edit()
+            .putBoolean("managed_by_webview_kiosk", true)
+            .commit()
+
+        assertFalse(tryUnlockTask(activity))
+        assertEquals(0, activity.stopAttempts)
+        assertFalse(LockTaskRecovery.isIntentionallyUnlocked())
     }
 
     @Test

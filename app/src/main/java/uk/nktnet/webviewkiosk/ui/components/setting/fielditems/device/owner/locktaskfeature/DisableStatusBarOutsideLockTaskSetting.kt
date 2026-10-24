@@ -1,8 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature
 
-import android.app.ActivityManager
-import android.content.Context
-import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -29,8 +26,9 @@ fun DisableStatusBarOutsideLockTaskSetting() {
             """
             When Lock on Launch is enabled and the app is Device Owner, keep
             the status bar disabled if the OS unexpectedly exits lock task mode.
-            Android applies this policy after lock task exits. The app's normal
-            Unlock action restores the status bar.
+            The app applies this policy only after full lock task is confirmed.
+            Android enforces it after lock task exits. The app's normal Unlock
+            action restores the status bar.
 
             This restricts notification shade access, but does not disable
             Settings or prevent all system-level escapes. Requires Android 6+.
@@ -41,17 +39,7 @@ fun DisableStatusBarOutsideLockTaskSetting() {
         restricted = userSettings.isRestricted(settingKey),
         onSave = { enabled ->
             userSettings.disableStatusBarOutsideLockTask = enabled
-            if (!enabled) {
-                DeviceOwnerStatusBarPolicy.sync(context, false)
-            } else if (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                    userSettings.lockOnLaunch &&
-                    (context.getSystemService(Context.ACTIVITY_SERVICE)
-                            as ActivityManager)
-                        .lockTaskModeState == ActivityManager.LOCK_TASK_MODE_LOCKED
-            ) {
-                DeviceOwnerStatusBarPolicy.sync(context, true)
-            }
+            DeviceOwnerStatusBarPolicy.reconcile(context)
         },
     )
 }

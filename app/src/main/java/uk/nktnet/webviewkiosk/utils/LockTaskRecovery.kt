@@ -5,6 +5,7 @@ import android.app.ActivityManager
 /** Keeps an explicit unlock from being mistaken for an unexpected firmware exit. */
 internal object LockTaskRecovery {
     @Volatile private var intentionalUnlock = false
+    @Volatile private var observedFullLockTask = false
 
     fun beginIntentionalUnlock(): Boolean {
         val previous = intentionalUnlock
@@ -19,7 +20,26 @@ internal object LockTaskRecovery {
     }
 
     fun onLockStarted() {
+        observedFullLockTask = true
         intentionalUnlock = false
+    }
+
+    /** Changing the opt-in settings must not arm recovery for earlier exits. */
+    fun disarm() {
+        observedFullLockTask = false
+    }
+
+    /** Screen pinning is not a managed lock session, even if it later ends. */
+    fun observeLockTaskState(mode: Int) {
+        when (mode) {
+            ActivityManager.LOCK_TASK_MODE_LOCKED -> observedFullLockTask = true
+            ActivityManager.LOCK_TASK_MODE_PINNED -> observedFullLockTask = false
+        }
+    }
+
+    internal fun resetForTests() {
+        intentionalUnlock = false
+        observedFullLockTask = false
     }
 
     fun shouldRecover(
@@ -34,6 +54,7 @@ internal object LockTaskRecovery {
             deviceOwner &&
             allowlisted &&
             !intentionalUnlock &&
+            observedFullLockTask &&
             lockTaskModeState == ActivityManager.LOCK_TASK_MODE_NONE
 
     fun isIntentionallyUnlocked(): Boolean = intentionalUnlock
