@@ -29,10 +29,18 @@ internal object LockTaskRecovery {
         observedFullLockTask = false
     }
 
+    fun onSettingsChanged(relockEnabled: Boolean, lockOnLaunch: Boolean) {
+        if (!relockEnabled || !lockOnLaunch) {
+            disarm()
+        }
+    }
+
     /** Screen pinning is not a managed lock session, even if it later ends. */
     fun observeLockTaskState(mode: Int) {
         when (mode) {
-            ActivityManager.LOCK_TASK_MODE_LOCKED -> observedFullLockTask = true
+            // A real managed lock supersedes an older intentional Unlock,
+            // including when the system initiated locking rather than this app.
+            ActivityManager.LOCK_TASK_MODE_LOCKED -> onLockStarted()
             ActivityManager.LOCK_TASK_MODE_PINNED -> observedFullLockTask = false
         }
     }

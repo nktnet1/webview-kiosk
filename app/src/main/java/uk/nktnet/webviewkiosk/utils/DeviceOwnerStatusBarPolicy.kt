@@ -55,6 +55,28 @@ internal object DeviceOwnerStatusBarPolicy {
         }
     }
 
+    data class PolicyClearResult(val succeeded: Boolean, val wasManaged: Boolean)
+
+    /**
+     * Reads and clears the policy under the same lock as installation. A concurrent
+     * remote settings update must not install the policy between the caller's
+     * managed-state check and a successful Unlock. Call only after beginning the
+     * intentional-unlock suppression.
+     */
+    @Synchronized
+    fun clearForIntentionalExit(context: Context): PolicyClearResult {
+        val wasManaged = isManaged(context)
+        return PolicyClearResult(
+            // Keep Android 5.x and installations with no managed policy
+            // unlockable without requiring an API 23 Device Owner call.
+            succeeded = !wasManaged || sync(context, false),
+            wasManaged = wasManaged,
+        )
+    }
+
+    // Serialize binder updates with Unlock and ownership changes. Otherwise a
+    // background settings update can re-disable the shade after Unlock cleared it.
+    @Synchronized
     fun sync(context: Context, disabled: Boolean): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             return false
@@ -93,14 +115,32 @@ internal object DeviceOwnerStatusBarPolicy {
                 }
             }
             val admin = ComponentName(context, WebviewKioskAdminReceiver::class.java)
+            val wasManaged = prefs.getBoolean(MANAGED_KEY, false)
+            if (disabled && !wasManaged) {
+                // Record ownership durably before calling Android. Otherwise a
+                // process death after the binder call can strand a restriction
+                // that a later Unlock believes we do not own.
+                if (!prefs.edit().putBoolean(MANAGED_KEY, true).commit()) {
+                    Log.w(
+                        javaClass.simpleName,
+                        "Unable to record status bar policy ownership",
+                    )
+                    return false
+                }
+            }
             if (!dpm.setStatusBarDisabled(admin, disabled)) {
+                if (disabled && !wasManaged) {
+                    prefs.edit().putBoolean(MANAGED_KEY, false).commit()
+                }
                 Log.w(
                     javaClass.simpleName,
                     "Device Owner status bar policy was rejected",
                 )
                 false
+            } else if (!disabled) {
+                // Once Android accepts removal, clear the ownership marker.
+                prefs.edit().putBoolean(MANAGED_KEY, false).commit()
             } else {
-                prefs.edit().putBoolean(MANAGED_KEY, disabled).apply()
                 true
             }
         } catch (e: Exception) {

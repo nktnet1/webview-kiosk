@@ -48,6 +48,7 @@ import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
 import uk.nktnet.webviewkiosk.utils.DeviceOwnerStatusBarPolicy
+import uk.nktnet.webviewkiosk.utils.LockTaskRecovery
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 
 private const val MAX_IMPORT_FILE_BYTES = 1024 * 1024
@@ -284,6 +285,10 @@ fun ImportSettingsDialog(
 
                                 if (success) {
                                     updateDeviceSettings(context)
+                                    LockTaskRecovery.onSettingsChanged(
+                                        userSettings.relockOnUnexpectedExit,
+                                        userSettings.lockOnLaunch,
+                                    )
                                     DeviceOwnerStatusBarPolicy.reconcile(context)
                                     ToastManager.show(
                                         context,

@@ -293,12 +293,11 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                         showDeviceOwnerRemovalDialog = false
                         val previousUnlock =
                             LockTaskRecovery.beginIntentionalUnlock()
-                        val hadStatusBarPolicy =
-                            DeviceOwnerStatusBarPolicy.isManaged(context)
-                        if (
-                            hadStatusBarPolicy &&
-                                !DeviceOwnerStatusBarPolicy.sync(context, false)
-                        ) {
+                        val clearedPolicy =
+                            DeviceOwnerStatusBarPolicy.clearForIntentionalExit(
+                                context
+                            )
+                        if (!clearedPolicy.succeeded) {
                             LockTaskRecovery.completeIntentionalUnlock(
                                 false,
                                 previousUnlock,
@@ -337,7 +336,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                             !isDeviceOwner,
                             previousUnlock,
                         )
-                        if (isDeviceOwner && hadStatusBarPolicy) {
+                        if (isDeviceOwner && clearedPolicy.wasManaged) {
                             DeviceOwnerStatusBarPolicy.reconcile(context)
                         }
                     }

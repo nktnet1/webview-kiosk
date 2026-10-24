@@ -150,6 +150,10 @@ open class MainActivity : AppCompatActivity() {
                             }
                         }
                         updateDeviceSettings(context)
+                        LockTaskRecovery.onSettingsChanged(
+                            userSettings.relockOnUnexpectedExit,
+                            userSettings.lockOnLaunch,
+                        )
                         DeviceOwnerStatusBarPolicy.reconcile(context)
                         userSettings.refreshMutualTlsState()
                         AuthenticationManager.resetAuthentication()
@@ -293,11 +297,6 @@ open class MainActivity : AppCompatActivity() {
 
             LaunchedEffect(Unit) {
                 RemoteMessageManager.settingsAppliedFlow.collect { settings ->
-                    if (isApplicationEventHost()) {
-                        // The policy must respond to remote settings even when
-                        // reloadActivity is false or the WebView is not visible.
-                        DeviceOwnerStatusBarPolicy.reconcile(this@MainActivity)
-                    }
                     if (
                         isApplicationEventHost() && settings.message.reloadActivity
                     ) {

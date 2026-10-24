@@ -8,6 +8,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.LockTaskRecovery
 
 @Composable
 fun RelockOnUnexpectedExitSetting() {
@@ -32,6 +33,9 @@ fun RelockOnUnexpectedExitSetting() {
         initialValue = userSettings.relockOnUnexpectedExit,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.relockOnUnexpectedExit = it },
+        onSave = { enabled ->
+            userSettings.relockOnUnexpectedExit = enabled
+            LockTaskRecovery.onSettingsChanged(enabled, userSettings.lockOnLaunch)
+        },
     )
 }

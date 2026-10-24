@@ -29,6 +29,8 @@ observed. Screen pinning and unsuccessful initial locks are not covered.
 
 Requires Android 7.0 or newer, Device Owner, and lock task allowlisting.
 The app retries failed attempts with a delay to avoid repeated locking prompts.
+Turning this option or Lock on Launch off clears the previous lock observation,
+so enabling it again cannot recover an older exit.
 
 **Setting key:** `web_lifecycle.relock_on_unexpected_exit`
 

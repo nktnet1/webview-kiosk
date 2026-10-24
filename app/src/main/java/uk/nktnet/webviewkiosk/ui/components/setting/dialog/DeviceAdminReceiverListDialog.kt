@@ -163,12 +163,9 @@ private fun ConfirmTransferDialog(
             TextButton(
                 onClick = {
                     val previousUnlock = LockTaskRecovery.beginIntentionalUnlock()
-                    val hadStatusBarPolicy =
-                        DeviceOwnerStatusBarPolicy.isManaged(context)
-                    if (
-                        hadStatusBarPolicy &&
-                            !DeviceOwnerStatusBarPolicy.sync(context, false)
-                    ) {
+                    val clearedPolicy =
+                        DeviceOwnerStatusBarPolicy.clearForIntentionalExit(context)
+                    if (!clearedPolicy.succeeded) {
                         LockTaskRecovery.completeIntentionalUnlock(
                             false,
                             previousUnlock,
@@ -195,7 +192,7 @@ private fun ConfirmTransferDialog(
                             false,
                             previousUnlock,
                         )
-                        if (hadStatusBarPolicy) {
+                        if (clearedPolicy.wasManaged) {
                             DeviceOwnerStatusBarPolicy.reconcile(context)
                         }
                         ToastManager.show(context, "Error: ${e.message}")

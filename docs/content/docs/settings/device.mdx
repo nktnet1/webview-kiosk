@@ -211,6 +211,8 @@ Unlock action to restore access. The status bar may remain unavailable after
 an unexpected exit until the app clears the policy. The app installs this
 policy only after verifying full managed lock task mode, including when the
 setting is enabled through MQTT, UnifiedPush, or a settings import.
+If you remove {APP_NAME} from the Lock Task Packages allowlist, the app first
+restores the status bar. It cancels the removal if Android rejects the cleanup.
 
 **Setting key:** `device.owner.disable_status_bar_outside_lock_task`
 

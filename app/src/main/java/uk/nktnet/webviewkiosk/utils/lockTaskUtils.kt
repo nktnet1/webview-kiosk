@@ -294,11 +294,8 @@ fun tryUnlockTask(activity: Activity?): Boolean {
     // Suppress recovery before any DevicePolicyManager operations that may end
     // the session; restore the old state if stopLockTask fails.
     val previousIntentionalUnlock = LockTaskRecovery.beginIntentionalUnlock()
-    val restoreStatusBarOnFailure = DeviceOwnerStatusBarPolicy.isManaged(activity)
-    if (
-        restoreStatusBarOnFailure &&
-            !DeviceOwnerStatusBarPolicy.sync(activity, false)
-    ) {
+    val clearedPolicy = DeviceOwnerStatusBarPolicy.clearForIntentionalExit(activity)
+    if (!clearedPolicy.succeeded) {
         LockTaskRecovery.completeIntentionalUnlock(false, previousIntentionalUnlock)
         ToastManager.show(
             activity,
@@ -366,10 +363,61 @@ fun tryUnlockTask(activity: Activity?): Boolean {
             },
         )
     LockTaskRecovery.completeIntentionalUnlock(succeeded, previousIntentionalUnlock)
-    if (!succeeded && restoreStatusBarOnFailure) {
-        DeviceOwnerStatusBarPolicy.sync(activity, true)
+    if (!succeeded && clearedPolicy.wasManaged) {
+        DeviceOwnerStatusBarPolicy.reconcile(activity)
     }
     return succeeded
+}
+
+/**
+ * Removes an allowlisted package without stranding our status-bar restriction when
+ * the user deliberately removes Webview Kiosk itself.
+ */
+fun removeLockTaskPackage(
+    context: Context,
+    packageName: String,
+    remainingPackages: Array<String>,
+) {
+    check(DeviceOwnerManager.hasOwnerPermission(context)) {
+        "Owner permission is not granted."
+    }
+
+    val removingSelf = packageName == context.packageName
+    val previousUnlock =
+        if (removingSelf) {
+            LockTaskRecovery.beginIntentionalUnlock()
+        } else {
+            null
+        }
+    val clearedPolicy =
+        if (removingSelf) {
+            DeviceOwnerStatusBarPolicy.clearForIntentionalExit(context)
+        } else {
+            null
+        }
+
+    if (clearedPolicy != null && !clearedPolicy.succeeded) {
+        LockTaskRecovery.completeIntentionalUnlock(false, previousUnlock!!)
+        error("Cannot restore status bar before removing the kiosk allowlist entry.")
+    }
+
+    try {
+        DeviceOwnerManager.DPM.setLockTaskPackages(
+            DeviceOwnerManager.DAR,
+            remainingPackages,
+        )
+        if (previousUnlock != null) {
+            LockTaskRecovery.completeIntentionalUnlock(true, previousUnlock)
+        }
+    } catch (e: Exception) {
+        if (previousUnlock != null) {
+            LockTaskRecovery.completeIntentionalUnlock(false, previousUnlock)
+        }
+        if (clearedPolicy?.wasManaged == true) {
+            DeviceOwnerStatusBarPolicy.reconcile(context)
+        }
+        throw e
+    }
 }
 
 fun setupLockTaskPackage(context: Context): Boolean {

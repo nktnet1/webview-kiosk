@@ -99,4 +99,34 @@ class LockTaskRecoveryTest {
         LockTaskRecovery.completeIntentionalUnlock(false, second)
         assertFalse(shouldRecover())
     }
+
+    @Test
+    fun disabledOptionsDisarmImmediatelyEvenBeforeWatcherPolls() {
+        LockTaskRecovery.onLockStarted()
+        LockTaskRecovery.onSettingsChanged(
+            relockEnabled = false,
+            lockOnLaunch = true,
+        )
+        assertFalse(shouldRecover())
+        LockTaskRecovery.onSettingsChanged(relockEnabled = true, lockOnLaunch = true)
+        assertFalse(shouldRecover())
+
+        LockTaskRecovery.onLockStarted()
+        LockTaskRecovery.onSettingsChanged(
+            relockEnabled = true,
+            lockOnLaunch = false,
+        )
+        assertFalse(shouldRecover())
+    }
+
+    @Test
+    fun observingManagedLockRearmsAfterSystemInitiatedRelock() {
+        LockTaskRecovery.onLockStarted()
+        val previous = LockTaskRecovery.beginIntentionalUnlock()
+        LockTaskRecovery.completeIntentionalUnlock(true, previous)
+        assertFalse(shouldRecover())
+
+        LockTaskRecovery.observeLockTaskState(ActivityManager.LOCK_TASK_MODE_LOCKED)
+        assertTrue(shouldRecover())
+    }
 }

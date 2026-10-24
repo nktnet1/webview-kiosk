@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -133,6 +134,26 @@ class UnlockFailureNotificationTest {
 
             assertEquals(1, activity.stopAttempts)
             assertEquals(0, unlockNotifications)
+        } finally {
+            ReflectionHelpers.setStaticField(
+                Build.VERSION::class.java,
+                "SDK_INT",
+                originalSdk,
+            )
+        }
+    }
+
+    @Test
+    fun android5UnlockDoesNotRequireUnavailableStatusBarApi() {
+        val originalSdk = Build.VERSION.SDK_INT
+        ReflectionHelpers.setStaticField(
+            Build.VERSION::class.java,
+            "SDK_INT",
+            Build.VERSION_CODES.LOLLIPOP,
+        )
+        try {
+            assertTrue(tryUnlockTask(activity))
+            assertEquals(1, activity.stopAttempts)
         } finally {
             ReflectionHelpers.setStaticField(
                 Build.VERSION::class.java,
