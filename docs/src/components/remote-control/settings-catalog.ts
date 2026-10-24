@@ -16,6 +16,7 @@ export type SettingDefinition = {
   label: string;
   group: string;
   kind: SettingKind;
+  description?: string;
   multiline?: boolean;
   options?: readonly string[];
 };
@@ -52,6 +53,7 @@ const KEYS = {
     "web_engine.media_playback_requires_user_gesture",
     "web_engine.request_focus_on_page_start",
     "web_lifecycle.lock_on_launch",
+    "web_lifecycle.relock_on_unexpected_exit",
     "web_lifecycle.reset_on_launch",
     "web_lifecycle.refresh_on_screen_wake",
     "appearance.show_loading_progress_bar",
@@ -63,6 +65,7 @@ const KEYS = {
     "device.allow_notifications",
     "device.block_screen_capture",
     "device.block_volume_keys",
+    "device.owner.disable_status_bar_outside_lock_task",
     "device.owner.lock_task_feature.home",
     "device.owner.lock_task_feature.overview",
     "device.owner.lock_task_feature.global_actions",
@@ -335,6 +338,24 @@ const MULTI_SELECT_KEYS = new Set<string>([
   "web_lifecycle.reset_actions",
 ]);
 
+/** Additional help shown in both MQTT and UnifiedPush settings editors. */
+const SETTING_DETAILS: Record<
+  string,
+  { label: string; group?: string; description: string }
+> = {
+  "web_lifecycle.relock_on_unexpected_exit": {
+    label: "Re-lock After Unexpected Exit",
+    description:
+      "Requires Android 7+, Device Owner, Lock on Launch, and lock task allowlisting. Attempts to recover while the kiosk activity is visible. Does not replace a normal administrator Unlock.",
+  },
+  "device.owner.disable_status_bar_outside_lock_task": {
+    label: "Disable Status Bar Outside Lock Task",
+    group: "Device Owner",
+    description:
+      "Requires Android 6+, Device Owner, Lock on Launch, and lock task allowlisting. Limits notification shade access if full lock task unexpectedly ends. The in-app Unlock action restores the status bar.",
+  },
+};
+
 const ACRONYMS = new Set([
   "API",
   "DOM",
@@ -369,11 +390,13 @@ function setting(
   options?: readonly string[],
 ): SettingDefinition {
   const parts = key.split(".");
+  const details = SETTING_DETAILS[key];
   return {
     key,
-    group: formatSettingLabel(parts[0]),
-    label: formatSettingLabel(parts.at(-1) ?? key),
+    group: details?.group ?? formatSettingLabel(parts[0]),
+    label: details?.label ?? formatSettingLabel(parts.at(-1) ?? key),
     kind,
+    ...(details ? { description: details.description } : {}),
     ...(kind === "string" && MULTILINE_SETTING_KEYS.has(key)
       ? { multiline: true }
       : {}),

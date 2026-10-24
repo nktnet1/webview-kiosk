@@ -49,6 +49,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.DeviceAdminReceiverListDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.LockTaskPackagesDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunchSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.DisableStatusBarOutsideLockTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureHomeSetting
@@ -172,6 +173,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 DividerDefaults.color,
             )
 
+            DisableStatusBarOutsideLockTaskSetting()
             LockTaskFeatureHomeSetting()
             LockTaskFeatureOverviewSetting()
             LockTaskFeatureGlobalActionsSetting()

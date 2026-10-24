@@ -12,6 +12,27 @@ On some devices, you may still be prompted with a confirmation screen.
 
 **Default:** false
 
+### 1.1. Re-lock After Unexpected Exit
+
+**Settings → Web Lifecycle → Re-lock After Unexpected Exit**
+
+When **Lock on Launch** is enabled and {APP_NAME} is the **Device Owner**,
+this option periodically checks whether full lock task mode has unexpectedly
+ended while the kiosk activity is on screen. If Android ends the lock without
+the app's Unlock action, the app attempts to lock again automatically.
+
+This can help on devices where manufacturer firmware unexpectedly exits kiosk
+mode, for example after a hardware Back-button gesture. It does not stop the
+underlying firmware behaviour or guarantee recovery if the app is no longer in
+the foreground. Screen pinning is not covered.
+
+Requires Android 7.0 or newer, Device Owner, and lock task allowlisting.
+The app retries failed attempts with a delay to avoid repeated locking prompts.
+
+**Setting key:** `web_lifecycle.relock_on_unexpected_exit`
+
+**Default:** false
+
 ## 2. Reset on Launch
 
 When enabled, the app will always start fresh at the Home URL when
@@ -114,7 +135,7 @@ HTTP server errors are detected using
 These errors also count as page errors for `Refresh on Network Available`.
 
 Retries honour URL restrictions. The server's response remains visible until the
-next attempt; a successful new load or navigation to another page clears the
+next attempt. A successful new load or navigation to another page clears the
 error. On Android 5, connection-error recovery continues to work, but HTTP status
 recovery is unavailable.
 
