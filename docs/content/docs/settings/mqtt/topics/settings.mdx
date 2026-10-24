@@ -55,6 +55,19 @@ the following properties can be specified:
 For a list of available setting keys, refer to
 [./app/src/main/res/xml/app_restrictions.xml](https://github.com/nktnet1/webview-kiosk/blob/main/app/src/main/res/xml/app_restrictions.xml).
 
+For example, the Device Owner kiosk hardening options can be configured with
+`web_lifecycle.relock_on_unexpected_exit` and
+`device.owner.disable_status_bar_outside_lock_task`. Both values are booleans,
+with a default of `false`. See [Re-lock After Unexpected Exit](/docs/settings/web-lifecycle#11-re-lock-after-unexpected-exit)
+and [Disable Status Bar Outside Lock Task](/docs/settings/device#1511-disable-status-bar-outside-lock-task)
+for requirements and limitations.
+
+These settings are also available in the
+[MQTT tool](/tools/mqtt) under **Publish → Settings**, and in the
+[UnifiedPush tool](/tools/unifiedpush) using the shared settings editor.
+Use `reloadActivity: true` when changing the status-bar policy remotely so
+that the running activity reconciles the policy. This is the default setting.
+
 Example Payloads:
 
 ```json tab="Minimal"
@@ -73,8 +86,8 @@ Example Payloads:
     "settings": {
       "web_browsing.allow_refresh": false,
       "web_browsing.address_bar_actions": [
-        "GO_BACK",
-        "GO_FORWARD",
+        "BACK",
+        "FORWARD",
         "REFRESH"
       ],
       "appearance.theme": "LIGHT",
@@ -86,6 +99,18 @@ Example Payloads:
   "targetUsernames": ["user-001"],
   "showToast": false,
   "reloadActivity": false
+}
+```
+
+```json tab="Kiosk hardening"
+{
+  "data": {
+    "settings": {
+      "web_lifecycle.relock_on_unexpected_exit": true,
+      "device.owner.disable_status_bar_outside_lock_task": true
+    }
+  },
+  "reloadActivity": true
 }
 ```
 

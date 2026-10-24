@@ -29,7 +29,7 @@ fun DisableStatusBarOutsideLockTaskSetting() {
             """
             When Lock on Launch is enabled and the app is Device Owner, keep
             the status bar disabled if the OS unexpectedly exits lock task mode.
-            Android applies this policy after lock task exits; the app's normal
+            Android applies this policy after lock task exits. The app's normal
             Unlock action restores the status bar.
 
             This restricts notification shade access, but does not disable

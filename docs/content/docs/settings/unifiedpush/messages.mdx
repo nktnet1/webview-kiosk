@@ -50,3 +50,23 @@ Example Payload
   }
 }
 ```
+
+For Device Owner kiosk hardening, the same two boolean settings can be sent
+using UnifiedPush. They are also available in the
+[UnifiedPush tool](/tools/unifiedpush) settings editor. Refer to
+[Web Lifecycle](/docs/settings/web-lifecycle#11-re-lock-after-unexpected-exit)
+and [Device Owner](/docs/settings/device#1511-disable-status-bar-outside-lock-task)
+for prerequisites and limitations.
+
+```jsonc
+{
+  "type": "settings",
+  "data": {
+    "settings": {
+      "web_lifecycle.relock_on_unexpected_exit": true,
+      "device.owner.disable_status_bar_outside_lock_task": true
+    }
+  },
+  "reloadActivity": true
+}
+```

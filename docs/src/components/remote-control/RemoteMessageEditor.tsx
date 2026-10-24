@@ -330,9 +330,14 @@ function SettingsControls({
                 <div className="flex min-w-0 items-center gap-1">
                   <p className="text-sm font-medium">{setting?.label ?? key}</p>
                   <InfoTooltip>
-                    {setting
-                      ? `Setting key: ${key}`
-                      : `Unknown setting: ${key}. Edit its value in the JSON tab.`}
+                    {setting ? (
+                      <div className="max-w-sm space-y-2">
+                        {setting.description && <p>{setting.description}</p>}
+                        <p className="font-mono text-xs">Setting key: {key}</p>
+                      </div>
+                    ) : (
+                      `Unknown setting: ${key}. Edit its value in the JSON tab.`
+                    )}
                   </InfoTooltip>
                 </div>
                 <Button
