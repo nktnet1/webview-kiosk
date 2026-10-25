@@ -59,6 +59,7 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.option.ImmersiveModeOption
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
 import uk.nktnet.webviewkiosk.managers.PdfJsManager
@@ -163,6 +164,64 @@ class MainActivityWebViewRefreshTest {
         }
         blockingSettings.close()
         blockerField.set(null, previousBlocker)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun regainingWindowFocusRestoresStickyImmersiveBarsOnWebView() {
+        UserSettings(activity).immersiveMode = ImmersiveModeOption.ALWAYS_ON
+        val decorView = activity.window.decorView
+        val hiddenBars =
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+
+        // Simulate another activity clearing immersive flags while the Compose
+        // destination stays mounted; losing focus must not hide the bars.
+        decorView.systemUiVisibility =
+            decorView.systemUiVisibility and hiddenBars.inv()
+        activityController.windowFocusChanged(false)
+        assertEquals(0, decorView.systemUiVisibility and hiddenBars)
+
+        activityController.windowFocusChanged(true)
+        assertEquals(hiddenBars, decorView.systemUiVisibility and hiddenBars)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun focusRecoveryDoesNotHideBarsWhenImmersiveModeIsDisabled() {
+        UserSettings(activity).immersiveMode = ImmersiveModeOption.ALWAYS_OFF
+        val decorView = activity.window.decorView
+        val hiddenBars =
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        decorView.systemUiVisibility =
+            decorView.systemUiVisibility and hiddenBars.inv()
+
+        activityController.windowFocusChanged(false)
+        activityController.windowFocusChanged(true)
+        assertEquals(0, decorView.systemUiVisibility and hiddenBars)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun focusRecoveryDoesNotHideBarsOnInAppSettingsScreen() {
+        UserSettings(activity).immersiveMode = ImmersiveModeOption.ALWAYS_ON
+        controller().navigate(Screen.Settings.route)
+        frames()
+        val decorView = activity.window.decorView
+        val hiddenBars =
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        decorView.systemUiVisibility =
+            decorView.systemUiVisibility and hiddenBars.inv()
+
+        activityController.windowFocusChanged(false)
+        activityController.windowFocusChanged(true)
+        assertEquals(Screen.Settings.route, controller().currentDestination?.route)
+        assertEquals(0, decorView.systemUiVisibility and hiddenBars)
     }
 
     @Test

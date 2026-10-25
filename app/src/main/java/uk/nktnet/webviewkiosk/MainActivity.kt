@@ -79,6 +79,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
+import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
 import uk.nktnet.webviewkiosk.utils.getBooleanExtraSafely
 import uk.nktnet.webviewkiosk.utils.getLocalFileLink
 import uk.nktnet.webviewkiosk.utils.getParcelableExtraSafely
@@ -88,6 +89,7 @@ import uk.nktnet.webviewkiosk.utils.handleMainIntent
 import uk.nktnet.webviewkiosk.utils.launchAndroid6KioskTask
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
+import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
@@ -623,6 +625,24 @@ open class MainActivity : AppCompatActivity() {
                 pendingAndroid6LockRequest = false
                 tryLockTask(this)
             }
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Another activity (e.g. Android Settings) can reset the window's system
+        // bar behaviour without replacing the current Compose WebView entry.
+        // onResume may run before window focus is restored, so reassert the
+        // transient-bar policy once our WebView window is active again.
+        if (
+            hasFocus &&
+                this::navController.isInitialized &&
+                this::userSettings.isInitialized &&
+                isApplicationEventHost() &&
+                navController.currentDestination?.route == Screen.WebView.route &&
+                shouldBeImmersed(this, userSettings)
+        ) {
+            enterImmersiveMode(this)
         }
     }
 
