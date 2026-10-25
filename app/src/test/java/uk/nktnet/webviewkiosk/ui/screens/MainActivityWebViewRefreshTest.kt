@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.app.ActivityManager
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
@@ -222,6 +223,68 @@ class MainActivityWebViewRefreshTest {
         activityController.windowFocusChanged(true)
         assertEquals(Screen.Settings.route, controller().currentDestination?.route)
         assertEquals(0, decorView.systemUiVisibility and hiddenBars)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun resumeWithExistingWindowFocusRestoresImmersiveMode() {
+        UserSettings(activity).immersiveMode = ImmersiveModeOption.ALWAYS_ON
+        activityController.windowFocusChanged(true)
+        activityController.pause()
+        val hiddenBars =
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        val decorView = activity.window.decorView
+        decorView.systemUiVisibility =
+            decorView.systemUiVisibility and hiddenBars.inv()
+
+        // No new window-focus callback: resume itself must repair the policy.
+        activityController.resume()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(hiddenBars, decorView.systemUiVisibility and hiddenBars)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun lateWindowFocusCallbackCannotHideBarsWhilePaused() {
+        UserSettings(activity).immersiveMode = ImmersiveModeOption.ALWAYS_ON
+        activityController.pause()
+        val hiddenBars =
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        val decorView = activity.window.decorView
+        decorView.systemUiVisibility =
+            decorView.systemUiVisibility and hiddenBars.inv()
+
+        activityController.windowFocusChanged(true)
+        assertEquals(0, decorView.systemUiVisibility and hiddenBars)
+        activityController.resume()
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun focusRecoveryRespectsOnlyWhenLockedAndTheCurrentLockTaskState() {
+        UserSettings(activity).immersiveMode = ImmersiveModeOption.ONLY_WHEN_LOCKED
+        val manager =
+            activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val hiddenBars =
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        val decorView = activity.window.decorView
+        decorView.systemUiVisibility =
+            decorView.systemUiVisibility and hiddenBars.inv()
+        shadowOf(manager).setLockTaskModeState(ActivityManager.LOCK_TASK_MODE_NONE)
+        activityController.windowFocusChanged(true)
+        assertEquals(0, decorView.systemUiVisibility and hiddenBars)
+
+        shadowOf(manager).setLockTaskModeState(ActivityManager.LOCK_TASK_MODE_LOCKED)
+        activityController.windowFocusChanged(false)
+        activityController.windowFocusChanged(true)
+        assertEquals(hiddenBars, decorView.systemUiVisibility and hiddenBars)
+        shadowOf(manager).setLockTaskModeState(ActivityManager.LOCK_TASK_MODE_NONE)
     }
 
     @Test
