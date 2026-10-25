@@ -46,6 +46,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineStart
@@ -86,6 +87,7 @@ import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleMainIntent
 import uk.nktnet.webviewkiosk.utils.launchAndroid6KioskTask
+import uk.nktnet.webviewkiosk.utils.navigateToAdminRestrictionsChangedIfReady
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
@@ -99,6 +101,7 @@ open class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavHostController
     private var uploadingFileUri by mutableStateOf<Uri?>(null)
     private var uploadProgress by mutableFloatStateOf(0f)
+    private var pendingAdminRestrictionsNavigation by mutableStateOf(false)
     private lateinit var userSettings: UserSettings
     private lateinit var systemSettings: SystemSettings
     private lateinit var backButtonService: BackButtonManager
@@ -131,19 +134,10 @@ open class MainActivity : AppCompatActivity() {
                 }
                 when (intent.action) {
                     Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED -> {
-                        if (this@MainActivity::navController.isInitialized) {
-                            val currentRoute =
-                                navController.currentBackStackEntry
-                                    ?.destination
-                                    ?.route
-                            if (
-                                currentRoute != Screen.AdminRestrictionsChanged.route
-                            ) {
-                                navController.navigate(
-                                    Screen.AdminRestrictionsChanged.route
-                                )
-                            }
-                        }
+                        // The controller can exist before the NavHost installs its
+                        // graph (or while the NavHost is temporarily absent).
+                        // Deliver the notice after a destination becomes active.
+                        pendingAdminRestrictionsNavigation = true
                         updateDeviceSettings(context)
                         userSettings.refreshMutualTlsState()
                         AuthenticationManager.resetAuthentication()
@@ -270,6 +264,25 @@ open class MainActivity : AppCompatActivity() {
 
             val activity = LocalActivity.current
             val handlesApplicationEvents = isApplicationEventHost()
+            val currentBackStackEntry by navController.currentBackStackEntryAsState()
+            LaunchedEffect(
+                pendingAdminRestrictionsNavigation,
+                currentBackStackEntry,
+                webViewReady,
+                uploadingFileUri,
+                handlesApplicationEvents,
+            ) {
+                if (
+                    pendingAdminRestrictionsNavigation &&
+                        handlesApplicationEvents &&
+                        webViewReady &&
+                        uploadingFileUri == null &&
+                        currentBackStackEntry != null &&
+                        navigateToAdminRestrictionsChangedIfReady(navController)
+                ) {
+                    pendingAdminRestrictionsNavigation = false
+                }
+            }
             val handlesAuthentication =
                 if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
                     // The API 23 workaround keeps both MainActivity and
