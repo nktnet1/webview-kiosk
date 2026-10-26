@@ -87,40 +87,36 @@ class HomeAssistantDiscoveryTest {
 
     @Test
     fun obsoleteComponentsCanBeRemovedWithoutRetiringUnchangedEntities() {
-        val removal =
-            discovery.componentRemovalPayload(
-                mapOf(
-                    "setting_device_owner_disable_status_bar_outside_lock_task" to
-                        "switch",
-                    "setting_web_lifecycle_relock_on_unexpected_exit" to "switch",
-                    "setting_old_integer" to "number",
-                )
+        val current =
+            discovery.payload("", "", "", "1").getValue("components").jsonObject
+        val obsoleteComponents =
+            current.values
+                .asSequence()
+                .map { it.jsonObject.getValue("platform").jsonPrimitive.content }
+                .distinct()
+                .mapIndexed { index, platform ->
+                    "removed_component_$index" to platform
+                }
+                .toMap()
+        assertTrue(obsoleteComponents.isNotEmpty())
+        val removal = discovery.componentRemovalPayload(obsoleteComponents)
+        val removed = removal.getValue("components").jsonObject
+
+        obsoleteComponents.forEach { (id, platform) ->
+            assertEquals(
+                platform,
+                removed
+                    .getValue(id)
+                    .jsonObject
+                    .getValue("platform")
+                    .jsonPrimitive
+                    .content,
             )
-        val components = removal.getValue("components").jsonObject
-        assertEquals(
-            "switch",
-            components
-                .getValue(
-                    "setting_device_owner_disable_status_bar_outside_lock_task"
-                )
-                .jsonObject
-                .getValue("platform")
-                .jsonPrimitive
-                .content,
-        )
-        assertEquals(
-            "number",
-            components
-                .getValue("setting_old_integer")
-                .jsonObject
-                .getValue("platform")
-                .jsonPrimitive
-                .content,
-        )
-        components.values.forEach {
+        }
+        removed.values.forEach {
             assertEquals(setOf("platform"), it.jsonObject.keys)
         }
-        assertFalse(components.containsKey("battery"))
+        assertTrue(removed.keys.intersect(current.keys).isEmpty())
     }
 
     @Test

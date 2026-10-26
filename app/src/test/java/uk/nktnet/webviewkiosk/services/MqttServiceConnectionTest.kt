@@ -646,7 +646,7 @@ class MqttServiceConnectionTest {
     }
 
     @Test
-    fun aDowngradeRemovesObsoleteSettingsWithoutResettingOtherEntities() {
+    fun aDowngradeRemovesObsoleteComponentsWithoutResettingExistingEntities() {
         settings.mqttHomeAssistantEnabled = true
         val first = connect()
         val ha = homeAssistant()
@@ -655,45 +655,52 @@ class MqttServiceConnectionTest {
             context.getSharedPreferences("mqtt_home_assistant", Context.MODE_PRIVATE)
         val catalogKey = prefs.all.keys.single { it.startsWith("components:") }
         val catalog = JSONObject(requireNotNull(prefs.getString(catalogKey, null)))
-        catalog.put(
-            "setting_device_owner_disable_status_bar_outside_lock_task",
-            "switch",
-        )
-        catalog.put("setting_web_lifecycle_relock_on_unexpected_exit", "switch")
+        val currentIds = catalog.keys().asSequence().toSet()
+        val obsoleteComponents =
+            currentIds
+                .asSequence()
+                .map(catalog::getString)
+                .distinct()
+                .mapIndexed { index, platform ->
+                    "removed_component_$index" to platform
+                }
+                .toMap()
+        assertTrue(obsoleteComponents.isNotEmpty())
+        assertTrue(obsoleteComponents.keys.intersect(currentIds).isEmpty())
+        obsoleteComponents.forEach { (id, platform) -> catalog.put(id, platform) }
         prefs.edit().putString(catalogKey, catalog.toString()).commit()
 
         MqttManager.restart(context, DisconnectCause.USER_INITIATED_RESTART)
         val second = broker.awaitConnection()
         second.acknowledgeConnect()
         val announcement = awaitDiscovery(second, ha)
-        val removal =
+        val removed =
             JSONObject(awaitPublication(second, ha.configTopic).payload)
                 .getJSONObject("components")
+        val removedIds = removed.keys().asSequence().toSet()
+        assertTrue(removedIds.intersect(currentIds).isEmpty())
+        obsoleteComponents.forEach { (id, platform) ->
+            assertEquals(platform, removed.getJSONObject(id).getString("platform"))
+            assertEquals(
+                setOf("platform"),
+                removed.getJSONObject(id).keys().asSequence().toSet(),
+            )
+        }
         assertEquals(
-            "switch",
-            removal
-                .getJSONObject(
-                    "setting_device_owner_disable_status_bar_outside_lock_task"
-                )
-                .getString("platform"),
-        )
-        assertEquals(
-            "switch",
-            removal
-                .getJSONObject("setting_web_lifecycle_relock_on_unexpected_exit")
-                .getString("platform"),
-        )
-        assertFalse(removal.has("battery"))
-        assertFalse(
+            currentIds,
             JSONObject(announcement.payload)
                 .getJSONObject("components")
-                .has("setting_web_lifecycle_relock_on_unexpected_exit")
+                .keys()
+                .asSequence()
+                .toSet(),
         )
         awaitPublication(second, ha.availabilityTopic, "online")
-        assertFalse(
+        val updatedCatalog =
             JSONObject(requireNotNull(prefs.getString(catalogKey, null)))
-                .has("setting_web_lifecycle_relock_on_unexpected_exit")
-        )
+        assertEquals(currentIds, updatedCatalog.keys().asSequence().toSet())
+        currentIds.forEach { id ->
+            assertEquals(catalog.getString(id), updatedCatalog.getString(id))
+        }
     }
 
     @Test
@@ -1065,7 +1072,12 @@ class MqttServiceConnectionTest {
     ) =
         awaitPublication(connection, discovery.configTopic) {
             it.payload.isNotEmpty() &&
-                JSONObject(it.payload).getJSONObject("components").has("battery")
+                JSONObject(it.payload).getJSONObject("components").let { components
+                    ->
+                    components.keys().asSequence().any { id ->
+                        components.getJSONObject(id).has("unique_id")
+                    }
+                }
         }
 
     private fun awaitPublication(
