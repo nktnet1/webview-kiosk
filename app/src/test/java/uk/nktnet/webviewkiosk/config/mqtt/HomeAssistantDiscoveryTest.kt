@@ -50,7 +50,7 @@ class HomeAssistantDiscoveryTest {
 
     @Test
     fun onlyTheRetiredNotifiersAreIncludedInTheRemovalMessage() {
-        val removal = discovery.notifierRemovalPayload()
+        val removal = discovery.componentRemovalPayload()
         val removed = removal.getValue("components").jsonObject
         val current = discovery.payload("", "", "", "1")
         val components = current.getValue("components").jsonObject
@@ -83,6 +83,44 @@ class HomeAssistantDiscoveryTest {
                 it.jsonObject.getValue("platform").jsonPrimitive.content == "notify"
             }
         )
+    }
+
+    @Test
+    fun obsoleteComponentsCanBeRemovedWithoutRetiringUnchangedEntities() {
+        val removal =
+            discovery.componentRemovalPayload(
+                mapOf(
+                    "setting_device_owner_disable_status_bar_outside_lock_task" to
+                        "switch",
+                    "setting_web_lifecycle_relock_on_unexpected_exit" to "switch",
+                    "setting_old_integer" to "number",
+                )
+            )
+        val components = removal.getValue("components").jsonObject
+        assertEquals(
+            "switch",
+            components
+                .getValue(
+                    "setting_device_owner_disable_status_bar_outside_lock_task"
+                )
+                .jsonObject
+                .getValue("platform")
+                .jsonPrimitive
+                .content,
+        )
+        assertEquals(
+            "number",
+            components
+                .getValue("setting_old_integer")
+                .jsonObject
+                .getValue("platform")
+                .jsonPrimitive
+                .content,
+        )
+        components.values.forEach {
+            assertEquals(setOf("platform"), it.jsonObject.keys)
+        }
+        assertFalse(components.containsKey("battery"))
     }
 
     @Test

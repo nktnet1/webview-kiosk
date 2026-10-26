@@ -566,7 +566,7 @@ class MqttServiceConnectionTest {
 
         val removal = connection.publications.first { it.topic == ha.configTopic }
         assertTrue(removal.retain)
-        assertEquals(ha.notifierRemovalPayload().toString(), removal.payload)
+        assertEquals(ha.componentRemovalPayload().toString(), removal.payload)
         assertEquals(
             listOf(removal.payload, announcement.payload),
             connection.publications
@@ -619,6 +619,84 @@ class MqttServiceConnectionTest {
     }
 
     @Test
+    fun aDowngradeWithoutASavedCatalogClearsUnknownRetainedEntities() {
+        settings.mqttHomeAssistantEnabled = true
+        val first = connect()
+        val ha = homeAssistant()
+        awaitPublication(first, ha.availabilityTopic, "online")
+        // Old versions remembered retained topics, but not their component IDs.
+        val prefs =
+            context.getSharedPreferences("mqtt_home_assistant", Context.MODE_PRIVATE)
+        val catalogKey = prefs.all.keys.single { it.startsWith("components:") }
+        prefs.edit().remove(catalogKey).commit()
+
+        MqttManager.restart(context, DisconnectCause.USER_INITIATED_RESTART)
+        val second = broker.awaitConnection()
+        second.acknowledgeConnect()
+        val announcement = awaitDiscovery(second, ha)
+        assertTrue(awaitPublication(second, ha.configTopic, "").retain)
+        assertEquals(
+            listOf("", announcement.payload),
+            second.publications
+                .filter { it.topic == ha.configTopic }
+                .map { it.payload },
+        )
+        awaitPublication(second, ha.availabilityTopic, "online")
+        assertTrue(prefs.contains(catalogKey))
+    }
+
+    @Test
+    fun aDowngradeRemovesObsoleteSettingsWithoutResettingOtherEntities() {
+        settings.mqttHomeAssistantEnabled = true
+        val first = connect()
+        val ha = homeAssistant()
+        awaitPublication(first, ha.availabilityTopic, "online")
+        val prefs =
+            context.getSharedPreferences("mqtt_home_assistant", Context.MODE_PRIVATE)
+        val catalogKey = prefs.all.keys.single { it.startsWith("components:") }
+        val catalog = JSONObject(requireNotNull(prefs.getString(catalogKey, null)))
+        catalog.put(
+            "setting_device_owner_disable_status_bar_outside_lock_task",
+            "switch",
+        )
+        catalog.put("setting_web_lifecycle_relock_on_unexpected_exit", "switch")
+        prefs.edit().putString(catalogKey, catalog.toString()).commit()
+
+        MqttManager.restart(context, DisconnectCause.USER_INITIATED_RESTART)
+        val second = broker.awaitConnection()
+        second.acknowledgeConnect()
+        val announcement = awaitDiscovery(second, ha)
+        val removal =
+            JSONObject(awaitPublication(second, ha.configTopic).payload)
+                .getJSONObject("components")
+        assertEquals(
+            "switch",
+            removal
+                .getJSONObject(
+                    "setting_device_owner_disable_status_bar_outside_lock_task"
+                )
+                .getString("platform"),
+        )
+        assertEquals(
+            "switch",
+            removal
+                .getJSONObject("setting_web_lifecycle_relock_on_unexpected_exit")
+                .getString("platform"),
+        )
+        assertFalse(removal.has("battery"))
+        assertFalse(
+            JSONObject(announcement.payload)
+                .getJSONObject("components")
+                .has("setting_web_lifecycle_relock_on_unexpected_exit")
+        )
+        awaitPublication(second, ha.availabilityTopic, "online")
+        assertFalse(
+            JSONObject(requireNotNull(prefs.getString(catalogKey, null)))
+                .has("setting_web_lifecycle_relock_on_unexpected_exit")
+        )
+    }
+
+    @Test
     fun homeAssistantBirthResendsDiscoveryStateAndAvailability() {
         settings.mqttHomeAssistantEnabled = true
         settings.mqttHomeAssistantDiscoveryPrefix = "custom/discovery"
@@ -632,7 +710,7 @@ class MqttServiceConnectionTest {
 
         assertTrue(awaitDiscovery(connection, ha).retain)
         assertEquals(
-            ha.notifierRemovalPayload().toString(),
+            ha.componentRemovalPayload().toString(),
             connection.publications.first { it.topic == ha.configTopic }.payload,
         )
         assertTrue(awaitPublication(connection, ha.stateTopic).retain)
@@ -986,7 +1064,8 @@ class MqttServiceConnectionTest {
         discovery: HomeAssistantDiscovery,
     ) =
         awaitPublication(connection, discovery.configTopic) {
-            JSONObject(it.payload).getJSONObject("components").has("battery")
+            it.payload.isNotEmpty() &&
+                JSONObject(it.payload).getJSONObject("components").has("battery")
         }
 
     private fun awaitPublication(
