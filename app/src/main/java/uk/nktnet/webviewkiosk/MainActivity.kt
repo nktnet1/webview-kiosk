@@ -80,6 +80,8 @@ import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
+import uk.nktnet.webviewkiosk.utils.ImmersiveModeRecovery
+import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
 import uk.nktnet.webviewkiosk.utils.getBooleanExtraSafely
 import uk.nktnet.webviewkiosk.utils.getLocalFileLink
 import uk.nktnet.webviewkiosk.utils.getParcelableExtraSafely
@@ -90,6 +92,7 @@ import uk.nktnet.webviewkiosk.utils.launchAndroid6KioskTask
 import uk.nktnet.webviewkiosk.utils.navigateToAdminRestrictionsChangedIfReady
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
+import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
@@ -155,6 +158,18 @@ open class MainActivity : AppCompatActivity() {
             }
         }
 
+    private var immersiveModeRecovery: ImmersiveModeRecovery? = null
+
+    private fun canRecoverImmersiveMode(): Boolean =
+        this::navController.isInitialized &&
+            this::userSettings.isInitialized &&
+            lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+            !isFinishing &&
+            !isDestroyed &&
+            isApplicationEventHost() &&
+            navController.currentDestination?.route == Screen.WebView.route &&
+            shouldBeImmersed(this, userSettings)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -183,6 +198,12 @@ open class MainActivity : AppCompatActivity() {
         CustomNotificationManager.init(applicationContext)
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
+        immersiveModeRecovery =
+            ImmersiveModeRecovery(
+                windowView = window.decorView,
+                canRecover = ::canRecoverImmersiveMode,
+                recover = { enterImmersiveMode(this) },
+            )
         DeviceOwnerManager.init(this)
         pendingDhizukuPermissionRequest =
             userSettings.dhizukuRequestPermissionOnLaunch
@@ -637,9 +658,17 @@ open class MainActivity : AppCompatActivity() {
                 tryLockTask(this)
             }
         }
+        immersiveModeRecovery?.resume()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Focus can return without onResume (e.g. after the notification shade).
+        immersiveModeRecovery?.onWindowFocusChanged(hasFocus)
     }
 
     override fun onPause() {
+        immersiveModeRecovery?.pause()
         disableNfcForegroundDispatch()
         super.onPause()
     }
@@ -647,6 +676,7 @@ open class MainActivity : AppCompatActivity() {
     override fun onUserInteraction() {
         super.onUserInteraction()
         UserInteractionStateSingleton.onUserInteraction()
+        immersiveModeRecovery?.onUserInteraction()
     }
 
     override fun onStop() {
@@ -769,6 +799,8 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        immersiveModeRecovery?.pause()
+        immersiveModeRecovery = null
         createdHosts.remove(this)
         startedHosts.remove(this)
         unregisterMqttCommandHost?.invoke()

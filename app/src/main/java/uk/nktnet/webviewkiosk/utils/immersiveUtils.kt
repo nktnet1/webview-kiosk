@@ -5,8 +5,9 @@ import android.app.ActivityManager
 import android.content.Context.ACTIVITY_SERVICE
 import android.os.Build
 import android.view.View
-import android.view.WindowInsets
-import android.view.WindowInsetsController
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ImmersiveModeOption
 
@@ -24,13 +25,21 @@ fun shouldBeImmersed(activity: Activity, userSettings: UserSettings): Boolean {
 @Suppress("DEPRECATION")
 fun enterImmersiveMode(activity: Activity) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        activity.window.insetsController?.let { controller ->
-            controller.hide(
-                WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars()
+        // Use the window-backed compat controller: on Android 11 a window
+        // LayoutParams update can clear the platform controller's bar behaviour.
+        // AndroidX keeps the sticky policy in decor flags to survive that update.
+        // Configure the policy before hiding, including before the first attach.
+        val controller =
+            WindowCompat.getInsetsController(
+                activity.window,
+                activity.window.decorView,
             )
-            controller.systemBarsBehavior =
-                WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller.hide(
+            WindowInsetsCompat.Type.statusBars() or
+                WindowInsetsCompat.Type.navigationBars()
+        )
     } else {
         val decorView = activity.window.decorView
         val currentFlags = decorView.systemUiVisibility
@@ -48,8 +57,15 @@ fun enterImmersiveMode(activity: Activity) {
 @Suppress("DEPRECATION")
 fun exitImmersiveMode(activity: Activity) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        activity.window.insetsController?.show(
-            WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars()
+        val controller =
+            WindowCompat.getInsetsController(
+                activity.window,
+                activity.window.decorView,
+            )
+        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+        controller.show(
+            WindowInsetsCompat.Type.statusBars() or
+                WindowInsetsCompat.Type.navigationBars()
         )
     } else {
         val decorView = activity.window.decorView
