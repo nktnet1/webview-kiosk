@@ -566,7 +566,7 @@ class MqttServiceConnectionTest {
 
         val removal = connection.publications.first { it.topic == ha.configTopic }
         assertTrue(removal.retain)
-        assertEquals(ha.notifierRemovalPayload().toString(), removal.payload)
+        assertEquals(ha.componentRemovalPayload().toString(), removal.payload)
         assertEquals(
             listOf(removal.payload, announcement.payload),
             connection.publications
@@ -619,6 +619,91 @@ class MqttServiceConnectionTest {
     }
 
     @Test
+    fun aDowngradeWithoutASavedCatalogClearsUnknownRetainedEntities() {
+        settings.mqttHomeAssistantEnabled = true
+        val first = connect()
+        val ha = homeAssistant()
+        awaitPublication(first, ha.availabilityTopic, "online")
+        // Old versions remembered retained topics, but not their component IDs.
+        val prefs =
+            context.getSharedPreferences("mqtt_home_assistant", Context.MODE_PRIVATE)
+        val catalogKey = prefs.all.keys.single { it.startsWith("components:") }
+        prefs.edit().remove(catalogKey).commit()
+
+        MqttManager.restart(context, DisconnectCause.USER_INITIATED_RESTART)
+        val second = broker.awaitConnection()
+        second.acknowledgeConnect()
+        val announcement = awaitDiscovery(second, ha)
+        assertTrue(awaitPublication(second, ha.configTopic, "").retain)
+        assertEquals(
+            listOf("", announcement.payload),
+            second.publications
+                .filter { it.topic == ha.configTopic }
+                .map { it.payload },
+        )
+        awaitPublication(second, ha.availabilityTopic, "online")
+        assertTrue(prefs.contains(catalogKey))
+    }
+
+    @Test
+    fun aDowngradeRemovesObsoleteComponentsWithoutResettingExistingEntities() {
+        settings.mqttHomeAssistantEnabled = true
+        val first = connect()
+        val ha = homeAssistant()
+        awaitPublication(first, ha.availabilityTopic, "online")
+        val prefs =
+            context.getSharedPreferences("mqtt_home_assistant", Context.MODE_PRIVATE)
+        val catalogKey = prefs.all.keys.single { it.startsWith("components:") }
+        val catalog = JSONObject(requireNotNull(prefs.getString(catalogKey, null)))
+        val currentIds = catalog.keys().asSequence().toSet()
+        val obsoleteComponents =
+            currentIds
+                .asSequence()
+                .map(catalog::getString)
+                .distinct()
+                .mapIndexed { index, platform ->
+                    "removed_component_$index" to platform
+                }
+                .toMap()
+        assertTrue(obsoleteComponents.isNotEmpty())
+        assertTrue(obsoleteComponents.keys.intersect(currentIds).isEmpty())
+        obsoleteComponents.forEach { (id, platform) -> catalog.put(id, platform) }
+        prefs.edit().putString(catalogKey, catalog.toString()).commit()
+
+        MqttManager.restart(context, DisconnectCause.USER_INITIATED_RESTART)
+        val second = broker.awaitConnection()
+        second.acknowledgeConnect()
+        val announcement = awaitDiscovery(second, ha)
+        val removed =
+            JSONObject(awaitPublication(second, ha.configTopic).payload)
+                .getJSONObject("components")
+        val removedIds = removed.keys().asSequence().toSet()
+        assertTrue(removedIds.intersect(currentIds).isEmpty())
+        obsoleteComponents.forEach { (id, platform) ->
+            assertEquals(platform, removed.getJSONObject(id).getString("platform"))
+            assertEquals(
+                setOf("platform"),
+                removed.getJSONObject(id).keys().asSequence().toSet(),
+            )
+        }
+        assertEquals(
+            currentIds,
+            JSONObject(announcement.payload)
+                .getJSONObject("components")
+                .keys()
+                .asSequence()
+                .toSet(),
+        )
+        awaitPublication(second, ha.availabilityTopic, "online")
+        val updatedCatalog =
+            JSONObject(requireNotNull(prefs.getString(catalogKey, null)))
+        assertEquals(currentIds, updatedCatalog.keys().asSequence().toSet())
+        currentIds.forEach { id ->
+            assertEquals(catalog.getString(id), updatedCatalog.getString(id))
+        }
+    }
+
+    @Test
     fun homeAssistantBirthResendsDiscoveryStateAndAvailability() {
         settings.mqttHomeAssistantEnabled = true
         settings.mqttHomeAssistantDiscoveryPrefix = "custom/discovery"
@@ -632,7 +717,7 @@ class MqttServiceConnectionTest {
 
         assertTrue(awaitDiscovery(connection, ha).retain)
         assertEquals(
-            ha.notifierRemovalPayload().toString(),
+            ha.componentRemovalPayload().toString(),
             connection.publications.first { it.topic == ha.configTopic }.payload,
         )
         assertTrue(awaitPublication(connection, ha.stateTopic).retain)
@@ -986,7 +1071,13 @@ class MqttServiceConnectionTest {
         discovery: HomeAssistantDiscovery,
     ) =
         awaitPublication(connection, discovery.configTopic) {
-            JSONObject(it.payload).getJSONObject("components").has("battery")
+            it.payload.isNotEmpty() &&
+                JSONObject(it.payload).getJSONObject("components").let { components
+                    ->
+                    components.keys().asSequence().any { id ->
+                        components.getJSONObject(id).has("unique_id")
+                    }
+                }
         }
 
     private fun awaitPublication(

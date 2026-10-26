@@ -4,6 +4,8 @@ import android.content.RestrictionEntry
 import java.io.File
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
@@ -88,6 +90,61 @@ class HomeAssistantCatalogTest {
             File(path).apply {
                 parentFile?.mkdirs()
                 writeText(payload.toString())
+            }
+        }
+    }
+
+    @Test
+    fun settingTemplatesHandleMissingKeysWithoutUndefinedValues() {
+        val components = payload().getValue("components").jsonObject
+        HomeAssistantSetting.load(context).forEach { setting ->
+            val entity = components.getValue(setting.componentId).jsonObject
+            val key = JsonPrimitive(setting.key).toString()
+            val availability =
+                entity
+                    .getValue("availability")
+                    .jsonArray[1]
+                    .jsonObject
+                    .getValue("value_template")
+                    .jsonPrimitive
+                    .content
+            assertTrue(
+                availability.contains("$key not in value_json.get('managed', {})")
+            )
+            if (setting.isPassword) {
+                // Passwords are deliberately absent from the public settings map.
+                assertEquals(
+                    "{{ '' }}",
+                    entity.getValue("value_template").jsonPrimitive.content,
+                )
+                assertFalse(
+                    availability.contains(
+                        "$key not in value_json.get('settings', {})"
+                    )
+                )
+            } else {
+                assertTrue(
+                    availability.contains(
+                        "$key not in value_json.get('settings', {})"
+                    )
+                )
+                assertTrue(
+                    entity
+                        .getValue("value_template")
+                        .jsonPrimitive
+                        .content
+                        .contains("value_json.get('settings', {}).get($key, ")
+                )
+                val attributes =
+                    entity.getValue("json_attributes_template").jsonPrimitive.content
+                assertTrue(
+                    attributes.contains("value_json.get('settings', {}).get($key)")
+                )
+                assertTrue(
+                    attributes.contains(
+                        "value_json.get('managed', {}).get($key, false)"
+                    )
+                )
             }
         }
     }

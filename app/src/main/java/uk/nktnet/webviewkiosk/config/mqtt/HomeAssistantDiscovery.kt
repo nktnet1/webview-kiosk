@@ -33,8 +33,12 @@ class HomeAssistantDiscovery(
 
     fun responseTopic(request: String) = "$baseTopic/response/$request"
 
-    /** Retire the old notify entities before announcing the current controls. */
-    fun notifierRemovalPayload(): JsonObject = buildJsonObject {
+    /**
+     * Explicitly remove obsolete components before announcing the current controls.
+     */
+    fun componentRemovalPayload(
+        removedComponents: Map<String, String> = emptyMap()
+    ): JsonObject = buildJsonObject {
         put(
             "device",
             buildJsonObject {
@@ -45,15 +49,15 @@ class HomeAssistantDiscovery(
         put(
             "components",
             buildJsonObject {
-                listOf(
-                        "toast",
-                        "notify",
-                        "command_json",
-                        "settings_json",
-                        "request_json",
-                    )
-                    .forEach { key ->
-                        put(key, buildJsonObject { put("platform", "notify") })
+                (mapOf(
+                        "toast" to "notify",
+                        "notify" to "notify",
+                        "command_json" to "notify",
+                        "settings_json" to "notify",
+                        "request_json" to "notify",
+                    ) + removedComponents)
+                    .forEach { (key, platform) ->
+                        put(key, buildJsonObject { put("platform", platform) })
                     }
             },
         )
@@ -379,9 +383,16 @@ class HomeAssistantDiscovery(
                     add(
                         buildJsonObject {
                             put("topic", settingsStateTopic)
+                            val managed = "value_json.get('managed', {})"
+                            val absent =
+                                if (setting.isPassword) {
+                                    "$key not in $managed"
+                                } else {
+                                    "$key not in value_json.get('settings', {}) or $key not in $managed"
+                                }
                             put(
                                 "value_template",
-                                "{{ 'offline' if value_json.managed[$key] else 'online' }}",
+                                "{{ 'offline' if $absent or $managed.get($key, true) else 'online' }}",
                             )
                         }
                     )
@@ -430,11 +441,11 @@ class HomeAssistantDiscovery(
             } else {
                 put("state_topic", settingsStateTopic)
                 val value =
-                    "value_json.settings[$key]" +
+                    "value_json.get('settings', {}).get($key, " +
                         if (setting.type == RestrictionEntry.TYPE_MULTI_SELECT) {
-                            " | tojson"
+                            "[]) | tojson"
                         } else {
-                            ""
+                            "'')"
                         }
                 put(
                     "value_template",
@@ -447,7 +458,7 @@ class HomeAssistantDiscovery(
                 put("json_attributes_topic", settingsStateTopic)
                 put(
                     "json_attributes_template",
-                    "{{ {\"value\":value_json.settings[$key],\"managed\":value_json.managed[$key]} | tojson }}",
+                    "{{ {\"value\":value_json.get('settings', {}).get($key),\"managed\":value_json.get('managed', {}).get($key, false)} | tojson }}",
                 )
             }
         }
