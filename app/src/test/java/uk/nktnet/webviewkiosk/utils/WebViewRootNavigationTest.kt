@@ -10,6 +10,7 @@ import androidx.navigation.createGraph
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -137,6 +138,46 @@ class WebViewRootNavigationTest {
         assertEquals(
             2,
             root.savedStateHandle.get<Int>(WEBVIEW_RECREATION_REQUEST_KEY),
+        )
+    }
+
+    @Test
+    fun restrictionsBroadcastWaitsForTheNavigationGraph() {
+        val activity =
+            Robolectric.buildActivity(AppCompatActivity::class.java).setup().get()
+        val navController =
+            NavHostController(activity).apply {
+                setLifecycleOwner(activity)
+                setViewModelStore(ViewModelStore())
+                navigatorProvider.addNavigator(ComposeNavigator())
+            }
+
+        assertFalse(navigateToAdminRestrictionsChangedIfReady(navController))
+
+        navController.graph =
+            navController.createGraph(startDestination = Screen.WebView.route) {
+                composable(Screen.WebView.route) {}
+            }
+        assertFalse(navigateToAdminRestrictionsChangedIfReady(navController))
+
+        navController.graph =
+            navController.createGraph(startDestination = Screen.WebView.route) {
+                composable(Screen.WebView.route) {}
+                composable(Screen.AdminRestrictionsChanged.route) {}
+            }
+        assertTrue(navigateToAdminRestrictionsChangedIfReady(navController))
+        assertEquals(
+            Screen.AdminRestrictionsChanged.route,
+            navController.currentDestination?.route,
+        )
+
+        // Duplicate broadcasts must not create duplicate notices.
+        assertTrue(navigateToAdminRestrictionsChangedIfReady(navController))
+        assertEquals(
+            1,
+            navController.currentBackStack.value.count {
+                it.destination.route == Screen.AdminRestrictionsChanged.route
+            },
         )
     }
 }

@@ -6,6 +6,7 @@ import android.webkit.WebView
 import androidx.webkit.ScriptHandler
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import uk.nktnet.webviewkiosk.utils.webview.withOptionalWebViewFeature
 
 /**
  * Synchronous, boolean-only policy lookup for APIs absent from native interception.
@@ -60,10 +61,14 @@ private constructor(
 
     fun dispose() {
         rules.disposed = true
-        if (
-            WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
-        ) {
-            runCatching { handler?.remove() }
+        withOptionalWebViewFeature(WebViewFeature.DOCUMENT_START_SCRIPT) {
+            if (
+                WebViewFeature.isFeatureSupported(
+                    WebViewFeature.DOCUMENT_START_SCRIPT
+                )
+            ) {
+                runCatching { handler?.remove() }
+            }
         }
         webView.removeJavascriptInterface(BRIDGE)
     }
