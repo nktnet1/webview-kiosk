@@ -11,6 +11,30 @@ import uk.nktnet.webviewkiosk.config.Screen
  */
 internal const val WEBVIEW_RECREATION_REQUEST_KEY = "webviewRecreationRequest"
 
+/**
+ * A restrictions broadcast may arrive while startup or a file import has taken the
+ * NavHost out of composition. Let the caller keep the request pending until a graph
+ * with the notice destination and an active entry is available.
+ */
+internal fun navigateToAdminRestrictionsChangedIfReady(
+    navController: NavController
+): Boolean {
+    if (navController.currentBackStackEntry == null) {
+        return false
+    }
+
+    val graph = runCatching { navController.graph }.getOrNull() ?: return false
+    val route = Screen.AdminRestrictionsChanged.route
+    if (graph.findNode(route) == null) {
+        return false
+    }
+
+    if (navController.currentDestination?.route != route) {
+        navController.navigate(route) { launchSingleTop = true }
+    }
+    return true
+}
+
 fun navigateToWebViewScreen(navController: NavController) {
     try {
         // The WebView is the graph's root. Removing it with an inclusive popUpTo and

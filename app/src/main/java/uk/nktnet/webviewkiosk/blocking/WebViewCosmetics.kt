@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
+import uk.nktnet.webviewkiosk.utils.webview.withOptionalWebViewFeature
 
 /**
  * A data-only bridge: pages can request CSS hide selectors, never call privileged
@@ -143,18 +144,27 @@ private constructor(
         }
         disposed = true
         scope.cancel()
-        if (
-            WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
-        ) {
-            runCatching { handler?.remove() }
-        }
-        if (
-            bridgeInstalled &&
+        withOptionalWebViewFeature(WebViewFeature.DOCUMENT_START_SCRIPT) {
+            if (
                 WebViewFeature.isFeatureSupported(
-                    WebViewFeature.WEB_MESSAGE_LISTENER
+                    WebViewFeature.DOCUMENT_START_SCRIPT
                 )
-        ) {
-            runCatching { WebViewCompat.removeWebMessageListener(webView, BRIDGE) }
+            ) {
+                runCatching { handler?.remove() }
+            }
+        }
+        if (bridgeInstalled) {
+            withOptionalWebViewFeature(WebViewFeature.WEB_MESSAGE_LISTENER) {
+                if (
+                    WebViewFeature.isFeatureSupported(
+                        WebViewFeature.WEB_MESSAGE_LISTENER
+                    )
+                ) {
+                    runCatching {
+                        WebViewCompat.removeWebMessageListener(webView, BRIDGE)
+                    }
+                }
+            }
         }
     }
 

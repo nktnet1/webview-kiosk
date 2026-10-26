@@ -95,6 +95,7 @@ import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScrip
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDisableVibrationApiScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateErudaConsoleScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
+import uk.nktnet.webviewkiosk.utils.webview.withOptionalWebViewFeature
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
 private const val LOCAL_NETWORK_PERMISSION_ERROR =
@@ -600,32 +601,41 @@ fun createCustomWebview(
                             NfcInterface.NAME,
                         )
                         NfcBridgeManager.attachWebView(this)
-                        if (
-                            WebViewFeature.isFeatureSupported(
-                                WebViewFeature.DOCUMENT_START_SCRIPT
-                            )
+                        withOptionalWebViewFeature(
+                            WebViewFeature.DOCUMENT_START_SCRIPT
                         ) {
-                            runCatching {
-                                WebViewCompat.addDocumentStartJavaScript(
-                                    this,
-                                    NfcInterface.JS_WEB_NFC_HOOK,
-                                    setOf("*"),
+                            if (
+                                WebViewFeature.isFeatureSupported(
+                                    WebViewFeature.DOCUMENT_START_SCRIPT
                                 )
+                            ) {
+                                runCatching {
+                                    WebViewCompat.addDocumentStartJavaScript(
+                                        this,
+                                        NfcInterface.JS_WEB_NFC_HOOK,
+                                        setOf("*"),
+                                    )
+                                }
                             }
                         }
                     }
-                    if (
-                        !userSettings.enableVibrationApi &&
-                            WebViewFeature.isFeatureSupported(
-                                WebViewFeature.DOCUMENT_START_SCRIPT
-                            )
-                    ) {
-                        runCatching {
-                            WebViewCompat.addDocumentStartJavaScript(
-                                this,
-                                generateDisableVibrationApiScript(),
-                                setOf("*"),
-                            )
+                    if (!userSettings.enableVibrationApi) {
+                        withOptionalWebViewFeature(
+                            WebViewFeature.DOCUMENT_START_SCRIPT
+                        ) {
+                            if (
+                                WebViewFeature.isFeatureSupported(
+                                    WebViewFeature.DOCUMENT_START_SCRIPT
+                                )
+                            ) {
+                                runCatching {
+                                    WebViewCompat.addDocumentStartJavaScript(
+                                        this,
+                                        generateDisableVibrationApiScript(),
+                                        setOf("*"),
+                                    )
+                                }
+                            }
                         }
                     }
                     blobInterface?.let {
