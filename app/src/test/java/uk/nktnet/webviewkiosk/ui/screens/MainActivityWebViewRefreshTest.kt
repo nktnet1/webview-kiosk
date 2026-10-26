@@ -1,3 +1,5 @@
+@file:Suppress("UsePropertyAccessSyntax")
+
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.app.ActivityManager
@@ -72,6 +74,7 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewStartup
 import uk.nktnet.webviewkiosk.utils.webview.WebViewStartupGate
 
 /** Exercises the real MainActivity -> SetupNavHost -> WebviewScreen refresh path. */
+@Suppress("UsePropertyAccessSyntax")
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
 @LooperMode(LooperMode.Mode.PAUSED)
