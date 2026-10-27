@@ -50,7 +50,7 @@ class HomeAssistantDiscoveryTest {
 
     @Test
     fun onlyTheRetiredNotifiersAreIncludedInTheRemovalMessage() {
-        val removal = discovery.notifierRemovalPayload()
+        val removal = discovery.componentRemovalPayload()
         val removed = removal.getValue("components").jsonObject
         val current = discovery.payload("", "", "", "1")
         val components = current.getValue("components").jsonObject
@@ -83,6 +83,40 @@ class HomeAssistantDiscoveryTest {
                 it.jsonObject.getValue("platform").jsonPrimitive.content == "notify"
             }
         )
+    }
+
+    @Test
+    fun obsoleteComponentsCanBeRemovedWithoutRetiringUnchangedEntities() {
+        val current =
+            discovery.payload("", "", "", "1").getValue("components").jsonObject
+        val obsoleteComponents =
+            current.values
+                .asSequence()
+                .map { it.jsonObject.getValue("platform").jsonPrimitive.content }
+                .distinct()
+                .mapIndexed { index, platform ->
+                    "removed_component_$index" to platform
+                }
+                .toMap()
+        assertTrue(obsoleteComponents.isNotEmpty())
+        val removal = discovery.componentRemovalPayload(obsoleteComponents)
+        val removed = removal.getValue("components").jsonObject
+
+        obsoleteComponents.forEach { (id, platform) ->
+            assertEquals(
+                platform,
+                removed
+                    .getValue(id)
+                    .jsonObject
+                    .getValue("platform")
+                    .jsonPrimitive
+                    .content,
+            )
+        }
+        removed.values.forEach {
+            assertEquals(setOf("platform"), it.jsonObject.keys)
+        }
+        assertTrue(removed.keys.intersect(current.keys).isEmpty())
     }
 
     @Test

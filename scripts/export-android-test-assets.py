@@ -27,7 +27,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 MAX_ARCHIVE_BYTES = 180_000_000  # Decimal MB, including each numbered part.
 SDK_PLATFORM = "android-37.0"
 SDK_BUILD_TOOLS = "36.0.0"
-ROBOLECTRIC_VERSIONS = ("9-robolectric-4913185-2-i7", "10-robolectric-5803371-i7")
+ROBOLECTRIC_VERSIONS = (
+    "9-robolectric-4913185-2-i7",
+    "10-robolectric-5803371-i7",
+    "11-robolectric-6757853-i7",
+)
 ROBOLECTRIC_MAVEN_URL = (
     "https://repo.maven.apache.org/maven2/org/robolectric/android-all-instrumented"
 )
@@ -552,7 +556,7 @@ def export_gradle(args, output, *, env=None):
             if not any(path.is_dir() for path in modules.glob("metadata-2.*")):
                 raise ExportError("Gradle dependency resolution metadata was not populated")
             maven = (home if args.gradle_user_home else work) / "robolectric-maven"
-            say("Checking/downloading Robolectric API 28/29 Maven runtimes")
+            say("Checking/downloading Robolectric API 28/29/30 Maven runtimes")
             for version in ROBOLECTRIC_VERSIONS:
                 for extension in ("pom", "jar"):
                     robolectric_artifact(maven, version, extension)
@@ -578,7 +582,7 @@ Gradle/JBR distributions: exported in tools/ when requested with --download-grad
 Android SDK: platforms/{SDK_PLATFORM}, build-tools/{SDK_BUILD_TOOLS}, platform-tools
 Android SDK licences: exported when available
 Gradle dependencies: caches/modules-2 (artifacts and resolution metadata; excludes *.lock and gc.properties)
-Robolectric: Android 9 / API 28 and Android 10 / API 29 Maven runtime artifacts
+Robolectric: Android 9 / API 28, Android 10 / API 29 and Android 11 / API 30 Maven runtime artifacts
 Gradle tests and lint: dependencies resolved only (no tasks executed)
 Gradle deps destination: $GRADLE_USER_HOME/caches/modules-2/ (extract into $GRADLE_USER_HOME/)
 Android SDK destination: $ANDROID_SDK_ROOT/

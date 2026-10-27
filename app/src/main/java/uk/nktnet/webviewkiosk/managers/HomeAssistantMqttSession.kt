@@ -22,6 +22,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -87,6 +88,10 @@ internal class HomeAssistantMqttSession(
                     .map(::JsonPrimitive)
             )
             .toString()
+    // Scoped to broker, instance, and discovery topic so prefixes do not share
+    // catalogs.
+    private val publishedComponentsKey =
+        "components:$brokerKey:${discovery?.configTopic}"
     private val settingsCatalog by lazy { HomeAssistantSetting.load(context) }
     private val userSettings = UserSettings(context)
     private val userPrefs =
@@ -153,28 +158,63 @@ internal class HomeAssistantMqttSession(
         if (!isActive()) {
             return
         }
+        val payload =
+            ha.payload(
+                config.homeAssistantDeviceName,
+                Build.MANUFACTURER,
+                Build.MODEL,
+                BuildConfig.VERSION_NAME,
+                settingsCatalog,
+            )
+        // Keep the actual component platforms, not setting values or passwords.
+        val currentComponents = buildJsonObject {
+            payload.getValue("components").jsonObject.forEach { (id, component) ->
+                put(id, component.jsonObject.getValue("platform"))
+            }
+        }
+        val previousComponents =
+            prefs.getString(publishedComponentsKey, null)?.let { encoded ->
+                runCatching {
+                    BaseJson.parseToJsonElement(encoded).jsonObject.mapValues {
+                        it.value.jsonPrimitive.content
+                    }
+                }
+                    .getOrNull()
+            }
+        val previouslyRegistered =
+            synchronized(registryLock) {
+                ha.configTopic in prefs.getStringSet(brokerKey, emptySet()).orEmpty()
+            }
+        val obsoleteComponents =
+            previousComponents.orEmpty().filter { (id, platform) ->
+                currentComponents[id]?.jsonPrimitive?.content != platform
+            }
+        // Older versions did not record their component catalogs. Clear their
+        // entire retained discovery once so even unknown future-branch settings
+        // disappear on downgrade; use targeted removals on later announcements.
+        val removal =
+            if (previouslyRegistered && previousComponents == null) {
+                ""
+            } else {
+                ha.componentRemovalPayload(obsoleteComponents).toString()
+            }
         // Record before sending: a disconnect before PUBACK can still leave a
         // retained configuration that must be removed after changing settings.
         updateRegistry(ha.configTopic)
-        publish(
-            ha.configTopic,
-            ha.notifierRemovalPayload().toString(),
-        ) { success ->
+        publish(ha.configTopic, removal) { success ->
             if (success) {
-                // HA requires explicit platform-only removal entries, followed
-                // by a retained configuration that omits the removed entities.
-                publish(
-                    ha.configTopic,
-                    ha.payload(
-                            config.homeAssistantDeviceName,
-                            Build.MANUFACTURER,
-                            Build.MODEL,
-                            BuildConfig.VERSION_NAME,
-                            settingsCatalog,
-                        )
-                        .toString(),
-                ) { announced ->
+                // HA requires platform-only removals followed by an updated
+                // discovery configuration omitting the removed components.
+                publish(ha.configTopic, payload.toString()) { announced ->
                     if (announced) {
+                        synchronized(registryLock) {
+                            prefs.edit(commit = true) {
+                                putString(
+                                    publishedComponentsKey,
+                                    currentComponents.toString(),
+                                )
+                            }
+                        }
                         scope.launch(Dispatchers.Main) {
                             if (isActive()) {
                                 refreshState()

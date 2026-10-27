@@ -2,7 +2,6 @@ package uk.nktnet.webviewkiosk.utils.webview
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -12,15 +11,10 @@ import org.robolectric.annotation.Config
 @Config(sdk = [28])
 class OptionalWebViewFeatureTest {
     @Test
-    fun classLoadingFailureDisablesOnlyTheOptionalFeature() {
-        var remainingStartupRan = false
-
+    fun classLoadingFailureDoesNotCrashStartup() {
         withOptionalWebViewFeature("DOCUMENT_START_SCRIPT") {
             throw NoClassDefFoundError("Missing WebView implementation class")
         }
-        remainingStartupRan = true
-
-        assertTrue(remainingStartupRan)
     }
 
     @Test
