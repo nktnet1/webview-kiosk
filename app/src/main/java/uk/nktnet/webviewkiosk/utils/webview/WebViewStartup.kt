@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.annotation.OptIn
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewStartUpConfig
 import java.util.concurrent.Executor
@@ -51,14 +52,26 @@ internal class WebViewStartupGate(
 }
 
 /**
- * On AndroidX WebKit 1.14 the experimental API works down to our API 21 minimum.
- * Only background-safe startup work is requested; never run native UI initialization
- * synchronously while the Activity is being created. Actual WebView construction
- * remains on the UI thread after the callback, as required by WebKit.
+ * Include the UI-thread phase instead of deferring it until the first WebView API
+ * call.
  */
-@androidx.annotation.OptIn(
-    markerClass = [WebViewCompat.ExperimentalAsyncStartUp::class]
-)
+@OptIn(WebViewCompat.ExperimentalAsyncStartUp::class)
+internal fun webViewStartupConfig(
+    backgroundExecutor: Executor
+): WebViewStartUpConfig =
+    WebViewStartUpConfig.Builder(backgroundExecutor)
+        .setShouldRunUiThreadStartUpTasks(true)
+        .build()
+
+/**
+ * Fully initialize the provider before mounting a WebView. A background-only warmup
+ * leaves the UI-thread phase for the first WebView API call, which in this app is
+ * ServiceWorkerControllerCompat.getInstance() during composition. That cold start
+ * can block the main thread on Android's broadcast-receiver registration. WebKit
+ * schedules the required UI-thread startup tasks asynchronously; WebView
+ * construction still happens on the main thread after the callback.
+ */
+@OptIn(markerClass = [WebViewCompat.ExperimentalAsyncStartUp::class])
 internal object WebViewStartup {
     private const val TAG = "WebViewStartup"
     // WebKit 1.14's experimental callback has no failure callback. Never strand the
@@ -97,10 +110,7 @@ internal object WebViewStartup {
                 // An actual WebView may have been created by another entry point
                 // already.
                 // The API handles that case and invokes the callback promptly.
-                val config =
-                    WebViewStartUpConfig.Builder(backgroundExecutor)
-                        .setShouldRunUiThreadStartUpTasks(false)
-                        .build()
+                val config = webViewStartupConfig(backgroundExecutor)
                 WebViewCompat.startUpWebView(applicationContext, config) {
                     onComplete()
                 }
