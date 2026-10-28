@@ -1,0 +1,7 @@
+## Changes
+
+- Reduced the risk of WebView startup freezes and ANRs on some Android devices.
+- Improved immersive mode reliability after swipes, opening notifications and switching apps.
+- Fixed stale Home Assistant MQTT entities remaining after downgrading the app.
+- Improved compatibility with older or faulty Android System WebView providers.
+- Fixed navigation when administrator restrictions change during startup or file imports.
