@@ -22,7 +22,10 @@ import org.robolectric.util.ReflectionHelpers.ClassParameter
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
-@Suppress("DEPRECATION") // Control power state independently to test event ordering.
+@Suppress(
+    "DEPRECATION",
+    "UsePropertyAccessSyntax",
+) // Control power state independently to test event ordering.
 class ScreenWakeRefreshControllerTest {
     private class Owner : LifecycleOwner {
         val registry = LifecycleRegistry(this)
