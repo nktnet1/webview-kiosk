@@ -1,14 +1,12 @@
-/* eslint-disable react/no-children-prop */
-
 import { useForm } from "@tanstack/react-form";
-import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
+import { ChevronDown, QrCode, SlidersHorizontal, Wifi } from "lucide-react";
 import { useState } from "react";
-import QRCode from "react-qr-code";
 import { toast } from "sonner";
 import QrCheckboxField from "#/components/qr/fields/QrCheckboxField";
 import QrSelectField from "#/components/qr/fields/QrSelectField";
 import QrTextField from "#/components/qr/fields/QrTextField";
 import { buildQrProvisioningPayload } from "#/components/qr/payload";
+import QrCodePreview from "#/components/qr/QrCodePreview";
 import {
   DownloadSource,
   FormSchema,
@@ -16,15 +14,106 @@ import {
   type QrData,
   WifiSecurityType,
 } from "#/components/qr/schema";
-import { QR_INSTALLATION_VERSIONS } from "#/components/qr/version";
+import {
+  QR_INSTALLATION_VERSIONS,
+  type QrInstallationSource,
+} from "#/components/qr/version";
 import { Button } from "#/components/ui/button";
-import { Checkbox } from "#/components/ui/checkbox";
-import { Label } from "#/components/ui/label";
-import { Separator } from "#/components/ui/separator";
+
+const androidDocs =
+  "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_";
+
+const deviceOptions = [
+  {
+    name: "leaveAllSystemAppsEnabled",
+    label: "Leave all system apps enabled",
+    docsKey: "LEAVE_ALL_SYSTEM_APPS_ENABLED",
+  },
+  {
+    name: "skipEncryption",
+    label: "Skip encryption",
+    docsKey: "SKIP_ENCRYPTION",
+  },
+  {
+    name: "useMobileData",
+    label: "Use mobile data",
+    docsKey: "USE_MOBILE_DATA",
+  },
+  { name: "allowOffline", label: "Allow offline", docsKey: "ALLOW_OFFLINE" },
+  {
+    name: "keepScreenOn",
+    label: "Keep screen on",
+    docsKey: "KEEP_SCREEN_ON",
+  },
+] as const;
+
+const advancedTextGroups = [
+  {
+    title: "Language and time",
+    fields: [
+      {
+        name: "locale",
+        label: "Locale",
+        placeholder: "e.g. en-US",
+        docsKey: "LOCALE",
+      },
+      {
+        name: "timeZone",
+        label: "Time zone",
+        placeholder: "e.g. Australia/Sydney",
+        docsKey: "TIME_ZONE",
+      },
+      {
+        name: "localTime",
+        label: "Local time (ISO)",
+        placeholder: "e.g. 2026-02-18T09:00:00Z",
+        docsKey: "LOCAL_TIME",
+      },
+    ],
+  },
+  {
+    title: "Proxy and download",
+    fields: [
+      {
+        name: "proxyHost",
+        label: "Proxy host",
+        placeholder: "e.g. proxy.example.com",
+        docsKey: "WIFI_PROXY_HOST",
+      },
+      {
+        name: "proxyPort",
+        label: "Proxy port",
+        placeholder: "e.g. 8080",
+        docsKey: "WIFI_PROXY_PORT",
+      },
+      {
+        name: "proxyBypass",
+        label: "Proxy bypass",
+        placeholder: "e.g. localhost,*.example.com",
+        docsKey: "WIFI_PROXY_BYPASS",
+      },
+      {
+        name: "pacUrl",
+        label: "PAC URL",
+        placeholder: "https://example.com/proxy.pac",
+        docsKey: "WIFI_PAC_URL",
+      },
+      {
+        name: "packageDownloadCookieHeader",
+        label: "Package download cookie header",
+        placeholder: "Optional",
+        docsKey: "DEVICE_ADMIN_PACKAGE_DOWNLOAD_COOKIE_HEADER",
+      },
+    ],
+  },
+] as const;
 
 export default function QRCodeForm() {
-  const [qrValue, setQrValue] = useState<QrData | null>(null);
-  const [showJson, setShowJson] = useState(false);
+  const [result, setResult] = useState<{
+    payload: QrData;
+    downloadSource: QrInstallationSource;
+    formValues: string;
+  } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const form = useForm({
@@ -55,271 +144,251 @@ export default function QRCodeForm() {
       if (invalidAdminExtras) {
         toast.warning("Invalid admin extras", { duration: 3000 });
       }
-      setQrValue(payload);
+      setResult({
+        payload,
+        downloadSource: value.downloadSource,
+        formValues: JSON.stringify(value),
+      });
     },
   });
 
   return (
-    <div className="bg-fd-muted rounded-2xl p-6 md:p-10 w-full max-w-7xl flex flex-col items-center justify-center">
-      <h1 className="text-4xl wrap-break-word font-bold tracking-tight">
-        Generate QR Code
-      </h1>
+    <div className="mx-auto w-full max-w-6xl text-left">
+      <header className="mb-8 max-w-2xl space-y-3">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          QR installation
+        </h1>
+        <p className="leading-relaxed text-muted-foreground">
+          Set up Webview Kiosk as the device owner on a new or factory-reset
+          Android device. Choose your settings, generate a code, and scan it
+          during device setup.
+        </p>
+      </header>
 
-      <form
-        className="flex flex-col mt-8 gap-4 w-full max-w-xl"
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
-      >
-        <form.Field
-          name="downloadSource"
-          children={(field) => (
-            <QrSelectField
-              field={field}
-              label="Download Source"
-              options={DownloadSource.options}
-              docsLink="https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION"
-            />
-          )}
-        />
-
-        <div className="border-y border-dashed py-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="my-2 min-h-12 whitespace-normal wrap-break-words"
-          >
-            {showAdvanced ? "Hide Advanced Options" : "Show Advanced Options"}
-          </Button>
-
-          {showAdvanced && (
-            <div className="flex flex-col gap-4 mt-4">
-              {(
-                [
-                  {
-                    key: "leaveAllSystemAppsEnabled",
-                    label: "Leave All System Apps Enabled",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED",
-                  },
-                  {
-                    key: "skipEncryption",
-                    label: "Skip Encryption",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_SKIP_ENCRYPTION",
-                  },
-                  {
-                    key: "wifiHidden",
-                    label: "Wi-Fi Hidden",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_HIDDEN",
-                  },
-                  {
-                    key: "useMobileData",
-                    label: "Use Mobile Data",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_USE_MOBILE_DATA",
-                  },
-                  {
-                    key: "allowOffline",
-                    label: "Allow Offline",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_ALLOW_OFFLINE",
-                  },
-                  {
-                    key: "keepScreenOn",
-                    label: "Keep Screen On",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_KEEP_SCREEN_ON",
-                  },
-                ] as const
-              ).map(({ key, label, docsLink }) => (
-                <form.Field
-                  key={key}
-                  name={key}
-                  children={(field) => (
-                    <QrCheckboxField
-                      field={field}
-                      label={label}
-                      docsLink={docsLink}
-                    />
-                  )}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+        <form
+          id="qr-installation-form"
+          aria-label="Installation settings"
+          className="min-w-0 overflow-hidden rounded-2xl border bg-card text-card-foreground"
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+        >
+          <div className="space-y-5 p-5 sm:p-6">
+            <div>
+              <h2 className="font-semibold">Installation settings</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Choose where your device downloads the app.
+              </p>
+            </div>
+            <form.Field
+              name="downloadSource"
+              children={(field) => (
+                <QrSelectField
+                  field={field}
+                  label="Download source"
+                  options={DownloadSource.options}
+                  docsLink={`${androidDocs}DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION`}
                 />
-              ))}
+              )}
+            />
+            <form.Subscribe
+              selector={(s) => s.values.downloadSource}
+              children={(downloadSource) => {
+                const version = QR_INSTALLATION_VERSIONS[downloadSource];
+                return (
+                  <p className="text-xs text-muted-foreground">
+                    Version {version.tag} · Build {version.code}
+                  </p>
+                );
+              }}
+            />
+          </div>
 
-              <Separator className="my-2" />
-
-              {(
-                [
-                  {
-                    name: "locale",
-                    label: "Locale",
-                    placeholder: "e.g. en-US",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_LOCALE",
-                  },
-                  {
-                    name: "timeZone",
-                    label: "Time Zone",
-                    placeholder: "e.g. America/New_York",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_TIME_ZONE",
-                  },
-                  {
-                    name: "wifiSSID",
-                    label: "Wi-Fi SSID",
-                    placeholder: "Optional",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_SSID",
-                  },
-                  {
-                    name: "wifiPassword",
-                    label: "Wi-Fi Password",
-                    placeholder: "Optional",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_PASSWORD",
-                  },
-                  {
-                    name: "proxyHost",
-                    label: "Proxy Host",
-                    placeholder: "Optional",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_PROXY_HOST",
-                  },
-                  {
-                    name: "proxyPort",
-                    label: "Proxy Port",
-                    placeholder: "Optional",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_PROXY_PORT",
-                  },
-                  {
-                    name: "proxyBypass",
-                    label: "Proxy Bypass",
-                    placeholder: "Optional",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_PROXY_BYPASS",
-                  },
-                  {
-                    name: "pacUrl",
-                    label: "PAC URL",
-                    placeholder: "Optional",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_PAC_URL",
-                  },
-                  {
-                    name: "localTime",
-                    label: "Local Time (ISO)",
-                    placeholder: "Optional, e.g. 2026-02-18T09:00:00Z",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_LOCAL_TIME",
-                  },
-                  {
-                    name: "packageDownloadCookieHeader",
-                    label: "Package Download Cookie Header",
-                    placeholder: "Optional",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_COOKIE_HEADER",
-                  },
-                  {
-                    name: "adminExtras",
-                    label: "Admin Extras (JSON)",
-                    placeholder: '{"key":"value"}',
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE",
-                  },
-                ] as const
-              ).map(({ name, label, placeholder, docsLink }) => (
+          <fieldset className="min-w-0 border-t p-5 sm:p-6">
+            <legend className="sr-only">Wi-Fi settings (optional)</legend>
+            <div className="mb-5">
+              <h3 className="flex items-center gap-2 text-sm font-semibold">
+                <Wifi aria-hidden="true" className="size-4" />
+                Wi-Fi
+                <span className="ml-auto text-xs font-normal text-muted-foreground">
+                  Optional
+                </span>
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Pre-fill a network, or connect on the device during setup.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <form.Field
+                name="wifiSSID"
+                children={(field) => (
+                  <QrTextField
+                    field={field}
+                    label="Network name (SSID)"
+                    placeholder="Enter your Wi-Fi network name"
+                    docsLink={`${androidDocs}WIFI_SSID`}
+                  />
+                )}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
                 <form.Field
-                  key={name}
-                  name={name}
+                  name="wifiPassword"
                   children={(field) => (
                     <QrTextField
                       field={field}
-                      label={label}
-                      placeholder={placeholder}
-                      docsLink={docsLink}
+                      label="Wi-Fi password"
+                      placeholder="Enter network password"
+                      docsLink={`${androidDocs}WIFI_PASSWORD`}
+                      secret
                     />
                   )}
                 />
-              ))}
-
+                <form.Field
+                  name="wifiSecurityType"
+                  children={(field) => (
+                    <QrSelectField
+                      field={field}
+                      label="Security type"
+                      options={WifiSecurityType.options}
+                      docsLink={`${androidDocs}WIFI_SECURITY_TYPE`}
+                    />
+                  )}
+                />
+              </div>
               <form.Field
-                name="wifiSecurityType"
+                name="wifiHidden"
                 children={(field) => (
-                  <QrSelectField
+                  <QrCheckboxField
                     field={field}
-                    label="Wi-Fi Security Type"
-                    options={WifiSecurityType.options}
-                    docsLink={
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_SECURITY_TYPE"
-                    }
+                    label="Hidden network"
+                    docsLink={`${androidDocs}WIFI_HIDDEN`}
                   />
                 )}
               />
             </div>
-          )}
-        </div>
+          </fieldset>
+
+          <div className="border-t">
+            <Button
+              type="button"
+              variant="ghost"
+              aria-expanded={showAdvanced}
+              aria-controls="qr-advanced-options"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="h-auto min-h-16 w-full justify-start gap-3 rounded-none px-5 py-4 sm:px-6"
+            >
+              <SlidersHorizontal aria-hidden="true" className="size-4" />
+              Advanced options
+              <ChevronDown
+                aria-hidden="true"
+                className={`ml-auto size-4 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
+              />
+            </Button>
+            <div
+              id="qr-advanced-options"
+              hidden={!showAdvanced}
+              className="space-y-6 px-5 pb-6 sm:px-6"
+            >
+              <fieldset className="min-w-0">
+                <legend className="mb-3 text-sm font-semibold">
+                  Device behaviour
+                </legend>
+                <div className="space-y-1">
+                  {deviceOptions.map(({ name, label, docsKey }) => (
+                    <form.Field
+                      key={name}
+                      name={name}
+                      children={(field) => (
+                        <QrCheckboxField
+                          field={field}
+                          label={label}
+                          docsLink={`${androidDocs}${docsKey}`}
+                        />
+                      )}
+                    />
+                  ))}
+                </div>
+              </fieldset>
+
+              {advancedTextGroups.map(({ title, fields }) => (
+                <fieldset key={title} className="min-w-0 border-t pt-5">
+                  <legend className="pr-3 text-sm font-semibold">
+                    {title}
+                  </legend>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {fields.map(({ name, label, placeholder, docsKey }) => (
+                      <form.Field
+                        key={name}
+                        name={name}
+                        children={(field) => (
+                          <QrTextField
+                            field={field}
+                            label={label}
+                            placeholder={placeholder}
+                            docsLink={`${androidDocs}${docsKey}`}
+                          />
+                        )}
+                      />
+                    ))}
+                  </div>
+                </fieldset>
+              ))}
+
+              <div className="border-t pt-5">
+                <form.Field
+                  name="adminExtras"
+                  children={(field) => (
+                    <QrTextField
+                      field={field}
+                      label="Admin extras (JSON)"
+                      placeholder={'{"key": "value"}'}
+                      docsLink={`${androidDocs}ADMIN_EXTRAS_BUNDLE`}
+                      multiline
+                    />
+                  )}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t bg-muted/30 p-5 sm:p-6">
+            <form.Subscribe
+              selector={(s) => s.canSubmit}
+              children={(canSubmit) => (
+                <Button
+                  type="submit"
+                  disabled={!canSubmit}
+                  className="min-h-11 w-full whitespace-normal"
+                >
+                  <QrCode aria-hidden="true" className="size-4" />
+                  Generate QR code
+                </Button>
+              )}
+            />
+            <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
+              The code includes your Wi-Fi password if provided. Share it only
+              with people setting up your device.
+            </p>
+          </div>
+        </form>
 
         <form.Subscribe
           selector={(s) => ({
+            formValues: JSON.stringify(s.values),
             canSubmit: s.canSubmit,
-            downloadSource: s.values.downloadSource,
           })}
-          children={({ canSubmit, downloadSource }) => {
-            const installationVersion =
-              QR_INSTALLATION_VERSIONS[downloadSource];
-
-            return (
-              <Button
-                type="submit"
-                disabled={!canSubmit}
-                className="mt-2 min-h-12 whitespace-normal wrap-break-word"
-              >
-                {`Generate QR code for ${installationVersion.tag} (${installationVersion.code})`}
-              </Button>
-            );
-          }}
-        />
-      </form>
-
-      {qrValue && (
-        <div className="flex flex-col w-full">
-          <div className="mt-10 flex flex-col items-center gap-4">
-            <div
-              className="border-10 border-white"
-              data-testid="provisioning-qr"
-              data-provisioning-payload={JSON.stringify(qrValue)}
-            >
-              <QRCode className="max-w-full" value={JSON.stringify(qrValue)} />
-            </div>
-            <p className="text-sm opacity-70 break-all">
-              Scan during device setup
-            </p>
-          </div>
-
-          <div className="flex justify-center mt-5 gap-x-3">
-            <Checkbox
-              id="show-json-checkbox"
-              checked={showJson}
-              onCheckedChange={(state) => setShowJson(state === true)}
+          children={({ formValues, canSubmit }) => (
+            <QrCodePreview
+              result={result}
+              hasChanges={result !== null && result.formValues !== formValues}
+              canSubmit={canSubmit}
             />
-            <Label htmlFor="show-json-checkbox">Show JSON</Label>
-          </div>
-
-          {showJson && (
-            <div className="text-left mt-3">
-              <DynamicCodeBlock
-                lang="json"
-                code={JSON.stringify(qrValue, null, 2)}
-              />
-            </div>
           )}
-        </div>
-      )}
+        />
+      </div>
     </div>
   );
 }

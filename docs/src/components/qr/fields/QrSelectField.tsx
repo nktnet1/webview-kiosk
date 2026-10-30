@@ -1,6 +1,5 @@
 import type { AnyFieldApi } from "@tanstack/react-form";
-import { ExternalLink } from "lucide-react";
-import { Label } from "#/components/ui/label";
+import QrFieldLabel from "#/components/qr/fields/QrFieldLabel";
 import {
   Select,
   SelectContent,
@@ -22,23 +21,17 @@ export default function QrSelectField({
   docsLink: string;
 }) {
   return (
-    <div className="text-left">
-      <Label htmlFor={field.name} className="flex items-center gap-2">
-        {label}
-        <a
-          href={docsLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center hover:opacity-75"
-        >
-          <ExternalLink size={18} />
-        </a>
-      </Label>
+    <div className="min-w-0 space-y-2">
+      <QrFieldLabel id={field.name} label={label} docsLink={docsLink} />
       <Select
         value={field.state.value}
         onValueChange={(value) => field.handleChange(value)}
       >
-        <SelectTrigger className="mt-2 w-full">
+        <SelectTrigger
+          id={field.name}
+          onBlur={field.handleBlur}
+          className="w-full data-[size=default]:h-10"
+        >
           <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
         </SelectTrigger>
         <SelectContent>

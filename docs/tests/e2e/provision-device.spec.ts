@@ -11,7 +11,9 @@ async function generatePayload(page: Page): Promise<ProvisioningPayload> {
     (await qr.count()) > 0
       ? await qr.getAttribute("data-provisioning-payload")
       : null;
-  await page.getByRole("button", { name: /^generate qr code for/i }).click();
+  await page
+    .getByRole("button", { name: "Generate QR code", exact: true })
+    .click();
   if (previous !== null) {
     await expect
       .poll(() => qr.getAttribute("data-provisioning-payload"))
@@ -24,9 +26,9 @@ async function generatePayload(page: Page): Promise<ProvisioningPayload> {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("provision-device/");
+  await page.goto("tools/qr-installation/");
   await expect(
-    page.getByRole("heading", { name: "Generate QR Code" }),
+    page.getByRole("heading", { name: "QR installation", exact: true }),
   ).toBeVisible();
 });
 
@@ -43,10 +45,10 @@ test("switching download sources changes the rendered QR payload and URL", async
     github["android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM"];
   expect(githubChecksum).toMatch(/^[A-Za-z0-9+/_-]+={0,2}$/);
 
-  await page.getByRole("combobox").first().click();
+  await page.getByRole("combobox", { name: "Download source" }).click();
   await page.getByRole("option", { name: "F-Droid" }).click();
   await expect(
-    page.getByRole("button", { name: /generate qr code for v/i }),
+    page.getByRole("button", { name: "Generate QR code", exact: true }),
   ).toBeEnabled();
   const fdroid = await generatePayload(page);
   expect(
@@ -67,7 +69,7 @@ test("switching download sources changes the rendered QR payload and URL", async
     fdroid["android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM"],
   ).toBe(githubChecksum);
 
-  await page.getByRole("combobox").first().click();
+  await page.getByRole("combobox", { name: "Download source" }).click();
   await page.getByRole("option", { name: "IzzyOnDroid" }).click();
   const izzy = await generatePayload(page);
   expect(
@@ -80,10 +82,16 @@ test("switching download sources changes the rendered QR payload and URL", async
 test("advanced edits affect the encoded provisioning data", async ({
   page,
 }) => {
-  await page.getByRole("button", { name: "Show Advanced Options" }).click();
-  await page.locator("#wifiSSID").fill("Test E2E WiFi");
-  await page.locator("#wifiPassword").fill("local-only-passphrase");
-  await page.getByText("Keep Screen On", { exact: true }).click();
+  await page.getByRole("button", { name: "Advanced options" }).click();
+  await page
+    .getByLabel("Network name (SSID)", { exact: true })
+    .fill("Test E2E WiFi");
+  await page
+    .getByLabel("Wi-Fi password", { exact: true })
+    .fill("local-only-passphrase");
+  await page
+    .getByRole("checkbox", { name: "Keep screen on", exact: true })
+    .check();
   const payload = await generatePayload(page);
   expect(payload["android.app.extra.PROVISIONING_WIFI_SSID"]).toBe(
     "Test E2E WiFi",
@@ -102,8 +110,10 @@ test("advanced edits affect the encoded provisioning data", async ({
 test("malformed admin extras do not prevent a safe QR payload", async ({
   page,
 }) => {
-  await page.getByRole("button", { name: "Show Advanced Options" }).click();
-  await page.locator("#adminExtras").fill("{invalid-json");
+  await page.getByRole("button", { name: "Advanced options" }).click();
+  await page
+    .getByLabel("Admin extras (JSON)", { exact: true })
+    .fill("{invalid-json");
   const payload = await generatePayload(page);
   expect(payload["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"]).toEqual(
     {
@@ -112,3 +122,116 @@ test("malformed admin extras do not prevent a safe QR payload", async ({
   );
   await expect(page.getByText("Invalid admin extras")).toBeVisible();
 });
+
+test("changed settings replace an outdated QR with an update action", async ({
+  page,
+}) => {
+  await generatePayload(page);
+  await expect(page.getByRole("status")).toHaveText("Ready to scan");
+  await page
+    .getByLabel("Network name (SSID)", { exact: true })
+    .fill("Updated network");
+  await expect(page.getByTestId("provisioning-qr")).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText("Settings changed");
+  await page
+    .getByRole("button", { name: "Update QR code", exact: true })
+    .click();
+  const qr = page.getByTestId("provisioning-qr");
+  await expect(qr.locator("svg")).toBeVisible();
+  const payload = JSON.parse(
+    (await qr.getAttribute("data-provisioning-payload")) ?? "{}",
+  );
+  expect(payload["android.app.extra.PROVISIONING_WIFI_SSID"]).toBe(
+    "Updated network",
+  );
+  await expect(page.getByRole("status")).toHaveText("Ready to scan");
+});
+
+test("Wi-Fi password visibility does not change the encoded password", async ({
+  page,
+}) => {
+  const password = page.getByLabel("Wi-Fi password", { exact: true });
+  await password.fill("local-only-passphrase");
+  await expect(password).toHaveAttribute("type", "password");
+  await page
+    .getByRole("button", { name: "Show wi-fi password", exact: true })
+    .click();
+  await expect(password).toHaveAttribute("type", "text");
+  await page
+    .getByRole("button", { name: "Hide wi-fi password", exact: true })
+    .click();
+  await expect(password).toHaveAttribute("type", "password");
+  const payload = await generatePayload(page);
+  expect(payload["android.app.extra.PROVISIONING_WIFI_PASSWORD"]).toBe(
+    "local-only-passphrase",
+  );
+});
+
+test("advanced settings are keyboard accessible and retain edits when collapsed", async ({
+  page,
+}) => {
+  const advanced = page.getByRole("button", { name: "Advanced options" });
+  await expect(advanced).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByLabel("Locale", { exact: true })).toBeHidden();
+  await advanced.press("Enter");
+  await expect(advanced).toHaveAttribute("aria-expanded", "true");
+  await page.getByLabel("Locale", { exact: true }).fill("");
+  await page.getByLabel("Time zone", { exact: true }).fill("");
+  await page
+    .getByLabel("Admin extras (JSON)", { exact: true })
+    .fill('{\n  "key": "value"\n}');
+  await page
+    .getByRole("checkbox", { name: "Keep screen on", exact: true })
+    .check();
+  await advanced.press("Enter");
+  await expect(advanced).toHaveAttribute("aria-expanded", "false");
+  const payload = await generatePayload(page);
+  expect(payload["android.app.extra.PROVISIONING_LOCALE"]).toBeUndefined();
+  expect(payload["android.app.extra.PROVISIONING_TIME_ZONE"]).toBeUndefined();
+  expect(payload["android.app.extra.PROVISIONING_KEEP_SCREEN_ON"]).toBe(true);
+  expect(payload["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"]).toEqual(
+    { key: "value" },
+  );
+});
+
+test("the legacy provisioning URL still renders the installer", async ({
+  page,
+}) => {
+  await page.goto("provision-device/");
+  await expect(
+    page.getByRole("heading", { name: "QR installation", exact: true }),
+  ).toBeVisible();
+  await generatePayload(page);
+});
+
+for (const theme of ["light", "dark"]) {
+  test(`the installer fits narrow screens in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.evaluate((value) => {
+      document.documentElement.classList.toggle("dark", value === "dark");
+    }, theme);
+    await page.getByRole("button", { name: "Advanced options" }).click();
+    await page
+      .getByLabel("Admin extras (JSON)", { exact: true })
+      .fill('{"mobile":"test"}');
+    await page
+      .getByRole("button", { name: "Generate QR code", exact: true })
+      .click();
+    await expect(
+      page.getByTestId("provisioning-qr").locator("svg"),
+    ).toBeInViewport();
+    await page.getByText("Show JSON", { exact: true }).click();
+    await expect(
+      page.getByText(
+        "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME",
+      ),
+    ).toBeVisible();
+    const dimensions = await page.evaluate(() => ({
+      content: document.documentElement.scrollWidth,
+      viewport: document.documentElement.clientWidth,
+    }));
+    expect(dimensions.content).toBeLessThanOrEqual(dimensions.viewport);
+  });
+}
