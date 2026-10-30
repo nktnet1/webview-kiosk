@@ -72,6 +72,8 @@ object UserSettingsKeys {
 
     object WebLifecycle {
         const val LOCK_ON_LAUNCH = "web_lifecycle.lock_on_launch"
+        const val RELOCK_ON_UNEXPECTED_EXIT =
+            "web_lifecycle.relock_on_unexpected_exit"
         const val RESET_ON_LAUNCH = "web_lifecycle.reset_on_launch"
         const val RESET_ON_INACTIVITY_SECONDS =
             "web_lifecycle.reset_on_inactivity_seconds"
@@ -115,6 +117,9 @@ object UserSettingsKeys {
         const val BLOCK_VOLUME_KEYS = "device.block_volume_keys"
 
         object Owner {
+            const val DISABLE_STATUS_BAR_OUTSIDE_LOCK_TASK =
+                "device.owner.disable_status_bar_outside_lock_task"
+
             object LockTaskFeature {
                 const val HOME = "device.owner.lock_task_feature.home"
                 const val OVERVIEW = "device.owner.lock_task_feature.overview"

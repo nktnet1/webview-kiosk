@@ -49,6 +49,7 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
+import uk.nktnet.webviewkiosk.utils.removeLockTaskPackage
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -200,8 +201,9 @@ fun RemoveLockTaskAppDialog(
                     }
 
                     try {
-                        DeviceOwnerManager.DPM.setLockTaskPackages(
-                            DeviceOwnerManager.DAR,
+                        removeLockTaskPackage(
+                            context,
+                            removeApp.packageName,
                             apps
                                 .filter { app ->
                                     app.packageName != removeApp.packageName

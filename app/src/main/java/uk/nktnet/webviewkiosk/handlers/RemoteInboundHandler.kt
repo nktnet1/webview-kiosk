@@ -34,6 +34,8 @@ import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
+import uk.nktnet.webviewkiosk.utils.DeviceOwnerStatusBarPolicy
+import uk.nktnet.webviewkiosk.utils.LockTaskRecovery
 import uk.nktnet.webviewkiosk.utils.getStatus
 import uk.nktnet.webviewkiosk.utils.getSystemInfo
 import uk.nktnet.webviewkiosk.utils.openPackage
@@ -160,6 +162,14 @@ object RemoteInboundHandler {
         if (!userSettings.importJson(settings.data.settings.toString())) {
             return
         }
+        // The MQTT foreground service and UnifiedPush can apply settings with no
+        // activity alive. Reconcile the Device Owner policy at the point of import
+        // instead of relying on a UI collector that may never receive the event.
+        LockTaskRecovery.onSettingsChanged(
+            userSettings.relockOnUnexpectedExit,
+            userSettings.lockOnLaunch,
+        )
+        DeviceOwnerStatusBarPolicy.reconcile(context.applicationContext)
         RemoteMessageManager.emitSettingsApplied(settings, source)
 
         if (settings.showToast) {

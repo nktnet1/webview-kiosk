@@ -267,10 +267,20 @@ fun tryLockTask(activity: Activity?): Boolean {
         activity,
         lockAction = Activity::startLockTask,
         onSuccess = {
+            if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                    (activity.getSystemService(Context.ACTIVITY_SERVICE)
+                            as ActivityManager)
+                        .lockTaskModeState == ActivityManager.LOCK_TASK_MODE_LOCKED
+            ) {
+                LockTaskRecovery.onLockStarted()
+            }
+            DeviceOwnerStatusBarPolicy.reconcile(activity)
             AuthenticationManager.resetAuthentication()
             // Handled MQTT publish in LockStateSingleton
         },
         onFailed = {
+            // Preserve the existing status bar policy after an unexpected exit.
             ToastManager.show(activity, "Failed to lock: $it")
         },
     )
@@ -281,64 +291,133 @@ fun tryUnlockTask(activity: Activity?): Boolean {
         return false
     }
     logAndroid6LockAction(activity, "stopLockTask")
-    return tryLockAction(
-        activity,
-        lockAction = {
-            if (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-                    DeviceOwnerManager.hasOwnerPermission(activity)
-            ) {
-                try {
-                    val savedPackages =
-                        DeviceOwnerManager.DPM.getLockTaskPackages(
-                            DeviceOwnerManager.DAR
-                        )
-                    val savedFeatures =
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            DeviceOwnerManager.DPM.getLockTaskFeatures(
+    // Suppress recovery before any DevicePolicyManager operations that may end
+    // the session; restore the old state if stopLockTask fails.
+    val previousIntentionalUnlock = LockTaskRecovery.beginIntentionalUnlock()
+    val clearedPolicy = DeviceOwnerStatusBarPolicy.clearForIntentionalExit(activity)
+    if (!clearedPolicy.succeeded) {
+        LockTaskRecovery.completeIntentionalUnlock(false, previousIntentionalUnlock)
+        ToastManager.show(
+            activity,
+            "Failed to restore status bar. Unlock cancelled.",
+        )
+        return false
+    }
+    val succeeded =
+        tryLockAction(
+            activity,
+            lockAction = {
+                if (
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                        DeviceOwnerManager.hasOwnerPermission(activity)
+                ) {
+                    try {
+                        val savedPackages =
+                            DeviceOwnerManager.DPM.getLockTaskPackages(
                                 DeviceOwnerManager.DAR
                             )
-                        } else {
-                            null
-                        }
-                    DeviceOwnerManager.DPM.setLockTaskPackages(
-                        DeviceOwnerManager.DAR,
-                        arrayOf(activity.packageName),
-                    )
-                    DeviceOwnerManager.DPM.setLockTaskPackages(
-                        DeviceOwnerManager.DAR,
-                        savedPackages,
-                    )
-                    if (
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-                            savedFeatures != null
-                    ) {
-                        DeviceOwnerManager.DPM.setLockTaskFeatures(
+                        val savedFeatures =
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                DeviceOwnerManager.DPM.getLockTaskFeatures(
+                                    DeviceOwnerManager.DAR
+                                )
+                            } else {
+                                null
+                            }
+                        DeviceOwnerManager.DPM.setLockTaskPackages(
                             DeviceOwnerManager.DAR,
-                            savedFeatures,
+                            arrayOf(activity.packageName),
+                        )
+                        DeviceOwnerManager.DPM.setLockTaskPackages(
+                            DeviceOwnerManager.DAR,
+                            savedPackages,
+                        )
+                        if (
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                                savedFeatures != null
+                        ) {
+                            DeviceOwnerManager.DPM.setLockTaskFeatures(
+                                DeviceOwnerManager.DAR,
+                                savedFeatures,
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.w(
+                            Constants.APP_SCHEME,
+                            "Lock task packages or features operation failed",
+                            e,
+                        )
+                        ToastManager.show(
+                            activity,
+                            "DPM ${DeviceOwnerManager.status.value.mode}) error: ${e.message}",
                         )
                     }
-                } catch (e: Exception) {
-                    Log.w(
-                        Constants.APP_SCHEME,
-                        "Lock task packages or features operation failed",
-                        e,
-                    )
-                    ToastManager.show(
-                        activity,
-                        "DPM ${DeviceOwnerManager.status.value.mode}) error: ${e.message}",
-                    )
                 }
-            }
-            activity.stopLockTask()
-        },
-        onSuccess = {
-            // Handled MQTT publish in LockStateSingleton
-        },
-        onFailed = {
-            ToastManager.show(activity, "Failed to unlock: $it")
-        },
-    )
+                activity.stopLockTask()
+            },
+            onSuccess = {
+                // Handled MQTT publish in LockStateSingleton
+            },
+            onFailed = {
+                ToastManager.show(activity, "Failed to unlock: $it")
+            },
+        )
+    LockTaskRecovery.completeIntentionalUnlock(succeeded, previousIntentionalUnlock)
+    if (!succeeded && clearedPolicy.wasManaged) {
+        DeviceOwnerStatusBarPolicy.reconcile(activity)
+    }
+    return succeeded
+}
+
+/**
+ * Removes an allowlisted package without stranding our status-bar restriction when
+ * the user deliberately removes Webview Kiosk itself.
+ */
+fun removeLockTaskPackage(
+    context: Context,
+    packageName: String,
+    remainingPackages: Array<String>,
+) {
+    check(DeviceOwnerManager.hasOwnerPermission(context)) {
+        "Owner permission is not granted."
+    }
+
+    val removingSelf = packageName == context.packageName
+    val previousUnlock =
+        if (removingSelf) {
+            LockTaskRecovery.beginIntentionalUnlock()
+        } else {
+            null
+        }
+    val clearedPolicy =
+        if (removingSelf) {
+            DeviceOwnerStatusBarPolicy.clearForIntentionalExit(context)
+        } else {
+            null
+        }
+
+    if (clearedPolicy != null && !clearedPolicy.succeeded) {
+        LockTaskRecovery.completeIntentionalUnlock(false, previousUnlock!!)
+        error("Cannot restore status bar before removing the kiosk allowlist entry.")
+    }
+
+    try {
+        DeviceOwnerManager.DPM.setLockTaskPackages(
+            DeviceOwnerManager.DAR,
+            remainingPackages,
+        )
+        if (previousUnlock != null) {
+            LockTaskRecovery.completeIntentionalUnlock(true, previousUnlock)
+        }
+    } catch (e: Exception) {
+        if (previousUnlock != null) {
+            LockTaskRecovery.completeIntentionalUnlock(false, previousUnlock)
+        }
+        if (clearedPolicy?.wasManaged == true) {
+            DeviceOwnerStatusBarPolicy.reconcile(context)
+        }
+        throw e
+    }
 }
 
 fun setupLockTaskPackage(context: Context): Boolean {

@@ -3,7 +3,7 @@ title: Security
 description: Authentication, launcher, lock task mode/pinning, device owner, DPC and managed configurations
 ---
 
-import Link from 'fumadocs-core/link';
+import Link from 'fumadocs-core/link'
 
 ## 1. Settings Authentication Session
 
@@ -62,11 +62,10 @@ This has the benefits of:
    the back and overview button, thus removing the side-effect of the device
    getting locked when users attempt to "unpin"
 
-In
+Under normal Android behaviour, when {APP_NAME} is running in fully managed
 [Lock Task Mode](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode),
-the only way to unlock {APP_NAME} would be using a methods provided in-app,
-which are always configurable and can be disabled. The supported methods are
-currently:
+users cannot exit using the standard screen-unpin gesture. Administrators can
+unlock it through the configurable in-app methods below:
 
 1. Opening the Kiosk Control Panel by either
    - holding the back button
@@ -74,6 +73,16 @@ currently:
      (e.g. Top Left quadrant)
 1. Adding a custom unlock shortcut (requires a physical keyboard or
    a method of that sending key combinations, e.g. `CTRL+1`)
+
+Some manufacturer firmware has been reported to leave kiosk mode unexpectedly,
+including after hardware Back-button input. When investigating an escape, first
+check whether the device was in full lock task mode or ordinary screen pinning.
+To help mitigate unexpected exits, Device Owner installations can enable
+[Re-lock After Unexpected Exit](/docs/settings/web-lifecycle#11-re-lock-after-unexpected-exit)
+and [Disable Status Bar Outside Lock Task](/docs/settings/device#1511-disable-status-bar-outside-lock-task).
+Both options are disabled by default. Re-locking works only while the kiosk
+activity is visible. Neither option fixes an Android firmware issue, and
+the status-bar policy must be cleared through an administrator unlock.
 
 There are also standalone applications that, when set as the device owner, can
 perform the duties of a DPC. Below are instructions for two popular applications:

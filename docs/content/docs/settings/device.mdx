@@ -191,6 +191,35 @@ For more information about `Device Owner`, see the [Security](/docs/security) do
 
 ### 15.1. Lock Task Features
 
+#### 15.1.1. Disable Status Bar Outside Lock Task
+
+**Settings → Device → Manage Device Owner → Lock Task Features → Disable Status Bar Outside Lock Task**
+
+When **Lock on Launch** is enabled and {APP_NAME} is the **Device Owner**,
+this option asks Android to keep the status bar disabled if the system
+unexpectedly exits full lock task mode. This helps prevent access to the
+notification shade and Quick Settings after an unexpected unlock.
+
+The normal **Unlock** action restores status-bar access. Android does not apply
+this policy while full lock task mode is active. It takes effect when lock task
+ends. It does not disable the Settings app or block every way of leaving the
+kiosk.
+
+Requires Android 6.0 or newer, Device Owner, and lock task allowlisting.
+Before turning this on, make sure you can use the app's normal administrator
+Unlock action to restore access. The status bar may remain unavailable after
+an unexpected exit until the app clears the policy. The app installs this
+policy only after verifying full managed lock task mode, including when the
+setting is enabled through MQTT, UnifiedPush, or a settings import.
+If you remove {APP_NAME} from the Lock Task Packages allowlist, the app first
+restores the status bar. It cancels the removal if Android rejects the cleanup.
+
+**Setting key:** `device.owner.disable_status_bar_outside_lock_task`
+
+**Default:** false
+
+#### 15.1.2. Other Lock Task Features
+
 The following settings are based on Android's lock-task documentation:
 - [Lock Task Mode -> Customise UI](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#customize-ui)
 - [DevicePolicyManager#LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK)

@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk
 
+import android.app.ActivityManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -11,6 +12,7 @@ import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
@@ -80,7 +82,9 @@ import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
+import uk.nktnet.webviewkiosk.utils.DeviceOwnerStatusBarPolicy
 import uk.nktnet.webviewkiosk.utils.ImmersiveModeRecovery
+import uk.nktnet.webviewkiosk.utils.LockTaskRecovery
 import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
 import uk.nktnet.webviewkiosk.utils.getBooleanExtraSafely
 import uk.nktnet.webviewkiosk.utils.getLocalFileLink
@@ -114,6 +118,7 @@ open class MainActivity : AppCompatActivity() {
     private var pendingAndroid6LockRequest = false
     private var pendingDhizukuPermissionRequest = false
     private var deviceOwnerInitJob: Job? = null
+    private var lockTaskRecoveryJob: Job? = null
     private var unregisterMqttCommandHost: (() -> Unit)? = null
 
     // Android 6 can keep the HOME routing activity and private kiosk host alive
@@ -142,6 +147,11 @@ open class MainActivity : AppCompatActivity() {
                         // Deliver the notice after a destination becomes active.
                         pendingAdminRestrictionsNavigation = true
                         updateDeviceSettings(context)
+                        LockTaskRecovery.onSettingsChanged(
+                            userSettings.relockOnUnexpectedExit,
+                            userSettings.lockOnLaunch,
+                        )
+                        DeviceOwnerStatusBarPolicy.reconcile(context)
                         userSettings.refreshMutualTlsState()
                         AuthenticationManager.resetAuthentication()
                         AuthenticationManager.hideCustomAuthPrompt()
@@ -214,6 +224,8 @@ open class MainActivity : AppCompatActivity() {
             setupLockTaskPackage(this)
         }
 
+        // Reconcile a policy from a previous run even when the option was disabled.
+        DeviceOwnerStatusBarPolicy.reconcile(this)
         LockStateSingleton.startMonitoring(application)
 
         backButtonService = BackButtonManager(lifecycleScope = lifecycleScope)
@@ -643,6 +655,8 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        DeviceOwnerStatusBarPolicy.reconcile(this)
+        startLockTaskRecoveryMonitoring()
         backButtonService.onBackPressedCallback.isEnabled = true
         enableNfcForegroundDispatch()
 
@@ -669,8 +683,81 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         immersiveModeRecovery?.pause()
+        lockTaskRecoveryJob?.cancel()
+        lockTaskRecoveryJob = null
         disableNfcForegroundDispatch()
         super.onPause()
+    }
+
+    private fun startLockTaskRecoveryMonitoring() {
+        // API 23 uses a separate task with a one-shot explicit lock request.
+        if (
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.N ||
+                lockTaskRecoveryJob != null
+        ) {
+            return
+        }
+        lockTaskRecoveryJob = lifecycleScope.launch {
+            val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            var retryDelayMs = 2000L
+            var nextAttemptAt = 0L
+            while (true) {
+                delay(1000.milliseconds)
+                if (
+                    !userSettings.relockOnUnexpectedExit ||
+                        !userSettings.lockOnLaunch
+                ) {
+                    LockTaskRecovery.disarm()
+                    retryDelayMs = 2000L
+                    nextAttemptAt = 0L
+                    continue
+                }
+
+                val mode = am.lockTaskModeState
+                LockTaskRecovery.observeLockTaskState(mode)
+                if (mode != ActivityManager.LOCK_TASK_MODE_NONE) {
+                    // PINNED is deliberately not upgraded: that requires
+                    // investigating
+                    // allowlisting instead of creating repeated pinning requests.
+                    retryDelayMs = 2000L
+                    nextAttemptAt = 0L
+                    continue
+                }
+
+                val now = SystemClock.elapsedRealtime()
+                if (now < nextAttemptAt) {
+                    continue
+                }
+                val isDeviceOwner =
+                    try {
+                        DeviceOwnerManager.DPM.isDeviceOwnerApp(packageName)
+                    } catch (_: Exception) {
+                        false
+                    }
+                if (!isDeviceOwner) {
+                    continue
+                }
+                val allowlisted =
+                    try {
+                        DeviceOwnerManager.DPM.isLockTaskPermitted(packageName)
+                    } catch (_: Exception) {
+                        false
+                    }
+                if (
+                    LockTaskRecovery.shouldRecover(
+                        enabled = userSettings.relockOnUnexpectedExit,
+                        lockOnLaunch = userSettings.lockOnLaunch,
+                        deviceOwner = isDeviceOwner,
+                        allowlisted = allowlisted,
+                        lockTaskModeState = mode,
+                    )
+                ) {
+                    tryLockTask(this@MainActivity)
+                    nextAttemptAt = now + retryDelayMs
+                    retryDelayMs = (retryDelayMs * 2).coerceAtMost(30000L)
+                }
+            }
+        }
     }
 
     override fun onUserInteraction() {

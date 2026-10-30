@@ -43,12 +43,14 @@ import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.DeviceAdminReceiverListDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.LockTaskPackagesDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunchSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.DisableStatusBarOutsideLockTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureHomeSetting
@@ -56,6 +58,8 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureNotificationsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
+import uk.nktnet.webviewkiosk.utils.DeviceOwnerStatusBarPolicy
+import uk.nktnet.webviewkiosk.utils.LockTaskRecovery
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 import uk.nktnet.webviewkiosk.utils.openPackage
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
@@ -172,6 +176,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 DividerDefaults.color,
             )
 
+            DisableStatusBarOutsideLockTaskSetting()
             LockTaskFeatureHomeSetting()
             LockTaskFeatureOverviewSetting()
             LockTaskFeatureGlobalActionsSetting()
@@ -286,6 +291,23 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 TextButton(
                     onClick = {
                         showDeviceOwnerRemovalDialog = false
+                        val previousUnlock =
+                            LockTaskRecovery.beginIntentionalUnlock()
+                        val clearedPolicy =
+                            DeviceOwnerStatusBarPolicy.clearForIntentionalExit(
+                                context
+                            )
+                        if (!clearedPolicy.succeeded) {
+                            LockTaskRecovery.completeIntentionalUnlock(
+                                false,
+                                previousUnlock,
+                            )
+                            ToastManager.show(
+                                context,
+                                "Cannot restore status bar. Deactivation cancelled.",
+                            )
+                            return@TextButton
+                        }
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             try {
                                 @Suppress("DEPRECATION")
@@ -310,6 +332,13 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                         }
                         DeviceOwnerManager.init(context)
                         isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)
+                        LockTaskRecovery.completeIntentionalUnlock(
+                            !isDeviceOwner,
+                            previousUnlock,
+                        )
+                        if (isDeviceOwner && clearedPolicy.wasManaged) {
+                            DeviceOwnerStatusBarPolicy.reconcile(context)
+                        }
                     }
                 ) {
                     Text(

@@ -36,6 +36,8 @@ import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
+import uk.nktnet.webviewkiosk.utils.DeviceOwnerStatusBarPolicy
+import uk.nktnet.webviewkiosk.utils.LockTaskRecovery
 
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
@@ -160,14 +162,39 @@ private fun ConfirmTransferDialog(
         confirmButton = {
             TextButton(
                 onClick = {
+                    val previousUnlock = LockTaskRecovery.beginIntentionalUnlock()
+                    val clearedPolicy =
+                        DeviceOwnerStatusBarPolicy.clearForIntentionalExit(context)
+                    if (!clearedPolicy.succeeded) {
+                        LockTaskRecovery.completeIntentionalUnlock(
+                            false,
+                            previousUnlock,
+                        )
+                        ToastManager.show(
+                            context,
+                            "Cannot restore status bar. Transfer cancelled.",
+                        )
+                        return@TextButton
+                    }
                     try {
                         dpm.transferOwnership(
                             DeviceOwnerManager.DAR,
                             selectedAdminReceiver.admin,
                             null,
                         )
+                        LockTaskRecovery.completeIntentionalUnlock(
+                            true,
+                            previousUnlock,
+                        )
                         onConfirm()
                     } catch (e: Exception) {
+                        LockTaskRecovery.completeIntentionalUnlock(
+                            false,
+                            previousUnlock,
+                        )
+                        if (clearedPolicy.wasManaged) {
+                            DeviceOwnerStatusBarPolicy.reconcile(context)
+                        }
                         ToastManager.show(context, "Error: ${e.message}")
                     }
                 }

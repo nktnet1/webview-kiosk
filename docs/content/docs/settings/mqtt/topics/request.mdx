@@ -142,6 +142,11 @@ The values for the following settings will not be returned for security reasons:
 
 If no setting keys are provided, all valid settings will be returned.
 
+For example, you can request the current kiosk hardening settings using
+`web_lifecycle.relock_on_unexpected_exit` and
+`device.owner.disable_status_bar_outside_lock_task`. Both are returned as
+boolean values when present.
+
 #### 2.2.1. Parse as Array
 
 For the the following setting keys, which are stored as strings and delimited
