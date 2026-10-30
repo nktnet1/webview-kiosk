@@ -741,6 +741,13 @@ class UserSettings(val context: Context) {
             min = 0,
             max = Constants.MAX_INT_SETTING,
         )
+    var enableAppLauncherApi by
+        booleanPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.JsScripts.ENABLE_APP_LAUNCHER_API,
+            false,
+        )
     var enableBatteryApi by
         booleanPref(
             getRestrictions,
@@ -1509,6 +1516,10 @@ class UserSettings(val context: Context) {
                     UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH,
                     applyDesktopViewportWidth,
                 )
+                put(
+                    UserSettingsKeys.JsScripts.ENABLE_APP_LAUNCHER_API,
+                    enableAppLauncherApi,
+                )
                 put(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
                 put(
                     UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API,
@@ -2196,6 +2207,11 @@ class UserSettings(val context: Context) {
                 json.optInt(
                     UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH,
                     applyDesktopViewportWidth,
+                )
+            enableAppLauncherApi =
+                json.optBoolean(
+                    UserSettingsKeys.JsScripts.ENABLE_APP_LAUNCHER_API,
+                    enableAppLauncherApi,
                 )
             enableBatteryApi =
                 json.optBoolean(
