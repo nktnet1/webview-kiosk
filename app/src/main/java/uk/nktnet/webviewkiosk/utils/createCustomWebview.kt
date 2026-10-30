@@ -79,6 +79,7 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.isPdfSourceNavigation
 import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
+import uk.nktnet.webviewkiosk.utils.webview.interfaces.AppLauncherInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
@@ -583,6 +584,12 @@ fun createCustomWebview(
                     scriptlets =
                         WebViewScriptlets.attach(this, contentBlocker, scope)
 
+                    if (userSettings.enableAppLauncherApi) {
+                        addJavascriptInterface(
+                            AppLauncherInterface(context),
+                            AppLauncherInterface.NAME,
+                        )
+                    }
                     if (userSettings.enableBatteryApi) {
                         addJavascriptInterface(
                             BatteryInterface(context),
