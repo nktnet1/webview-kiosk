@@ -32,8 +32,8 @@ class AppLauncherInterface(private val context: Context) {
             isPackageInstalled(context, packageName.trim())
 
     /**
-     * Lets a page draw only the tiles it can actually open, instead of
-     * offering an app that is not on this device.
+     * Lets a page draw only the tiles it can actually open, instead of offering an
+     * app that is not on this device.
      */
     @Suppress("unused")
     @JavascriptInterface
