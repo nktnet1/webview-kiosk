@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04ubuntu-24.04
+    runs-on: ubuntu-24.04
 
     defaults:
       run:
