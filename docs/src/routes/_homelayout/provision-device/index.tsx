@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_homelayout/provision-device/")({
 
 function RouteComponent() {
   return (
-    <main className="flex flex-col items-center text-center p-4 md:mt-8 w-full">
+    <main className="w-full px-5 py-8 sm:px-8 sm:py-12 lg:px-10">
       <QRCodeForm />
     </main>
   );
