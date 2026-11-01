@@ -148,4 +148,74 @@ class UiStringResourcesTest {
             ),
         )
     }
+
+    @Test
+    fun mqttVariableExamplesKeepTheirLiteralDollarBraces() {
+        assertEquals(
+            "The MQTT topic to publish event messages.\n\n" +
+                "Supported variables:\n- EVENT_TYPE\n- APP_INSTANCE_ID\n- USERNAME\n\n" +
+                "Example:\n- wk/event/\${EVENT_TYPE}",
+            context.getString(
+                R.string.setting_info_mqtt_publish_event_topic,
+                "EVENT_TYPE",
+                "APP_INSTANCE_ID",
+                "USERNAME",
+            ),
+        )
+        assertEquals(
+            "The MQTT payload to send for the last will message if the client\n" +
+                "disconnects unexpectedly.\n\nFor example,\n  {\n" +
+                "    \"message\": \"Client has disconnected.\",\n" +
+                "    \"username\": \"\${USERNAME}\",\n" +
+                "    \"appInstanceId\": \"\${APP_INSTANCE_ID}\"\n  }",
+            context.getString(
+                R.string.setting_info_mqtt_will_payload,
+                "USERNAME",
+                "APP_INSTANCE_ID",
+            ),
+        )
+    }
+
+    @Test
+    fun contextualStatusAndAccessibilityStringsKeepTheirFormatting() {
+        assertEquals(
+            "Sticky mode enabled.",
+            context.getString(
+                R.string.ui_sticky_mode_value,
+                context.getString(R.string.ui_enabled_2),
+            ),
+        )
+        assertEquals(
+            "Sticky mode disabled.",
+            context.getString(
+                R.string.ui_sticky_mode_value,
+                context.getString(R.string.ui_disabled_2),
+            ),
+        )
+        assertEquals(
+            "Distributor (registered)",
+            context.getString(R.string.ui_distributorvalue, " (registered)"),
+        )
+        assertEquals(
+            "Filter example",
+            context.getString(R.string.ui_filter_value, "example"),
+        )
+        assertEquals(
+            "Host: example.com",
+            context.getString(R.string.ui_host_value, "example.com"),
+        )
+        assertEquals(
+            "25 min ago",
+            context.getString(R.string.ui_value_min_ago, "25"),
+        )
+        assertEquals(
+            "1080 x 1920 px, density: 2.5",
+            context.getString(
+                R.string.ui_value_x_value_px_density_value,
+                1080,
+                1920,
+                2.5,
+            ),
+        )
+    }
 }

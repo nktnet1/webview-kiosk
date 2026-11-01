@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Settings help text -->
+    <string name="setting_info_address_bar_actions" formatted="false">"Manage visible actions in the address bar.\n\nUse the drag handle at the end to reorder the items."</string>
+    <string name="setting_info_allow_backwards_navigation" formatted="false">"Whether the user can use the device \'back\' button to go back one page in history."</string>
+    <string name="setting_info_allow_bookmark_access" formatted="false">"Whether the user can access saved bookmarks from the address bar."</string>
+    <string name="setting_info_allow_default_long_press" formatted="false">"When enabled, long-pressing areas in the WebView will trigger the native\nWebView behaviour, e.g. text selection.\n\nSpecifically for links, even if this is set to false, it can be overridden\nby the \"Allow Link Long Press Context Menu\" setting."</string>
+    <string name="setting_info_allow_go_home" formatted="false">"Whether the user can return to the configured home page."</string>
+    <string name="setting_info_allow_history_access" formatted="false">"Whether the user can access browsing history from the address bar."</string>
+    <string name="setting_info_allow_link_long_press_context_menu">"When enabled, long-pressing links or images will trigger a\ncustom context menu.\n\nThis will take precedence over the \"Allow Default Long Press\"\nsetting (i.e. overrides it).\n\nFor links, the options are:\n- Copy Link\n- Open Link\n- Open in Browser (when unlocked)\n- Share Link (when unlocked)\n\nFor images, there is an additional option:\n- Download Image (requires %1$s)"</string>
+    <string name="setting_info_allow_other_url_schemes" formatted="false">"Allow the handling of non-http/https URL schemes (i.e. intents)\nsuch as intent:, mailto:, sms:, tel:, spotify:, whatsapp:, unifiedpush:,\netc in other apps.\n\nWhen in Lock Task Mode, the apps responsible for handling these\nintents needs to be present in the Lock Task Permitted list under\nthe device owner settings to function."</string>
+    <string name="setting_info_allow_pull_to_refresh" tools:ignore="TypographyFractions" formatted="false">"Set to true to allow the user to refresh the page by pulling down\nfrom the top 1/4 of the screen.\n\nNote that this requires:\n- the \"Allow Refresh\" setting to also be true\n- the page to have been scrolled fully to the top prior to the gesture\n- a single finger (touch) is used"</string>
+    <string name="setting_info_allow_refresh" formatted="false">"Set to true to allow the user to refresh the page, e.g. using the\n- address bar actions\n- kiosk control panel\n- pull to refresh (can be configured separately)"</string>
+    <string name="setting_info_clear_history_on_home" formatted="false">"Clear the browser history whenever the user triggers an action to return home."</string>
+    <string name="setting_info_kiosk_control_panel_actions" formatted="false">"Manage visible actions in the kiosk control panel.\n\nUse the drag handle at the end to reorder the items.\n\nWhen in locked mode, the \"UNLOCK\" action will be appended to the\nend if not configured.\n\nWhen in unlocked mode, if \"Appearance -&gt; Floating Toolbar Mode\" is\nset to Hidden, the \"SETTINGS\" action will be appended to the end\nif not configured."</string>
+    <string name="setting_info_kiosk_control_panel_region" formatted="false">"Controls which part of the screen can be multi-tapped 10 times in quick\nsuccession to show the Kiosk Control Panel.\n\nThe default is Top Left (upper-left quadrant of the screen).\n\nYou cannot disable the multi-tap region when both of these apply:\n  1. [Appearance -&gt; Floating Toolbar Mode] is set to Hidden\n  2. [Device -&gt; Back Button Hold Action] is not set to \"Open Kiosk Control Panel\"\nIn that case, the region stays at Top Left so the panel remains accessible."</string>
+    <string name="setting_info_override_url_loading_block_action" formatted="false">"Action to take when a URL navigation (via shouldOverrideUrlLoading)\nmatches the blacklist regex.\n\nTypically, this is from clicking links (&lt;a&gt; tags) on a webpage\'s HTML.\n\nActions are:\n- Show Block Page (display a HTML block page)\n- Prevent Navigation (does nothing when links are clicked)\n- Show Toast (shows a toast with your custom block message)\n\nThis option will NOT take effect for:\n- JavaScript navigation\n- Custom URL loading, e.g. from the Address Bar, Bookmarks, History, etc\n\nIn those other cases, the block page will simply be shown."</string>
+    <string name="setting_info_replace_history_url_on_redirect" formatted="false">"Set to true to replace the current history entry with the final URL if\nany page redirections occurs, rather than adding multiple entries to the\nhistory navigation stack."</string>
+    <string name="setting_info_search_provider_url">"The URL used for search queries in the address bar.\n\nThis URL must include a query parameter, e.g.\n  %1$s"</string>
+    <string name="setting_info_search_suggestion_engine" formatted="false">"Configure the search engine for text suggestions (autocomplete/hints)\nwhen typing in the address bar.\n\nFor example, when searching for \"new\", you may get suggested\n- news\n- new recipes\n- new york times"</string>
+    <!-- UI labels, placeholders, and messages -->
+    <string name="ui_bookmarks" formatted="false">"Bookmarks"</string>
+    <string name="ui_copy_full_url" formatted="false">"Copy full URL"</string>
+    <string name="ui_copy_link" formatted="false">"Copy Link"</string>
+    <string name="ui_copy_link_2" formatted="false">"Copy link"</string>
+    <string name="ui_disabled_2" formatted="false">"disabled."</string>
+    <string name="ui_download_file" formatted="false">"Download File"</string>
+    <string name="ui_download_image" formatted="false">"Download Image"</string>
+    <string name="ui_download_is_disabled_in_settings_value">"Download is disabled in settings (%1$s)"</string>
+    <string name="ui_downloading_file" tools:ignore="TypographyEllipsis" formatted="false">"Downloading file..."</string>
+    <string name="ui_enabled_2" formatted="false">"enabled."</string>
+    <string name="ui_enter_a_replacement_url" formatted="false">"Enter a replacement URL"</string>
+    <string name="ui_find_in_page" formatted="false">"Find in page"</string>
+    <string name="ui_forward" formatted="false">"Forward"</string>
+    <string name="ui_history" formatted="false">"History"</string>
+    <string name="ui_image_url" formatted="false">"Image URL"</string>
+    <string name="ui_invalid_search_provider_url" formatted="false">"Invalid search provider URL."</string>
+    <string name="ui_just_now" formatted="false">"Just now"</string>
+    <string name="ui_link" formatted="false">"Link"</string>
+    <string name="ui_long_url_ready_press_search" formatted="false">"Long URL ready — press Search"</string>
+    <string name="ui_no_bookmarks_saved" formatted="false">"No bookmarks saved."</string>
+    <string name="ui_non_sticky" formatted="false">"Non-Sticky"</string>
+    <string name="ui_open_image" formatted="false">"Open Image"</string>
+    <string name="ui_open_link" formatted="false">"Open Link"</string>
+    <string name="ui_open_link_2" formatted="false">"Open link"</string>
+    <string name="ui_page_url" formatted="false">"Page URL"</string>
+    <string name="ui_retrieving_image_details" tools:ignore="TypographyEllipsis" formatted="false">"Retrieving image details..."</string>
+    <string name="ui_search_provider_bing" formatted="false">"Bing"</string>
+    <string name="ui_search_provider_duckduckgo" formatted="false">"DuckDuckGo"</string>
+    <string name="ui_search_provider_ecosia" formatted="false">"Ecosia"</string>
+    <string name="ui_search_provider_google" formatted="false">"Google"</string>
+    <string name="ui_search_provider_start_page" formatted="false">"Start page"</string>
+    <string name="ui_search_provider_unduck" formatted="false">"Unduck"</string>
+    <string name="ui_search_provider_unduckified" formatted="false">"Unduckified"</string>
+    <string name="ui_search_provider_yahoo" formatted="false">"Yahoo"</string>
+    <string name="ui_share_link" formatted="false">"Share Link"</string>
+    <string name="ui_ssl_advanced" formatted="false">"Advanced"</string>
+    <string name="ui_ssl_ca_untrusted" formatted="false">"The certificate authority is not trusted."</string>
+    <string name="ui_ssl_certificate_error" formatted="false">"SSL Certificate Error"</string>
+    <string name="ui_ssl_error_details">"%1$s\n\nURL:\n    %2$s"</string>
+    <string name="ui_ssl_error_unknown" formatted="false">"Unknown SSL error."</string>
+    <string name="ui_ssl_expired" formatted="false">"The certificate has expired."</string>
+    <string name="ui_ssl_hostname_mismatch" formatted="false">"The certificate Hostname mismatch."</string>
+    <string name="ui_ssl_not_yet_valid" formatted="false">"The certificate is not yet valid."</string>
+    <string name="ui_ssl_proceed" formatted="false">"Proceed"</string>
+    <string name="ui_ssl_proceed_warning" formatted="false">"WARNING: Proceeding may compromise your security!"</string>
+    <string name="ui_starting_download_for_value">"Starting download for %1$s"</string>
+    <string name="ui_sticky" formatted="false">"Sticky"</string>
+    <string name="ui_sticky_mode_value">"Sticky mode %1$s"</string>
+    <string name="ui_the_kiosk_control_panel_needs_a_way_to_open_you_cannot" formatted="false">"The Kiosk Control Panel needs a way to open. You cannot disable\nthis region while the floating toolbar is Hidden and Back Button\nHold Action is not set to \"Open Kiosk Control Panel\"."</string>
+    <string name="ui_top_left_cannot_disable" formatted="false">"Top Left (cannot disable)"</string>
+    <string name="ui_value_d_ago">"%1$s d ago"</string>
+    <string name="ui_value_h_ago">"%1$s h ago"</string>
+    <string name="ui_value_min_ago">"%1$s min ago"</string>
+    <string name="ui_website_blacklist_example" formatted="false">"e.g.\n    ^.*$\n    ^https://.*\\.?google\\.com/?.*"</string>
+    <string name="ui_website_bookmarks_example">"e.g.\n\n%1$s | Webview Kiosk\n\nhttps://duckduckgo.com | DuckDuckGo\n\nhttps://f-droid.org | F-Droid"</string>
+    <string name="ui_website_whitelist_example" formatted="false">"e.g.\n    ^https://trusted\\.org(/.*)?$\n    ^https://.*\\.trusted\\.org(/.*)?$"</string>
+</resources>

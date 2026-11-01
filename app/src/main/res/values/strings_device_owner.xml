@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_add_lock_task_package" formatted="false">"Add Lock Task Package"</string>
+    <string name="ui_app" formatted="false">"App"</string>
+    <string name="ui_are_you_sure_you_want_to_transfer_ownership_to_value">"Are you sure you want to transfer ownership to %1$s?"</string>
+    <string name="ui_confirm_remove_device_owner">"Are you sure you want to unset %1$s\nas the device owner?\n\nThis means Lock Task Mode will no longer be available, meaning\nthe kiosk lock feature will utilise Screen Pinning instead."</string>
+    <string name="ui_deactivate" formatted="false">"Deactivate"</string>
+    <string name="ui_deactivate_device_owner" formatted="false">"Deactivate Device Owner"</string>
+    <string name="ui_device_owner_not_configured">"%1$s is not set as the device owner.\nThe settings below will not take effect."</string>
+    <string name="ui_dhizuku" formatted="false">"Dhizuku"</string>
+    <string name="ui_dpm_value_error_value">"DPM %1$s) error: %2$s"</string>
+    <string name="ui_error_lock_task_feature_home_under_device_owner_is_req" formatted="false">"Error: lock task feature HOME (under device owner) is required."</string>
+    <string name="ui_error_owner_permission_is_not_granted" formatted="false">"Error: owner permission is not granted."</string>
+    <string name="ui_error_value_is_not_lock_task_permitted_in_settings">"Error: %1$s is not lock task permitted in settings."</string>
+    <string name="ui_error_value_must_be_lock_task_permitted_to_launch_apps">"Error: %1$s must be lock task permitted to launch apps."</string>
+    <string name="ui_failed_to_leave_screen_pinning_value">"Failed to leave screen pinning: %1$s"</string>
+    <string name="ui_failed_to_lock_app_is_not_permitted_for_lock_task_mode" formatted="false">"Failed to lock: app is not permitted for lock task mode."</string>
+    <string name="ui_failed_to_lock_value">"Failed to lock: %1$s"</string>
+    <string name="ui_failed_to_unlock_value">"Failed to unlock: %1$s"</string>
+    <string name="ui_lock_task_features" formatted="false">"Lock Task Features"</string>
+    <string name="ui_lock_task_packages" formatted="false">"Lock Task Packages"</string>
+    <string name="ui_manage_lock_task_packages" formatted="false">"Manage Lock Task Packages"</string>
+    <string name="ui_open_dhizuku" formatted="false">"Open Dhizuku"</string>
+    <string name="ui_receiver" formatted="false">"Receiver"</string>
+    <string name="ui_remove_lock_task_package_confirmation">"Are you sure you want to remove %1$s from the allow\nlist of lock task packages?\n\nThis means lock task mode will no longer be available for this\napplication, and kiosk mode will fall back to screen pinning."</string>
+    <string name="ui_request_dhizuku_permission" formatted="false">"Request Dhizuku Permission"</string>
+    <string name="ui_this_action_cannot_be_undone" formatted="false">"This action cannot be undone."</string>
+    <string name="ui_transfer" formatted="false">"Transfer"</string>
+    <string name="ui_transfer_ownership" formatted="false">"Transfer Ownership"</string>
+    <string name="ui_value_has_been_added_to_lock_task_packages">"%1$s has been added to lock task packages."</string>
+    <string name="ui_value_has_been_removed_from_lock_task_packages">"%1$s has been removed from lock task packages."</string>
+</resources>

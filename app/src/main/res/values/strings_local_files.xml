@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="ui_change_file" formatted="false">"Change file"</string>
+    <string name="ui_change_replacement_file" formatted="false">"Change replacement file"</string>
+    <string name="ui_confirm_delete_local_file">"Are you sure you want to delete this file?\n\n  %1$s\n\nThis will only remove the app\'s copy and not the original file on your device."</string>
+    <string name="ui_copy_file" formatted="false">"Copy file://"</string>
+    <string name="ui_delete_file" formatted="false">"Delete File"</string>
+    <string name="ui_edit_file" formatted="false">"Edit file"</string>
+    <string name="ui_failed_to_delete_value">"Failed to delete %1$s"</string>
+    <string name="ui_failed_to_save_file" formatted="false">"Failed to save file"</string>
+    <string name="ui_file_link" formatted="false">"File Link"</string>
+    <string name="ui_file_picker_is_disabled_in_value_s_web_engine_settings">"File picker is disabled in %1$s\'s Web Engine settings."</string>
+    <string name="ui_file_saved" formatted="false">"File saved"</string>
+    <string name="ui_file_size" formatted="false">"File size"</string>
+    <string name="ui_file_uploaded" formatted="false">"File uploaded"</string>
+    <string name="ui_files" formatted="false">"Files"</string>
+    <string name="ui_id_value">"ID: %1$s"</string>
+    <string name="ui_legacy_file" formatted="false">"legacy file://"</string>
+    <string name="ui_no_files_uploaded_yet" formatted="false">"No files uploaded yet."</string>
+    <string name="ui_no_local_files_available" formatted="false">"No local files available."</string>
+    <string name="ui_note_this_may_break_existing_links_bookmarks" formatted="false">"NOTE: this may break existing links/bookmarks."</string>
+    <string name="ui_open_file" formatted="false">"Open file://"</string>
+    <string name="ui_path_must_start_with" formatted="false">"Path must start with \'/\'"</string>
+    <string name="ui_rename_failed" formatted="false">"Rename failed"</string>
+    <string name="ui_rename_file" formatted="false">"Rename File"</string>
+    <string name="ui_saving" tools:ignore="TypographyEllipsis" formatted="false">"Saving..."</string>
+    <string name="ui_size_value">"Size: %1$s"</string>
+    <string name="ui_time_value">"Time: %1$s"</string>
+    <string name="ui_total_value">"Total: %1$s"</string>
+    <string name="ui_unable_to_open_file_picker" formatted="false">"Unable to open file picker."</string>
+    <string name="ui_upload" formatted="false">"Upload"</string>
+    <string name="ui_upload_failed_value">"Upload failed: %1$s"</string>
+    <string name="ui_uploading_file" tools:ignore="TypographyEllipsis" formatted="false">"Uploading file..."</string>
+</resources>

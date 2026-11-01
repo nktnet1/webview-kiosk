@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_a_url_list_with_this_address_already_exists" formatted="false">"A URL list with this address already exists"</string>
+    <string name="ui_add_default" formatted="false">"Add Default"</string>
+    <string name="ui_add_default_lists" formatted="false">"Add default lists"</string>
+    <string name="ui_add_filter_list" formatted="false">"Add filter list"</string>
+    <string name="ui_add_list" formatted="false">"Add list"</string>
+    <string name="ui_all_lists_disabled" formatted="false">"All lists disabled"</string>
+    <string name="ui_all_lists_enabled" formatted="false">"All lists enabled"</string>
+    <string name="ui_already_added" formatted="false">"Already added"</string>
+    <string name="ui_applies_to_intercepted_network_requests_and_page_navig_2" formatted="false">"Applies to intercepted network requests and page navigation. Popup and inline script/font filtering are unavailable."</string>
+    <string name="ui_blocking_couldn_t_be_updated" formatted="false">"Blocking couldn\'t be updated."</string>
+    <string name="ui_bullet" formatted="false">"•"</string>
+    <string name="ui_cannot_open_the_selected_file" formatted="false">"Cannot open the selected file"</string>
+    <string name="ui_clone" formatted="false">"Clone"</string>
+    <string name="ui_content_blocking_is_disabled_the_settings_below_will_n" formatted="false">"Content blocking is disabled. The settings below will not take effect."</string>
+    <string name="ui_cosmetic" formatted="false">"Cosmetic"</string>
+    <string name="ui_couldn_t_open_this_list_please_try_again" formatted="false">"Couldn\'t open this list. Please try again."</string>
+    <string name="ui_disable_selected" formatted="false">"Disable selected"</string>
+    <string name="ui_downloading_filter_list" formatted="false">"Downloading filter list…"</string>
+    <string name="ui_downloading_filter_lists" formatted="false">"Downloading filter lists…"</string>
+    <string name="ui_downloading_selected_filter_lists" formatted="false">"Downloading selected filter lists…"</string>
+    <string name="ui_downloading_ublock_origin_defaults" formatted="false">"Downloading uBlock Origin defaults…"</string>
+    <string name="ui_downloading_value">"Downloading %1$s…"</string>
+    <string name="ui_e_g_my_filters" formatted="false">"e.g. My filters"</string>
+    <string name="ui_edit_filter_list" formatted="false">"Edit filter list"</string>
+    <string name="ui_enable_selected" formatted="false">"Enable selected"</string>
+    <string name="ui_filter_lists" formatted="false">"Filter Lists"</string>
+    <string name="ui_filter_rules" formatted="false">"Filter rules"</string>
+    <string name="ui_filter_value">"Filter %1$s"</string>
+    <string name="ui_imported_filter_list" formatted="false">"Imported filter list"</string>
+    <string name="ui_last_updated" formatted="false">"Last updated"</string>
+    <string name="ui_list_added" formatted="false">"List added"</string>
+    <string name="ui_list_cloned_disabled" formatted="false">"List cloned (disabled)"</string>
+    <string name="ui_list_details" formatted="false">"List details"</string>
+    <string name="ui_list_information_is_unavailable_please_try_again" formatted="false">"List information is unavailable. Please try again."</string>
+    <string name="ui_list_refreshed" formatted="false">"List refreshed"</string>
+    <string name="ui_list_saved" formatted="false">"List saved"</string>
+    <string name="ui_list_type" formatted="false">"List type"</string>
+    <string name="ui_lists_enabled_count">"%1$s/%2$s enabled"</string>
+    <string name="ui_loading_content_blocking_rules" formatted="false">"Loading content-blocking rules…"</string>
+    <string name="ui_loading_value">"Loading %1$s"</string>
+    <string name="ui_manage" formatted="false">"Manage"</string>
+    <string name="ui_network" formatted="false">"Network"</string>
+    <string name="ui_no_filter_lists_have_been_added" formatted="false">"No filter lists have been added"</string>
+    <string name="ui_not_applicable" formatted="false">"Not applicable"</string>
+    <string name="ui_options_for_value">"Options for %1$s"</string>
+    <string name="ui_partially_supported_rules" formatted="false">"Partially supported rules"</string>
+    <string name="ui_preset" formatted="false">"Preset"</string>
+    <string name="ui_preset_lists_are_read_only" formatted="false">"Preset lists are read-only"</string>
+    <string name="ui_reading_and_validating_the_filter_list" formatted="false">"Reading and validating the filter list…"</string>
+    <string name="ui_refresh_all" formatted="false">"Refresh all"</string>
+    <string name="ui_remove_filter_list" formatted="false">"Remove filter list?"</string>
+    <string name="ui_remove_selected" formatted="false">"Remove selected"</string>
+    <string name="ui_remove_value_filter_lists">"Remove %1$s filter lists?"</string>
+    <string name="ui_reorder_value">"Reorder %1$s"</string>
+    <string name="ui_replace_from_file" formatted="false">"Replace from file"</string>
+    <string name="ui_rules" formatted="false">"Rules"</string>
+    <string name="ui_scriptlets" formatted="false">"Scriptlets"</string>
+    <string name="ui_scroll_for_more" formatted="false">"Scroll for more ↓"</string>
+    <string name="ui_select_all_filter_lists" formatted="false">"Select all filter lists"</string>
+    <string name="ui_select_value">"Select %1$s"</string>
+    <string name="ui_selected_file" formatted="false">"Selected file"</string>
+    <string name="ui_selected_lists_disabled" formatted="false">"Selected lists disabled"</string>
+    <string name="ui_selected_lists_enabled" formatted="false">"Selected lists enabled"</string>
+    <string name="ui_skipped" formatted="false">"Skipped"</string>
+    <string name="ui_skipped_rules" formatted="false">"Skipped rules"</string>
+    <string name="ui_some_lines_contain_invalid_regular_expressions" formatted="false">"Some lines contain invalid regular expressions."</string>
+    <string name="ui_some_lines_contain_invalid_urls" formatted="false">"Some lines contain invalid URLs"</string>
+    <string name="ui_source_url" formatted="false">"Source URL"</string>
+    <string name="ui_status_2" formatted="false">"Status"</string>
+    <string name="ui_text_is_too_long_to_edit_here_128_kib_max_import_a_fil" formatted="false">"Text is too long to edit here (128 KiB max). Import a file instead."</string>
+    <string name="ui_the_following_lists_will_be_added" formatted="false">"The following lists will be added:"</string>
+    <string name="ui_this_address_is_already_in_a_url_list" formatted="false">"This address is already in a URL list"</string>
+    <string name="ui_this_list_is_too_large_to_edit_inline_choose_a_replace" formatted="false">"This list is too large to edit inline. Choose a replacement text file instead."</string>
+    <string name="ui_type_or_paste_filter_rules" formatted="false">"Type or paste filter rules"</string>
+    <string name="ui_unavailable" formatted="false">"Unavailable"</string>
+    <string name="ui_update_selected" formatted="false">"Update selected"</string>
+    <string name="ui_use_text" formatted="false">"Use text"</string>
+    <string name="ui_validating_and_saving_the_filter_list" formatted="false">"Validating and saving the filter list…"</string>
+</resources>

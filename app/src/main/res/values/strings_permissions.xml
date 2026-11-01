@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_all_permissions_will_be_removed" formatted="false">"All permissions will be removed."</string>
+    <string name="ui_are_you_sure_you_want_to_remove_all_permissions_for_th" formatted="false">"Are you sure you want to remove ALL permissions for this site?"</string>
+    <string name="ui_deleted_value">"Deleted %1$s"</string>
+    <string name="ui_location_permission_not_available">"%1$s requested access to your location.\n\nHowever, location permission is either disabled in settings or\nnot yet granted to %2$s."</string>
+    <string name="ui_manage_site_permissions" formatted="false">"Manage Site Permissions"</string>
+    <string name="ui_permission_blocked" formatted="false">"Permission blocked"</string>
+    <string name="ui_permission_blocked_host">"|%1$s requested access to:"</string>
+    <string name="ui_permission_camera" formatted="false">"Camera"</string>
+    <string name="ui_permission_disabled_or_not_granted">"However, these permissions are either disabled in settings or not yet granted to %1$s."</string>
+    <string name="ui_permission_list">"• %1$s"</string>
+    <string name="ui_permission_microphone" formatted="false">"Microphone"</string>
+    <string name="ui_permission_request" formatted="false">"Permission request"</string>
+    <string name="ui_permission_request_host">"|%1$s is requesting access to:"</string>
+    <string name="ui_remember_my_choice" formatted="false">"Remember my choice"</string>
+    <string name="ui_remove_permission" formatted="false">"Remove permission"</string>
+    <string name="ui_request_camera_permission" formatted="false">"Request Camera Permission"</string>
+    <string name="ui_request_coarse_location_permission" formatted="false">"Request Coarse Location Permission"</string>
+    <string name="ui_request_fine_location_permission" formatted="false">"Request Fine Location Permission"</string>
+    <string name="ui_request_microphone_permission" formatted="false">"Request Microphone Permission"</string>
+    <string name="ui_request_notification_permission" formatted="false">"Request Notification Permission"</string>
+    <string name="ui_request_precise_location" formatted="false">"Request precise location"</string>
+    <string name="ui_unhandled_permissions" formatted="false">"Unhandled permissions:"</string>
+    <string name="ui_value_is_requesting_access_to_your_location">"%1$s is requesting access to your location"</string>
+</resources>

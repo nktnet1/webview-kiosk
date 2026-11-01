@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_0_disabled" formatted="false">"0 (disabled)"</string>
+    <string name="ui_cannot_execute_notify_command_notifications_disabled_i" formatted="false">"Cannot execute notify command - notifications disabled in settings"</string>
+    <string name="ui_download_complete" formatted="false">"Download complete"</string>
+    <string name="ui_download_failed_value">"Download failed: %1$s"</string>
+    <string name="ui_drag_handle" formatted="false">"Drag Handle"</string>
+    <string name="ui_enter_a_number_between_value_and_value">"Enter a number between %1$s and %2$s"</string>
+    <string name="ui_enter_a_number_value_or_0_to_disable">"Enter a number ≥ %1$s (or 0 to disable)"</string>
+    <string name="ui_enter_a_number_value_or_0_to_disable_2">"Enter a number ≤ %1$s (or 0 to disable)"</string>
+    <string name="ui_exception" formatted="false">"Exception:"</string>
+    <string name="ui_export" formatted="false">"Export"</string>
+    <string name="ui_failed_to_finish_download_value">"Failed to finish download: %1$s"</string>
+    <string name="ui_go_to_webview" formatted="false">"Go to WebView"</string>
+    <string name="ui_invalid_filename_value">"Invalid filename: \'%1$s\'"</string>
+    <string name="ui_launcher" formatted="false">"Launcher"</string>
+    <string name="ui_manage_device_owner" formatted="false">"Manage Device Owner"</string>
+    <string name="ui_remote_settings_value">"Remote: settings %1$s."</string>
+    <string name="ui_resetting_in" formatted="false">"Resetting in"</string>
+    <string name="ui_restricted" formatted="false">"[Restricted]"</string>
+    <string name="ui_tap_to_cancel" formatted="false">"Tap to cancel"</string>
+    <string name="ui_tap_to_open" formatted="false">"Tap to open"</string>
+    <string name="ui_this_setting_is_managed_by_your_it_admin" formatted="false">"This setting is managed by your IT Admin."</string>
+    <string name="ui_unable_to_start_download_value">"Unable to start download: %1$s"</string>
+    <string name="ui_value_downloaded">"%1$s downloaded"</string>
+    <string name="ui_webview_error" formatted="false">"WebView Error"</string>
+    <string name="ui_webview_missing_dependency">"%1$s requires Android System WebView\n(com.google.android.webview) to be installed on your device."</string>
+</resources>

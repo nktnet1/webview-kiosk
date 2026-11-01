@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings help text -->
+    <string name="setting_info_address_bar_mode" formatted="false">"Customise the visibility of the address bar."</string>
+    <string name="setting_info_address_bar_position" formatted="false">"Customise the position of the address bar - either top or bottom."</string>
+    <string name="setting_info_address_bar_size" formatted="false">"Customise the size of the address bar, which will determine the\nheight, font size, padding and icon size."</string>
+    <string name="setting_info_blocked_message" formatted="false">"Custom message shown on blocked pages."</string>
+    <string name="setting_info_custom_block_page_html" formatted="false">"Define the custom HTML content to show when a page is blocked.\n\nLeave blank to use the default block page."</string>
+    <string name="setting_info_floating_toolbar_mode" formatted="false">"Control the visibility and behaviour of the floating toolbar menu button.\n\nWhen set to \"Hidden\", the \"Settings\" button will be visible from the\nKiosk Control Panel."</string>
+    <string name="setting_info_immersive_mode" formatted="false">"In immersive mode, your system bars (status and navigation) are hidden.\n\nYou can temporarily reveal the system bars with gestures such as swiping\nfrom the edge of the screen where the bar is hidden from.\n\nNote: immersive mode is enabled automatically when entering fullscreen\n(for example, when watching a video), irrespective of this setting."</string>
+    <string name="setting_info_show_loading_progress_bar" formatted="false">"Show a progress bar at the top of the WebView while the main page loads.\n\nBackground iframe loads after the page finishes do not reopen the bar.\n\nDisable this to hide the bar during all page loads."</string>
+    <string name="setting_info_theme" formatted="false">"Select the app theme: System (default), Dark or Light.\n\nSee also: Settings -&gt; JS Scripts -&gt; Apply App Theme ."</string>
+    <string name="setting_info_web_view_inset" formatted="false">"Select which WindowInsets the WebView should respect for padding."</string>
+    <!-- UI labels, placeholders, and messages -->
+    <string name="ui_custom_block_page_html_example">"e.g.\n    &lt;div style=\"text-align:center; margin-top:10%%;\"&gt;\n      &lt;h1 style=\"font-size:4rem;\"&gt;Blocked&lt;/h1&gt;\n      &lt;p style=\"font-size:3rem;\"&gt;This site is not accessible.&lt;/p&gt;\n    &lt;/div&gt;\n\nor as a redirect:\n    &lt;meta http-equiv=\"refresh\" content=\"0; url=%1$s\"&gt;"</string>
+    <string name="ui_e_g_this_site_is_blocked_by_company_name" formatted="false">"e.g. This site is blocked by &lt;Company Name&gt;"</string>
+</resources>
