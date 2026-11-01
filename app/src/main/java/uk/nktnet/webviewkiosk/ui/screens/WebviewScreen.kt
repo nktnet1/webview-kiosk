@@ -112,7 +112,6 @@ import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
-import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -392,10 +391,6 @@ fun WebviewScreen(navController: NavController) {
         onDispose {
             mqttLastPublishedUrlJob?.cancel()
             (webViewCreation as? WebViewCreation.Success)?.onDispose?.invoke()
-            NfcBridgeManager.detachWebView(webView)
-            runCatching { webView.stopLoading() }
-            runCatching { webView.removeAllViews() }
-            runCatching { webView.destroy() }
         }
     }
 
@@ -615,12 +610,17 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    val cookieManager = CookieManager.getInstance()
-    cookieManager.setAcceptCookie(userSettings.acceptCookies)
-    cookieManager.setAcceptThirdPartyCookies(
-        webView,
-        userSettings.acceptThirdPartyCookies,
-    )
+    // The initial policy is installed before loading the first page. If settings
+    // change while this WebView stays mounted, update only when values change,
+    // rather than invoking WebView's cookie APIs on every recomposition.
+    val acceptCookies = userSettings.acceptCookies
+    val acceptThirdPartyCookies = userSettings.acceptThirdPartyCookies
+    LaunchedEffect(webView, acceptCookies, acceptThirdPartyCookies) {
+        CookieManager.getInstance().apply {
+            setAcceptCookie(acceptCookies)
+            setAcceptThirdPartyCookies(webView, acceptThirdPartyCookies)
+        }
+    }
 
     val composableAddressBarView =
         @Composable {
