@@ -28,7 +28,7 @@ fun <T> DropdownSettingFieldItem(
     validator: (value: T) -> Boolean = { true },
     validationMessage: String? = null,
     onSave: (T) -> Unit,
-    itemText: (T) -> String,
+    itemText: @Composable (T) -> String,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var value by remember { mutableStateOf(initialValue) }

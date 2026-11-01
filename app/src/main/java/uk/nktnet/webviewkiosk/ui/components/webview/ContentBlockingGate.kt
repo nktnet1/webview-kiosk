@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.blocking.BlockingStatus
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 internal fun ContentBlockingGate(
@@ -37,7 +38,7 @@ internal fun ContentBlockingGate(
         rulesPending || !initialLoadComplete || status == BlockingStatus.LOADING
     val message =
         if (waiting) {
-            stage?.description
+            stage?.let { stringResource(it.displayLabelRes) }
                 ?: stringResource(R.string.ui_loading_content_blocking_rules)
         } else {
             null

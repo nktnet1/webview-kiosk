@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun FloatingToolbarModeSetting() {
@@ -24,6 +25,6 @@ fun FloatingToolbarModeSetting() {
         restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.floatingToolbarMode,
         onSave = { userSettings.floatingToolbarMode = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.utils.setDeviceRotation
 
 @Composable
@@ -28,6 +29,6 @@ fun DeviceRotationSetting() {
             userSettings.rotation = it
             setDeviceRotation(context, it)
         },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

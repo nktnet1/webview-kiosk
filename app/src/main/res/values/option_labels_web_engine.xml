@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Translatable display labels; never use these values for stored configuration. -->
+    <!-- CacheModeOption -->
+    <string name="option_display_cache_mode_option_default">"Default"</string>
+    <string name="option_display_cache_mode_option_cache_else_network">"Cache Else Network"</string>
+    <string name="option_display_cache_mode_option_no_cache">"No Cache"</string>
+    <string name="option_display_cache_mode_option_cache_only">"Cache Only"</string>
+    <!-- LayoutAlgorithmOption -->
+    <string name="option_display_layout_algorithm_option_normal">"Normal"</string>
+    <string name="option_display_layout_algorithm_option_single_column">"Single Column"</string>
+    <string name="option_display_layout_algorithm_option_narrow_columns">"Narrow Columns"</string>
+    <string name="option_display_layout_algorithm_option_text_autosizing">"Text Autosizing"</string>
+    <!-- SslErrorModeOption -->
+    <string name="option_display_ssl_error_mode_option_block">"Block"</string>
+    <string name="option_display_ssl_error_mode_option_prompt">"Prompt"</string>
+    <string name="option_display_ssl_error_mode_option_proceed">"Proceed"</string>
+    <!-- MixedContentModeOption -->
+    <string name="option_display_mixed_content_mode_option_never_allow">"Never Allow"</string>
+    <string name="option_display_mixed_content_mode_option_compatibility_mode">"Compatibility Mode"</string>
+    <string name="option_display_mixed_content_mode_option_always_allow">"Always Allow"</string>
+    <!-- OverScrollModeOption -->
+    <string name="option_display_over_scroll_mode_option_never">"Never"</string>
+    <string name="option_display_over_scroll_mode_option_always">"Always"</string>
+    <string name="option_display_over_scroll_mode_option_if_content_scrolls">"If Content Scrolls"</string>
+</resources>

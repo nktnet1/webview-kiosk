@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Translatable display labels; never use these values for stored configuration. -->
+    <!-- DeviceRotationOption -->
+    <string name="option_display_device_rotation_option_auto">"Auto"</string>
+    <string name="option_display_device_rotation_option_rotation_0" translatable="false">"0"</string>
+    <string name="option_display_device_rotation_option_rotation_90" translatable="false">"90"</string>
+    <string name="option_display_device_rotation_option_rotation_180" translatable="false">"180"</string>
+    <string name="option_display_device_rotation_option_rotation_270" translatable="false">"270"</string>
+    <!-- BackButtonHoldActionOption -->
+    <string name="option_display_back_button_hold_action_option_open_kiosk_control_panel">"Open Kiosk Control Panel"</string>
+    <string name="option_display_back_button_hold_action_option_go_home">"Go Home"</string>
+    <string name="option_display_back_button_hold_action_option_disabled">"Disabled"</string>
+    <!-- UnlockAuthRequirementOption -->
+    <string name="option_display_unlock_auth_requirement_option_default">"Default"</string>
+    <string name="option_display_unlock_auth_requirement_option_off">"Off"</string>
+    <string name="option_display_unlock_auth_requirement_option_require">"Require"</string>
+</resources>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Translatable display labels; never use these values for stored configuration. -->
+    <!-- KioskControlPanelRegionOption -->
+    <string name="option_display_kiosk_control_panel_region_option_top_left">"Top Left"</string>
+    <string name="option_display_kiosk_control_panel_region_option_top_right">"Top Right"</string>
+    <string name="option_display_kiosk_control_panel_region_option_bottom_left">"Bottom Left"</string>
+    <string name="option_display_kiosk_control_panel_region_option_bottom_right">"Bottom Right"</string>
+    <string name="option_display_kiosk_control_panel_region_option_top">"Top"</string>
+    <string name="option_display_kiosk_control_panel_region_option_bottom">"Bottom"</string>
+    <string name="option_display_kiosk_control_panel_region_option_full">"Full"</string>
+    <string name="option_display_kiosk_control_panel_region_option_disabled">"Disabled"</string>
+    <!-- WebviewControlActionOption -->
+    <string name="option_display_webview_control_action_option_navigation">"Navigation"</string>
+    <string name="option_display_webview_control_action_option_back">"Back"</string>
+    <string name="option_display_webview_control_action_option_forward">"Forward"</string>
+    <string name="option_display_webview_control_action_option_refresh">"Refresh"</string>
+    <string name="option_display_webview_control_action_option_home">"Home"</string>
+    <string name="option_display_webview_control_action_option_history">"History"</string>
+    <string name="option_display_webview_control_action_option_bookmark">"Bookmark"</string>
+    <string name="option_display_webview_control_action_option_files">"Files"</string>
+    <string name="option_display_webview_control_action_option_find">"Find"</string>
+    <string name="option_display_webview_control_action_option_scroll_top">"Scroll Top"</string>
+    <string name="option_display_webview_control_action_option_scroll_bot">"Scroll Bot"</string>
+    <string name="option_display_webview_control_action_option_apps">"Apps"</string>
+    <string name="option_display_webview_control_action_option_settings">"Settings"</string>
+    <string name="option_display_webview_control_action_option_lock">"Lock"</string>
+    <string name="option_display_webview_control_action_option_unlock">"Unlock"</string>
+    <!-- OverrideUrlLoadingBlockActionOption -->
+    <string name="option_display_override_url_loading_block_action_option_show_block_page">"Show Block Page"</string>
+    <string name="option_display_override_url_loading_block_action_option_prevent_navigation">"Prevent Navigation"</string>
+    <string name="option_display_override_url_loading_block_action_option_show_toast">"Show Toast"</string>
+    <!-- SearchSuggestionEngineOption -->
+    <string name="option_display_search_suggestion_engine_option_none">"None"</string>
+    <string name="option_display_search_suggestion_engine_option_google">"Google"</string>
+    <string name="option_display_search_suggestion_engine_option_duckduckgo">"DuckDuckGo"</string>
+    <string name="option_display_search_suggestion_engine_option_yahoo">"Yahoo"</string>
+</resources>

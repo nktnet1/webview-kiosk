@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.utils.canDisableKioskControlPanelRegion
 
 @Composable
@@ -41,7 +42,7 @@ fun KioskControlPanelRegionSetting() {
             ) {
                 context.getString(R.string.ui_top_left_cannot_disable)
             } else {
-                it.label
+                stringResource(it.displayLabelRes)
             }
         },
     )

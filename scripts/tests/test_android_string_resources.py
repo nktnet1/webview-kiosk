@@ -200,6 +200,82 @@ class AndroidStringResourceTests(unittest.TestCase):
                     with self.subTest(resource=name, file=path.name):
                         self.assertEqual(element.get("translatable"), "false")
 
+    def test_translated_option_arrays_preserve_item_counts_and_mqtt_codes(self):
+        """Legacy entry arrays must retain their lengths and MQTT numeric codes."""
+        originals = {
+            element.get("name"): ["".join(item.itertext()) for item in element]
+            for path, (_, root) in self.resources.items()
+            if path.parent.name == "values"
+            for element in root
+            if element.tag == "string-array"
+        }
+        numeric_code_arrays = {
+            "entries_mqtt_qos_option",
+            "ui_labels_mqtt_retain_handling",
+        }
+        for path, (_, root) in self.resources.items():
+            if path.parent.name != "values" and not re.match(
+                r"values-(?!v\d+$)", path.parent.name
+            ):
+                continue
+            for element in root:
+                if element.tag != "string-array":
+                    continue
+                name = element.get("name")
+                items = ["".join(item.itertext()) for item in element]
+                if name not in originals:
+                    continue
+                with self.subTest(file=path.name, resource=name):
+                    self.assertEqual(
+                        len(originals[name]), len(items),
+                        "Translated option array must preserve all enum positions",
+                    )
+                    if name in numeric_code_arrays:
+                        for index, (source, value) in enumerate(zip(originals[name], items)):
+                            expected_code = re.search(r"\([0-9]+\)$", source)
+                            self.assertIsNotNone(expected_code, "Source MQTT option is missing its code")
+                            self.assertTrue(
+                                value.endswith(" " + expected_code.group()),
+                                f"MQTT option #{index} must keep its numeric code",
+                            )
+
+    def test_enum_numeric_codes_stay_stable_when_localised(self):
+        """MQTT codes and device rotation values must not acquire translated units."""
+        source = {}
+        for path, (_, root) in self.resources.items():
+            if path.parent.name != "values":
+                continue
+            for element in root:
+                if element.tag != "string":
+                    continue
+                name = element.get("name", "")
+                if name.startswith("option_display_device_rotation_option_rotation_"):
+                    with self.subTest(resource=name):
+                        self.assertEqual(element.get("translatable"), "false")
+                if name.startswith(
+                    (
+                        "option_display_mqtt_qos_option_",
+                        "option_display_mqtt_retain_handling_option_",
+                    )
+                ):
+                    value = "".join(element.itertext()).strip('"')
+                    match = re.search(r" \([012]\)$", value)
+                    with self.subTest(resource=name):
+                        self.assertIsNotNone(match)
+                    if match is not None:
+                        source[name] = match.group()
+        for path, (_, root) in self.resources.items():
+            if path.parent.name == "values":
+                continue
+            for element in root:
+                name = element.get("name", "")
+                if element.tag == "string" and name in source:
+                    with self.subTest(file=path.name, resource=name):
+                        self.assertTrue(
+                            "".join(element.itertext()).strip('"').endswith(source[name]),
+                            "Translated MQTT labels must retain the literal protocol code",
+                        )
+
     def test_no_duplicate_resource_names_per_configuration(self):
         files_by_qualifier = {}
         for path, (_, root) in self.resources.items():

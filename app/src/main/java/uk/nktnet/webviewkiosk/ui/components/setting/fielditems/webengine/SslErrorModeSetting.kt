@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun SslErrorModeSetting() {
@@ -24,6 +25,6 @@ fun SslErrorModeSetting() {
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.sslErrorMode = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

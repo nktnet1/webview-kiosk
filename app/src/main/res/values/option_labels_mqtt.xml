@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Translatable display labels; never use these values for stored configuration. -->
+    <!-- Translators: preserve the numeric MQTT protocol code in parentheses. -->
+    <!-- MqttQosOption -->
+    <string name="option_display_mqtt_qos_option_at_most_once">"At Most Once (0)"</string>
+    <string name="option_display_mqtt_qos_option_at_least_once">"At Least Once (1)"</string>
+    <string name="option_display_mqtt_qos_option_exactly_once">"Exactly Once (2)"</string>
+    <!-- MqttRetainHandlingOption -->
+    <string name="option_display_mqtt_retain_handling_option_send">"Send (0)"</string>
+    <string name="option_display_mqtt_retain_handling_option_send_if_subscription_does_not_exist">"Send If Subscription Does Not Exist (1)"</string>
+    <string name="option_display_mqtt_retain_handling_option_do_not_send">"Do Not Send (2)"</string>
+</resources>

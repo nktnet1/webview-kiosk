@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun AddressBarPositionSetting() {
@@ -24,6 +25,6 @@ fun AddressBarPositionSetting() {
         restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.addressBarPosition,
         onSave = { userSettings.addressBarPosition = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

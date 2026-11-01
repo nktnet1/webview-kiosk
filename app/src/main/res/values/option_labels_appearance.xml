@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Translatable display labels; never use these values for stored configuration. -->
+    <!-- ThemeOption -->
+    <string name="option_display_theme_option_system">"System"</string>
+    <string name="option_display_theme_option_dark">"Dark"</string>
+    <string name="option_display_theme_option_light">"Light"</string>
+    <!-- AddressBarModeOption -->
+    <string name="option_display_address_bar_mode_option_hidden">"Hidden"</string>
+    <string name="option_display_address_bar_mode_option_hidden_when_locked">"Hidden When Locked"</string>
+    <string name="option_display_address_bar_mode_option_shown">"Shown"</string>
+    <!-- AddressBarSizeOption -->
+    <string name="option_display_address_bar_size_option_extra_small">"Extra Small"</string>
+    <string name="option_display_address_bar_size_option_small">"Small"</string>
+    <string name="option_display_address_bar_size_option_medium">"Medium"</string>
+    <string name="option_display_address_bar_size_option_large">"Large"</string>
+    <string name="option_display_address_bar_size_option_extra_large">"Extra Large"</string>
+    <!-- AddressBarPositionOption -->
+    <string name="option_display_address_bar_position_option_top">"Top"</string>
+    <string name="option_display_address_bar_position_option_bottom">"Bottom"</string>
+    <!-- FloatingToolbarModeOption -->
+    <string name="option_display_floating_toolbar_mode_option_hidden">"Hidden"</string>
+    <string name="option_display_floating_toolbar_mode_option_hidden_when_locked">"Hidden When Locked"</string>
+    <string name="option_display_floating_toolbar_mode_option_shown">"Shown"</string>
+    <!-- ImmersiveModeOption -->
+    <string name="option_display_immersive_mode_option_always_on">"Always On"</string>
+    <string name="option_display_immersive_mode_option_always_off">"Always Off"</string>
+    <string name="option_display_immersive_mode_option_only_when_locked">"Only When Locked"</string>
+    <!-- WebviewInsetOption -->
+    <string name="option_display_webview_inset_option_none">"None"</string>
+    <string name="option_display_webview_inset_option_status_bars">"Status Bars"</string>
+    <string name="option_display_webview_inset_option_navigation_bars">"Navigation Bars"</string>
+    <string name="option_display_webview_inset_option_system_bars">"System Bars"</string>
+    <string name="option_display_webview_inset_option_display_cutout">"Display Cutout"</string>
+    <string name="option_display_webview_inset_option_safe_drawing">"Safe Drawing"</string>
+    <string name="option_display_webview_inset_option_safe_gestures">"Safe Gestures"</string>
+    <string name="option_display_webview_inset_option_safe_content">"Safe Content"</string>
+</resources>

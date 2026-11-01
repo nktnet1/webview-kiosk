@@ -121,6 +121,7 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 
 private fun ImportedFilterList.displayName(): String =
@@ -1526,7 +1527,9 @@ private fun FilterListInfoDialog(
                                         .sortedBy { it.key.ordinal }
                                         .forEach { (reason, count) ->
                                             InfoStat(
-                                                reason.label,
+                                                stringResource(
+                                                    reason.displayLabelRes
+                                                ),
                                                 numbers.format(count),
                                             )
                                         }

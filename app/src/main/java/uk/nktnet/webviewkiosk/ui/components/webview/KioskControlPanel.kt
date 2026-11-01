@@ -65,6 +65,7 @@ import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.utils.canDisableKioskControlPanelRegion
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
@@ -80,6 +81,7 @@ private fun ActionButton(
     iconRes: Int,
     modifier: Modifier = Modifier,
 ) {
+    val label = stringResource(action.displayLabelRes)
     Button(
         enabled = enabled,
         onClick = onClick,
@@ -87,11 +89,11 @@ private fun ActionButton(
     ) {
         Icon(
             painter = painterResource(iconRes),
-            contentDescription = action.label,
+            contentDescription = label,
             modifier = Modifier.size(24.dp),
         )
         Spacer(modifier = Modifier.width(8.dp))
-        Text(action.label)
+        Text(label)
     }
 }
 

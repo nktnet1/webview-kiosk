@@ -10,6 +10,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun ThemeSetting() {
@@ -24,7 +25,7 @@ fun ThemeSetting() {
         initialValue = userSettings.theme,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
         onSave = {
             userSettings.theme = it
             ThemeStateSingleton.setTheme(it)

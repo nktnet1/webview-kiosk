@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.RefreshOnNetworkAvailableOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun RefreshOnNetworkAvailableSetting() {
@@ -27,7 +28,7 @@ fun RefreshOnNetworkAvailableSetting() {
         initialValue = userSettings.refreshOnNetworkAvailable,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
         onSave = {
             userSettings.refreshOnNetworkAvailable = it
         },

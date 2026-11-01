@@ -39,6 +39,8 @@
     <string name="ui_list_type" formatted="false">"List type"</string>
     <string name="ui_lists_enabled_count">"%1$s/%2$s enabled"</string>
     <string name="ui_loading_content_blocking_rules" formatted="false">"Loading content-blocking rules…"</string>
+    <string name="ui_preparing_content_blocking">Preparing content blocking…</string>
+    <string name="ui_starting_webview">Starting WebView…</string>
     <string name="ui_loading_value">"Loading %1$s"</string>
     <string name="ui_manage" formatted="false">"Manage"</string>
     <string name="ui_network" formatted="false">"Network"</string>

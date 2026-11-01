@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun OverrideUrlLoadingBlockActionSetting() {
@@ -28,6 +29,6 @@ fun OverrideUrlLoadingBlockActionSetting() {
         restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.overrideUrlLoadingBlockAction,
         onSave = { userSettings.overrideUrlLoadingBlockAction = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

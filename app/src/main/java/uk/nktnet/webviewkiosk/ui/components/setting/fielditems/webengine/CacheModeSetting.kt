@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.CacheModeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun CacheModeSetting() {
@@ -24,6 +25,6 @@ fun CacheModeSetting() {
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.cacheMode = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

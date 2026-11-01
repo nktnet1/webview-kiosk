@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.EnumListSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun AddressBarActionsSetting() {
@@ -20,7 +21,7 @@ fun AddressBarActionsSetting() {
         label = stringResource(R.string.web_browsing_address_bar_actions_title),
         infoText = stringResource(R.string.setting_info_address_bar_actions),
         entries = WebviewControlActionOption.entries,
-        getLabel = { it.label },
+        getLabel = { stringResource(it.displayLabelRes) },
         getDefault = { WebviewControlActionOption.getDefaultAddressBarOptions() },
         initialValue = userSettings.addressBarActions,
         settingKey = settingKey,

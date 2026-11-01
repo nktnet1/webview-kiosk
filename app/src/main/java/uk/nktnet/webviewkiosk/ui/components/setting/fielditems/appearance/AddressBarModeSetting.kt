@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun AddressBarModeSetting() {
@@ -24,6 +25,6 @@ fun AddressBarModeSetting() {
         restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.addressBarMode,
         onSave = { userSettings.addressBarMode = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

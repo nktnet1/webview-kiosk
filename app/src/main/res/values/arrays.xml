@@ -286,6 +286,7 @@
         <item>SHOW_TOAST</item>
     </string-array>
 
+    <!-- Translators: retain the numeric QoS identifiers (0), (1), (2). -->
     <string-array name="entries_mqtt_qos_option">
         <item>At Most Once (0)</item>
         <item>At Least Once (1)</item>

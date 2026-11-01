@@ -66,6 +66,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.requestFocusWhenPlaced
@@ -125,14 +126,15 @@ private fun AddressBarMenuItem(
     onClick: () -> Unit,
     iconRes: Int,
 ) {
+    val label = stringResource(action.displayLabelRes)
     DropdownMenuItem(
-        text = { Text(action.label) },
+        text = { Text(label) },
         enabled = enabled,
         onClick = onClick,
         leadingIcon = {
             Icon(
                 painter = painterResource(iconRes),
-                contentDescription = action.label,
+                contentDescription = label,
             )
         },
     )
@@ -256,7 +258,10 @@ fun AddressBar(
                                             R.drawable.baseline_arrow_back_24
                                         ),
                                     contentDescription =
-                                        WebviewControlActionOption.BACK.label,
+                                        stringResource(
+                                            WebviewControlActionOption.BACK
+                                                .displayLabelRes
+                                        ),
                                 )
                             }
 
@@ -279,7 +284,10 @@ fun AddressBar(
                                             R.drawable.baseline_arrow_forward_24
                                         ),
                                     contentDescription =
-                                        WebviewControlActionOption.FORWARD.label,
+                                        stringResource(
+                                            WebviewControlActionOption.FORWARD
+                                                .displayLabelRes
+                                        ),
                                 )
                             }
                         }

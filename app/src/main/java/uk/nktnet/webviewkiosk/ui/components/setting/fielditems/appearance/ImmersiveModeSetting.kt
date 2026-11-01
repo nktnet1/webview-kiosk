@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.ImmersiveModeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun ImmersiveModeSetting() {
@@ -24,6 +25,6 @@ fun ImmersiveModeSetting() {
         restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.immersiveMode,
         onSave = { userSettings.immersiveMode = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

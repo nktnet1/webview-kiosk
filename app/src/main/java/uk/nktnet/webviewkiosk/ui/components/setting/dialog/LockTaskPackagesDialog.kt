@@ -49,6 +49,7 @@ import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -344,7 +345,7 @@ fun AddLockTaskPackagesDialog(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = appType.label,
+                            text = stringResource(appType.displayLabelRes),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f),
                         )
@@ -371,7 +372,7 @@ fun AddLockTaskPackagesDialog(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        type.label,
+                                        stringResource(type.displayLabelRes),
                                         style = MaterialTheme.typography.bodyMedium,
                                     )
                                 },

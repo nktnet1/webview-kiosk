@@ -40,7 +40,7 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
     label: String,
     infoText: String,
     entries: List<T>,
-    getLabel: (T) -> String,
+    getLabel: @Composable (T) -> String,
     getDefault: () -> List<T>,
     initialValue: List<T>,
     settingKey: String,

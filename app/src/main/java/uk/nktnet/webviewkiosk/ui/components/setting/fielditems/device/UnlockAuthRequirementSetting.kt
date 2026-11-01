@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun UnlockAuthRequirementSetting() {
@@ -28,6 +29,6 @@ fun UnlockAuthRequirementSetting() {
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.unlockAuthRequirement = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

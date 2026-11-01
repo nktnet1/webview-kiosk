@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun MqttSubscribeCommandQosSetting() {
@@ -24,6 +25,6 @@ fun MqttSubscribeCommandQosSetting() {
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mqttSubscribeCommandQos = it },
-        itemText = { it.getSettingLabel() },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

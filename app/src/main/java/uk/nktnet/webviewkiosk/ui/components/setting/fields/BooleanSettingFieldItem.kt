@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fields
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
 
 @Composable
@@ -11,14 +12,13 @@ fun BooleanSettingFieldItem(
     settingKey: String,
     restricted: Boolean,
     onSave: (Boolean) -> Unit,
-    itemText: ((Boolean) -> String)? = null,
+    itemText: (@Composable (Boolean) -> String)? = null,
     extraContent: (@Composable ((setValue: (Boolean) -> Unit) -> Unit))? = null,
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val resolvedItemText =
+    val resolvedItemText: @Composable (Boolean) -> String =
         itemText
             ?: { value: Boolean ->
-                context.getString(
+                stringResource(
                     if (value) {
                         R.string.ui_true
                     } else {
