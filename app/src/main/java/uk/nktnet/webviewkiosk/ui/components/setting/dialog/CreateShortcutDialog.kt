@@ -349,7 +349,7 @@ private fun SimpleOutlinedTextField(
 }
 
 private fun validateLabel(
-    context: android.content.Context,
+    context: Context,
     value: String,
     fieldName: String,
     maxLength: Int,
@@ -377,7 +377,7 @@ private fun validateLabel(
 }
 
 private fun validateShortLabel(
-    context: android.content.Context,
+    context: Context,
     value: String,
 ): String? {
     return validateLabel(
@@ -389,7 +389,7 @@ private fun validateShortLabel(
 }
 
 private fun validateLongLabel(
-    context: android.content.Context,
+    context: Context,
     value: String,
 ): String? {
     return validateLabel(

@@ -23,7 +23,7 @@ Background iframe loads after the page finishes do not reopen the bar.
 Disable this to hide the bar during all page loads."</string>
     <string name="setting_info_theme" formatted="false">"Select the app theme: System (default), Dark or Light.
 
-See also: Settings -&gt; JS Scripts -&gt; Apply App Theme ."</string>
+See also: Settings -&gt; JS Scripts -&gt; Apply App Theme."</string>
     <string name="setting_info_web_view_inset" formatted="false">"Select which WindowInsets the WebView should respect for padding."</string>
     <!-- UI labels, placeholders, and messages -->
     <!-- Translators: Preserve the HTML tags, attribute names, 10%% escape and %1$s URL placeholder. -->

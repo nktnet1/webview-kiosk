@@ -58,6 +58,12 @@ class UiStringResourcesTest {
             "Open file://",
             context.getString(R.string.ui_open_file),
         )
+        assertEquals(
+            "(disabled in Android settings)",
+            context.getString(
+                R.string.ui_notifications_disabled_in_android_settings
+            ),
+        )
     }
 
     @Test
@@ -140,7 +146,7 @@ class UiStringResourcesTest {
         )
         assertEquals(
             "{\n  \"message\": \"Client has disconnected.\",\n" +
-                "  \"appInstanceId\": \"${'$'}{APP_INSTANCE_ID}\"\n}",
+                $$"  \"appInstanceId\": \"${APP_INSTANCE_ID}\"\n}",
             context.getString(
                 R.string.ui_mqtt_will_payload_example,
                 "APP_INSTANCE_ID",
@@ -164,7 +170,7 @@ class UiStringResourcesTest {
         assertEquals(
             "The MQTT topic to publish event messages.\n\n" +
                 "Supported variables:\n- EVENT_TYPE\n- APP_INSTANCE_ID\n- USERNAME\n\n" +
-                "Example:\n- wk/event/\${EVENT_TYPE}",
+                $$"Example:\n- wk/event/${EVENT_TYPE}",
             context.getString(
                 R.string.setting_info_mqtt_publish_event_topic,
                 "EVENT_TYPE",
@@ -176,8 +182,8 @@ class UiStringResourcesTest {
             "The MQTT payload to send for the last will message if the client " +
                 "disconnects unexpectedly.\n\nFor example,\n  {\n" +
                 "    \"message\": \"Client has disconnected.\",\n" +
-                "    \"username\": \"\${USERNAME}\",\n" +
-                "    \"appInstanceId\": \"\${APP_INSTANCE_ID}\"\n  }",
+                $$"    \"username\": \"${USERNAME}\",\n" +
+                $$"    \"appInstanceId\": \"${APP_INSTANCE_ID}\"\n  }",
             context.getString(
                 R.string.setting_info_mqtt_will_payload,
                 "USERNAME",

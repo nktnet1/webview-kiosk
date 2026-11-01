@@ -22,7 +22,7 @@ Web NFC security information:
 - https://developer.chrome.com/docs/capabilities/nfc#security-and-permissions"</string>
     <string name="setting_info_allow_notifications">"Set to true to allow %1$s to send notifications. For example, this will allow the MQTT notify command to create alerts.
 
-You will need to grant the POST_NOTIFICATIONS android permission.
+On Android 13 and later, you must grant the POST_NOTIFICATIONS permission to show app notifications.
 
 Please note that for foreground services, e.g. when using lock task mode kiosk-launch or MQTT, the notification will always be created irrespective of this setting. You can disable notifications at the device level if you do not want them."</string>
     <string name="setting_info_back_button_hold_action" formatted="false">"Customise the behaviour when the back button is held down (long pressed)."</string>
@@ -33,7 +33,7 @@ Please note that for foreground services, e.g. when using lock task mode kiosk-l
 Use -1 to disable (i.e. the system default brightness will be used)."</string>
     <string name="setting_info_custom_auth_password">"Specify a custom password to protect your settings or when unlocking from the kiosk state.
 
-For user-owned devices that utilises screen pinning, this will only work if you are using an unlock method provided by the app.
+For user-owned devices that use screen pinning, this will only work if you are using an unlock method provided by the app.
 
 Device-level unpin methods (e.g. gestures/holding overview + back button simultaneously) will bypass this setting. To enhance security, please see: %1$s/security
 
@@ -88,6 +88,7 @@ For user-owned devices without lock task mode, the device will auto-lock when un
     <string name="ui_nfc_disabled" formatted="false">"(NFC disabled)"</string>
     <string name="ui_nfc_is_not_supported_on_this_device" formatted="false">"NFC is not supported on this device."</string>
     <string name="ui_nfc_not_supported" formatted="false">"(NFC not supported)"</string>
+    <string name="ui_notifications_disabled_in_android_settings" formatted="false">"(disabled in Android settings)"</string>
     <string name="ui_open_nfc_settings" formatted="false">"Open NFC Settings"</string>
     <string name="ui_please_enter_fewer_than_value_characters">"Please enter fewer than %1$s characters."</string>
     <string name="ui_request_permission_on_launch" formatted="false">"Request Permission on Launch"</string>

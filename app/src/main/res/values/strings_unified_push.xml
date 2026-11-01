@@ -6,7 +6,7 @@
 - org.unifiedpush.distributor.sunup
 - io.heckel.ntfy
 
-The distributor app serves as the middle-man that receives the app notification from the push server and forwarding it to %1$s."</string>
+The distributor app receives push notifications from the push server and forwards them to %1$s."</string>
     <string name="setting_info_unified_push_enabled">"Allow %1$s to process new push messages or register new endpoints."</string>
     <string name="setting_info_unified_push_instance">"Registration instance. Can be used to create multiple registrations.
 
