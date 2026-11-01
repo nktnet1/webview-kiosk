@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Machine-readable option codes: labels in entries_* are translatable. -->
     <string-array name="entries_theme_option">
         <item>System Default</item>
         <item>Dark Mode</item>
         <item>Light Mode</item>
     </string-array>
-    <string-array name="entry_values_theme_option">
+    <string-array name="entry_values_theme_option" translatable="false">
         <item>SYSTEM</item>
         <item>DARK</item>
         <item>LIGHT</item>
@@ -16,7 +17,7 @@
         <item>Hidden When Locked</item>
         <item>Shown</item>
     </string-array>
-    <string-array name="entry_values_address_bar_mode_option">
+    <string-array name="entry_values_address_bar_mode_option" translatable="false">
         <item>HIDDEN</item>
         <item>HIDDEN_WHEN_LOCKED</item>
         <item>SHOWN</item>
@@ -29,7 +30,7 @@
         <item>Large</item>
         <item>Extra Large</item>
     </string-array>
-    <string-array name="entry_values_address_bar_size_option">
+    <string-array name="entry_values_address_bar_size_option" translatable="false">
         <item>EXTRA_SMALL</item>
         <item>SMALL</item>
         <item>MEDIUM</item>
@@ -41,7 +42,7 @@
         <item>Top</item>
         <item>Bottom</item>
     </string-array>
-    <string-array name="entry_values_address_bar_position_option">
+    <string-array name="entry_values_address_bar_position_option" translatable="false">
         <item>TOP</item>
         <item>BOTTOM</item>
     </string-array>
@@ -51,7 +52,7 @@
         <item>Hidden When Locked</item>
         <item>Shown</item>
     </string-array>
-    <string-array name="entry_values_floating_toolbar_mode_option">
+    <string-array name="entry_values_floating_toolbar_mode_option" translatable="false">
         <item>HIDDEN</item>
         <item>HIDDEN_WHEN_LOCKED</item>
         <item>SHOWN</item>
@@ -62,7 +63,7 @@
         <item>Always Off</item>
         <item>Only when Locked</item>
     </string-array>
-    <string-array name="entry_values_immersive_mode_option">
+    <string-array name="entry_values_immersive_mode_option" translatable="false">
         <item>ALWAYS_ON</item>
         <item>ALWAYS_OFF</item>
         <item>ONLY_WHEN_LOCKED</item>
@@ -74,7 +75,7 @@
         <item>No Cache</item>
         <item>Cache Only</item>
     </string-array>
-    <string-array name="entry_values_cache_mode_option">
+    <string-array name="entry_values_cache_mode_option" translatable="false">
         <item>DEFAULT</item>
         <item>CACHE_ELSE_NETWORK</item>
         <item>NO_CACHE</item>
@@ -87,7 +88,7 @@
         <item>Narrow Columns</item>
         <item>Text Autosizing</item>
     </string-array>
-    <string-array name="entry_values_layout_algorithm_option">
+    <string-array name="entry_values_layout_algorithm_option" translatable="false">
         <item>NORMAL</item>
         <item>SINGLE_COLUMN</item>
         <item>NARROW_COLUMNS</item>
@@ -101,7 +102,7 @@
         <item>180°</item>
         <item>270°</item>
     </string-array>
-    <string-array name="entry_values_device_rotation_option">
+    <string-array name="entry_values_device_rotation_option" translatable="false">
         <item>AUTO</item>
         <item>ROTATION_0</item>
         <item>ROTATION_90</item>
@@ -119,7 +120,7 @@
         <item>Full</item>
         <item>Disabled</item>
     </string-array>
-    <string-array name="entry_values_kiosk_control_panel_region_option">
+    <string-array name="entry_values_kiosk_control_panel_region_option" translatable="false">
         <item>TOP_LEFT</item>
         <item>TOP_RIGHT</item>
         <item>BOTTOM_LEFT</item>
@@ -147,7 +148,7 @@
         <item>Lock</item>
         <item>Unlock</item>
     </string-array>
-    <string-array name="entry_values_webview_control_action_option">
+    <string-array name="entry_values_webview_control_action_option" translatable="false">
         <item>NAVIGATION</item>
         <item>BACK</item>
         <item>FORWARD</item>
@@ -174,7 +175,7 @@
         <item>SSL Preferences</item>
         <item>Recreate WebView</item>
     </string-array>
-    <string-array name="entry_values_reset_action_option">
+    <string-array name="entry_values_reset_action_option" translatable="false">
         <item>HISTORY</item>
         <item>COOKIES</item>
         <item>WEB_STORAGE</item>
@@ -194,7 +195,7 @@
         <item>Safe Gestures</item>
         <item>Safe Content</item>
     </string-array>
-    <string-array name="entry_values_webview_inset_option">
+    <string-array name="entry_values_webview_inset_option" translatable="false">
         <item>NONE</item>
         <item>STATUS_BARS</item>
         <item>NAVIGATION_BARS</item>
@@ -210,7 +211,7 @@
         <item>Go Home</item>
         <item>Disabled</item>
     </string-array>
-    <string-array name="entry_values_back_button_hold_action_option">
+    <string-array name="entry_values_back_button_hold_action_option" translatable="false">
         <item>OPEN_KIOSK_CONTROL_PANEL</item>
         <item>GO_HOME</item>
         <item>DISABLED</item>
@@ -221,7 +222,7 @@
         <item>Off</item>
         <item>Require</item>
     </string-array>
-    <string-array name="entry_values_unlock_auth_requirement_option">
+    <string-array name="entry_values_unlock_auth_requirement_option" translatable="false">
         <item>DEFAULT</item>
         <item>OFF</item>
         <item>REQUIRE</item>
@@ -232,7 +233,7 @@
         <item>Prompt</item>
         <item>Proceed</item>
     </string-array>
-    <string-array name="entry_values_ssl_error_mode_option">
+    <string-array name="entry_values_ssl_error_mode_option" translatable="false">
         <item>BLOCK</item>
         <item>PROMPT</item>
         <item>PROCEED</item>
@@ -245,7 +246,7 @@
         <item>Yahoo</item>
     </string-array>
 
-    <string-array name="entry_values_search_suggestion_engine_option">
+    <string-array name="entry_values_search_suggestion_engine_option" translatable="false">
         <item>NONE</item>
         <item>GOOGLE</item>
         <item>DUCKDUCKGO</item>
@@ -257,7 +258,7 @@
         <item>Compatibility Mode</item>
         <item>Always Allow</item>
     </string-array>
-    <string-array name="entry_values_mixed_content_mode_option">
+    <string-array name="entry_values_mixed_content_mode_option" translatable="false">
         <item>NEVER_ALLOW</item>
         <item>COMPATIBILITY_MODE</item>
         <item>ALWAYS_ALLOW</item>
@@ -268,7 +269,7 @@
         <item>Always</item>
         <item>If Content Scrolls</item>
     </string-array>
-    <string-array name="entry_values_over_scroll_mode_option">
+    <string-array name="entry_values_over_scroll_mode_option" translatable="false">
         <item>NEVER</item>
         <item>ALWAYS</item>
         <item>IF_CONTENT_SCROLLS</item>
@@ -279,7 +280,7 @@
         <item>Prevent Navigation</item>
         <item>Show Toast</item>
     </string-array>
-    <string-array name="entry_values_override_url_loading_block_action_option">
+    <string-array name="entry_values_override_url_loading_block_action_option" translatable="false">
         <item>SHOW_BLOCK_PAGE</item>
         <item>PREVENT_NAVIGATION</item>
         <item>SHOW_TOAST</item>
@@ -290,7 +291,7 @@
         <item>At Least Once (1)</item>
         <item>Exactly Once (2)</item>
     </string-array>
-    <string-array name="entry_values_mqtt_qos_option">
+    <string-array name="entry_values_mqtt_qos_option" translatable="false">
         <item>AT_MOST_ONCE</item>
         <item>AT_LEAST_ONCE</item>
         <item>EXACTLY_ONCE</item>
@@ -301,7 +302,7 @@
         <item>Send If Subscription Does Not Exist</item>
         <item>Do Not Send</item>
     </string-array>
-    <string-array name="entry_values_mqtt_retain_handling_option">
+    <string-array name="entry_values_mqtt_retain_handling_option" translatable="false">
         <item>SEND</item>
         <item>SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST</item>
         <item>DO_NOT_SEND</item>
@@ -312,7 +313,7 @@
         <item>On Page Error</item>
         <item>Never</item>
     </string-array>
-    <string-array name="entry_values_refresh_on_network_available_option">
+    <string-array name="entry_values_refresh_on_network_available_option" translatable="false">
         <item>ALWAYS</item>
         <item>ON_PAGE_ERROR</item>
         <item>NEVER</item>

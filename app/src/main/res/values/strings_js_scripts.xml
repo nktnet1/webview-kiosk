@@ -12,5 +12,5 @@
     <string name="setting_info_enable_vibration_api" formatted="false">"Allow web pages to vibrate the device using navigator.vibrate(pattern).\n\nThe pattern can be a duration in milliseconds or an array of alternating\nvibration and pause durations. A user interaction may be required by the\nWebView before vibration is allowed."</string>
     <!-- UI labels, placeholders, and messages -->
     <string name="ui_e_g_1024_or_0_to_disable" formatted="false">"e.g. 1024 (or 0 to disable)"</string>
-    <string name="ui_e_g_document_body_style_backgroundcolor_green" formatted="false">"e.g. document.body.style.backgroundColor = \'green\';"</string>
+    <string name="ui_e_g_document_body_style_backgroundcolor_green" translatable="false" formatted="false">"e.g. document.body.style.backgroundColor = \'green\';"</string>
 </resources>

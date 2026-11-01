@@ -32,7 +32,7 @@
     <string name="ui_e_g_100" formatted="false">"e.g. 100"</string>
     <string name="ui_install_client_certificate" formatted="false">"Install client certificate"</string>
     <string name="ui_leave_blank_for_system_default" formatted="false">"(leave blank for system default)"</string>
-    <string name="ui_mutual_tls_host_placeholder" formatted="false">"secure.example.com\napi.example.com:8443\nmanaged.example.com=work-client-cert"</string>
+    <string name="ui_mutual_tls_host_placeholder" translatable="false" formatted="false">"secure.example.com\napi.example.com:8443\nmanaged.example.com=work-client-cert"</string>
     <string name="ui_pdf_rendering_cannot_be_used_until_pdf_js_assets_are_d" formatted="false">"PDF rendering cannot be used until PDF.js assets are downloaded."</string>
     <string name="ui_unable_to_clear_client_certificate_preferences" formatted="false">"Unable to clear client certificate preferences."</string>
     <string name="ui_unable_to_install_client_certificate_value">"Unable to install client certificate: %1$s"</string>

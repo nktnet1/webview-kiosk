@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Settings help text -->
+    <!-- Translators: Preserve MQTT topics, ${VARIABLE} tokens, JSON keys, and %N$s placeholders in examples. -->
     <string name="setting_info_mqtt_automatic_reconnect">"When enabled, attempt to automatically reconnect to the MQTT broker after\nan unexpected disconnect.\n\nIn %1$s, this is implemented linearly\nat a fixed %2$s-second interval."</string>
     <string name="setting_info_mqtt_clean_start" formatted="false">"When enabled, the MQTT client will start a new session on connect,\ndiscarding any previous session state stored by the broker.\n\nWhen disabled, the client will resume the previous session\n(subscriptions, in-flight messages, etc.) if it exists."</string>
     <string name="setting_info_mqtt_client_id">"A unique identifier for this client when connecting to the MQTT broker.\n\nLeave this field blank if you want the broker server to generate a\nclient ID for %1$s.\n\nSupports global variables such as APP_INSTANCE_ID and USERNAME, which\nyou can use like:\n- %2$s"</string>
@@ -78,10 +79,10 @@
     <string name="ui_enter_a_non_empty_mqtt_topic_without_or" formatted="false">"Enter a non-empty MQTT topic without + or #."</string>
     <string name="ui_error_restarting_value">"Error restarting: %1$s"</string>
     <string name="ui_home_kiosk" formatted="false">"Home kiosk"</string>
-    <string name="ui_homeassistant" formatted="false">"homeassistant"</string>
-    <string name="ui_homeassistant_status" formatted="false">"homeassistant/status"</string>
+    <string name="ui_homeassistant" translatable="false" formatted="false">"homeassistant"</string>
+    <string name="ui_homeassistant_status" translatable="false" formatted="false">"homeassistant/status"</string>
     <string name="ui_messageid_value">"messageId: %1$s"</string>
-    <string name="ui_mqtt" formatted="false">"/mqtt"</string>
+    <string name="ui_mqtt" translatable="false" formatted="false">"/mqtt"</string>
     <string name="ui_mqtt_client_id" formatted="false">"MQTT Client ID"</string>
     <string name="ui_mqtt_connected_successfully" formatted="false">"MQTT connected successfully."</string>
     <string name="ui_mqtt_connection_failed_value">"MQTT connection failed: %1$s"</string>
@@ -90,7 +91,7 @@
     <string name="ui_mqtt_homeassistant_prefix_validation" formatted="false">"Enter a non-empty MQTT prefix without wildcards.\nRemove any leading/trailing spaces or slashes."</string>
     <string name="ui_mqtt_invalid_request_see_debug_logs" formatted="false">"MQTT: invalid request. See debug logs."</string>
     <string name="ui_mqtt_websocket_port_warning">"NOTE: if your broker accepts WebSocket connections on port %1$s,\nenable:\n\n - MQTT &gt; Connection &gt; Use WebSocket"</string>
-    <string name="ui_mqtt_will_payload_example">"{\n  \"message\": \"Client has disconnected.\",\n  \"appInstanceId\": \"${%1$s}\"\n}"</string>
+    <string name="ui_mqtt_will_payload_example" translatable="false">"{\n  \"message\": \"Client has disconnected.\",\n  \"appInstanceId\": \"${%1$s}\"\n}"</string>
     <string name="ui_received_invalid_mqtt_command_see_debug_logs_in_mqtt_s" formatted="false">"Received invalid MQTT command. See debug logs in MQTT settings."</string>
     <string name="ui_restart" formatted="false">"Restart"</string>
     <string name="ui_restarted_successfully" formatted="false">"Restarted successfully."</string>

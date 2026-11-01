@@ -72,7 +72,7 @@
     <string name="ui_value_d_ago">"%1$s d ago"</string>
     <string name="ui_value_h_ago">"%1$s h ago"</string>
     <string name="ui_value_min_ago">"%1$s min ago"</string>
-    <string name="ui_website_blacklist_example" formatted="false">"e.g.\n    ^.*$\n    ^https://.*\\.?google\\.com/?.*"</string>
-    <string name="ui_website_bookmarks_example">"e.g.\n\n%1$s | Webview Kiosk\n\nhttps://duckduckgo.com | DuckDuckGo\n\nhttps://f-droid.org | F-Droid"</string>
-    <string name="ui_website_whitelist_example" formatted="false">"e.g.\n    ^https://trusted\\.org(/.*)?$\n    ^https://.*\\.trusted\\.org(/.*)?$"</string>
+    <string name="ui_website_blacklist_example" translatable="false" formatted="false">"e.g.\n    ^.*$\n    ^https://.*\\.?google\\.com/?.*"</string>
+    <string name="ui_website_bookmarks_example" translatable="false">"e.g.\n\n%1$s | Webview Kiosk\n\nhttps://duckduckgo.com | DuckDuckGo\n\nhttps://f-droid.org | F-Droid"</string>
+    <string name="ui_website_whitelist_example" translatable="false" formatted="false">"e.g.\n    ^https://trusted\\.org(/.*)?$\n    ^https://.*\\.trusted\\.org(/.*)?$"</string>
 </resources>

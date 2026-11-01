@@ -177,6 +177,30 @@ class UiStringResourcesTest {
     }
 
     @Test
+    fun immutableTechnicalResourcesKeepTheirExactText() {
+        assertEquals("homeassistant", context.getString(R.string.ui_homeassistant))
+        assertEquals(
+            "homeassistant/status",
+            context.getString(R.string.ui_homeassistant_status),
+        )
+        assertEquals("/mqtt", context.getString(R.string.ui_mqtt))
+        assertEquals(
+            "SYSTEM",
+            context.resources.getStringArray(R.array.entry_values_theme_option)[0],
+        )
+        assertEquals(
+            "https://webviewkiosk.nktnet.uk/docs/settings/mqtt/",
+            context.getString(R.string.mqtt_enabled_description),
+        )
+        assertEquals(
+            "e.g. document.body.style.backgroundColor = 'green';",
+            context.getString(
+                R.string.ui_e_g_document_body_style_backgroundcolor_green
+            ),
+        )
+    }
+
+    @Test
     fun contextualStatusAndAccessibilityStringsKeepTheirFormatting() {
         assertEquals(
             "Sticky mode enabled.",

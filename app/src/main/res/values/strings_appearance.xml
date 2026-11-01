@@ -12,6 +12,7 @@
     <string name="setting_info_theme" formatted="false">"Select the app theme: System (default), Dark or Light.\n\nSee also: Settings -&gt; JS Scripts -&gt; Apply App Theme ."</string>
     <string name="setting_info_web_view_inset" formatted="false">"Select which WindowInsets the WebView should respect for padding."</string>
     <!-- UI labels, placeholders, and messages -->
+    <!-- Translators: Preserve the HTML tags, attribute names, 10%% escape and %1$s URL placeholder. -->
     <string name="ui_custom_block_page_html_example">"e.g.\n    &lt;div style=\"text-align:center; margin-top:10%%;\"&gt;\n      &lt;h1 style=\"font-size:4rem;\"&gt;Blocked&lt;/h1&gt;\n      &lt;p style=\"font-size:3rem;\"&gt;This site is not accessible.&lt;/p&gt;\n    &lt;/div&gt;\n\nor as a redirect:\n    &lt;meta http-equiv=\"refresh\" content=\"0; url=%1$s\"&gt;"</string>
     <string name="ui_e_g_this_site_is_blocked_by_company_name" formatted="false">"e.g. This site is blocked by &lt;Company Name&gt;"</string>
 </resources>
