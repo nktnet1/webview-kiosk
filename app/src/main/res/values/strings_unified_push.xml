@@ -1,13 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Settings help text -->
-    <string name="setting_info_unified_push_distributor">"The package name of the distributor, e.g.\n\n- org.unifiedpush.distributor.sunup\n- io.heckel.ntfy\n\nThe distributor app serves as the middle-man that receives the app notification\nfrom the push server and forwarding it to %1$s."</string>
-    <string name="setting_info_unified_push_enabled">"Allow %1$s to process\nnew push messages or register new endpoints."</string>
-    <string name="setting_info_unified_push_instance">"Registration instance. Can be used to create multiple registrations.\n\nSupported variables:\n- %1$s\n\nExample:\n- %2$s\n\nIf left blank, %3$s will be used."</string>
-    <string name="setting_info_unified_push_message_for_distributor" formatted="false">"A customised message that may be shown by the distributor UI to\nidentify this registration."</string>
-    <string name="setting_info_unified_push_process_unencrypted_messages">"When enabled, %1$s will also handle\nUnifiedPush messages that did not successfully decrypt.\n\nA valid use case for this would be to enable simple curl requests\nto ntfy.sh without encryption for testing or convenience, although\nthis reduces security."</string>
-    <string name="setting_info_unified_push_store_endpoint_credentials">"When enabled, %1$s will persist\nthe following values after registration:\n\n- Endpoint URL\n- Endpoint Public Key\n- Endpoint Auth Secret\n\nIdeally, these values should not be stored at all, and are instead\nsent directly to the application server at the point of registration.\n\nHowever, %1$s does not yet have an\napplication server. These values are thus stored locally in the\napplication so they can be copied. They can be optionally redacted\nafterwards through the settings UI."</string>
-    <string name="setting_info_unified_push_vapid_public_key" formatted="false">"VAPID public key (RFC8292), base64url, in uncompressed form (87 chars long).\n\nFor more details, see:\n- https://www.rfc-editor.org/rfc/rfc8292"</string>
+    <string name="setting_info_unified_push_distributor">"The package name of the distributor, e.g.
+
+- org.unifiedpush.distributor.sunup
+- io.heckel.ntfy
+
+The distributor app serves as the middle-man that receives the app notification from the push server and forwarding it to %1$s."</string>
+    <string name="setting_info_unified_push_enabled">"Allow %1$s to process new push messages or register new endpoints."</string>
+    <string name="setting_info_unified_push_instance">"Registration instance. Can be used to create multiple registrations.
+
+Supported variables:
+- %1$s
+
+Example:
+- %2$s
+
+If left blank, %3$s will be used."</string>
+    <string name="setting_info_unified_push_message_for_distributor" formatted="false">"A customised message that may be shown by the distributor UI to identify this registration."</string>
+    <string name="setting_info_unified_push_process_unencrypted_messages">"When enabled, %1$s will also handle UnifiedPush messages that did not successfully decrypt.
+
+A valid use case for this would be to enable simple curl requests to ntfy.sh without encryption for testing or convenience, although this reduces security."</string>
+    <string name="setting_info_unified_push_store_endpoint_credentials">"When enabled, %1$s will persist the following values after registration:
+
+- Endpoint URL
+- Endpoint Public Key
+- Endpoint Auth Secret
+
+Ideally, these values should not be stored at all, and are instead sent directly to the application server at the point of registration.
+
+However, %1$s does not yet have an application server. These values are thus stored locally in the application so they can be copied. They can be optionally redacted afterwards through the settings UI."</string>
+    <string name="setting_info_unified_push_vapid_public_key" formatted="false">"VAPID public key (RFC8292), base64url, in uncompressed form (87 chars long).
+
+For more details, see:
+- https://www.rfc-editor.org/rfc/rfc8292"</string>
     <!-- UI labels, placeholders, and messages -->
     <string name="ui_distributorvalue">"Distributor%1$s"</string>
     <string name="ui_e_g_io_heckel_ntfy" formatted="false">"e.g. io.heckel.ntfy"</string>

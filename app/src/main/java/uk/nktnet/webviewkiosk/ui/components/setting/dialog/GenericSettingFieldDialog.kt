@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
-import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 
 @Composable
 fun GenericSettingFieldDialog(
@@ -73,7 +72,9 @@ fun GenericSettingFieldDialog(
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     SelectionContainer {
-                        Text(normaliseInfoText(infoText))
+                        // Setting resources use line breaks only for intentional
+                        // layout.
+                        Text(infoText)
                     }
                 }
             },

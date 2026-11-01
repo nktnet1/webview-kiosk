@@ -3,27 +3,86 @@
     <!-- Settings help text -->
     <string name="setting_info_accept_cookies" formatted="false">"Allow websites to store and read cookies."</string>
     <string name="setting_info_accept_third_party_cookies" formatted="false">"Allow third-party websites to set cookies in this WebView."</string>
-    <string name="setting_info_allow_file_access_from_file_url" formatted="false">"This method was deprecated in API level 30 (Android 11).\n\nSets whether cross-origin requests in the context of a file scheme URL\nshould be allowed to access content from other file scheme URLs. Note\nthat some accesses such as image HTML elements don\'t follow same-origin\nrules and aren\'t affected by this setting.\n\nDon\'t enable this setting if you open files that may be created or altered\nby external sources. Enabling this setting allows malicious scripts loaded\nin a file:// context to access arbitrary local files including WebView\ncookies and app private data."</string>
-    <string name="setting_info_allow_file_download">"Allow files to be downloaded from websites to:\n\n- %1$s\n\nFor Android 9.0 (SDK 28) and below, the WRITE_EXTERNAL_STORAGE\npermission is required."</string>
+    <string name="setting_info_allow_file_access_from_file_url" formatted="false">"This method was deprecated in API level 30 (Android 11).
+
+Sets whether cross-origin requests in the context of a file scheme URL should be allowed to access content from other file scheme URLs. Note that some accesses such as image HTML elements don\'t follow same-origin rules and aren\'t affected by this setting.
+
+Don\'t enable this setting if you open files that may be created or altered by external sources. Enabling this setting allows malicious scripts loaded in a file:// context to access arbitrary local files including WebView cookies and app private data."</string>
+    <string name="setting_info_allow_file_download">"Allow files to be downloaded from websites to:
+
+- %1$s
+
+For Android 9.0 (SDK 28) and below, the WRITE_EXTERNAL_STORAGE permission is required."</string>
     <string name="setting_info_allow_file_picker" formatted="false">"Allow websites to open the system file picker, e.g. for uploading files."</string>
-    <string name="setting_info_allow_universal_access_from_file_urls" formatted="false">"This method was deprecated in API level 30 (Android 11).\n\nSets whether cross-origin requests in the context of a file scheme URL\nshould be allowed to access content from any origin. This includes access\nto content from other file scheme URLs or web contexts. Note that some\naccess such as image HTML elements doesn\'t follow same-origin rules and\nisn\'t affected by this setting.\n\nDon\'t enable this setting if you open files that may be created or altered\nby external sources. Enabling this setting allows malicious scripts loaded\nin a file:// context to launch cross-site scripting attacks, either accessing\narbitrary local files including WebView cookies, app private data or even\ncredentials used on arbitrary web sites."</string>
-    <string name="setting_info_built_in_zoom_controls" formatted="false">"Sets whether the WebView should use its built-in zoom mechanisms.\n\nThe built-in zoom mechanisms comprise on-screen zoom controls, which are displayed\nover the WebView\'s content, and the use of a pinch gesture to control zooming."</string>
+    <string name="setting_info_allow_universal_access_from_file_urls" formatted="false">"This method was deprecated in API level 30 (Android 11).
+
+Sets whether cross-origin requests in the context of a file scheme URL should be allowed to access content from any origin. This includes access to content from other file scheme URLs or web contexts. Note that some access such as image HTML elements doesn\'t follow same-origin rules and isn\'t affected by this setting.
+
+Don\'t enable this setting if you open files that may be created or altered by external sources. Enabling this setting allows malicious scripts loaded in a file:// context to launch cross-site scripting attacks, either accessing arbitrary local files including WebView cookies, app private data or even credentials used on arbitrary web sites."</string>
+    <string name="setting_info_built_in_zoom_controls" formatted="false">"Sets whether the WebView should use its built-in zoom mechanisms.
+
+The built-in zoom mechanisms comprise on-screen zoom controls, which are displayed over the WebView\'s content, and the use of a pinch gesture to control zooming."</string>
     <string name="setting_info_cache_mode" formatted="false">"Control how the WebView uses its cache when loading pages."</string>
-    <string name="setting_info_display_zoom_controls" formatted="false">"Sets whether the WebView should display on-screen zoom controls\nwhen using the built-in zoom mechanisms."</string>
+    <string name="setting_info_display_zoom_controls" formatted="false">"Sets whether the WebView should display on-screen zoom controls when using the built-in zoom mechanisms."</string>
     <string name="setting_info_enable_dom_storage" formatted="false">"Allow web pages to use DOM storage APIs like local storage and session storage."</string>
     <string name="setting_info_enable_java_script" formatted="false">"Allow the execution of JavaScript in web pages."</string>
-    <string name="setting_info_initial_scale" formatted="false">"Sets the initial scale for this WebView as a percentage. 0 means default.\n\nThe behavior for the default scale depends on the state of\n- useWideViewPort\n- loadWithOverviewMode\n\nIf the content fits into the WebView control by width, the zoom is set to 100%.\n\nFor wide content, the behaviour depends on the state of loadWithOverviewMode.\nIf its value is true, the content will be zoomed out to be fit by width into\nthe WebView control, otherwise not.\n\nIf initial scale is greater than 0, WebView starts with this value as initial\nscale. Please note that unlike the scale properties in the viewport meta tag,\nthis method doesn\'t take the screen density into account."</string>
-    <string name="setting_info_layout_algorithm" formatted="false">"- NORMAL: no rendering changes\n\n- SINGLE_COLUMN: all content in one column the width of the view\n\n- NARROW_COLUMNS: columns no wider than screen (pre-KitKat)\n\n- TEXT_AUTOSIZING: boosts font size heuristically (API 19+)"</string>
+    <string name="setting_info_initial_scale" formatted="false">"Sets the initial scale for this WebView as a percentage. 0 means default.
+
+The behavior for the default scale depends on the state of
+- useWideViewPort
+- loadWithOverviewMode
+
+If the content fits into the WebView control by width, the zoom is set to 100%.
+
+For wide content, the behaviour depends on the state of loadWithOverviewMode. If its value is true, the content will be zoomed out to be fit by width into the WebView control, otherwise not.
+
+If initial scale is greater than 0, WebView starts with this value as initial scale. Please note that unlike the scale properties in the viewport meta tag, this method doesn\'t take the screen density into account."</string>
+    <string name="setting_info_layout_algorithm" formatted="false">"- NORMAL: no rendering changes
+
+- SINGLE_COLUMN: all content in one column the width of the view
+
+- NARROW_COLUMNS: columns no wider than screen (pre-KitKat)
+
+- TEXT_AUTOSIZING: boosts font size heuristically (API 19+)"</string>
     <string name="setting_info_load_with_overview_mode" formatted="false">"Load the WebView content fully zoomed out to fit the screen width."</string>
     <string name="setting_info_media_playback_requires_user_gesture" formatted="false">"Sets whether the WebView requires a user gesture (e.g. tap) to play media."</string>
-    <string name="setting_info_mixed_content_mode" formatted="false">"Configures the WebView\'s behavior when a secure origin attempts to load\na resource from an insecure origin.\n\nThe preferred and most secure mode of operation is \"Never Allow\".\n\nThe use of \"Always Allow\" is strongly discouraged and could compromise\nyour security. With \"Compatibility Mode\", use it with caution."</string>
-    <string name="setting_info_mutual_tls">"Configure exact sites that may use a client certificate for Mutual TLS (mTLS).\n\nThe client certificate installer accepts PKCS#12 credentials with a private key.\nIt does not install a root CA for HTTPS server verification. To trust a private\nHTTPS server, install its CA certificate through Android Settings. WebView Kiosk\ntrusts Android-installed user CAs throughout the app, not only for these sites.\n\nAdd one entry per line in the format:\n\n    host[:port][=KeyChain alias]\n\nThe port defaults to `443`. Wildcards, schemes, paths, query strings and\nfragments are not supported. This prevents a client certificate from being\nsent to a site that was not explicitly configured.\n\nAn alias can be provided explicitly for managed devices where the app already\nhas access to that KeyChain entry.\n\nWhen %1$s is the device/profile owner,\nan explicitly configured alias is also returned from Android\'s private-key selection\ncallback for %1$s\'s own matching site, allowing\nAndroid to grant access without showing the certificate picker."</string>
-    <string name="setting_info_over_scroll_mode" formatted="false">"Configures the WebView\'s overscroll behavior.\n\nOptions:\n- Always: Shows the overscroll effect whenever the content is scrolled.\n- If Content Scrolls: allow over-scrolling only if the view content is larger than the container\n- Never: Disables the overscroll effect entirely."</string>
+    <string name="setting_info_mixed_content_mode" formatted="false">"Configures the WebView\'s behavior when a secure origin attempts to load a resource from an insecure origin.
+
+The preferred and most secure mode of operation is \"Never Allow\".
+
+The use of \"Always Allow\" is strongly discouraged and could compromise your security. With \"Compatibility Mode\", use it with caution."</string>
+    <string name="setting_info_mutual_tls">"Configure exact sites that may use a client certificate for Mutual TLS (mTLS).
+
+The client certificate installer accepts PKCS#12 credentials with a private key. It does not install a root CA for HTTPS server verification. To trust a private HTTPS server, install its CA certificate through Android Settings. WebView Kiosk trusts Android-installed user CAs throughout the app, not only for these sites.
+
+Add one entry per line in the format:
+
+    host[:port][=KeyChain alias]
+
+The port defaults to `443`. Wildcards, schemes, paths, query strings and fragments are not supported. This prevents a client certificate from being sent to a site that was not explicitly configured.
+
+An alias can be provided explicitly for managed devices where the app already has access to that KeyChain entry.
+
+When %1$s is the device/profile owner, an explicitly configured alias is also returned from Android\'s private-key selection callback for %1$s\'s own matching site, allowing Android to grant access without showing the certificate picker."</string>
+    <string name="setting_info_over_scroll_mode" formatted="false">"Configures the WebView\'s overscroll behavior.
+
+Options:
+- Always: Shows the overscroll effect whenever the content is scrolled.
+- If Content Scrolls: allow over-scrolling only if the view content is larger than the container
+- Never: Disables the overscroll effect entirely."</string>
     <string name="setting_info_request_focus_on_page_start" formatted="false">"Sets whether the WebView should request focus when a page starts loading."</string>
-    <string name="setting_info_ssl_error_mode" formatted="false">"Controls how the WebView handles SSL errors when loading pages.\n\n- BLOCK: cancels all failed SSL requests (default).\n- PROMPT: opens a dialog for the user to decide.\n- PROCEED: always proceeds despite SSL errors (dangerous, NOT RECOMMENDED).\n\nPlease use this setting carefully. Proceeding on SSL errors can compromise security."</string>
-    <string name="setting_info_support_zoom" formatted="false">"Sets whether the WebView should support zooming using its on-screen\nzoom controls and gestures."</string>
+    <string name="setting_info_ssl_error_mode" formatted="false">"Controls how the WebView handles SSL errors when loading pages.
+
+- BLOCK: cancels all failed SSL requests (default).
+- PROMPT: opens a dialog for the user to decide.
+- PROCEED: always proceeds despite SSL errors (dangerous, NOT RECOMMENDED).
+
+Please use this setting carefully. Proceeding on SSL errors can compromise security."</string>
+    <string name="setting_info_support_zoom" formatted="false">"Sets whether the WebView should support zooming using its on-screen zoom controls and gestures."</string>
     <string name="setting_info_use_wide_view_port" formatted="false">"Enable wide viewport support in the WebView for responsive pages."</string>
-    <string name="setting_info_user_agent" formatted="false">"The User Agent string controls how the web engine identifies itself\nto websites. Some sites may behave differently depending on this value.\n\nLeave blank to use the system default User Agent."</string>
+    <string name="setting_info_user_agent" formatted="false">"The User Agent string controls how the web engine identifies itself to websites. Some sites may behave differently depending on this value.
+
+Leave blank to use the system default User Agent."</string>
     <!-- UI labels, placeholders, and messages -->
     <string name="ui_clear_certificate_preferences" formatted="false">"Clear certificate preferences"</string>
     <string name="ui_client_certificate_file_exceeds_the_10_mib_limit" formatted="false">"Client certificate file exceeds the 10 MiB limit."</string>

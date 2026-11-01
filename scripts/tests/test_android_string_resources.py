@@ -276,6 +276,89 @@ class AndroidStringResourceTests(unittest.TestCase):
                             "Translated MQTT labels must retain the literal protocol code",
                         )
 
+    def test_managed_config_reuses_static_setting_descriptions(self):
+        """Managed-config entries must describe the same setting as the app UI.
+
+        Android restrictions resolve @string values directly; unlike Compose,
+        they cannot provide runtime arguments to formatted strings.
+        """
+        strings = {
+            element.get("name"): element
+            for path, (_, root) in self.resources.items()
+            if path.parent.name == "values"
+            for element in root
+            if element.tag == "string"
+        }
+        android = "{http://schemas.android.com/apk/res/android}"
+        restriction_file = RESOURCE_ROOT / "xml/app_restrictions.xml"
+        special = {
+            "web_engine.enable_javascript": "enable_java_script",
+            "web_engine.use_wide_viewport": "use_wide_view_port",
+            "web_engine.allow_file_access_from_file_urls": "allow_file_access_from_file_url",
+            "appearance.webview_inset": "web_view_inset",
+            "device.rotation": "device_rotation",
+            "mqtt.home_assistant.enabled": "mqtt_home_assistant_enable_discovery",
+            "mqtt.connection.use_websocket": "mqtt_use_web_socket",
+            "mqtt.connection.websocket_server_path": "mqtt_web_socket_server_path",
+        }
+        checked = set()
+        for restriction in ET.parse(restriction_file).getroot():
+            key = restriction.get(android + "key")
+            if key in special:
+                info_name = "setting_info_" + special[key]
+            elif key.startswith("mqtt.connection."):
+                info_name = "setting_info_mqtt_" + key[len("mqtt.connection."):]
+            elif key.startswith("device.owner."):
+                info_name = "setting_info_" + key[len("device.owner."):].replace(".", "_")
+            elif key.startswith("unifiedpush."):
+                info_name = "setting_info_unified_push_" + key[len("unifiedpush."):]
+            elif key.startswith("mqtt."):
+                info_name = "setting_info_" + key.replace(".", "_")
+            else:
+                info_name = "setting_info_" + key.split(".", 1)[1].replace(".", "_")
+            description_ref = restriction.get(android + "description")
+            with self.subTest(setting=key):
+                self.assertIn(info_name, strings)
+                self.assertTrue(description_ref.startswith("@string/"))
+                description_name = description_ref.removeprefix("@string/")
+                self.assertIn(description_name, strings)
+                info = "".join(strings[info_name].itertext())
+                has_runtime_arguments = bool(re.search(r"%[1-9][0-9]*\$", info))
+                if has_runtime_arguments:
+                    self.assertNotEqual(description_name, info_name)
+                    self.assertTrue(description_name.endswith("_description"))
+                else:
+                    self.assertEqual(description_name, info_name)
+                description = "".join(strings[description_name].itertext())
+                self.assertFalse(re.search(r"%[1-9][0-9]*\$", description))
+                self.assertFalse(description.strip('"').startswith("https://"))
+                self.assertGreater(len(description.strip('"')), 15)
+                checked.add(info_name)
+        self.assertEqual(
+            checked,
+            {name for name in strings if name.startswith("setting_info_")},
+            "Every setting help string should be represented by one restriction",
+        )
+
+    def test_setting_help_linebreaks_do_not_split_prose(self):
+        """Help text uses breaks for paragraphs and lists, not fixed-width lines."""
+        for path, (_, root) in self.resources.items():
+            if path.parent.name != "values":
+                continue
+            for element in root:
+                if element.tag != "string" or not element.get("name", "").startswith("setting_info_"):
+                    continue
+                text = "".join(element.itertext())
+                with self.subTest(resource=element.get("name")):
+                    self.assertNotIn(r"\n", text, "Use literal newlines in settings help XML")
+                    self.assertNotIn("\n     to ", text)
+                    self.assertNotIn("\n\n\n", text)
+                    self.assertNotRegex(
+                        text,
+                        r"\n(?!https?://)(?=[a-z])",
+                        "An explicit newline should not split an ordinary sentence",
+                    )
+
     def test_no_duplicate_resource_names_per_configuration(self):
         files_by_qualifier = {}
         for path, (_, root) in self.resources.items():

@@ -5,19 +5,19 @@
         android:key="web_content.home_url"
         android:restrictionType="string"
         android:title="@string/web_content_home_url_title"
-        android:description="@string/web_content_home_url_description"
+        android:description="@string/setting_info_home_url"
     />
     <restriction
         android:key="web_content.website_blacklist"
         android:restrictionType="string"
         android:title="@string/web_content_website_blacklist_title"
-        android:description="@string/web_content_website_blacklist_description"
+        android:description="@string/setting_info_website_blacklist"
     />
     <restriction
         android:key="web_content.website_whitelist"
         android:restrictionType="string"
         android:title="@string/web_content_website_whitelist_title"
-        android:description="@string/web_content_website_whitelist_description"
+        android:description="@string/setting_info_website_whitelist"
     />
     <restriction
         android:key="web_content.website_bookmarks"
@@ -35,14 +35,14 @@
         android:key="web_content.allow_local_files"
         android:restrictionType="bool"
         android:title="@string/web_content_allow_local_files_title"
-        android:description="@string/web_content_allow_local_files_description"
+        android:description="@string/setting_info_allow_local_files"
     />
     <restriction
         android:key="web_content.enable_content_blocking"
         android:restrictionType="bool"
         android:defaultValue="true"
         android:title="@string/web_content_enable_content_blocking_title"
-        android:description="@string/web_content_enable_content_blocking_description"
+        android:description="@string/setting_info_enable_content_blocking"
     />
 
     <!-- Web Browsing -->
@@ -50,61 +50,61 @@
         android:key="web_browsing.allow_refresh"
         android:restrictionType="bool"
         android:title="@string/web_browsing_allow_refresh_title"
-        android:description="@string/web_browsing_allow_refresh_description"
+        android:description="@string/setting_info_allow_refresh"
     />
     <restriction
         android:key="web_browsing.allow_pull_to_refresh"
         android:restrictionType="bool"
         android:title="@string/web_browsing_allow_pull_to_refresh_title"
-        android:description="@string/web_browsing_allow_pull_to_refresh_description"
+        android:description="@string/setting_info_allow_pull_to_refresh"
     />
     <restriction
         android:key="web_browsing.allow_backwards_navigation"
         android:restrictionType="bool"
         android:title="@string/web_browsing_allow_backwards_navigation_title"
-        android:description="@string/web_browsing_allow_backwards_navigation_description"
+        android:description="@string/setting_info_allow_backwards_navigation"
     />
     <restriction
         android:key="web_browsing.allow_go_home"
         android:restrictionType="bool"
         android:title="@string/web_browsing_allow_go_home_title"
-        android:description="@string/web_browsing_allow_go_home_description"
+        android:description="@string/setting_info_allow_go_home"
     />
     <restriction
         android:key="web_browsing.clear_history_on_home"
         android:restrictionType="bool"
         android:title="@string/web_browsing_clear_history_on_home_title"
-        android:description="@string/web_browsing_clear_history_on_home_description"
+        android:description="@string/setting_info_clear_history_on_home"
     />
     <restriction
         android:key="web_browsing.replace_history_url_on_redirect"
         android:restrictionType="bool"
         android:title="@string/web_browsing_replace_history_url_on_redirect_title"
-        android:description="@string/web_browsing_replace_history_url_on_redirect_description"
+        android:description="@string/setting_info_replace_history_url_on_redirect"
     />
     <restriction
         android:key="web_browsing.allow_history_access"
         android:restrictionType="bool"
         android:title="@string/web_browsing_allow_history_access_title"
-        android:description="@string/web_browsing_allow_history_access_description"
+        android:description="@string/setting_info_allow_history_access"
     />
     <restriction
         android:key="web_browsing.allow_bookmark_access"
         android:restrictionType="bool"
         android:title="@string/web_browsing_allow_bookmark_access_title"
-        android:description="@string/web_browsing_allow_bookmark_access_description"
+        android:description="@string/setting_info_allow_bookmark_access"
     />
     <restriction
         android:key="web_browsing.allow_other_url_schemes"
         android:restrictionType="bool"
         android:title="@string/web_browsing_allow_other_url_schemes_title"
-        android:description="@string/web_browsing_allow_other_url_schemes_description"
+        android:description="@string/setting_info_allow_other_url_schemes"
     />
     <restriction
         android:key="web_browsing.allow_default_long_press"
         android:restrictionType="bool"
         android:title="@string/web_browsing_allow_default_long_press_title"
-        android:description="@string/web_browsing_allow_default_long_press_description"
+        android:description="@string/setting_info_allow_default_long_press"
     />
     <restriction
         android:key="web_browsing.allow_link_long_press_context_menu"
@@ -118,7 +118,7 @@
         android:entries="@array/entries_override_url_loading_block_action_option"
         android:entryValues="@array/entry_values_override_url_loading_block_action_option"
         android:title="@string/web_browsing_override_url_loading_block_action_title"
-        android:description="@string/web_browsing_override_url_loading_block_action_description"
+        android:description="@string/setting_info_override_url_loading_block_action"
     />
     <restriction
         android:key="web_browsing.address_bar_actions"
@@ -126,7 +126,7 @@
         android:entries="@array/entries_webview_control_action_option"
         android:entryValues="@array/entry_values_webview_control_action_option"
         android:title="@string/web_browsing_address_bar_actions_title"
-        android:description="@string/web_browsing_address_bar_actions_description"
+        android:description="@string/setting_info_address_bar_actions"
     />
     <restriction
         android:key="web_browsing.kiosk_control_panel_region"
@@ -134,7 +134,7 @@
         android:entries="@array/entries_kiosk_control_panel_region_option"
         android:entryValues="@array/entry_values_kiosk_control_panel_region_option"
         android:title="@string/web_browsing_kiosk_control_panel_region_title"
-        android:description="@string/web_browsing_kiosk_control_panel_region_description"
+        android:description="@string/setting_info_kiosk_control_panel_region"
     />
     <restriction
         android:key="web_browsing.kiosk_control_panel_actions"
@@ -142,7 +142,7 @@
         android:entries="@array/entries_webview_control_action_option"
         android:entryValues="@array/entry_values_webview_control_action_option"
         android:title="@string/web_browsing_kiosk_control_panel_actions_title"
-        android:description="@string/web_browsing_kiosk_control_panel_actions_description"
+        android:description="@string/setting_info_kiosk_control_panel_actions"
     />
     <restriction
         android:key="web_browsing.search_provider_url"
@@ -156,7 +156,7 @@
         android:entries="@array/entries_search_suggestion_engine_option"
         android:entryValues="@array/entry_values_search_suggestion_engine_option"
         android:title="@string/web_browsing_search_suggestion_engine_title"
-        android:description="@string/web_browsing_search_suggestion_engine_description"
+        android:description="@string/setting_info_search_suggestion_engine"
     />
 
     <!-- Web Engine -->
@@ -164,13 +164,13 @@
         android:key="web_engine.enable_javascript"
         android:restrictionType="bool"
         android:title="@string/web_engine_enable_javascript_title"
-        android:description="@string/web_engine_enable_javascript_description"
+        android:description="@string/setting_info_enable_java_script"
     />
     <restriction
         android:key="web_engine.enable_dom_storage"
         android:restrictionType="bool"
         android:title="@string/web_engine_enable_dom_storage_title"
-        android:description="@string/web_engine_enable_dom_storage_description"
+        android:description="@string/setting_info_enable_dom_storage"
     />
     <restriction
         android:key="web_engine.cache_mode"
@@ -178,7 +178,7 @@
         android:entries="@array/entries_cache_mode_option"
         android:entryValues="@array/entry_values_cache_mode_option"
         android:title="@string/web_engine_cache_mode_title"
-        android:description="@string/web_engine_cache_mode_description"
+        android:description="@string/setting_info_cache_mode"
     />
     <restriction
         android:key="web_engine.layout_algorithm"
@@ -186,79 +186,79 @@
         android:entries="@array/entries_layout_algorithm_option"
         android:entryValues="@array/entry_values_layout_algorithm_option"
         android:title="@string/web_engine_layout_algorithm_title"
-        android:description="@string/web_engine_layout_algorithm_description"
+        android:description="@string/setting_info_layout_algorithm"
     />
     <restriction
         android:key="web_engine.accept_cookies"
         android:restrictionType="bool"
         android:title="@string/web_engine_accept_cookies_title"
-        android:description="@string/web_engine_accept_cookies_description"
+        android:description="@string/setting_info_accept_cookies"
     />
     <restriction
         android:key="web_engine.accept_third_party_cookies"
         android:restrictionType="bool"
         android:title="@string/web_engine_accept_third_party_cookies_title"
-        android:description="@string/web_engine_accept_third_party_cookies_description"
+        android:description="@string/setting_info_accept_third_party_cookies"
     />
     <restriction
         android:key="web_engine.user_agent"
         android:restrictionType="string"
         android:title="@string/web_engine_user_agent_title"
-        android:description="@string/web_engine_user_agent_description"
+        android:description="@string/setting_info_user_agent"
     />
     <restriction
         android:key="web_engine.use_wide_viewport"
         android:restrictionType="bool"
         android:title="@string/web_engine_use_wide_viewport_title"
-        android:description="@string/web_engine_use_wide_viewport_description"
+        android:description="@string/setting_info_use_wide_view_port"
     />
     <restriction
         android:key="web_engine.load_with_overview_mode"
         android:restrictionType="bool"
         android:title="@string/web_engine_load_with_overview_mode_title"
-        android:description="@string/web_engine_load_with_overview_mode_description"
+        android:description="@string/setting_info_load_with_overview_mode"
     />
     <restriction
         android:key="web_engine.support_zoom"
         android:restrictionType="bool"
         android:title="@string/web_engine_support_zoom_title"
-        android:description="@string/web_engine_support_zoom_description"
+        android:description="@string/setting_info_support_zoom"
     />
     <restriction
         android:key="web_engine.built_in_zoom_controls"
         android:restrictionType="bool"
         android:title="@string/web_engine_built_in_zoom_controls_title"
-        android:description="@string/web_engine_built_in_zoom_controls_description"
+        android:description="@string/setting_info_built_in_zoom_controls"
     />
     <restriction
         android:key="web_engine.display_zoom_controls"
         android:restrictionType="bool"
         android:title="@string/web_engine_display_zoom_controls_title"
-        android:description="@string/web_engine_display_zoom_controls_description"
+        android:description="@string/setting_info_display_zoom_controls"
     />
     <restriction
         android:key="web_engine.initial_scale"
         android:restrictionType="integer"
         android:title="@string/web_engine_initial_scale_title"
-        android:description="@string/web_engine_initial_scale_description"
+        android:description="@string/setting_info_initial_scale"
     />
     <restriction
         android:key="web_engine.allow_file_access_from_file_urls"
         android:restrictionType="bool"
         android:title="@string/web_engine_allow_file_access_from_file_urls_title"
-        android:description="@string/web_engine_allow_file_access_from_file_urls_description"
+        android:description="@string/setting_info_allow_file_access_from_file_url"
     />
     <restriction
         android:key="web_engine.allow_universal_access_from_file_urls"
         android:restrictionType="bool"
         android:title="@string/web_engine_allow_universal_access_from_file_urls_title"
-        android:description="@string/web_engine_allow_universal_access_from_file_urls_description"
+        android:description="@string/setting_info_allow_universal_access_from_file_urls"
     />
     <restriction
         android:key="web_engine.allow_file_picker"
         android:restrictionType="bool"
         android:title="@string/web_engine_allow_file_picker_title"
-        android:description="@string/web_engine_allow_file_picker_description"
+        android:description="@string/setting_info_allow_file_picker"
     />
     <restriction
         android:key="web_engine.allow_file_download"
@@ -270,7 +270,7 @@
         android:key="web_engine.media_playback_requires_user_gesture"
         android:restrictionType="bool"
         android:title="@string/web_engine_media_playback_requires_user_gesture_title"
-        android:description="@string/web_engine_media_playback_requires_user_gesture_description"
+        android:description="@string/setting_info_media_playback_requires_user_gesture"
     />
     <restriction
         android:key="web_engine.mutual_tls"
@@ -284,7 +284,7 @@
         android:entries="@array/entries_ssl_error_mode_option"
         android:entryValues="@array/entry_values_ssl_error_mode_option"
         android:title="@string/web_engine_ssl_error_mode_title"
-        android:description="@string/web_engine_ssl_error_mode_description"
+        android:description="@string/setting_info_ssl_error_mode"
     />
     <restriction
         android:key="web_engine.mixed_content_mode"
@@ -292,7 +292,7 @@
         android:entries="@array/entries_mixed_content_mode_option"
         android:entryValues="@array/entry_values_mixed_content_mode_option"
         android:title="@string/web_engine_mixed_content_mode_title"
-        android:description="@string/web_engine_mixed_content_mode_description"
+        android:description="@string/setting_info_mixed_content_mode"
     />
     <restriction
         android:key="web_engine.over_scroll_mode"
@@ -300,13 +300,13 @@
         android:entries="@array/entries_over_scroll_mode_option"
         android:entryValues="@array/entry_values_over_scroll_mode_option"
         android:title="@string/web_engine_over_scroll_mode_title"
-        android:description="@string/web_engine_over_scroll_mode_description"
+        android:description="@string/setting_info_over_scroll_mode"
     />
     <restriction
         android:key="web_engine.request_focus_on_page_start"
         android:restrictionType="bool"
         android:title="@string/web_engine_request_focus_on_page_start_title"
-        android:description="@string/web_engine_request_focus_on_page_start_description"
+        android:description="@string/setting_info_request_focus_on_page_start"
     />
 
     <!-- Web Lifecycle -->
@@ -314,13 +314,13 @@
         android:key="web_lifecycle.lock_on_launch"
         android:restrictionType="bool"
         android:title="@string/web_lifecycle_lock_on_launch_title"
-        android:description="@string/web_lifecycle_lock_on_launch_description"
+        android:description="@string/setting_info_lock_on_launch"
     />
     <restriction
         android:key="web_lifecycle.reset_on_launch"
         android:restrictionType="bool"
         android:title="@string/web_lifecycle_reset_on_launch_title"
-        android:description="@string/web_lifecycle_reset_on_launch_description"
+        android:description="@string/setting_info_reset_on_launch"
     />
     <restriction
         android:key="web_lifecycle.reset_on_inactivity_seconds"
@@ -334,7 +334,7 @@
         android:entries="@array/entries_reset_action_option"
         android:entryValues="@array/entry_values_reset_action_option"
         android:title="@string/web_lifecycle_reset_actions_title"
-        android:description="@string/web_lifecycle_reset_actions_description"
+        android:description="@string/setting_info_reset_actions"
     />
     <restriction
         android:key="web_lifecycle.dim_screen_on_inactivity_seconds"
@@ -348,7 +348,7 @@
         android:entries="@array/entries_refresh_on_network_available_option"
         android:entryValues="@array/entry_values_refresh_on_network_available_option"
         android:title="@string/web_lifecycle_refresh_on_network_available_title"
-        android:description="@string/web_lifecycle_refresh_on_network_available_description"
+        android:description="@string/setting_info_refresh_on_network_available"
     />
     <restriction
         android:key="web_lifecycle.refresh_on_loading_error_interval_seconds"
@@ -361,7 +361,7 @@
         android:key="web_lifecycle.refresh_on_screen_wake"
         android:restrictionType="bool"
         android:title="@string/web_lifecycle_refresh_on_screen_wake_title"
-        android:description="@string/web_lifecycle_refresh_on_screen_wake_description"
+        android:description="@string/setting_info_refresh_on_screen_wake"
     />
 
     <!-- Appearance -->
@@ -371,7 +371,7 @@
         android:entries="@array/entries_theme_option"
         android:entryValues="@array/entry_values_theme_option"
         android:title="@string/appearance_theme_title"
-        android:description="@string/appearance_theme_description"
+        android:description="@string/setting_info_theme"
     />
     <restriction
         android:key="appearance.floating_toolbar_mode"
@@ -379,7 +379,7 @@
         android:entries="@array/entries_floating_toolbar_mode_option"
         android:entryValues="@array/entry_values_floating_toolbar_mode_option"
         android:title="@string/appearance_floating_toolbar_mode_title"
-        android:description="@string/appearance_floating_toolbar_mode_description"
+        android:description="@string/setting_info_floating_toolbar_mode"
     />
     <restriction
         android:key="appearance.webview_inset"
@@ -387,7 +387,7 @@
         android:entries="@array/entries_webview_inset_option"
         android:entryValues="@array/entry_values_webview_inset_option"
         android:title="@string/appearance_webview_inset_title"
-        android:description="@string/appearance_webview_inset_description"
+        android:description="@string/setting_info_web_view_inset"
     />
     <restriction
         android:key="appearance.immersive_mode"
@@ -395,19 +395,19 @@
         android:entries="@array/entries_immersive_mode_option"
         android:entryValues="@array/entry_values_immersive_mode_option"
         android:title="@string/appearance_immersive_mode_title"
-        android:description="@string/appearance_immersive_mode_description"
+        android:description="@string/setting_info_immersive_mode"
     />
     <restriction
         android:key="appearance.blocked_message"
         android:restrictionType="string"
         android:title="@string/appearance_blocked_message_title"
-        android:description="@string/appearance_blocked_message_description"
+        android:description="@string/setting_info_blocked_message"
     />
     <restriction
         android:key="appearance.custom_block_page_html"
         android:restrictionType="string"
         android:title="@string/appearance_custom_block_page_html_title"
-        android:description="@string/appearance_custom_block_page_html_description"
+        android:description="@string/setting_info_custom_block_page_html"
     />
     <restriction
         android:key="appearance.address_bar_mode"
@@ -415,7 +415,7 @@
         android:entries="@array/entries_address_bar_mode_option"
         android:entryValues="@array/entry_values_address_bar_mode_option"
         android:title="@string/appearance_address_bar_mode_title"
-        android:description="@string/appearance_address_bar_mode_description"
+        android:description="@string/setting_info_address_bar_mode"
     />
     <restriction
         android:key="appearance.address_bar_size"
@@ -423,7 +423,7 @@
         android:entries="@array/entries_address_bar_size_option"
         android:entryValues="@array/entry_values_address_bar_size_option"
         android:title="@string/appearance_address_bar_size_title"
-        android:description="@string/appearance_address_bar_size_description"
+        android:description="@string/setting_info_address_bar_size"
     />
     <restriction
         android:key="appearance.address_bar_position"
@@ -431,14 +431,14 @@
         android:entries="@array/entries_address_bar_position_option"
         android:entryValues="@array/entry_values_address_bar_position_option"
         android:title="@string/appearance_address_bar_position_title"
-        android:description="@string/appearance_address_bar_position_description"
+        android:description="@string/setting_info_address_bar_position"
     />
     <restriction
         android:key="appearance.show_loading_progress_bar"
         android:restrictionType="bool"
         android:defaultValue="true"
         android:title="@string/appearance_show_loading_progress_bar_title"
-        android:description="@string/appearance_show_loading_progress_bar_description"
+        android:description="@string/setting_info_show_loading_progress_bar"
     />
 
     <!-- Device -->
@@ -446,7 +446,7 @@
         android:key="device.keep_screen_on"
         android:restrictionType="bool"
         android:title="@string/device_keep_screen_on_title"
-        android:description="@string/device_keep_screen_on_description"
+        android:description="@string/setting_info_keep_screen_on"
     />
     <restriction
         android:key="device.rotation"
@@ -454,37 +454,37 @@
         android:entries="@array/entries_device_rotation_option"
         android:entryValues="@array/entry_values_device_rotation_option"
         android:title="@string/device_rotation_title"
-        android:description="@string/device_rotation_description"
+        android:description="@string/setting_info_device_rotation"
     />
     <restriction
         android:key="device.brightness"
         android:restrictionType="integer"
         android:title="@string/device_brightness_title"
-        android:description="@string/device_brightness_description"
+        android:description="@string/setting_info_brightness"
     />
     <restriction
         android:key="device.allow_camera"
         android:restrictionType="bool"
         android:title="@string/device_allow_camera_title"
-        android:description="@string/device_allow_camera_description"
+        android:description="@string/setting_info_allow_camera"
     />
     <restriction
         android:key="device.allow_microphone"
         android:restrictionType="bool"
         android:title="@string/device_allow_microphone_title"
-        android:description="@string/device_allow_microphone_description"
+        android:description="@string/setting_info_allow_microphone"
     />
     <restriction
         android:key="device.allow_location"
         android:restrictionType="bool"
         android:title="@string/device_allow_location_title"
-        android:description="@string/device_allow_location_description"
+        android:description="@string/setting_info_allow_location"
     />
     <restriction
         android:key="device.allow_nfc"
         android:restrictionType="bool"
         android:title="@string/device_allow_nfc_title"
-        android:description="@string/device_allow_nfc_description"
+        android:description="@string/setting_info_allow_nfc"
     />
     <restriction
         android:key="device.allow_notifications"
@@ -498,13 +498,13 @@
         android:entries="@array/entries_back_button_hold_action_option"
         android:entryValues="@array/entry_values_back_button_hold_action_option"
         android:title="@string/device_back_button_hold_action_title"
-        android:description="@string/device_back_button_hold_action_description"
+        android:description="@string/setting_info_back_button_hold_action"
     />
     <restriction
         android:key="device.custom_unlock_shortcut"
         android:restrictionType="string"
         android:title="@string/device_custom_unlock_shortcut_title"
-        android:description="@string/device_custom_unlock_shortcut_description"
+        android:description="@string/setting_info_custom_unlock_shortcut"
     />
     <restriction
         android:key="device.custom_auth_password"
@@ -524,13 +524,13 @@
         android:key="device.block_screen_capture"
         android:restrictionType="bool"
         android:title="@string/device_block_screen_capture_title"
-        android:description="@string/device_block_screen_capture_description"
+        android:description="@string/setting_info_block_screen_capture"
     />
     <restriction
         android:key="device.block_volume_keys"
         android:restrictionType="bool"
         android:title="@string/device_block_volume_keys_title"
-        android:description="@string/device_block_volume_keys_description"
+        android:description="@string/setting_info_block_volume_keys"
     />
 
     <!-- Device Owner -->
@@ -538,43 +538,43 @@
         android:key="device.owner.lock_task_feature.home"
         android:restrictionType="bool"
         android:title="@string/device_owner_lock_task_feature_home_title"
-        android:description="@string/device_owner_lock_task_feature_home_description"
+        android:description="@string/setting_info_lock_task_feature_home"
     />
     <restriction
         android:key="device.owner.lock_task_feature.overview"
         android:restrictionType="bool"
         android:title="@string/device_owner_lock_task_feature_overview_title"
-        android:description="@string/device_owner_lock_task_feature_overview_description"
+        android:description="@string/setting_info_lock_task_feature_overview"
     />
     <restriction
         android:key="device.owner.lock_task_feature.global_actions"
         android:restrictionType="bool"
         android:title="@string/device_owner_lock_task_feature_global_actions_title"
-        android:description="@string/device_owner_lock_task_feature_global_actions_description"
+        android:description="@string/setting_info_lock_task_feature_global_actions"
     />
     <restriction
         android:key="device.owner.lock_task_feature.notifications"
         android:restrictionType="bool"
         android:title="@string/device_owner_lock_task_feature_notifications_title"
-        android:description="@string/device_owner_lock_task_feature_notifications_description"
+        android:description="@string/setting_info_lock_task_feature_notifications"
     />
     <restriction
         android:key="device.owner.lock_task_feature.system_info"
         android:restrictionType="bool"
         android:title="@string/device_owner_lock_task_feature_system_info_title"
-        android:description="@string/device_owner_lock_task_feature_system_info_description"
+        android:description="@string/setting_info_lock_task_feature_system_info"
     />
     <restriction
         android:key="device.owner.lock_task_feature.keyguard"
         android:restrictionType="bool"
         android:title="@string/device_owner_lock_task_feature_keyguard_title"
-        android:description="@string/device_owner_lock_task_feature_keyguard_description"
+        android:description="@string/setting_info_lock_task_feature_keyguard"
     />
     <restriction
         android:key="device.owner.lock_task_feature.block_activity_start_in_task"
         android:restrictionType="bool"
         android:title="@string/device_owner_lock_task_feature_block_activity_start_in_task_title"
-        android:description="@string/device_owner_lock_task_feature_block_activity_start_in_task_description"
+        android:description="@string/setting_info_lock_task_feature_block_activity_start_in_task"
     />
     <restriction
         android:key="device.owner.dhizuku.request_permission_on_launch"
@@ -600,43 +600,43 @@
         android:key="js_scripts.enable_battery_api"
         android:restrictionType="bool"
         android:title="@string/js_scripts_enable_battery_api_title"
-        android:description="@string/js_scripts_enable_battery_api_description"
+        android:description="@string/setting_info_enable_battery_api"
     />
     <restriction
         android:key="js_scripts.enable_brightness_api"
         android:restrictionType="bool"
         android:title="@string/js_scripts_enable_brightness_api_title"
-        android:description="@string/js_scripts_enable_brightness_api_description"
+        android:description="@string/setting_info_enable_brightness_api"
     />
     <restriction
         android:key="js_scripts.enable_vibration_api"
         android:restrictionType="bool"
         android:title="@string/js_scripts_enable_vibration_api_title"
-        android:description="@string/js_scripts_enable_vibration_api_description"
+        android:description="@string/setting_info_enable_vibration_api"
     />
     <restriction
         android:key="js_scripts.enable_dark_reader"
         android:restrictionType="bool"
         android:title="@string/js_scripts_enable_dark_reader_title"
-        android:description="@string/js_scripts_enable_dark_reader_description"
+        android:description="@string/setting_info_enable_dark_reader"
     />
     <restriction
         android:key="js_scripts.enable_eruda_console"
         android:restrictionType="bool"
         android:title="@string/js_scripts_enable_eruda_console_title"
-        android:description="@string/js_scripts_enable_eruda_console_description"
+        android:description="@string/setting_info_enable_eruda_console"
     />
     <restriction
         android:key="js_scripts.custom_script_on_page_start"
         android:restrictionType="string"
         android:title="@string/js_scripts_custom_script_on_page_start_title"
-        android:description="@string/js_scripts_custom_script_on_page_start_description"
+        android:description="@string/setting_info_custom_script_on_page_start"
     />
     <restriction
         android:key="js_scripts.custom_script_on_page_finish"
         android:restrictionType="string"
         android:title="@string/js_scripts_custom_script_on_page_finish_title"
-        android:description="@string/js_scripts_custom_script_on_page_finish_description"
+        android:description="@string/setting_info_custom_script_on_page_finish"
     />
 
     <!-- MQTT -->
@@ -658,26 +658,26 @@
         android:key="mqtt.home_assistant.enabled"
         android:restrictionType="bool"
         android:title="@string/mqtt_home_assistant_enabled_title"
-        android:description="@string/mqtt_home_assistant_description"
+        android:description="@string/setting_info_mqtt_home_assistant_enable_discovery"
     />
     <restriction
         android:key="mqtt.home_assistant.discovery_prefix"
         android:restrictionType="string"
         android:title="@string/mqtt_home_assistant_discovery_prefix_title"
-        android:description="@string/mqtt_home_assistant_description"
+        android:description="@string/setting_info_mqtt_home_assistant_discovery_prefix"
     />
     <restriction
         android:key="mqtt.home_assistant.device_name"
         android:restrictionType="string"
         android:title="@string/mqtt_home_assistant_device_name_title"
-        android:description="@string/mqtt_home_assistant_description"
+        android:description="@string/mqtt_home_assistant_device_name_description"
     />
 
     <restriction
         android:key="mqtt.home_assistant.status_topic"
         android:restrictionType="string"
         android:title="@string/mqtt_home_assistant_status_topic_title"
-        android:description="@string/mqtt_home_assistant_description"
+        android:description="@string/setting_info_mqtt_home_assistant_status_topic"
     />
 
     <!-- MQTT Connection -->
@@ -685,13 +685,13 @@
         android:key="mqtt.connection.server_host"
         android:restrictionType="string"
         android:title="@string/mqtt_connection_server_host_title"
-        android:description="@string/mqtt_connection_server_host_description"
+        android:description="@string/setting_info_mqtt_server_host"
     />
     <restriction
         android:key="mqtt.connection.server_port"
         android:restrictionType="integer"
         android:title="@string/mqtt_connection_server_port_title"
-        android:description="@string/mqtt_connection_server_port_description"
+        android:description="@string/setting_info_mqtt_server_port"
     />
     <restriction
         android:key="mqtt.connection.client_id"
@@ -703,43 +703,43 @@
         android:key="mqtt.connection.use_tls"
         android:restrictionType="bool"
         android:title="@string/mqtt_connection_use_tls_title"
-        android:description="@string/mqtt_connection_use_tls_description"
+        android:description="@string/setting_info_mqtt_use_tls"
     />
     <restriction
         android:key="mqtt.connection.username"
         android:restrictionType="string"
         android:title="@string/mqtt_connection_username_title"
-        android:description="@string/mqtt_connection_username_description"
+        android:description="@string/setting_info_mqtt_username"
     />
     <restriction
         android:key="mqtt.connection.password"
         android:restrictionType="string"
         android:title="@string/mqtt_connection_password_title"
-        android:description="@string/mqtt_connection_password_description"
+        android:description="@string/setting_info_mqtt_password"
     />
     <restriction
         android:key="mqtt.connection.clean_start"
         android:restrictionType="bool"
         android:title="@string/mqtt_connection_clean_start_title"
-        android:description="@string/mqtt_connection_clean_start_description"
+        android:description="@string/setting_info_mqtt_clean_start"
     />
     <restriction
         android:key="mqtt.connection.keep_alive"
         android:restrictionType="integer"
         android:title="@string/mqtt_connection_keep_alive_title"
-        android:description="@string/mqtt_connection_keep_alive_description"
+        android:description="@string/setting_info_mqtt_keep_alive"
     />
     <restriction
         android:key="mqtt.connection.connect_timeout"
         android:restrictionType="integer"
         android:title="@string/mqtt_connection_connect_timeout_title"
-        android:description="@string/mqtt_connection_connect_timeout_description"
+        android:description="@string/setting_info_mqtt_connect_timeout"
     />
     <restriction
         android:key="mqtt.connection.socket_connect_timeout"
         android:restrictionType="integer"
         android:title="@string/mqtt_connection_socket_connect_timeout_title"
-        android:description="@string/mqtt_connection_socket_connect_timeout_description"
+        android:description="@string/setting_info_mqtt_socket_connect_timeout"
     />
     <restriction
         android:key="mqtt.connection.automatic_reconnect"
@@ -751,19 +751,19 @@
         android:key="mqtt.connection.session_expiry_interval"
         android:restrictionType="integer"
         android:title="@string/mqtt_connection_session_expiry_interval_title"
-        android:description="@string/mqtt_connection_session_expiry_interval_description"
+        android:description="@string/setting_info_mqtt_session_expiry_interval"
     />
     <restriction
         android:key="mqtt.connection.use_websocket"
         android:restrictionType="bool"
         android:title="@string/mqtt_connection_use_websocket_title"
-        android:description="@string/mqtt_connection_use_websocket_description"
+        android:description="@string/setting_info_mqtt_use_web_socket"
     />
     <restriction
         android:key="mqtt.connection.websocket_server_path"
         android:restrictionType="string"
         android:title="@string/mqtt_connection_websocket_server_path_title"
-        android:description="@string/mqtt_connection_websocket_server_path_description"
+        android:description="@string/setting_info_mqtt_web_socket_server_path"
     />
 
     <!-- MQTT Will -->
@@ -779,7 +779,7 @@
         android:entries="@array/entries_mqtt_qos_option"
         android:entryValues="@array/entry_values_mqtt_qos_option"
         android:title="@string/mqtt_will_qos_title"
-        android:description="@string/mqtt_will_qos_description"
+        android:description="@string/setting_info_mqtt_will_qos"
     />
     <restriction
         android:key="mqtt.will.payload"
@@ -791,19 +791,19 @@
         android:key="mqtt.will.retain"
         android:restrictionType="bool"
         android:title="@string/mqtt_will_retain_title"
-        android:description="@string/mqtt_will_retain_description"
+        android:description="@string/setting_info_mqtt_will_retain"
     />
     <restriction
         android:key="mqtt.will.message_expiry_interval"
         android:restrictionType="integer"
         android:title="@string/mqtt_will_message_expiry_interval_title"
-        android:description="@string/mqtt_will_message_expiry_interval_description"
+        android:description="@string/setting_info_mqtt_will_message_expiry_interval"
     />
     <restriction
         android:key="mqtt.will.delay_interval"
         android:restrictionType="integer"
         android:title="@string/mqtt_will_delay_interval_title"
-        android:description="@string/mqtt_will_delay_interval_description"
+        android:description="@string/setting_info_mqtt_will_delay_interval"
     />
 
     <!-- MQTT Restrictions -->
@@ -811,49 +811,49 @@
         android:key="mqtt.restrictions.receive_maximum"
         android:restrictionType="integer"
         android:title="@string/mqtt_restrictions_receive_maximum_title"
-        android:description="@string/mqtt_restrictions_receive_maximum_description"
+        android:description="@string/setting_info_mqtt_restrictions_receive_maximum"
     />
     <restriction
         android:key="mqtt.restrictions.send_maximum"
         android:restrictionType="integer"
         android:title="@string/mqtt_restrictions_send_maximum_title"
-        android:description="@string/mqtt_restrictions_send_maximum_description"
+        android:description="@string/setting_info_mqtt_restrictions_send_maximum"
     />
     <restriction
         android:key="mqtt.restrictions.maximum_packet_size"
         android:restrictionType="integer"
         android:title="@string/mqtt_restrictions_maximum_packet_size_title"
-        android:description="@string/mqtt_restrictions_maximum_packet_size_description"
+        android:description="@string/setting_info_mqtt_restrictions_maximum_packet_size"
     />
     <restriction
         android:key="mqtt.restrictions.send_maximum_packet_size"
         android:restrictionType="integer"
         android:title="@string/mqtt_restrictions_send_maximum_packet_size_title"
-        android:description="@string/mqtt_restrictions_send_maximum_packet_size_description"
+        android:description="@string/setting_info_mqtt_restrictions_send_maximum_packet_size"
     />
     <restriction
         android:key="mqtt.restrictions.topic_alias_maximum"
         android:restrictionType="integer"
         android:title="@string/mqtt_restrictions_topic_alias_maximum_title"
-        android:description="@string/mqtt_restrictions_topic_alias_maximum_description"
+        android:description="@string/setting_info_mqtt_restrictions_topic_alias_maximum"
     />
     <restriction
         android:key="mqtt.restrictions.send_topic_alias_maximum"
         android:restrictionType="integer"
         android:title="@string/mqtt_restrictions_send_topic_alias_maximum_title"
-        android:description="@string/mqtt_restrictions_send_topic_alias_maximum_description"
+        android:description="@string/setting_info_mqtt_restrictions_send_topic_alias_maximum"
     />
     <restriction
         android:key="mqtt.restrictions.request_problem_information"
         android:restrictionType="bool"
         android:title="@string/mqtt_restrictions_request_problem_information_title"
-        android:description="@string/mqtt_restrictions_request_problem_information_description"
+        android:description="@string/setting_info_mqtt_restrictions_request_problem_information"
     />
     <restriction
         android:key="mqtt.restrictions.request_response_information"
         android:restrictionType="bool"
         android:title="@string/mqtt_restrictions_request_response_information_title"
-        android:description="@string/mqtt_restrictions_request_response_information_description"
+        android:description="@string/setting_info_mqtt_restrictions_request_response_information"
     />
 
     <!-- MQTT Publish Event -->
@@ -869,13 +869,13 @@
         android:entries="@array/entries_mqtt_qos_option"
         android:entryValues="@array/entry_values_mqtt_qos_option"
         android:title="@string/mqtt_publish_event_qos_title"
-        android:description="@string/mqtt_publish_event_qos_description"
+        android:description="@string/setting_info_mqtt_publish_event_qos"
     />
     <restriction
         android:key="mqtt.publish.event.retain"
         android:restrictionType="bool"
         android:title="@string/mqtt_publish_event_retain_title"
-        android:description="@string/mqtt_publish_event_retain_description"
+        android:description="@string/setting_info_mqtt_publish_event_retain"
     />
 
     <!-- MQTT Publish Response -->
@@ -891,13 +891,13 @@
         android:entries="@array/entries_mqtt_qos_option"
         android:entryValues="@array/entry_values_mqtt_qos_option"
         android:title="@string/mqtt_publish_response_qos_title"
-        android:description="@string/mqtt_publish_response_qos_description"
+        android:description="@string/setting_info_mqtt_publish_response_qos"
     />
     <restriction
         android:key="mqtt.publish.response.retain"
         android:restrictionType="bool"
         android:title="@string/mqtt_publish_response_retain_title"
-        android:description="@string/mqtt_publish_response_retain_description"
+        android:description="@string/setting_info_mqtt_publish_response_retain"
     />
 
     <!-- MQTT Subscribe Command -->
@@ -913,7 +913,7 @@
         android:entries="@array/entries_mqtt_qos_option"
         android:entryValues="@array/entry_values_mqtt_qos_option"
         android:title="@string/mqtt_subscribe_command_qos_title"
-        android:description="@string/mqtt_subscribe_command_qos_description"
+        android:description="@string/setting_info_mqtt_subscribe_command_qos"
     />
     <restriction
         android:key="mqtt.subscribe.command.retain_handling"
@@ -927,7 +927,7 @@
         android:key="mqtt.subscribe.command.retain_as_published"
         android:restrictionType="bool"
         android:title="@string/mqtt_subscribe_command_retain_as_published_title"
-        android:description="@string/mqtt_subscribe_command_retain_as_published_description"
+        android:description="@string/setting_info_mqtt_subscribe_command_retain_as_published"
     />
 
     <!-- MQTT Subscribe Settings -->
@@ -943,7 +943,7 @@
         android:entries="@array/entries_mqtt_qos_option"
         android:entryValues="@array/entry_values_mqtt_qos_option"
         android:title="@string/mqtt_subscribe_settings_qos_title"
-        android:description="@string/mqtt_subscribe_settings_qos_description"
+        android:description="@string/setting_info_mqtt_subscribe_settings_qos"
     />
     <restriction
         android:key="mqtt.subscribe.settings.retain_handling"
@@ -957,7 +957,7 @@
         android:key="mqtt.subscribe.settings.retain_as_published"
         android:restrictionType="bool"
         android:title="@string/mqtt_subscribe_settings_retain_as_published_title"
-        android:description="@string/mqtt_subscribe_settings_retain_as_published_description"
+        android:description="@string/setting_info_mqtt_subscribe_settings_retain_as_published"
     />
 
     <!-- MQTT Subscribe Request -->
@@ -973,7 +973,7 @@
         android:entries="@array/entries_mqtt_qos_option"
         android:entryValues="@array/entry_values_mqtt_qos_option"
         android:title="@string/mqtt_subscribe_request_qos_title"
-        android:description="@string/mqtt_subscribe_request_qos_description"
+        android:description="@string/setting_info_mqtt_subscribe_request_qos"
     />
     <restriction
         android:key="mqtt.subscribe.request.retain_handling"
@@ -987,7 +987,7 @@
         android:key="mqtt.subscribe.request.retain_as_published"
         android:restrictionType="bool"
         android:title="@string/mqtt_subscribe_request_retain_as_published_title"
-        android:description="@string/mqtt_subscribe_request_retain_as_published_description"
+        android:description="@string/setting_info_mqtt_subscribe_request_retain_as_published"
     />
 
     <!-- UnifiedPush -->
@@ -1013,13 +1013,13 @@
         android:key="unifiedpush.message_for_distributor"
         android:restrictionType="string"
         android:title="@string/unifiedpush_message_for_distributor_title"
-        android:description="@string/unifiedpush_message_for_distributor_description"
+        android:description="@string/setting_info_unified_push_message_for_distributor"
     />
     <restriction
         android:key="unifiedpush.vapid_public_key"
         android:restrictionType="string"
         android:title="@string/unifiedpush_vapid_public_key_title"
-        android:description="@string/unifiedpush_vapid_public_key_description"
+        android:description="@string/setting_info_unified_push_vapid_public_key"
     />
     <restriction
         android:key="unifiedpush.process_unencrypted_messages"

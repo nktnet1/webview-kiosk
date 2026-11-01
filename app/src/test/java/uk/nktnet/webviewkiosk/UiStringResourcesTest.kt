@@ -17,12 +17,22 @@ class UiStringResourcesTest {
     private val context = RuntimeEnvironment.getApplication()
 
     @Test
-    fun multilineSettingDescriptionsRetainIndentationAndLineBreaks() {
+    fun settingDescriptionsUseParagraphsAndListsWithoutHardWrappedProse() {
         assertEquals(
             "Set to true to give WebView access to your device's camera.\n\n" +
-                "You will need to grant the CAMERA permission, which is required for the\n" +
+                "You will need to grant the CAMERA permission, which is required for the " +
                 "WebView's RESOURCE_VIDEO_CAPTURE feature.",
             context.getString(R.string.setting_info_allow_camera),
+        )
+        assertEquals(
+            "The URL that can be returned to by:\n\n" +
+                "1. Tapping the configured Kiosk Control Panel region 10 times to open " +
+                "the panel, then choosing Home.\n" +
+                "2. Using the floating toolbar menu.\n" +
+                "3. Using the address bar menu.\n\n" +
+                "This is also controlled by the \"Allow Go Home\" setting under " +
+                "Web Browsing.",
+            context.getString(R.string.setting_info_home_url),
         )
     }
 
@@ -163,7 +173,7 @@ class UiStringResourcesTest {
             ),
         )
         assertEquals(
-            "The MQTT payload to send for the last will message if the client\n" +
+            "The MQTT payload to send for the last will message if the client " +
                 "disconnects unexpectedly.\n\nFor example,\n  {\n" +
                 "    \"message\": \"Client has disconnected.\",\n" +
                 "    \"username\": \"\${USERNAME}\",\n" +
@@ -189,7 +199,8 @@ class UiStringResourcesTest {
             context.resources.getStringArray(R.array.entry_values_theme_option)[0],
         )
         assertEquals(
-            "https://webviewkiosk.nktnet.uk/docs/settings/mqtt/",
+            "Connect to the configured MQTT broker and subscribe or publish to " +
+                "configured topics.",
             context.getString(R.string.mqtt_enabled_description),
         )
         assertEquals(
