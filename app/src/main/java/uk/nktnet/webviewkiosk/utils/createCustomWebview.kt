@@ -375,14 +375,11 @@ fun createCustomWebview(
                         config.onHttpAuthRequest(null)
                     }
                     dialogs.dispose()
-                    // WebViewCompat cleanup can call the dead renderer. Destroying
-                    // its WebView releases those registrations without further
-                    // calls.
-                    if (!rendererGone) {
-                        cosmetics?.dispose()
-                        scriptlets?.dispose()
-                        requests?.dispose()
-                    }
+                    // Always cancel local work and deactivate JS bridges. The
+                    // bindings skip WebView calls if its renderer has died.
+                    cosmetics?.dispose(rendererGone)
+                    scriptlets?.dispose(rendererGone)
+                    requests?.dispose(rendererGone)
                     blobInterface?.dispose()
                     NfcBridgeManager.detachWebView(view)
                 }

@@ -40,9 +40,11 @@ private constructor(
         }
     }
 
-    fun dispose() {
+    fun dispose(rendererGone: Boolean = false) {
+        // Always stop observing the shared service; the Compose scope outlives a
+        // WebView that is recreated after a renderer crash.
         job.cancel()
-        runCatching { binding.dispose() }
+        runCatching { binding.dispose(rendererGone) }
     }
 
     companion object {
@@ -126,10 +128,18 @@ internal class DocumentStartScriptBinding(
         }
     }
 
-    fun dispose() {
-        if (!disposed) {
-            replace(null)
-            disposed = true
+    fun dispose(rendererGone: Boolean = false) {
+        if (disposed) {
+            return
+        }
+        disposed = true
+        val unregister = remove
+        remove = null
+        active = null
+        // Registration removal calls into WebView; the registration is already
+        // invalid after renderer death, and must not be removed through it.
+        if (!rendererGone) {
+            unregister?.invoke()
         }
     }
 }

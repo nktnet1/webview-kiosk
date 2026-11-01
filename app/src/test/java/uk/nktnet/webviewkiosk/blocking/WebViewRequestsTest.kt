@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.blocking
 
+import android.content.Context
+import android.webkit.WebView
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -43,6 +45,42 @@ class WebViewRequestsTest {
                 }
                 .also { it.start() }
         rules = WebViewRequests.Rules(service)
+    }
+
+    private class TrackingWebView(context: Context) : WebView(context) {
+        var removedBridges = 0
+
+        override fun removeJavascriptInterface(name: String) {
+            removedBridges++
+            super.removeJavascriptInterface(name)
+        }
+    }
+
+    @Test
+    fun rendererDeathDisablesTheRequestBridgeWithoutAccessingTheDeadWebView() {
+        val view = TrackingWebView(RuntimeEnvironment.getApplication())
+        val binding = WebViewRequests(view, rules)
+        assertTrue(
+            rules.shouldBlock(
+                "wss://ads.example/socket",
+                "https://frame.example/",
+                "websocket",
+            )
+        )
+
+        binding.dispose(rendererGone = true)
+        // Subsequent Compose cleanup must not issue WebView commands either.
+        binding.dispose()
+
+        assertTrue(rules.disposed)
+        assertEquals(0, view.removedBridges)
+        assertFalse(
+            rules.shouldBlock(
+                "wss://ads.example/socket",
+                "https://frame.example/",
+                "websocket",
+            )
+        )
     }
 
     @Test
