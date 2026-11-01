@@ -66,7 +66,7 @@ fun SettingsHeaderMenu(navController: NavController) {
                         Icon(
                             painter =
                                 painterResource(R.drawable.outline_more_vert_24),
-                            contentDescription = "Menu",
+                            contentDescription = stringResource(R.string.ui_menu),
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -75,7 +75,12 @@ fun SettingsHeaderMenu(navController: NavController) {
                         onDismissRequest = { showMenu = false },
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Import", color = tintColor) },
+                            text = {
+                                Text(
+                                    stringResource(R.string.ui_import),
+                                    color = tintColor,
+                                )
+                            },
                             onClick = {
                                 showMenu = false
                                 showImportDialog = true
@@ -92,7 +97,12 @@ fun SettingsHeaderMenu(navController: NavController) {
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Export", color = tintColor) },
+                            text = {
+                                Text(
+                                    stringResource(R.string.ui_export),
+                                    color = tintColor,
+                                )
+                            },
                             onClick = {
                                 showMenu = false
                                 showExportDialog = true
@@ -111,7 +121,7 @@ fun SettingsHeaderMenu(navController: NavController) {
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    "Settings",
+                                    stringResource(R.string.ui_settings),
                                     color = tintColor,
                                 )
                             },
@@ -131,7 +141,12 @@ fun SettingsHeaderMenu(navController: NavController) {
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Launcher", color = tintColor) },
+                            text = {
+                                Text(
+                                    stringResource(R.string.ui_launcher),
+                                    color = tintColor,
+                                )
+                            },
                             onClick = {
                                 showMenu = false
                                 openDefaultLauncherSettings(context)
@@ -148,7 +163,12 @@ fun SettingsHeaderMenu(navController: NavController) {
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Help", color = tintColor) },
+                            text = {
+                                Text(
+                                    stringResource(R.string.ui_help),
+                                    color = tintColor,
+                                )
+                            },
                             onClick = {
                                 showMenu = false
                                 val intent =
@@ -168,7 +188,12 @@ fun SettingsHeaderMenu(navController: NavController) {
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("More", color = tintColor) },
+                            text = {
+                                Text(
+                                    stringResource(R.string.ui_more),
+                                    color = tintColor,
+                                )
+                            },
                             onClick = {
                                 showMenu = false
                                 navController.navigate(

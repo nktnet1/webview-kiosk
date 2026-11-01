@@ -20,10 +20,9 @@ fun MediaPlaybackRequiresUserGestureSetting() {
                 R.string.web_engine_media_playback_requires_user_gesture_title
             ),
         infoText =
-            """
-            Sets whether the WebView requires a user gesture (e.g. tap) to play media.
-            """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_media_playback_requires_user_gesture
+            ),
         initialValue = userSettings.mediaPlaybackRequiresUserGesture,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_export_error_value">"Export Error: %1$s"</string>
+    <string name="ui_export_settings" formatted="false">"Export Settings"</string>
+    <string name="ui_exported_data" formatted="false">"Exported Data"</string>
+    <string name="ui_exported_to_value">"Exported to %1$s"</string>
+    <string name="ui_failed_to_import_base64_you_may_need_to_switch_tabs" formatted="false">"Failed to import Base64. You may need to switch tabs."</string>
+    <string name="ui_failed_to_import_json_you_may_need_to_switch_tabs" formatted="false">"Failed to import JSON. You may need to switch tabs."</string>
+    <string name="ui_failed_to_read_file_value">"Failed to read file: %1$s"</string>
+    <string name="ui_from_file" formatted="false">"From File"</string>
+    <string name="ui_import_file" formatted="false">"Import file"</string>
+    <string name="ui_import_settings" formatted="false">"Import Settings"</string>
+    <string name="ui_imported_settings_successfully" formatted="false">"Imported settings successfully"</string>
+    <string name="ui_loaded_file_successfully" formatted="false">"Loaded file successfully."</string>
+    <string name="ui_paste_your_base64_config_string" formatted="false">"Paste your Base64 config string."</string>
+    <string name="ui_paste_your_json_string" formatted="false">"Paste your JSON string."</string>
+    <string name="ui_prettify" formatted="false">"Prettify"</string>
+    <string name="ui_preview_shortened_copy_or_save_the_file_to_view_all_se" formatted="false">"Preview shortened. Copy or save the file to view all settings."</string>
+    <string name="ui_redact" formatted="false">"Redact"</string>
+    <string name="ui_save_file" formatted="false">"Save File"</string>
+    <string name="ui_settings_file_exceeds_the_1_mib_limit" formatted="false">"Settings file exceeds the 1 MiB limit."</string>
+    <string name="ui_unable_to_open_selected_settings_file" formatted="false">"Unable to open selected settings file."</string>
+</resources>

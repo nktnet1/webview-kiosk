@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Translatable display labels; never use these values for stored configuration. -->
+    <!-- FilterSkipReason -->
+    <string name="option_display_filter_skip_reason_popup">"Popup rules"</string>
+    <string name="option_display_filter_skip_reason_csp">"Content Security Policy rules"</string>
+    <string name="option_display_filter_skip_reason_html">"HTML response filters"</string>
+    <string name="option_display_filter_skip_reason_procedural">"Unsupported cosmetic operations"</string>
+    <string name="option_display_filter_skip_reason_scriptlet_scope">"Unsupported scriptlet scopes"</string>
+    <string name="option_display_filter_skip_reason_scriptlet_name">"Unimplemented scriptlets"</string>
+    <string name="option_display_filter_skip_reason_scriptlet_arguments">"Unsupported scriptlet arguments or patterns"</string>
+    <string name="option_display_filter_skip_reason_scriptlet_trust">"Scriptlets requiring a trusted source"</string>
+    <string name="option_display_filter_skip_reason_network">"Unsupported network syntax or options"</string>
+    <string name="option_display_filter_skip_reason_limit">"Rules exceeding safety limits"</string>
+    <string name="option_display_filter_skip_reason_other">"Other unsupported rules"</string>
+    <string name="option_display_filter_skip_reason_invalid">"Invalid rules"</string>
+    <!-- RuleLoadStage -->
+    <string name="option_display_rule_load_stage_reading_lists">"Reading saved filter lists…"</string>
+    <string name="option_display_rule_load_stage_checking_cache">"Checking for saved compiled rules…"</string>
+    <string name="option_display_rule_load_stage_restoring">"Loading compiled rules into memory…"</string>
+    <string name="option_display_rule_load_stage_compiling">"Compiling rules for the enabled lists…"</string>
+    <string name="option_display_rule_load_stage_indexing">"Preparing rule indexes in memory…"</string>
+    <string name="option_display_rule_load_stage_saving_cache">"Saving compiled rules for faster startup…"</string>
+    <string name="option_display_rule_load_stage_clearing">"Disabling filter rules…"</string>
+</resources>

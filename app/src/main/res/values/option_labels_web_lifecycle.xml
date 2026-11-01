@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Translatable display labels; never use these values for stored configuration. -->
+    <!-- ResetActionOption -->
+    <string name="option_display_reset_action_option_history">"History"</string>
+    <string name="option_display_reset_action_option_cookies">"Cookies"</string>
+    <string name="option_display_reset_action_option_web_storage">"Web Storage"</string>
+    <string name="option_display_reset_action_option_cache">"Cache"</string>
+    <string name="option_display_reset_action_option_form_data">"Form Data"</string>
+    <string name="option_display_reset_action_option_ssl_preferences">"SSL Preferences"</string>
+    <string name="option_display_reset_action_option_recreate_webview">"Recreate WebView"</string>
+    <!-- RefreshOnNetworkAvailableOption -->
+    <string name="option_display_refresh_on_network_available_option_always">"Always"</string>
+    <string name="option_display_refresh_on_network_available_option_on_page_error">"On Page Error"</string>
+    <string name="option_display_refresh_on_network_available_option_never">"Never"</string>
+</resources>

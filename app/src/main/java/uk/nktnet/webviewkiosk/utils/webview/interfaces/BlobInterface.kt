@@ -15,6 +15,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
 import java.util.concurrent.ConcurrentHashMap
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
@@ -129,7 +130,7 @@ class BlobInterface(private val context: Context) {
         if (!isValidFilename(filename)) {
             ToastManager.show(
                 context,
-                "Invalid filename: '$filename'",
+                context.getString(R.string.ui_invalid_filename_value, filename),
             )
             return false
         }
@@ -144,7 +145,10 @@ class BlobInterface(private val context: Context) {
         } catch (e: Exception) {
             ToastManager.show(
                 context,
-                "Unable to start download: ${e.message}",
+                context.getString(
+                    R.string.ui_unable_to_start_download_value,
+                    e.message,
+                ),
             )
             false
         }
@@ -181,7 +185,7 @@ class BlobInterface(private val context: Context) {
             if (abortInternal(transferId, download)) {
                 ToastManager.show(
                     context,
-                    "Download failed: ${e.message}",
+                    context.getString(R.string.ui_download_failed_value, e.message),
                 )
             }
 
@@ -234,7 +238,7 @@ class BlobInterface(private val context: Context) {
 
             ToastManager.show(
                 context,
-                "${download.filename} downloaded",
+                context.getString(R.string.ui_value_downloaded, download.filename),
             )
 
             val userSettings = UserSettings(context)
@@ -258,7 +262,10 @@ class BlobInterface(private val context: Context) {
             if (abortInternal(transferId, download)) {
                 ToastManager.show(
                     context,
-                    "Failed to finish download: ${e.message}",
+                    context.getString(
+                        R.string.ui_failed_to_finish_download_value,
+                        e.message,
+                    ),
                 )
             }
 

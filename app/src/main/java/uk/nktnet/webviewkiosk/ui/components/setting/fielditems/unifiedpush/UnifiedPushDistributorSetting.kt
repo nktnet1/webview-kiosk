@@ -35,17 +35,11 @@ fun UnifiedPushDistributorSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.unifiedpush_distributor_title),
         infoText =
-            """
-            The package name of the distributor, e.g.
-
-            - org.unifiedpush.distributor.sunup
-            - io.heckel.ntfy
-
-            The distributor app serves as the middle-man that receives the app notification
-            from the push server and forwarding it to ${stringResource(R.string.app_name)}.
-        """
-                .trimIndent(),
-        placeholder = "e.g. io.heckel.ntfy",
+            stringResource(
+                R.string.setting_info_unified_push_distributor,
+                stringResource(R.string.app_name),
+            ),
+        placeholder = stringResource(R.string.ui_e_g_io_heckel_ntfy),
         initialValue = userSettings.unifiedPushDistributor,
         settingKey = settingKey,
         restricted = restricted,
@@ -53,7 +47,7 @@ fun UnifiedPushDistributorSetting() {
         validator = {
             it.isEmpty() || isPackageInstalled(context, it)
         },
-        validationMessage = "Package is not installed.",
+        validationMessage = stringResource(R.string.ui_package_is_not_installed),
         onSave = {
             userSettings.unifiedPushDistributor = it
         },
@@ -68,7 +62,7 @@ fun UnifiedPushDistributorSetting() {
                 colors = ButtonDefaults.buttonColors(),
             ) {
                 Text(
-                    text = "Select a Distributor",
+                    text = stringResource(R.string.ui_select_a_distributor),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )

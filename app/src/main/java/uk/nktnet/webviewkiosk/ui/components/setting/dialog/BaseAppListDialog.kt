@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -51,7 +52,9 @@ fun <T : AppInfo> BaseAppListDialog(
     onSelectApp: (T) -> Unit,
     extraFilters: @Composable (() -> Unit)? = null,
     extraContent: @Composable (() -> Unit)? = null,
-    emptyContent: @Composable (() -> Unit) = { Text("No apps available.") },
+    emptyContent: @Composable (() -> Unit) = {
+        Text(stringResource(R.string.ui_no_apps_available))
+    },
 ) {
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -154,7 +157,7 @@ fun <T : AppInfo> BaseAppListDialog(
                                 painterResource(
                                     R.drawable.keyboard_double_arrow_up_24
                                 ),
-                                "Scroll to top",
+                                stringResource(R.string.ui_scroll_to_top),
                             )
                         }
 
@@ -172,11 +175,13 @@ fun <T : AppInfo> BaseAppListDialog(
                                 painterResource(
                                     R.drawable.keyboard_double_arrow_down_24
                                 ),
-                                "Scroll to bottom",
+                                stringResource(R.string.ui_scroll_to_bottom),
                             )
                         }
                     }
-                    TextButton(onClick = onDismiss) { Text("Close") }
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.ui_close))
+                    }
                 }
             }
         }

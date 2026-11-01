@@ -20,26 +20,16 @@ fun MqttWillPayloadSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_will_payload_title),
         infoText =
-            $$"""
-            The MQTT payload to send for the last will message if the client
-            disconnects unexpectedly.
-
-            For example,
-              {
-                "message": "Client has disconnected.",
-                "username": "${$${MqttVariableName.USERNAME.name}}",
-                "appInstanceId": "${$${MqttVariableName.APP_INSTANCE_ID.name}}"
-              }
-        """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_mqtt_will_payload,
+                MqttVariableName.USERNAME.name,
+                MqttVariableName.APP_INSTANCE_ID.name,
+            ),
         placeholder =
-            $$"""
-            {
-              "message": "Client has disconnected.",
-              "appInstanceId": "${$${MqttVariableName.APP_INSTANCE_ID.name}}"
-            }
-        """
-                .trimIndent(),
+            stringResource(
+                R.string.ui_mqtt_will_payload_example,
+                MqttVariableName.APP_INSTANCE_ID.name,
+            ),
         initialValue = userSettings.mqttWillPayload,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

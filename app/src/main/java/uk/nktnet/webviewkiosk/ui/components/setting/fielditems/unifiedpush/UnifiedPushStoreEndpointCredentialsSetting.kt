@@ -19,23 +19,10 @@ fun UnifiedPushStoreEndpointCredentialsSetting() {
         label =
             stringResource(R.string.unifiedpush_store_endpoint_credentials_title),
         infoText =
-            """
-            When enabled, ${stringResource(R.string.app_name)} will persist
-            the following values after registration:
-
-            - Endpoint URL
-            - Endpoint Public Key
-            - Endpoint Auth Secret
-
-            Ideally, these values should not be stored at all, and are instead
-            sent directly to the application server at the point of registration.
-
-            However, ${stringResource(R.string.app_name)} does not yet have an
-            application server. These values are thus stored locally in the
-            application so they can be copied. They can be optionally redacted
-            afterwards through the settings UI.
-            """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_unified_push_store_endpoint_credentials,
+                stringResource(R.string.app_name),
+            ),
         initialValue = userSettings.unifiedPushStoreEndpointCredentials,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

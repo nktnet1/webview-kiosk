@@ -272,7 +272,10 @@ fun createCustomWebview(
                 pendingFileChooserInFlight = false
                 Log.e(Constants.APP_SCHEME, "Failed to launch file picker", it)
                 completeFileChooser(null)
-                ToastManager.show(context, "Unable to open file picker.")
+                ToastManager.show(
+                    context,
+                    context.getString(R.string.ui_unable_to_open_file_picker),
+                )
             }
     }
 
@@ -1632,7 +1635,11 @@ fun createCustomWebview(
                                 if (!config.userSettings.allowFilePicker) {
                                     ToastManager.show(
                                         context,
-                                        "File picker is disabled in ${context.getString(R.string.app_name)}'s Web Engine settings.",
+                                        context.getString(
+                                            R.string
+                                                .ui_file_picker_is_disabled_in_value_s_web_engine_settings,
+                                            context.getString(R.string.app_name),
+                                        ),
                                     )
                                     respondFileChooser(filePathCallback, null)
                                     return true

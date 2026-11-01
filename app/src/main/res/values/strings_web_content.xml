@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Settings help text -->
+    <string name="setting_info_allow_local_files" formatted="false">"Allow the WebView to open uploaded local files such as HTML, PDF, images,\naudio, video and text.\n\nUpload and manage files using \"Web Content -&gt; Manage Local Files\".\nOpen them with the Files action in the address bar menu or kiosk\ncontrol panel when that action is enabled."</string>
+    <string name="setting_info_enable_content_blocking" formatted="false">"Block ads, malware and trackers using enabled filter lists.\n\nIn Content Blocking, select Add list to choose a preset, enter a URL,\nor paste or import custom rules."</string>
+    <string name="setting_info_home_url" formatted="false">"The URL that can be returned to by:\n  1. tapping the configured Kiosk Control Panel region 10 times\n     to open the panel, then choosing Home\n  2. using the floating toolbar menu\n  3. using the address bar menu\n\nThis is also controlled by the \"Allow Go Home\" setting under web browsing."</string>
+    <string name="setting_info_support_pdf_rendering">"Set to true to support PDF Rendering using Mozilla\'s PDF.js renderer:\n\n- https://github.com/mozilla/pdf.js\n\nYou will first need to download the renderer by opening the popup menu for this\nsetting and clicking the \"Download PDF.js assets\" button.\n\n---\n\nPDF.js assets and PDF source requests are routed through\n%1$s and handled locally by the app using the\nWebViewAssetLoader API.\n\nFor more details, see:\n\nhttps://developer.android.com/reference/androidx/webkit/WebViewAssetLoader"</string>
+    <!-- Translators: Keep regex tokens such as \, ^, $, . and ? unchanged. -->
+    <string name="setting_info_website_blacklist" formatted="false">"Specify regular expressions (regex), one per line.\n\nEscaping with backslash (\\) is required for special characters\nin regex like \'.\' and \'?\'.\n\nThese patterns also use partial matching.\nIf you need strict control, anchor your regex with `^` and `$`.\n\nWhitelist patterns take precedence over blacklist patterns."</string>
+    <string name="setting_info_website_bookmarks">"Specify bookmarked URLs one per line. Blank lines will be ignored.\n\nThis is accessible in the address bar. See the relevant setting \"Web Browsing -&gt; Allow Bookmark Access\".\n\nYou can also specify a title for display in the format: \"&lt;URL&gt; | &lt;Title&gt;\".\n\nFor example:\n\n```\n\n%1$s | Webview Kiosk\n\nhttps://duckduckgo.com | DuckDuckGo\n\nhttps://f-droid.org | F-Droid\n\n```"</string>
+    <string name="setting_info_website_whitelist" formatted="false">"Specify regular expressions (regex), one per line.\n\nEscaping with backslash (\\) is required for special characters\nin regex like \'.\' and \'?\'.\n\nThese patterns also use partial matching.\nIf you need strict control, anchor your regex with `^` and `$`.\n\nWhitelist patterns take precedence over blacklist patterns."</string>
+    <!-- UI labels, placeholders, and messages -->
+    <string name="ui_append_the_current_url" formatted="false">"Append the current URL:"</string>
+    <string name="ui_delete_pdf_js_assets" formatted="false">"Delete PDF.js assets"</string>
+    <string name="ui_deleting_pdf_js" tools:ignore="TypographyEllipsis" formatted="false">"Deleting PDF.js..."</string>
+    <string name="ui_download_pdf_js_assets" formatted="false">"Download PDF.js assets"</string>
+    <string name="ui_downloading_pdf_js" tools:ignore="TypographyEllipsis" formatted="false">"Downloading PDF.js..."</string>
+    <string name="ui_invalid_home_url_provided" formatted="false">"Invalid Home URL provided."</string>
+    <string name="ui_pdf_js_asset_deleted" formatted="false">"PDF.js asset deleted."</string>
+    <string name="ui_pdf_js_asset_deletion_failed_value">"PDF.js asset deletion failed: %1$s"</string>
+    <string name="ui_select_from_history" formatted="false">"Select from History"</string>
+</resources>

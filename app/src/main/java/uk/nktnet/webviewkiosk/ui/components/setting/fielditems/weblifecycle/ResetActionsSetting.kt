@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.ResetActionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.EnumListSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun ResetActionsSetting() {
@@ -18,25 +19,9 @@ fun ResetActionsSetting() {
 
     EnumListSettingFieldItem(
         label = stringResource(R.string.web_lifecycle_reset_actions_title),
-        infoText =
-            """
-            Choose what to clear when an inactivity reset returns to the home URL.
-
-            Returning home always happens, even when no actions are selected.
-
-            Use the drag handle at the end to reorder the items.
-
-            Actions run in the selected order, except WebView recreation,
-            which always happens after the other actions.
-
-            Cookies and website storage are shared across all websites in the app.
-            Clearing them may sign users out of websites.
-
-            Recreating the WebView also ends the current in-memory page session.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_reset_actions),
         entries = ResetActionOption.entries,
-        getLabel = { it.label },
+        getLabel = { stringResource(it.displayLabelRes) },
         getDefault = ResetActionOption::defaults,
         initialValue = userSettings.resetActions,
         settingKey = settingKey,

@@ -17,23 +17,7 @@ fun MqttUseWebSocketSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_use_websocket_title),
-        infoText =
-            """
-            When enabled, MQTT uses WebSocket transport instead of a direct
-            TCP connection. TLS is configured separately with "Use TLS".
-            Enable both settings to use WSS (secure WebSocket).
-
-            Ensure the broker supports WebSocket on the selected port,
-            which is typically
-            - 80 for WS
-            - 443 for WSS (WebSocket Secure)
-
-            You should only enable WebSocket when strictly necessary, as it
-            will consume more resources. A valid use case would be when you
-            are connected to a network with a firewall that blocks non-standard
-            ports like 8883.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_mqtt_use_web_socket),
         initialValue = userSettings.mqttUseWebSocket,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

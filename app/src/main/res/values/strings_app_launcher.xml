@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_app_launcher_no_apps_in_kiosk">"No apps available.\n\nIn kiosk/locked mode, you can only launch apps that have been added to\nthe lock task permitted list (under device owner settings).\n\nFor user devices that utilise screen pinning, you will not be able to\nlaunch other apps.\n\nRefer to the documentations for how device owner can be obtained - this\nrequires one of: ADB, Shizuku or Dhizuku.\n\n- %1$s"</string>
+    <string name="ui_apps" formatted="false">"Apps"</string>
+    <string name="ui_error_handling_intent_no_package_available_for_value">"Error handling intent: no package available for %1$s"</string>
+    <string name="ui_error_no_activities_for_app" formatted="false">"Error: no activities for app."</string>
+    <string name="ui_error_please_enable_value">"Error: please enable %1$s"</string>
+    <string name="ui_error_value_cannot_be_opened">"Error: %1$s cannot be opened."</string>
+    <string name="ui_no_activity_for_intent_value">"No activity for intent: %1$s"</string>
+    <string name="ui_no_apps_available" formatted="false">"No apps available."</string>
+    <string name="ui_scroll_to_bottom" formatted="false">"Scroll to bottom"</string>
+    <string name="ui_scroll_to_top" formatted="false">"Scroll to top"</string>
+    <string name="ui_search_1_app" formatted="false">"Search 1 app."</string>
+    <string name="ui_search_value_apps">"Search %1$s apps"</string>
+    <string name="ui_select_an_activity_to_launch" formatted="false">"Select an activity to launch:"</string>
+</resources>

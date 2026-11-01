@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -70,11 +71,14 @@ fun AppSearchBar(
                             Text(
                                 text =
                                     if (filteredAppCount > 1) {
-                                        "Search $filteredAppCount apps"
+                                        stringResource(
+                                            R.string.ui_search_value_apps,
+                                            filteredAppCount,
+                                        )
                                     } else if (filteredAppCount == 1) {
-                                        "Search 1 app."
+                                        stringResource(R.string.ui_search_1_app)
                                     } else {
-                                        "No apps available."
+                                        stringResource(R.string.ui_no_apps_available)
                                     },
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(
@@ -96,7 +100,7 @@ fun AppSearchBar(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_clear_24),
-                            contentDescription = "Clear",
+                            contentDescription = stringResource(R.string.ui_clear),
                             modifier = Modifier.size(24.dp).padding(2.dp),
                         )
                     }
@@ -117,7 +121,7 @@ fun AppSearchBar(
         ) {
             Icon(
                 painter = painterResource(R.drawable.baseline_sort_24),
-                contentDescription = "Sort Order",
+                contentDescription = stringResource(R.string.ui_sort_order),
                 modifier =
                     Modifier.size(22.dp)
                         .graphicsLayer(

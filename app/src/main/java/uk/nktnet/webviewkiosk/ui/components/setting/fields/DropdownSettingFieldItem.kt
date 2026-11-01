@@ -10,7 +10,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.ui.components.common.DropdownSelector
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
 
@@ -26,7 +28,7 @@ fun <T> DropdownSettingFieldItem(
     validator: (value: T) -> Boolean = { true },
     validationMessage: String? = null,
     onSave: (T) -> Unit,
-    itemText: (T) -> String,
+    itemText: @Composable (T) -> String,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var value by remember { mutableStateOf(initialValue) }
@@ -91,7 +93,9 @@ fun <T> DropdownSettingFieldItem(
             }
             if (draftError) {
                 Text(
-                    text = validationMessage ?: "Invalid input",
+                    text =
+                        validationMessage
+                            ?: stringResource(R.string.ui_invalid_input),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),

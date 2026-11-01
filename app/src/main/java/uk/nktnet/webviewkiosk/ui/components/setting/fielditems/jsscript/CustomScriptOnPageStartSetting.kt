@@ -18,20 +18,11 @@ fun CustomScriptOnPageStartSetting() {
     TextSettingFieldItem(
         label =
             stringResource(R.string.js_scripts_custom_script_on_page_start_title),
-        infoText =
-            """
-            JavaScript to run immediately when the page starts loading.
-            You can use this for early DOM manipulation or overriding functions.
-
-            Your code content will be wrapped as follows to prevent
-            polluting the global scope and avoid conflicts with
-            other scripts:
-                (function() {
-                    // <YOUR CODE>
-                })()
-            """
-                .trimIndent(),
-        placeholder = "e.g. document.body.style.backgroundColor = 'green';",
+        infoText = stringResource(R.string.setting_info_custom_script_on_page_start),
+        placeholder =
+            stringResource(
+                R.string.ui_e_g_document_body_style_backgroundcolor_green
+            ),
         initialValue = userSettings.customScriptOnPageStart,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

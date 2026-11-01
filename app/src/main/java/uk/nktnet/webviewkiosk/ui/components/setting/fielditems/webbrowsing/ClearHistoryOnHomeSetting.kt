@@ -17,8 +17,7 @@ fun ClearHistoryOnHomeSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_browsing_clear_history_on_home_title),
-        infoText =
-            "Clear the browser history whenever the user triggers an action to return home.",
+        infoText = stringResource(R.string.setting_info_clear_history_on_home),
         initialValue = userSettings.clearHistoryOnHome,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

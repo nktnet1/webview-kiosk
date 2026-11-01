@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Translatable display labels; never use these values for stored configuration. -->
+    <!-- AppType -->
+    <string name="option_display_app_type_user_apps">"User apps"</string>
+    <string name="option_display_app_type_system_apps">"System apps"</string>
+    <string name="option_display_app_type_all_apps">"All apps"</string>
+</resources>

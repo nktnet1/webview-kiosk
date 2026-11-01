@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -68,7 +69,7 @@ fun LocalFileEditorDialog(
         ) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 Text(
-                    text = "Edit file",
+                    text = stringResource(R.string.ui_edit_file),
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Spacer(Modifier.height(4.dp))
@@ -100,7 +101,7 @@ fun LocalFileEditorDialog(
                         Icon(
                             painter =
                                 painterResource(R.drawable.baseline_refresh_24),
-                            contentDescription = "Reset",
+                            contentDescription = stringResource(R.string.ui_reset),
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     }
@@ -111,7 +112,7 @@ fun LocalFileEditorDialog(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_clear_24),
-                            contentDescription = "Clear",
+                            contentDescription = stringResource(R.string.ui_clear),
                             tint = MaterialTheme.colorScheme.error,
                         )
                     }
@@ -132,7 +133,7 @@ fun LocalFileEditorDialog(
                         Icon(
                             painter =
                                 painterResource(R.drawable.outline_content_paste_24),
-                            contentDescription = "Paste",
+                            contentDescription = stringResource(R.string.ui_paste),
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     }
@@ -147,7 +148,7 @@ fun LocalFileEditorDialog(
                         onClick = onDismiss,
                         enabled = !isSaving,
                     ) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.ui_cancel))
                     }
                     TextButton(
                         onClick = {
@@ -162,10 +163,18 @@ fun LocalFileEditorDialog(
                                     }
                                 isSaving = false
                                 if (saved) {
-                                    ToastManager.show(context, "File saved")
+                                    ToastManager.show(
+                                        context,
+                                        context.getString(R.string.ui_file_saved),
+                                    )
                                     onSaved()
                                 } else {
-                                    ToastManager.show(context, "Failed to save file")
+                                    ToastManager.show(
+                                        context,
+                                        context.getString(
+                                            R.string.ui_failed_to_save_file
+                                        ),
+                                    )
                                 }
                             }
                         },
@@ -173,9 +182,9 @@ fun LocalFileEditorDialog(
                     ) {
                         Text(
                             if (isSaving) {
-                                "Saving..."
+                                stringResource(R.string.ui_saving)
                             } else {
-                                "Save"
+                                stringResource(R.string.ui_save)
                             }
                         )
                     }

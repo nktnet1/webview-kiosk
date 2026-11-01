@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_create" formatted="false">"Create"</string>
+    <string name="ui_create_shortcut" formatted="false">"Create Shortcut"</string>
+    <string name="ui_invalid_characters_in_value_label">"Invalid characters in %1$s label"</string>
+    <string name="ui_invalid_url" formatted="false">"Invalid URL"</string>
+    <string name="ui_long_label" formatted="false">"Long Label"</string>
+    <string name="ui_long_label_2" formatted="false">"Long label"</string>
+    <string name="ui_max_value_characters">"Max %1$s characters"</string>
+    <string name="ui_short_label" formatted="false">"Short Label"</string>
+    <string name="ui_short_label_2" formatted="false">"Short label"</string>
+    <string name="ui_shortcut_must_use_ctrl_shift_alt_meta" formatted="false">"Shortcut must use CTRL/SHIFT/ALT/META."</string>
+    <string name="ui_shortcut_preview" formatted="false">"Shortcut preview"</string>
+    <string name="ui_shortcut_value">"Shortcut: %1$s"</string>
+    <string name="ui_value_cannot_be_empty">"%1$s cannot be empty"</string>
+</resources>

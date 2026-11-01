@@ -13,6 +13,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Constants.PDF_JS_ASSETS_DIR
 
@@ -110,13 +111,22 @@ object PdfJsManager {
 
                     currentCoroutineContext().ensureActive()
                     File(targetDir, VERSION_FILE).writeText(PDF_JS_VERSION)
-                    ToastManager.show(context, "Download complete")
+                    ToastManager.show(
+                        context,
+                        context.getString(R.string.ui_download_complete),
+                    )
                     true
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
                     Log.e(Constants.APP_SCHEME, "Failed to download PDF.js", e)
-                    ToastManager.show(context, "Download failed: ${e.message}")
+                    ToastManager.show(
+                        context,
+                        context.getString(
+                            R.string.ui_download_failed_value,
+                            e.message,
+                        ),
+                    )
                     false
                 }
             }
@@ -143,13 +153,19 @@ object PdfJsManager {
                     if (targetDir.exists() && !targetDir.deleteRecursively()) {
                         throw IOException("Failed to delete PDF.js assets")
                     }
-                    ToastManager.show(context, "PDF.js asset deleted.")
+                    ToastManager.show(
+                        context,
+                        context.getString(R.string.ui_pdf_js_asset_deleted),
+                    )
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
                     ToastManager.show(
                         context,
-                        "PDF.js asset deletion failed: ${e.message}",
+                        context.getString(
+                            R.string.ui_pdf_js_asset_deletion_failed_value,
+                            e.message,
+                        ),
                     )
                 }
             }

@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun BackButtonHoldActionSetting() {
@@ -18,16 +19,12 @@ fun BackButtonHoldActionSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.device_back_button_hold_action_title),
-        infoText =
-            """
-            Customise the behaviour when the back button is held down (long pressed).
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_back_button_hold_action),
         options = BackButtonHoldActionOption.entries,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.backButtonHoldAction,
         onSave = { userSettings.backButtonHoldAction = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

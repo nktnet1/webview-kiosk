@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun MqttSubscribeRequestQosSetting() {
@@ -18,17 +19,12 @@ fun MqttSubscribeRequestQosSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.mqtt_subscribe_request_qos_title),
-        infoText =
-            """
-            Quality of Service (QoS) ensures different message delivery guarantees
-            in case of connection failures.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_mqtt_subscribe_request_qos),
         options = MqttQosOption.entries,
         initialValue = userSettings.mqttSubscribeRequestQos,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mqttSubscribeRequestQos = it },
-        itemText = { it.getSettingLabel() },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

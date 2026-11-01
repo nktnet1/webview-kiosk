@@ -18,12 +18,7 @@ fun BlockScreenCaptureSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_block_screen_capture_title),
-        infoText =
-            """
-            Prevent screenshots, screen recording and content previews in Recent Apps.
-            This is done by setting the FLAG_SECURE window flag.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_block_screen_capture),
         initialValue = userSettings.blockScreenCapture,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.CacheModeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun CacheModeSetting() {
@@ -18,12 +19,12 @@ fun CacheModeSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.web_engine_cache_mode_title),
-        infoText = "Control how the WebView uses its cache when loading pages.",
+        infoText = stringResource(R.string.setting_info_cache_mode),
         options = CacheModeOption.entries,
         initialValue = userSettings.cacheMode,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.cacheMode = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

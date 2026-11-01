@@ -159,7 +159,12 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                             ) {
                                 if (searchQuery.text.isEmpty()) {
                                     Text(
-                                        text = "Search the last ${logs.size} logs",
+                                        text =
+                                            stringResource(
+                                                R.string
+                                                    .ui_search_the_last_value_logs,
+                                                logs.size,
+                                            ),
                                         style =
                                             LocalTextStyle.current.copy(
                                                 color =
@@ -187,7 +192,8 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                                         painterResource(
                                             R.drawable.baseline_clear_24
                                         ),
-                                    contentDescription = "Clear",
+                                    contentDescription =
+                                        stringResource(R.string.ui_clear),
                                     modifier = Modifier.size(24.dp).padding(2.dp),
                                 )
                             }
@@ -211,7 +217,7 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_sort_24),
-                        contentDescription = "Sort Order",
+                        contentDescription = stringResource(R.string.ui_sort_order),
                         modifier =
                             Modifier.size(22.dp)
                                 .graphicsLayer(
@@ -239,7 +245,7 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "No logs yet.",
+                        text = stringResource(R.string.ui_no_logs_yet),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -254,7 +260,10 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                                         onClick = {
                                             ToastManager.show(
                                                 context,
-                                                "Click and hold to copy message.",
+                                                context.getString(
+                                                    R.string
+                                                        .ui_click_and_hold_to_copy_message
+                                                ),
                                             )
                                         },
                                         onLongClick = {
@@ -272,7 +281,11 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                         ) {
                             Text(
                                 text =
-                                    "${dateFormat.format(logEntry.timestamp)} - ${logEntry.tag}",
+                                    stringResource(
+                                        R.string.ui_value_value_2,
+                                        dateFormat.format(logEntry.timestamp),
+                                        logEntry.tag,
+                                    ),
                                 style =
                                     MaterialTheme.typography.bodySmall.copy(
                                         fontWeight = FontWeight.Bold
@@ -281,7 +294,11 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                             )
                             logEntry.messageId?.let {
                                 Text(
-                                    text = "messageId: $it",
+                                    text =
+                                        stringResource(
+                                            R.string.ui_messageid_value,
+                                            it,
+                                        ),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(top = 4.dp),
@@ -327,7 +344,10 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                 modifier = Modifier.size(18.dp),
             )
             Spacer(Modifier.width(8.dp))
-            Text("Clear Logs", style = MaterialTheme.typography.labelLarge)
+            Text(
+                stringResource(R.string.ui_clear_logs),
+                style = MaterialTheme.typography.labelLarge,
+            )
         }
     }
 }

@@ -21,22 +21,9 @@ fun AllowUniversalAccessFromFileURLsSetting() {
                 R.string.web_engine_allow_universal_access_from_file_urls_title
             ),
         infoText =
-            """
-            This method was deprecated in API level 30 (Android 11).
-
-            Sets whether cross-origin requests in the context of a file scheme URL
-            should be allowed to access content from any origin. This includes access
-            to content from other file scheme URLs or web contexts. Note that some
-            access such as image HTML elements doesn't follow same-origin rules and
-            isn't affected by this setting.
-
-            Don't enable this setting if you open files that may be created or altered
-            by external sources. Enabling this setting allows malicious scripts loaded
-            in a file:// context to launch cross-site scripting attacks, either accessing
-            arbitrary local files including WebView cookies, app private data or even
-            credentials used on arbitrary web sites.
-            """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_allow_universal_access_from_file_urls
+            ),
         initialValue = userSettings.allowUniversalAccessFromFileURLs,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

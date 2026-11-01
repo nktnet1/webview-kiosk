@@ -20,18 +20,7 @@ fun LockTaskFeatureNotificationsSetting() {
                 R.string.device_owner_lock_task_feature_notifications_title
             ),
         infoText =
-            """
-            Enables notifications for all apps.
-
-            This shows notification icons in the status bar, heads-up notifications, and
-            the expandable notification shade.
-
-            If you enable this button, you must also enable the Home button.
-
-            Tapping notification actions and buttons that open new panels doesn't
-            work in lock task mode.
-            """
-                .trimIndent(),
+            stringResource(R.string.setting_info_lock_task_feature_notifications),
         initialValue = userSettings.lockTaskFeatureNotifications,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

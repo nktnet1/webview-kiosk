@@ -71,13 +71,7 @@ fun AdminRestrictionsChangedScreen(navController: NavController) {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text =
-                    """
-                    Your IT Administrator has applied new configurations.
-
-                    Some settings may have been restricted.
-                    """
-                        .trimIndent(),
+                text = stringResource(R.string.ui_admin_restrictions_notice),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -88,7 +82,7 @@ fun AdminRestrictionsChangedScreen(navController: NavController) {
                 modifier =
                     Modifier.sizeIn(maxWidth = 200.dp).fillMaxWidth().height(60.dp),
             ) {
-                Text("I understand.")
+                Text(stringResource(R.string.ui_i_understand))
             }
             Spacer(modifier = Modifier.height(32.dp))
             Row(
@@ -97,7 +91,7 @@ fun AdminRestrictionsChangedScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = "Returning automatically in ",
+                    text = stringResource(R.string.ui_returning_automatically_in),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground,
                     fontStyle = FontStyle.Italic,

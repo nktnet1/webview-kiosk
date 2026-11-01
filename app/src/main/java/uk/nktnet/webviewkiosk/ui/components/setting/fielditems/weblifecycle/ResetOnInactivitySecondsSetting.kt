@@ -20,22 +20,11 @@ fun ResetOnInactivitySecondsSetting() {
         label =
             stringResource(R.string.web_lifecycle_reset_on_inactivity_seconds_title),
         infoText =
-            """
-            Number of seconds of inactivity before the app resets to the home URL.
-
-            When there is 5 seconds left, a warning countdown will be shown on
-            the screen.
-
-            User interactions with the screen reset the timer.
-
-            Choose which browsing data to clear using Reset Actions.
-
-            Minimum: ${Constants.MIN_INACTIVITY_TIMEOUT_SECONDS}
-
-            To disable, use the value 0.
-        """
-                .trimIndent(),
-        placeholder = "e.g. 3600 (for 1 hour)",
+            stringResource(
+                R.string.setting_info_reset_on_inactivity_seconds,
+                Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,
+            ),
+        placeholder = stringResource(R.string.ui_e_g_3600_for_1_hour),
         initialValue = userSettings.resetOnInactivitySeconds,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

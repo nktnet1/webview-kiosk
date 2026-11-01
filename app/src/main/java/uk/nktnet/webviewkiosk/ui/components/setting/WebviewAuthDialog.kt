@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -55,15 +56,25 @@ fun BasicAuthDialog(authRequest: HttpAuthRequest?, onDismiss: () -> Unit) {
 
         AlertDialog(
             onDismissRequest = { completeAuthentication(submit = false) },
-            title = { Text("Authentication Required") },
+            title = { Text(stringResource(R.string.ui_authentication_required)) },
             text = {
                 Column {
-                    Text("Host: ${authRequest.host ?: ""}")
-                    Text("Realm: ${authRequest.realm ?: ""}")
+                    Text(
+                        stringResource(
+                            R.string.ui_host_value,
+                            authRequest.host.orEmpty(),
+                        )
+                    )
+                    Text(
+                        stringResource(
+                            R.string.ui_realm_value,
+                            authRequest.realm.orEmpty(),
+                        )
+                    )
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },
-                        label = { Text("Username") },
+                        label = { Text(stringResource(R.string.ui_username)) },
                         singleLine = true,
                         keyboardOptions =
                             KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
@@ -73,7 +84,7 @@ fun BasicAuthDialog(authRequest: HttpAuthRequest?, onDismiss: () -> Unit) {
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Password") },
+                        label = { Text(stringResource(R.string.ui_password)) },
                         visualTransformation =
                             if (showPassword) {
                                 VisualTransformation.None
@@ -94,9 +105,9 @@ fun BasicAuthDialog(authRequest: HttpAuthRequest?, onDismiss: () -> Unit) {
                                         ),
                                     contentDescription =
                                         if (showPassword) {
-                                            "Hide password"
+                                            stringResource(R.string.ui_hide_password)
                                         } else {
-                                            "Show password"
+                                            stringResource(R.string.ui_show_password)
                                         },
                                 )
                             }
@@ -118,7 +129,7 @@ fun BasicAuthDialog(authRequest: HttpAuthRequest?, onDismiss: () -> Unit) {
                     onClick = { completeAuthentication(submit = true) },
                     modifier = Modifier.width(95.dp),
                 ) {
-                    Text("Login")
+                    Text(stringResource(R.string.ui_login))
                 }
             },
             dismissButton = {
@@ -131,7 +142,7 @@ fun BasicAuthDialog(authRequest: HttpAuthRequest?, onDismiss: () -> Unit) {
                         ),
                     modifier = Modifier.width(95.dp),
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
             },
         )

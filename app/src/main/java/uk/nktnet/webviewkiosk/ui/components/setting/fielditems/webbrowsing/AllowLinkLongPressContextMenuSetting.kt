@@ -21,23 +21,10 @@ fun AllowLinkLongPressContextMenuSetting() {
                 R.string.web_browsing_allow_link_long_press_context_menu_title
             ),
         infoText =
-            """
-            When enabled, long-pressing links or images will trigger a
-            custom context menu.
-
-            This will take precedence over the "Allow Default Long Press"
-            setting (i.e. overrides it).
-
-            For links, the options are:
-            - Copy Link
-            - Open Link
-            - Open in Browser (when unlocked)
-            - Share Link (when unlocked)
-
-            For images, there is an additional option:
-            - Download Image (requires ${UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD})
-        """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_allow_link_long_press_context_menu,
+                UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD,
+            ),
         initialValue = userSettings.allowLinkLongPressContextMenu,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

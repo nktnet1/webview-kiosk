@@ -11,6 +11,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
@@ -66,7 +67,7 @@ fun handleSslErrorPromptRequest(
 
     val titleView =
         TextView(context).apply {
-            text = "SSL Certificate Error"
+            text = context.getString(R.string.ui_ssl_certificate_error)
             textSize = 22f
             setPadding(0, 0, 0, 30)
         }
@@ -74,23 +75,23 @@ fun handleSslErrorPromptRequest(
 
     val errorDescription =
         when (error?.primaryError) {
-            SslError.SSL_EXPIRED -> "The certificate has expired."
-            SslError.SSL_IDMISMATCH -> "The certificate Hostname mismatch."
-            SslError.SSL_UNTRUSTED -> "The certificate authority is not trusted."
-            SslError.SSL_NOTYETVALID -> "The certificate is not yet valid."
-            else -> "Unknown SSL error."
+            SslError.SSL_EXPIRED -> context.getString(R.string.ui_ssl_expired)
+            SslError.SSL_IDMISMATCH ->
+                context.getString(R.string.ui_ssl_hostname_mismatch)
+            SslError.SSL_UNTRUSTED -> context.getString(R.string.ui_ssl_ca_untrusted)
+            SslError.SSL_NOTYETVALID ->
+                context.getString(R.string.ui_ssl_not_yet_valid)
+            else -> context.getString(R.string.ui_ssl_error_unknown)
         }
 
     val messageView =
         TextView(context).apply {
             text =
-                """
-            $errorDescription
-
-            URL:
-                ${error?.url}
-        """
-                    .trimIndent()
+                context.getString(
+                    R.string.ui_ssl_error_details,
+                    errorDescription,
+                    error?.url,
+                )
             setPadding(0, 0, 0, 30)
         }
     layout.addView(messageView)
@@ -109,7 +110,7 @@ fun handleSslErrorPromptRequest(
     val prompt =
         AlertDialog.Builder(context)
             .setView(layout)
-            .setNegativeButton("Cancel") { _, _ ->
+            .setNegativeButton(context.getString(R.string.ui_cancel)) { _, _ ->
                 respond()
             }
             .setOnCancelListener {
@@ -122,20 +123,22 @@ fun handleSslErrorPromptRequest(
             UserInteractionStateSingleton.onUserInteraction()
         } ?: return
 
-    val proceedButton = Button(context).apply { text = "Proceed" }
+    val proceedButton =
+        Button(context).apply { text = context.getString(R.string.ui_ssl_proceed) }
     proceedButton.setOnClickListener {
         respond(true)
         dialogs.dismiss(dialog)
     }
 
-    val advancedButton = Button(context).apply { text = "Advanced" }
+    val advancedButton =
+        Button(context).apply { text = context.getString(R.string.ui_ssl_advanced) }
     buttonsLayout.addView(advancedButton)
     layout.addView(buttonsLayout)
 
     var advancedVisible = false
     val confirmTextView =
         TextView(context).apply {
-            text = "WARNING: Proceeding may compromise your security!"
+            text = context.getString(R.string.ui_ssl_proceed_warning)
             setPadding(0, 20, 0, 20)
         }
     advancedButton.setOnClickListener {

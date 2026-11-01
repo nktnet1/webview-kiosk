@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.WebViewInsetOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun WebViewInsetSetting() {
@@ -18,13 +19,12 @@ fun WebViewInsetSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.appearance_webview_inset_title),
-        infoText =
-            "Select which WindowInsets the WebView should respect for padding.",
+        infoText = stringResource(R.string.setting_info_web_view_inset),
         options = WebViewInsetOption.entries,
         initialValue = userSettings.webViewInset,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.webViewInset = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

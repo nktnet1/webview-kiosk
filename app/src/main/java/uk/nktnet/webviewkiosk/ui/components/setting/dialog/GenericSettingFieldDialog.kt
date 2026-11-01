@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import uk.nktnet.webviewkiosk.R
@@ -39,9 +40,10 @@ fun GenericSettingFieldDialog(
     onSave: () -> Unit,
     settingKey: String,
     restricted: Boolean,
-    saveText: String = "Save",
+    saveText: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val resolvedSaveText = saveText ?: stringResource(R.string.ui_save)
     var showInfoDialog by remember { mutableStateOf(false) }
 
     if (showInfoDialog) {
@@ -77,7 +79,7 @@ fun GenericSettingFieldDialog(
             },
             confirmButton = {
                 TextButton(onClick = { showInfoDialog = false }) {
-                    Text("Close")
+                    Text(stringResource(R.string.ui_close))
                 }
             },
         )
@@ -98,7 +100,7 @@ fun GenericSettingFieldDialog(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_info_24),
-                        contentDescription = "Info",
+                        contentDescription = stringResource(R.string.ui_info),
                     )
                 }
             }
@@ -107,7 +109,10 @@ fun GenericSettingFieldDialog(
             Column {
                 if (restricted) {
                     Text(
-                        text = "This setting is managed by your IT Admin.",
+                        text =
+                            stringResource(
+                                R.string.ui_this_setting_is_managed_by_your_it_admin
+                            ),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
@@ -119,7 +124,7 @@ fun GenericSettingFieldDialog(
         confirmButton = {
             if (!restricted) {
                 TextButton(onClick = onSave) {
-                    Text(saveText)
+                    Text(resolvedSaveText)
                 }
             }
         },
@@ -127,9 +132,9 @@ fun GenericSettingFieldDialog(
             TextButton(onClick = onDismiss) {
                 Text(
                     if (restricted) {
-                        "Close"
+                        stringResource(R.string.ui_close)
                     } else {
-                        "Cancel"
+                        stringResource(R.string.ui_cancel)
                     }
                 )
             }

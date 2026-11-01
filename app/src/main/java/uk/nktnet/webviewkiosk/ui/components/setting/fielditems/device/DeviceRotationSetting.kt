@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.utils.setDeviceRotation
 
 @Composable
@@ -19,12 +20,7 @@ fun DeviceRotationSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.device_rotation_title),
-        infoText =
-            """
-            Choose a fixed device rotation or select 'Auto' to allow
-            the system to rotate the screen automatically.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_device_rotation),
         options = DeviceRotationOption.entries,
         initialValue = userSettings.rotation,
         settingKey = settingKey,
@@ -33,6 +29,6 @@ fun DeviceRotationSetting() {
             userSettings.rotation = it
             setDeviceRotation(context, it)
         },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

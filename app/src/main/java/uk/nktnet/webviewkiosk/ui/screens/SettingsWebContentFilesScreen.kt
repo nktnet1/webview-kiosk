@@ -85,14 +85,23 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                         progress = p
                     }
                     filesList = listLocalFiles(filesDir)
-                    ToastManager.show(context, "File uploaded")
+                    ToastManager.show(
+                        context,
+                        context.getString(R.string.ui_file_uploaded),
+                    )
                 } catch (e: Exception) {
                     if (e is CancellationException) {
                         // Ignore cancellation caused by leaving the UI
                         Log.d(Constants.APP_SCHEME, "File upload cancelled", e)
                     } else {
                         Log.e(Constants.APP_SCHEME, "File upload failed", e)
-                        ToastManager.show(context, "Upload failed: ${e.message}")
+                        ToastManager.show(
+                            context,
+                            context.getString(
+                                R.string.ui_upload_failed_value,
+                                e.message,
+                            ),
+                        )
                     }
                 } finally {
                     uploading = false
@@ -141,17 +150,23 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                                 "File picker failed to launch",
                                 e,
                             )
-                            ToastManager.show(context, "Error: ${e.message}")
+                            ToastManager.show(
+                                context,
+                                context.getString(
+                                    R.string.ui_error_value,
+                                    e.message,
+                                ),
+                            )
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !uploading,
                 ) {
-                    Text("Upload")
+                    Text(stringResource(R.string.ui_upload))
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         painter = painterResource(R.drawable.outline_upload_file_24),
-                        contentDescription = "Upload",
+                        contentDescription = stringResource(R.string.ui_upload),
                     )
                 }
 
@@ -176,14 +191,14 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = "Total: ${filesList.size}",
+                text = stringResource(R.string.ui_total_value, filesList.size),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "legacy file://",
+                    text = stringResource(R.string.ui_legacy_file),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -210,7 +225,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 contentAlignment = Alignment.TopCenter,
             ) {
                 Text(
-                    text = "No files uploaded yet.",
+                    text = stringResource(R.string.ui_no_files_uploaded_yet),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

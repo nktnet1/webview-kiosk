@@ -20,36 +20,16 @@ fun ApplyDesktopViewportWidthSetting() {
         label =
             stringResource(R.string.js_scripts_apply_desktop_viewport_width_title),
         infoText =
-            """
-            This script creates or updates the page's viewport meta element,
-            setting its content to 'width=YOUR_WIDTH_VALUE' to request a
-            desktop-sized viewport.
-
-            JS history state changes will also be subscribed to
-            (e.g. from Single Page Applications), and the script
-            will be re-triggered as needed.
-
-            You should only enable this option if setting the user
-            agent was insufficient to force Desktop mode, as the
-            additional JS here will slow down the page.
-
-            You may also want to enable the following options under
-            Settings -> Web Engine:
-              - User Agent: Desktop
-              - Use Wide Viewport: True
-              - Load with Overview Mode: True
-
-            The minimum possible value is ${Constants.MIN_DESKTOP_WIDTH}.
-
-            To disable, use the value 0.
-        """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_apply_desktop_viewport_width,
+                Constants.MIN_DESKTOP_WIDTH,
+            ),
         initialValue = userSettings.applyDesktopViewportWidth,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = Constants.MIN_DESKTOP_WIDTH,
         max = Constants.MAX_INT_SETTING,
-        placeholder = "e.g. 1024 (or 0 to disable)",
+        placeholder = stringResource(R.string.ui_e_g_1024_or_0_to_disable),
         onSave = { userSettings.applyDesktopViewportWidth = it },
     )
 }

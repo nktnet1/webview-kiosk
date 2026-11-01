@@ -10,6 +10,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun ThemeSetting() {
@@ -19,18 +20,12 @@ fun ThemeSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.appearance_theme_title),
-        infoText =
-            """
-            Select the app theme: System (default), Dark or Light.
-
-            See also: Settings -> JS Scripts -> Apply App Theme .
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_theme),
         options = ThemeOption.entries,
         initialValue = userSettings.theme,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
         onSave = {
             userSettings.theme = it
             ThemeStateSingleton.setTheme(it)

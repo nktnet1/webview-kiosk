@@ -17,15 +17,8 @@ fun MqttKeepAliveSetting() {
 
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_keep_alive_title),
-        infoText =
-            """
-            The time interval (in seconds) in which the client sends a ping to the broker
-            if no other MQTT packets are sent during this period of time.
-
-            It is used to determine if the connection is still up.
-            """
-                .trimIndent(),
-        placeholder = "e.g. 60",
+        infoText = stringResource(R.string.setting_info_mqtt_keep_alive),
+        placeholder = stringResource(R.string.ui_e_g_60),
         initialValue = userSettings.mqttKeepAlive,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

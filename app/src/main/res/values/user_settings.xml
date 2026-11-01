@@ -1,488 +1,489 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- Documentation URLs must remain unchanged in translated builds. -->
     <!-- Web Content -->
     <string name="web_content_home_url_title">Home URL</string>
-    <string name="web_content_home_url_description">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
+    <string name="web_content_home_url_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
 
     <string name="web_content_website_blacklist_title">Website Blacklist</string>
-    <string name="web_content_website_blacklist_description">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
+    <string name="web_content_website_blacklist_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
 
     <string name="web_content_website_whitelist_title">Website Whitelist</string>
-    <string name="web_content_website_whitelist_description">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
+    <string name="web_content_website_whitelist_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
 
     <string name="web_content_website_bookmarks_title">Website Bookmarks</string>
-    <string name="web_content_website_bookmarks_description">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
+    <string name="web_content_website_bookmarks_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
 
     <string name="web_content_support_pdf_rendering_title">Support PDF Rendering</string>
-    <string name="web_content_support_pdf_rendering_description">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
+    <string name="web_content_support_pdf_rendering_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
 
     <string name="web_content_allow_local_files_title">Allow Local Files</string>
-    <string name="web_content_allow_local_files_description">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
+    <string name="web_content_allow_local_files_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
 
     <string name="web_content_enable_content_blocking_title">
         Enable Content Blocking
     </string>
-    <string name="web_content_enable_content_blocking_description">
+    <string name="web_content_enable_content_blocking_description" translatable="false">
         https://webviewkiosk.nktnet.uk/docs/settings/web-content/
     </string>
 
     <!-- Web Browsing -->
     <string name="web_browsing_allow_refresh_title">Allow Refresh</string>
-    <string name="web_browsing_allow_refresh_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_allow_refresh_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_allow_pull_to_refresh_title">Allow Pull to Refresh</string>
-    <string name="web_browsing_allow_pull_to_refresh_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_allow_pull_to_refresh_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_allow_backwards_navigation_title">Allow Backwards Navigation</string>
-    <string name="web_browsing_allow_backwards_navigation_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_allow_backwards_navigation_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_allow_go_home_title">Allow Go Home</string>
-    <string name="web_browsing_allow_go_home_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_allow_go_home_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_clear_history_on_home_title">Clear History on Home</string>
-    <string name="web_browsing_clear_history_on_home_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_clear_history_on_home_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_replace_history_url_on_redirect_title">Replace History URL on Redirect</string>
-    <string name="web_browsing_replace_history_url_on_redirect_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_replace_history_url_on_redirect_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_allow_history_access_title">Allow History Access</string>
-    <string name="web_browsing_allow_history_access_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_allow_history_access_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_allow_bookmark_access_title">Allow Bookmark Access</string>
-    <string name="web_browsing_allow_bookmark_access_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_allow_bookmark_access_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_allow_other_url_schemes_title">Allow Other URL Schemes</string>
-    <string name="web_browsing_allow_other_url_schemes_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_allow_other_url_schemes_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_allow_default_long_press_title">Allow Default Long Press</string>
-    <string name="web_browsing_allow_default_long_press_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_allow_default_long_press_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_allow_link_long_press_context_menu_title">Allow Link Long Press Context Menu</string>
-    <string name="web_browsing_allow_link_long_press_context_menu_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_allow_link_long_press_context_menu_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_override_url_loading_block_action_title">Override URL Loading Block Action</string>
-    <string name="web_browsing_override_url_loading_block_action_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_override_url_loading_block_action_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_address_bar_actions_title">Address Bar Actions</string>
-    <string name="web_browsing_address_bar_actions_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_address_bar_actions_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_kiosk_control_panel_region_title">Kiosk Control Panel Region</string>
-    <string name="web_browsing_kiosk_control_panel_region_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_kiosk_control_panel_region_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_kiosk_control_panel_actions_title">Kiosk Control Panel Actions</string>
-    <string name="web_browsing_kiosk_control_panel_actions_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_kiosk_control_panel_actions_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_search_provider_url_title">Search Provider URL</string>
-    <string name="web_browsing_search_provider_url_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_search_provider_url_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_search_suggestion_engine_title">Search Suggestion Engine</string>
-    <string name="web_browsing_search_suggestion_engine_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_search_suggestion_engine_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <!-- Web Engine -->
     <string name="web_engine_enable_javascript_title">Enable JavaScript</string>
-    <string name="web_engine_enable_javascript_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_enable_javascript_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_enable_dom_storage_title">Enable DOM Storage</string>
-    <string name="web_engine_enable_dom_storage_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_enable_dom_storage_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_cache_mode_title">Cache Mode</string>
-    <string name="web_engine_cache_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_cache_mode_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_layout_algorithm_title">Layout Algorithm</string>
-    <string name="web_engine_layout_algorithm_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_layout_algorithm_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_accept_cookies_title">Accept Cookies</string>
-    <string name="web_engine_accept_cookies_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_accept_cookies_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_accept_third_party_cookies_title">Accept Third-Party Cookies</string>
-    <string name="web_engine_accept_third_party_cookies_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_accept_third_party_cookies_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_user_agent_title">User Agent</string>
-    <string name="web_engine_user_agent_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_user_agent_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_use_wide_viewport_title">Use Wide Viewport</string>
-    <string name="web_engine_use_wide_viewport_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_use_wide_viewport_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_load_with_overview_mode_title">Load With Overview Mode</string>
-    <string name="web_engine_load_with_overview_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_load_with_overview_mode_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_support_zoom_title">Support Zoom</string>
-    <string name="web_engine_support_zoom_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_support_zoom_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_built_in_zoom_controls_title">Built-in Zoom Controls</string>
-    <string name="web_engine_built_in_zoom_controls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_built_in_zoom_controls_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_display_zoom_controls_title">Display Zoom Controls</string>
-    <string name="web_engine_display_zoom_controls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_display_zoom_controls_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_initial_scale_title">Initial Scale</string>
-    <string name="web_engine_initial_scale_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_initial_scale_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_allow_file_access_from_file_urls_title">Allow File Access From File URLs</string>
-    <string name="web_engine_allow_file_access_from_file_urls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_allow_file_access_from_file_urls_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_allow_universal_access_from_file_urls_title">Allow Universal Access From File URLs</string>
-    <string name="web_engine_allow_universal_access_from_file_urls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_allow_universal_access_from_file_urls_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_allow_file_picker_title">Allow File Picker</string>
-    <string name="web_engine_allow_file_picker_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_allow_file_picker_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_allow_file_download_title">Allow File Download</string>
-    <string name="web_engine_allow_file_download_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_allow_file_download_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_media_playback_requires_user_gesture_title">Media Playback Requires User Gesture</string>
-    <string name="web_engine_media_playback_requires_user_gesture_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_media_playback_requires_user_gesture_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_mutual_tls_title">Mutual TLS</string>
-    <string name="web_engine_mutual_tls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_mutual_tls_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_ssl_error_mode_title">SSL Error Mode</string>
-    <string name="web_engine_ssl_error_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_ssl_error_mode_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_mixed_content_mode_title">Mixed Content Mode</string>
-    <string name="web_engine_mixed_content_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_mixed_content_mode_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_over_scroll_mode_title">Over Scroll Mode</string>
-    <string name="web_engine_over_scroll_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_over_scroll_mode_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_request_focus_on_page_start_title">Request Focus on Page Start</string>
-    <string name="web_engine_request_focus_on_page_start_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_request_focus_on_page_start_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <!-- Web Lifecycle -->
     <string name="web_lifecycle_lock_on_launch_title">Lock on Launch</string>
-    <string name="web_lifecycle_lock_on_launch_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
+    <string name="web_lifecycle_lock_on_launch_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
 
     <string name="web_lifecycle_reset_on_launch_title">Reset on Launch</string>
-    <string name="web_lifecycle_reset_on_launch_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
+    <string name="web_lifecycle_reset_on_launch_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
 
     <string name="web_lifecycle_reset_on_inactivity_seconds_title">Reset on Inactivity (seconds)</string>
-    <string name="web_lifecycle_reset_on_inactivity_seconds_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
+    <string name="web_lifecycle_reset_on_inactivity_seconds_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
 
     <string name="web_lifecycle_reset_actions_title">Reset Actions</string>
-    <string name="web_lifecycle_reset_actions_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
+    <string name="web_lifecycle_reset_actions_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
 
     <string name="web_lifecycle_dim_screen_on_inactivity_seconds_title">Dim Screen on Inactivity (seconds)</string>
-    <string name="web_lifecycle_dim_screen_on_inactivity_seconds_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
+    <string name="web_lifecycle_dim_screen_on_inactivity_seconds_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
 
     <string name="web_lifecycle_refresh_on_network_available_title">Refresh on Network Available</string>
-    <string name="web_lifecycle_refresh_on_network_available_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
+    <string name="web_lifecycle_refresh_on_network_available_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
 
     <string name="web_lifecycle_refresh_on_loading_error_interval_seconds_title">Refresh on Loading Error Interval (seconds)</string>
-    <string name="web_lifecycle_refresh_on_loading_error_interval_seconds_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
+    <string name="web_lifecycle_refresh_on_loading_error_interval_seconds_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
 
     <string name="web_lifecycle_refresh_on_screen_wake_title">Refresh on Screen Wake</string>
-    <string name="web_lifecycle_refresh_on_screen_wake_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
+    <string name="web_lifecycle_refresh_on_screen_wake_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
 
     <!-- Appearance -->
     <string name="appearance_theme_title">Theme</string>
-    <string name="appearance_theme_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+    <string name="appearance_theme_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
     <string name="appearance_floating_toolbar_mode_title">Floating Toolbar Mode</string>
-    <string name="appearance_floating_toolbar_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+    <string name="appearance_floating_toolbar_mode_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
     <string name="appearance_webview_inset_title">WebView Inset</string>
-    <string name="appearance_webview_inset_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+    <string name="appearance_webview_inset_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
     <string name="appearance_immersive_mode_title">Immersive Mode</string>
-    <string name="appearance_immersive_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+    <string name="appearance_immersive_mode_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
     <string name="appearance_blocked_message_title">Blocked Message</string>
-    <string name="appearance_blocked_message_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+    <string name="appearance_blocked_message_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
     <string name="appearance_custom_block_page_html_title">Custom Block Page HTML</string>
-    <string name="appearance_custom_block_page_html_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+    <string name="appearance_custom_block_page_html_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
     <string name="appearance_address_bar_mode_title">Address Bar Mode</string>
-    <string name="appearance_address_bar_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+    <string name="appearance_address_bar_mode_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
     <string name="appearance_address_bar_position_title">Address Bar Position</string>
-    <string name="appearance_address_bar_position_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+    <string name="appearance_address_bar_position_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
     <string name="appearance_address_bar_size_title">Address Bar Size</string>
-    <string name="appearance_address_bar_size_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+    <string name="appearance_address_bar_size_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
     <string name="appearance_show_loading_progress_bar_title">Show Loading Progress Bar</string>
-    <string name="appearance_show_loading_progress_bar_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+    <string name="appearance_show_loading_progress_bar_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
     <!-- Device -->
     <string name="device_keep_screen_on_title">Keep Screen On</string>
-    <string name="device_keep_screen_on_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_keep_screen_on_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_rotation_title">Rotation</string>
-    <string name="device_rotation_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_rotation_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_brightness_title">Brightness</string>
-    <string name="device_brightness_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_brightness_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_allow_camera_title">Allow Camera</string>
-    <string name="device_allow_camera_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_allow_camera_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_allow_microphone_title">Allow Microphone</string>
-    <string name="device_allow_microphone_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_allow_microphone_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_allow_location_title">Allow Location</string>
-    <string name="device_allow_location_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_allow_location_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_allow_nfc_title">Allow NFC</string>
-    <string name="device_allow_nfc_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_allow_nfc_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_allow_notifications_title">Allow Notifications</string>
-    <string name="device_allow_notifications_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_allow_notifications_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_back_button_hold_action_title">Back Button Hold Action</string>
-    <string name="device_back_button_hold_action_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_back_button_hold_action_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_custom_unlock_shortcut_title">Custom Unlock Shortcut</string>
-    <string name="device_custom_unlock_shortcut_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_custom_unlock_shortcut_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_custom_auth_password_title">Custom Auth Password</string>
-    <string name="device_custom_auth_password_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_custom_auth_password_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_unlock_auth_requirement_title">Unlock Auth Requirement</string>
-    <string name="device_unlock_auth_requirement_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_unlock_auth_requirement_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_block_screen_capture_title">Block Screen Capture</string>
-    <string name="device_block_screen_capture_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_block_screen_capture_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_block_volume_keys_title">Block Volume Keys</string>
-    <string name="device_block_volume_keys_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_block_volume_keys_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <!-- Device Owner -->
     <string name="device_owner_lock_task_feature_home_title">Show Home Button</string>
-    <string name="device_owner_lock_task_feature_home_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_owner_lock_task_feature_home_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_owner_lock_task_feature_overview_title">Show Overview Button</string>
-    <string name="device_owner_lock_task_feature_overview_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_owner_lock_task_feature_overview_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_owner_lock_task_feature_global_actions_title">Enable Global Actions</string>
-    <string name="device_owner_lock_task_feature_global_actions_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_owner_lock_task_feature_global_actions_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_owner_lock_task_feature_notifications_title">Enable Notifications</string>
-    <string name="device_owner_lock_task_feature_notifications_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_owner_lock_task_feature_notifications_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_owner_lock_task_feature_system_info_title">Show System Info</string>
-    <string name="device_owner_lock_task_feature_system_info_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_owner_lock_task_feature_system_info_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_owner_lock_task_feature_keyguard_title">Enable Keyguard</string>
-    <string name="device_owner_lock_task_feature_keyguard_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_owner_lock_task_feature_keyguard_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_owner_lock_task_feature_block_activity_start_in_task_title">Block Activity Start in Task</string>
-    <string name="device_owner_lock_task_feature_block_activity_start_in_task_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_owner_lock_task_feature_block_activity_start_in_task_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_owner_dhizuku_request_permission_on_launch_title">Dhizuku Request Permission on Launch</string>
-    <string name="device_owner_dhizuku_request_permission_on_launch_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_owner_dhizuku_request_permission_on_launch_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <!-- JS Scripts -->
     <string name="js_scripts_apply_app_theme_title">Apply App Theme</string>
-    <string name="js_scripts_apply_app_theme_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
+    <string name="js_scripts_apply_app_theme_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <string name="js_scripts_apply_desktop_viewport_width_title">Apply Desktop Viewport Width (px)</string>
-    <string name="js_scripts_apply_desktop_viewport_width_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
+    <string name="js_scripts_apply_desktop_viewport_width_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <string name="js_scripts_enable_battery_api_title">Enable Battery API</string>
-    <string name="js_scripts_enable_battery_api_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
+    <string name="js_scripts_enable_battery_api_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <string name="js_scripts_enable_brightness_api_title">Enable Brightness API</string>
-    <string name="js_scripts_enable_brightness_api_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
+    <string name="js_scripts_enable_brightness_api_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <string name="js_scripts_enable_vibration_api_title">Enable Vibration API</string>
-    <string name="js_scripts_enable_vibration_api_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
+    <string name="js_scripts_enable_vibration_api_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <string name="js_scripts_enable_dark_reader_title">Enable Dark Reader</string>
-    <string name="js_scripts_enable_dark_reader_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
+    <string name="js_scripts_enable_dark_reader_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <string name="js_scripts_enable_eruda_console_title">Enable Eruda Console</string>
-    <string name="js_scripts_enable_eruda_console_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
+    <string name="js_scripts_enable_eruda_console_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <string name="js_scripts_custom_script_on_page_start_title">On Page Start (custom)</string>
-    <string name="js_scripts_custom_script_on_page_start_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
+    <string name="js_scripts_custom_script_on_page_start_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <string name="js_scripts_custom_script_on_page_finish_title">On Page Finish (custom)</string>
-    <string name="js_scripts_custom_script_on_page_finish_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
+    <string name="js_scripts_custom_script_on_page_finish_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <!-- MQTT -->
     <string name="mqtt_enabled_title">Enabled</string>
-    <string name="mqtt_enabled_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/</string>
+    <string name="mqtt_enabled_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/</string>
 
     <string name="mqtt_use_foreground_service_title">Use Foreground Service</string>
-    <string name="mqtt_use_foreground_service_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/</string>
+    <string name="mqtt_use_foreground_service_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/</string>
 
     <!-- MQTT Home Assistant -->
     <string name="settings_mqtt_home_assistant_title">Home Assistant</string>
     <string name="settings_mqtt_home_assistant_description">Automatic device discovery, monitoring, and control</string>
     <string name="mqtt_home_assistant_enabled_title">Enable Discovery</string>
-    <string name="mqtt_home_assistant_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/home-assistant/</string>
+    <string name="mqtt_home_assistant_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/home-assistant/</string>
     <string name="mqtt_home_assistant_discovery_prefix_title">Discovery Prefix</string>
     <string name="mqtt_home_assistant_device_name_title">Device Name</string>
     <string name="mqtt_home_assistant_status_topic_title">Status Topic</string>
 
     <!-- MQTT Connection -->
     <string name="mqtt_connection_server_host_title">Server Host</string>
-    <string name="mqtt_connection_server_host_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_server_host_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_server_port_title">Server Port</string>
-    <string name="mqtt_connection_server_port_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_server_port_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_client_id_title">Client ID</string>
-    <string name="mqtt_connection_client_id_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_client_id_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_use_tls_title">Use TLS</string>
-    <string name="mqtt_connection_use_tls_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_use_tls_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_username_title">Username</string>
-    <string name="mqtt_connection_username_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_username_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_password_title">Password</string>
-    <string name="mqtt_connection_password_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_password_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_clean_start_title">Clean Start</string>
-    <string name="mqtt_connection_clean_start_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_clean_start_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_keep_alive_title">Keep Alive (seconds)</string>
-    <string name="mqtt_connection_keep_alive_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_keep_alive_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_connect_timeout_title">Connect Timeout (seconds)</string>
-    <string name="mqtt_connection_connect_timeout_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_connect_timeout_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_socket_connect_timeout_title">Socket Connect Timeout (seconds)</string>
-    <string name="mqtt_connection_socket_connect_timeout_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_socket_connect_timeout_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_automatic_reconnect_title">Automatic Reconnect</string>
-    <string name="mqtt_connection_automatic_reconnect_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_automatic_reconnect_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_session_expiry_interval_title">Session Expiry Interval (seconds)</string>
-    <string name="mqtt_connection_session_expiry_interval_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_session_expiry_interval_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_use_websocket_title">Use WebSocket</string>
-    <string name="mqtt_connection_use_websocket_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_use_websocket_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_websocket_server_path_title">WebSocket Server Path</string>
-    <string name="mqtt_connection_websocket_server_path_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+    <string name="mqtt_connection_websocket_server_path_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <!-- MQTT Will -->
     <string name="mqtt_will_topic_title">Will Topic</string>
-    <string name="mqtt_will_topic_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
+    <string name="mqtt_will_topic_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
 
     <string name="mqtt_will_qos_title">Will QoS</string>
-    <string name="mqtt_will_qos_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
+    <string name="mqtt_will_qos_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
 
     <string name="mqtt_will_payload_title">Will Payload</string>
-    <string name="mqtt_will_payload_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
+    <string name="mqtt_will_payload_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
 
     <string name="mqtt_will_retain_title">Will Retain</string>
-    <string name="mqtt_will_retain_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
+    <string name="mqtt_will_retain_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
 
     <string name="mqtt_will_message_expiry_interval_title">Will Message Expiry Interval (seconds)</string>
-    <string name="mqtt_will_message_expiry_interval_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
+    <string name="mqtt_will_message_expiry_interval_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
 
     <string name="mqtt_will_delay_interval_title">Will Delay Interval (seconds)</string>
-    <string name="mqtt_will_delay_interval_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
+    <string name="mqtt_will_delay_interval_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
 
     <!-- MQTT Restrictions -->
     <string name="mqtt_restrictions_receive_maximum_title">Receive Maximum</string>
-    <string name="mqtt_restrictions_receive_maximum_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+    <string name="mqtt_restrictions_receive_maximum_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
 
     <string name="mqtt_restrictions_send_maximum_title">Send Maximum</string>
-    <string name="mqtt_restrictions_send_maximum_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+    <string name="mqtt_restrictions_send_maximum_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
 
     <string name="mqtt_restrictions_maximum_packet_size_title">Maximum Packet Size</string>
-    <string name="mqtt_restrictions_maximum_packet_size_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+    <string name="mqtt_restrictions_maximum_packet_size_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
 
     <string name="mqtt_restrictions_send_maximum_packet_size_title">Send Maximum Packet Size</string>
-    <string name="mqtt_restrictions_send_maximum_packet_size_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+    <string name="mqtt_restrictions_send_maximum_packet_size_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
 
     <string name="mqtt_restrictions_topic_alias_maximum_title">Topic Alias Maximum</string>
-    <string name="mqtt_restrictions_topic_alias_maximum_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+    <string name="mqtt_restrictions_topic_alias_maximum_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
 
     <string name="mqtt_restrictions_send_topic_alias_maximum_title">Send Topic Alias Maximum</string>
-    <string name="mqtt_restrictions_send_topic_alias_maximum_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+    <string name="mqtt_restrictions_send_topic_alias_maximum_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
 
     <string name="mqtt_restrictions_request_problem_information_title">Request Problem Information</string>
-    <string name="mqtt_restrictions_request_problem_information_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+    <string name="mqtt_restrictions_request_problem_information_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
 
     <string name="mqtt_restrictions_request_response_information_title">Request Response Information</string>
-    <string name="mqtt_restrictions_request_response_information_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+    <string name="mqtt_restrictions_request_response_information_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
 
     <!-- MQTT Topics: Publish and Subscribe -->
     <!-- Publish Event -->
     <string name="mqtt_publish_event_topic_title">Topic</string>
-    <string name="mqtt_publish_event_topic_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/event/</string>
+    <string name="mqtt_publish_event_topic_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/event/</string>
 
     <string name="mqtt_publish_event_qos_title">QoS</string>
-    <string name="mqtt_publish_event_qos_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/event/</string>
+    <string name="mqtt_publish_event_qos_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/event/</string>
 
     <string name="mqtt_publish_event_retain_title">Retain</string>
-    <string name="mqtt_publish_event_retain_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/event/</string>
+    <string name="mqtt_publish_event_retain_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/event/</string>
 
     <!-- Publish Response -->
     <string name="mqtt_publish_response_topic_title">Topic</string>
-    <string name="mqtt_publish_response_topic_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/response/</string>
+    <string name="mqtt_publish_response_topic_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/response/</string>
 
     <string name="mqtt_publish_response_qos_title">QoS</string>
-    <string name="mqtt_publish_response_qos_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/response/</string>
+    <string name="mqtt_publish_response_qos_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/response/</string>
 
     <string name="mqtt_publish_response_retain_title">Retain</string>
-    <string name="mqtt_publish_response_retain_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/response/</string>
+    <string name="mqtt_publish_response_retain_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/response/</string>
 
     <!-- Subscribe Command -->
     <string name="mqtt_subscribe_command_topic_title">Topic</string>
-    <string name="mqtt_subscribe_command_topic_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/command/</string>
+    <string name="mqtt_subscribe_command_topic_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/command/</string>
 
     <string name="mqtt_subscribe_command_qos_title">QoS</string>
-    <string name="mqtt_subscribe_command_qos_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/command/</string>
+    <string name="mqtt_subscribe_command_qos_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/command/</string>
 
     <string name="mqtt_subscribe_command_retain_handling_title">Retain Handling</string>
-    <string name="mqtt_subscribe_command_retain_handling_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/command/</string>
+    <string name="mqtt_subscribe_command_retain_handling_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/command/</string>
 
     <string name="mqtt_subscribe_command_retain_as_published_title">Retain As Published</string>
-    <string name="mqtt_subscribe_command_retain_as_published_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/command/</string>
+    <string name="mqtt_subscribe_command_retain_as_published_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/command/</string>
 
     <!-- Subscribe Settings -->
     <string name="mqtt_subscribe_settings_topic_title">Topic</string>
-    <string name="mqtt_subscribe_settings_topic_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/settings/</string>
+    <string name="mqtt_subscribe_settings_topic_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/settings/</string>
 
     <string name="mqtt_subscribe_settings_qos_title">QoS</string>
-    <string name="mqtt_subscribe_settings_qos_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/settings/</string>
+    <string name="mqtt_subscribe_settings_qos_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/settings/</string>
 
     <string name="mqtt_subscribe_settings_retain_handling_title">Retain Handling</string>
-    <string name="mqtt_subscribe_settings_retain_handling_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/settings/</string>
+    <string name="mqtt_subscribe_settings_retain_handling_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/settings/</string>
 
     <string name="mqtt_subscribe_settings_retain_as_published_title">Retain As Published</string>
-    <string name="mqtt_subscribe_settings_retain_as_published_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/settings/</string>
+    <string name="mqtt_subscribe_settings_retain_as_published_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/settings/</string>
 
     <!-- Subscribe Request -->
     <string name="mqtt_subscribe_request_topic_title">Topic</string>
-    <string name="mqtt_subscribe_request_topic_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
+    <string name="mqtt_subscribe_request_topic_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
 
     <string name="mqtt_subscribe_request_qos_title">QoS</string>
-    <string name="mqtt_subscribe_request_qos_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
+    <string name="mqtt_subscribe_request_qos_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
 
     <string name="mqtt_subscribe_request_retain_handling_title">Retain Handling</string>
-    <string name="mqtt_subscribe_request_retain_handling_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
+    <string name="mqtt_subscribe_request_retain_handling_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
 
     <string name="mqtt_subscribe_request_retain_as_published_title">Retain As Published</string>
-    <string name="mqtt_subscribe_request_retain_as_published_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
+    <string name="mqtt_subscribe_request_retain_as_published_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
 
     <!-- UnifiedPush -->
     <string name="unifiedpush_enabled_title">Enabled</string>
-    <string name="unifiedpush_enabled_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+    <string name="unifiedpush_enabled_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 
     <string name="unifiedpush_distributor_title">Distributor</string>
-    <string name="unifiedpush_distributor_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+    <string name="unifiedpush_distributor_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 
     <string name="unifiedpush_instance_title">Instance</string>
-    <string name="unifiedpush_instance_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+    <string name="unifiedpush_instance_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 
     <string name="unifiedpush_message_for_distributor_title">Message for Distributor</string>
-    <string name="unifiedpush_message_for_distributor_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+    <string name="unifiedpush_message_for_distributor_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 
     <string name="unifiedpush_vapid_public_key_title">VAPID Public Key</string>
-    <string name="unifiedpush_vapid_public_key_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+    <string name="unifiedpush_vapid_public_key_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 
     <string name="unifiedpush_process_unencrypted_messages_title">Process Unencrypted Messages</string>
-    <string name="unifiedpush_process_unencrypted_messages_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+    <string name="unifiedpush_process_unencrypted_messages_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 
     <string name="unifiedpush_store_endpoint_credentials_title">Store Endpoint Credentials</string>
-    <string name="unifiedpush_store_endpoint_credentials_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+    <string name="unifiedpush_store_endpoint_credentials_description" translatable="false">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 </resources>

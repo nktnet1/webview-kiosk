@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun FloatingToolbarModeSetting() {
@@ -18,19 +19,12 @@ fun FloatingToolbarModeSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.appearance_floating_toolbar_mode_title),
-        infoText =
-            """
-            Control the visibility and behaviour of the floating toolbar menu button.
-
-            When set to "Hidden", the "Settings" button will be visible from the
-            Kiosk Control Panel.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_floating_toolbar_mode),
         options = FloatingToolbarModeOption.entries,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.floatingToolbarMode,
         onSave = { userSettings.floatingToolbarMode = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

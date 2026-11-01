@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_actions" formatted="false">"Actions"</string>
+    <string name="ui_add" formatted="false">"Add"</string>
+    <string name="ui_allow" formatted="false">"Allow"</string>
+    <string name="ui_back" formatted="false">"Back"</string>
+    <string name="ui_blank" formatted="false">"(blank)"</string>
+    <string name="ui_cancel" formatted="false">"Cancel"</string>
+    <string name="ui_category" formatted="false">"Category"</string>
+    <string name="ui_clear" formatted="false">"Clear"</string>
+    <string name="ui_clear_all" formatted="false">"Clear All"</string>
+    <string name="ui_clear_logs" formatted="false">"Clear Logs"</string>
+    <string name="ui_click_and_hold_to_copy_message" formatted="false">"Click and hold to copy message."</string>
+    <string name="ui_close" formatted="false">"Close"</string>
+    <string name="ui_confirm" formatted="false">"Confirm"</string>
+    <string name="ui_copy" formatted="false">"Copy"</string>
+    <string name="ui_custom" formatted="false">"Custom"</string>
+    <string name="ui_delete" formatted="false">"Delete"</string>
+    <string name="ui_deny" formatted="false">"Deny"</string>
+    <string name="ui_disable_all" formatted="false">"Disable all"</string>
+    <string name="ui_disabled" formatted="false">"Disabled"</string>
+    <string name="ui_done" formatted="false">"Done"</string>
+    <string name="ui_download" formatted="false">"Download"</string>
+    <string name="ui_e_g_5" formatted="false">"e.g. 5"</string>
+    <string name="ui_e_g_value">"e.g. %1$s"</string>
+    <string name="ui_edit" formatted="false">"Edit"</string>
+    <string name="ui_enable_all" formatted="false">"Enable all"</string>
+    <string name="ui_enabled" formatted="false">"Enabled"</string>
+    <string name="ui_error_value">"Error: %1$s"</string>
+    <string name="ui_false" formatted="false">"False"</string>
+    <string name="ui_false_value">"False %1$s"</string>
+    <string name="ui_help" formatted="false">"Help"</string>
+    <string name="ui_import" formatted="false">"Import"</string>
+    <string name="ui_info" formatted="false">"Info"</string>
+    <string name="ui_invalid" formatted="false">"Invalid"</string>
+    <string name="ui_invalid_input" formatted="false">"Invalid input"</string>
+    <string name="ui_invalid_number" formatted="false">"Invalid number"</string>
+    <string name="ui_menu" formatted="false">"Menu"</string>
+    <string name="ui_more" formatted="false">"More"</string>
+    <string name="ui_n_a" formatted="false">"N/A"</string>
+    <string name="ui_name" formatted="false">"Name"</string>
+    <string name="ui_next" formatted="false">"Next"</string>
+    <string name="ui_no_logs_yet" formatted="false">"No logs yet."</string>
+    <string name="ui_no_permission" formatted="false">"(no permission)"</string>
+    <string name="ui_no_site_permissions_have_been_granted" formatted="false">"No site permissions have been granted."</string>
+    <string name="ui_none" formatted="false">"None"</string>
+    <string name="ui_open_in_browser" formatted="false">"Open in Browser"</string>
+    <string name="ui_package" formatted="false">"Package"</string>
+    <string name="ui_password" formatted="false">"Password"</string>
+    <string name="ui_paste" formatted="false">"Paste"</string>
+    <string name="ui_previous" formatted="false">"Previous"</string>
+    <string name="ui_refresh" formatted="false">"Refresh"</string>
+    <string name="ui_remove" formatted="false">"Remove"</string>
+    <string name="ui_rename" formatted="false">"Rename"</string>
+    <string name="ui_reset" formatted="false">"Reset"</string>
+    <string name="ui_retry" formatted="false">"Retry"</string>
+    <string name="ui_save" formatted="false">"Save"</string>
+    <string name="ui_search" formatted="false">"Search"</string>
+    <string name="ui_search_the_last_value_logs">"Search the last %1$s logs"</string>
+    <string name="ui_select" formatted="false">"Select"</string>
+    <string name="ui_settings" formatted="false">"Settings"</string>
+    <string name="ui_show_values" formatted="false">"Show Values"</string>
+    <string name="ui_sort_order" formatted="false">"Sort Order"</string>
+    <string name="ui_status" formatted="false">"Status: "</string>
+    <string name="ui_total" formatted="false">"Total"</string>
+    <string name="ui_true" formatted="false">"True"</string>
+    <string name="ui_true_value">"True %1$s"</string>
+    <string name="ui_type" formatted="false">"Type"</string>
+    <string name="ui_unknown" formatted="false">"Unknown"</string>
+    <string name="ui_unknown_error" formatted="false">"unknown error"</string>
+    <string name="ui_url" formatted="false">"URL"</string>
+    <string name="ui_use_recommended" formatted="false">"Use recommended:"</string>
+    <string name="ui_use_the_current_url" formatted="false">"Use the current URL:"</string>
+    <string name="ui_value">"• %1$s"</string>
+    <string name="ui_value_3">"%1$s%%"</string>
+    <string name="ui_value_selected">"%1$s selected"</string>
+    <string name="ui_value_value">"%1$s/%2$s"</string>
+    <string name="ui_value_value_2">"%1$s - %2$s"</string>
+    <string name="ui_value_value_3">"%1$s · %2$s"</string>
+    <string name="ui_value_value_4">"%1$s • %2$s"</string>
+</resources>

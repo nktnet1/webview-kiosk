@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings help text -->
+    <string name="setting_info_unified_push_distributor">"The package name of the distributor, e.g.\n\n- org.unifiedpush.distributor.sunup\n- io.heckel.ntfy\n\nThe distributor app serves as the middle-man that receives the app notification\nfrom the push server and forwarding it to %1$s."</string>
+    <string name="setting_info_unified_push_enabled">"Allow %1$s to process\nnew push messages or register new endpoints."</string>
+    <string name="setting_info_unified_push_instance">"Registration instance. Can be used to create multiple registrations.\n\nSupported variables:\n- %1$s\n\nExample:\n- %2$s\n\nIf left blank, %3$s will be used."</string>
+    <string name="setting_info_unified_push_message_for_distributor" formatted="false">"A customised message that may be shown by the distributor UI to\nidentify this registration."</string>
+    <string name="setting_info_unified_push_process_unencrypted_messages">"When enabled, %1$s will also handle\nUnifiedPush messages that did not successfully decrypt.\n\nA valid use case for this would be to enable simple curl requests\nto ntfy.sh without encryption for testing or convenience, although\nthis reduces security."</string>
+    <string name="setting_info_unified_push_store_endpoint_credentials">"When enabled, %1$s will persist\nthe following values after registration:\n\n- Endpoint URL\n- Endpoint Public Key\n- Endpoint Auth Secret\n\nIdeally, these values should not be stored at all, and are instead\nsent directly to the application server at the point of registration.\n\nHowever, %1$s does not yet have an\napplication server. These values are thus stored locally in the\napplication so they can be copied. They can be optionally redacted\nafterwards through the settings UI."</string>
+    <string name="setting_info_unified_push_vapid_public_key" formatted="false">"VAPID public key (RFC8292), base64url, in uncompressed form (87 chars long).\n\nFor more details, see:\n- https://www.rfc-editor.org/rfc/rfc8292"</string>
+    <!-- UI labels, placeholders, and messages -->
+    <string name="ui_distributorvalue">"Distributor%1$s"</string>
+    <string name="ui_e_g_io_heckel_ntfy" formatted="false">"e.g. io.heckel.ntfy"</string>
+    <string name="ui_e_g_registering_value">"e.g. Registering %1$s"</string>
+    <string name="ui_endpoint_auth_secret" formatted="false">"Endpoint Auth Secret"</string>
+    <string name="ui_endpoint_public_key" formatted="false">"Endpoint Public Key"</string>
+    <string name="ui_endpoint_url" formatted="false">"Endpoint URL"</string>
+    <string name="ui_error_distributor_cannot_be_blank" formatted="false">"Error: distributor cannot be blank"</string>
+    <string name="ui_error_distributor_is_not_installed" formatted="false">"Error: distributor is not installed"</string>
+    <string name="ui_error_invalid_vapid_public_key" formatted="false">"Error: invalid VAPID public key"</string>
+    <string name="ui_invalid_vapid_public_key" formatted="false">"Invalid VAPID public key."</string>
+    <string name="ui_package_is_not_installed" formatted="false">"Package is not installed."</string>
+    <string name="ui_paste_clipboard" formatted="false">"Paste Clipboard"</string>
+    <string name="ui_register" formatted="false">"Register"</string>
+    <string name="ui_select_a_distributor" formatted="false">"Select a Distributor"</string>
+    <string name="ui_unifiedpush_distributors" formatted="false">"UnifiedPush Distributors"</string>
+    <string name="ui_unifiedpush_failed_to_handle_message_see_debug_logs_fo" formatted="false">"UnifiedPush: failed to handle message. See debug logs for details."</string>
+    <string name="ui_unifiedpush_instance" formatted="false">"UnifiedPush Instance"</string>
+    <string name="ui_unifiedpush_new_endpoint" formatted="false">"UnifiedPush: new endpoint."</string>
+    <string name="ui_unifiedpush_redact_confirmation">"Are you sure you want to redact the endpoint?\nThis action cannot be undone.\n\nThis will remove the following values stored in %1$s:\n  - Endpoint URL\n  - Endpoint Public Key\n  - Endpoint Auth Secret\n\nThis will not affect any UnifiedPush functionalities, although it\nis recommended that you copy and store these values in a secure\nlocation before redacting them."</string>
+    <string name="ui_unifiedpush_registration_failed" formatted="false">"UnifiedPush: registration failed."</string>
+    <string name="ui_unifiedpush_temporarily_unavailable" formatted="false">"UnifiedPush: temporarily unavailable."</string>
+    <string name="ui_unifiedpush_type_property_is_empty" formatted="false">"UnifiedPush: type property is empty"</string>
+    <string name="ui_unifiedpush_unregister_confirmation">"Are you sure you want to unregister from UnifiedPush for:\n\n- DISTRIBUTOR: %1$s\n- INSTANCE: %2$s\n\nThis action cannot be undone."</string>
+    <string name="ui_unifiedpush_unregistered_called" formatted="false">"UnifiedPush: unregistered called."</string>
+    <string name="ui_unifiedpush_unsupported_message_type_value">"UnifiedPush: unsupported message type: %1$s"</string>
+    <string name="ui_unregister" formatted="false">"Unregister"</string>
+</resources>

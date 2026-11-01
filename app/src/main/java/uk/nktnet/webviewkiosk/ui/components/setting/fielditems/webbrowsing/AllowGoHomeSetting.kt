@@ -17,7 +17,7 @@ fun AllowGoHomeSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_browsing_allow_go_home_title),
-        infoText = "Whether the user can return to the configured home page.",
+        infoText = stringResource(R.string.setting_info_allow_go_home),
         initialValue = userSettings.allowGoHome,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

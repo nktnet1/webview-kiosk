@@ -38,6 +38,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
@@ -48,6 +49,7 @@ import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -82,7 +84,7 @@ fun LockTaskPackagesDialog(
 
     BaseAppListDialog(
         onDismiss = onDismiss,
-        title = "Lock Task Packages",
+        title = stringResource(R.string.ui_lock_task_packages),
         apps = apps,
         progress = progress,
         onSelectApp = {
@@ -101,10 +103,10 @@ fun LockTaskPackagesDialog(
                 TextButton(onClick = { showAddLockTaskPackagesDialog = true }) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_add_24),
-                        contentDescription = "Add",
+                        contentDescription = stringResource(R.string.ui_add),
                         modifier = Modifier.padding(end = 4.dp),
                     )
-                    Text("Add")
+                    Text(stringResource(R.string.ui_add))
                 }
             }
         },
@@ -162,14 +164,10 @@ fun RemoveLockTaskAppDialog(
             ) {
                 Text(
                     normaliseInfoText(
-                        """
-                        Are you sure you want to remove ${removeApp.name} from the allow
-                        list of lock task packages?
-
-                        This means lock task mode will no longer be available for this
-                        application, and kiosk mode will fall back to screen pinning.
-                        """
-                            .trimIndent()
+                        stringResource(
+                            R.string.ui_remove_lock_task_package_confirmation,
+                            removeApp.name,
+                        )
                     ),
                     Modifier.padding(vertical = 8.dp),
                 )
@@ -178,11 +176,11 @@ fun RemoveLockTaskAppDialog(
                 Spacer(Modifier.height(14.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     AppLabelRow(
-                        "App",
+                        stringResource(R.string.ui_app),
                         removeApp.name,
                     )
                     AppLabelRow(
-                        "Package",
+                        stringResource(R.string.ui_package),
                         removeApp.packageName,
                     )
                 }
@@ -194,7 +192,9 @@ fun RemoveLockTaskAppDialog(
                     if (!DeviceOwnerManager.hasOwnerPermission(context)) {
                         ToastManager.show(
                             context,
-                            "Error: owner permission is not granted.",
+                            context.getString(
+                                R.string.ui_error_owner_permission_is_not_granted
+                            ),
                         )
                         return@TextButton
                     }
@@ -211,22 +211,32 @@ fun RemoveLockTaskAppDialog(
                         )
                         ToastManager.show(
                             context,
-                            "${removeApp.name} has been removed from lock task packages.",
+                            context.getString(
+                                R.string
+                                    .ui_value_has_been_removed_from_lock_task_packages,
+                                removeApp.name,
+                            ),
                         )
                         onConfirm(removeApp)
                     } catch (e: Exception) {
-                        ToastManager.show(context, "Error: ${e.message}")
+                        ToastManager.show(
+                            context,
+                            context.getString(R.string.ui_error_value, e.message),
+                        )
                     } finally {
                         onDismiss()
                     }
                 }
             ) {
-                Text("Remove", color = MaterialTheme.colorScheme.error)
+                Text(
+                    stringResource(R.string.ui_remove),
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.ui_cancel))
             }
         },
     )
@@ -266,7 +276,7 @@ fun AddLockTaskPackagesDialog(
 
     BaseAppListDialog(
         onDismiss = onDismiss,
-        title = "Add Lock Task Package",
+        title = stringResource(R.string.ui_add_lock_task_package),
         apps = apps,
         appFilter = { app, query ->
             (app.name.contains(query, ignoreCase = true) ||
@@ -276,7 +286,12 @@ fun AddLockTaskPackagesDialog(
         progress = progress,
         onSelectApp = { newApp ->
             if (!DeviceOwnerManager.hasOwnerPermission(context)) {
-                ToastManager.show(context, "Error: owner permission is not granted.")
+                ToastManager.show(
+                    context,
+                    context.getString(
+                        R.string.ui_error_owner_permission_is_not_granted
+                    ),
+                )
                 return@BaseAppListDialog
             }
 
@@ -287,11 +302,17 @@ fun AddLockTaskPackagesDialog(
                 )
                 ToastManager.show(
                     context,
-                    "${newApp.name} has been added to lock task packages.",
+                    context.getString(
+                        R.string.ui_value_has_been_added_to_lock_task_packages,
+                        newApp.name,
+                    ),
                 )
                 onConfirm(newApp)
             } catch (e: Exception) {
-                ToastManager.show(context, "Error: ${e.message}")
+                ToastManager.show(
+                    context,
+                    context.getString(R.string.ui_error_value, e.message),
+                )
             } finally {
                 onDismiss()
             }
@@ -324,7 +345,7 @@ fun AddLockTaskPackagesDialog(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = appType.label,
+                            text = stringResource(appType.displayLabelRes),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f),
                         )
@@ -333,7 +354,7 @@ fun AddLockTaskPackagesDialog(
                                 painterResource(
                                     R.drawable.outline_keyboard_arrow_down_24
                                 ),
-                            contentDescription = "Select",
+                            contentDescription = stringResource(R.string.ui_select),
                         )
                     }
 
@@ -351,7 +372,7 @@ fun AddLockTaskPackagesDialog(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        type.label,
+                                        stringResource(type.displayLabelRes),
                                         style = MaterialTheme.typography.bodyMedium,
                                     )
                                 },

@@ -16,7 +16,7 @@ fun EnableJavaScriptSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_engine_enable_javascript_title),
-        infoText = "Allow the execution of JavaScript in web pages.",
+        infoText = stringResource(R.string.setting_info_enable_java_script),
         initialValue = userSettings.enableJavaScript,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

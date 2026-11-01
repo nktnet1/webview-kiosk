@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,7 +54,10 @@ fun SitePermissionsList(modifier: Modifier = Modifier) {
     if (sitePermissions.isEmpty()) {
         Box(modifier = modifier.fillMaxWidth().padding(16.dp)) {
             Text(
-                text = "No site permissions have been granted.",
+                text =
+                    stringResource(
+                        R.string.ui_no_site_permissions_have_been_granted
+                    ),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -77,7 +81,10 @@ fun SitePermissionsList(modifier: Modifier = Modifier) {
                         Spacer(modifier = Modifier.height(2.dp))
                         resources.forEach { res ->
                             Text(
-                                "• ${getPermissionDisplay(res)}",
+                                stringResource(
+                                    R.string.ui_value,
+                                    getPermissionDisplay(res),
+                                ),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -94,7 +101,8 @@ fun SitePermissionsList(modifier: Modifier = Modifier) {
                             Icon(
                                 painter =
                                     painterResource(R.drawable.outline_more_vert_24),
-                                contentDescription = "Menu",
+                                contentDescription =
+                                    stringResource(R.string.ui_menu),
                                 modifier = Modifier.size(32.dp),
                             )
                         }
@@ -104,14 +112,14 @@ fun SitePermissionsList(modifier: Modifier = Modifier) {
                             onDismissRequest = { menuExpanded = false },
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit") },
+                                text = { Text(stringResource(R.string.ui_edit)) },
                                 onClick = {
                                     showEditDialog = true
                                     menuExpanded = false
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Delete") },
+                                text = { Text(stringResource(R.string.ui_delete)) },
                                 onClick = {
                                     showDeleteDialog = true
                                     menuExpanded = false
@@ -147,7 +155,10 @@ fun SitePermissionsList(modifier: Modifier = Modifier) {
                 Column {
                     if (tempResources.isEmpty()) {
                         Text(
-                            text = "All permissions will be removed.",
+                            text =
+                                stringResource(
+                                    R.string.ui_all_permissions_will_be_removed
+                                ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                         )
@@ -172,7 +183,10 @@ fun SitePermissionsList(modifier: Modifier = Modifier) {
                                         painterResource(
                                             R.drawable.baseline_clear_24
                                         ),
-                                    contentDescription = "Remove permission",
+                                    contentDescription =
+                                        stringResource(
+                                            R.string.ui_remove_permission
+                                        ),
                                     tint = MaterialTheme.colorScheme.error,
                                 )
                             }
@@ -190,11 +204,13 @@ fun SitePermissionsList(modifier: Modifier = Modifier) {
                         showEditDialog = false
                     }
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.ui_save))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showEditDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text(stringResource(R.string.ui_cancel))
+                }
             },
         )
     }
@@ -210,7 +226,10 @@ fun SitePermissionsList(modifier: Modifier = Modifier) {
             },
             text = {
                 Text(
-                    "Are you sure you want to remove ALL permissions for this site?"
+                    stringResource(
+                        R.string
+                            .ui_are_you_sure_you_want_to_remove_all_permissions_for_th
+                    )
                 )
             },
             confirmButton = {
@@ -219,19 +238,24 @@ fun SitePermissionsList(modifier: Modifier = Modifier) {
                         activeSite?.let {
                             systemSettings.setSitePermissions(it, emptySet())
                             sitePermissions = systemSettings.sitePermissionsMap
-                            ToastManager.show(context, "Deleted $it")
+                            ToastManager.show(
+                                context,
+                                context.getString(R.string.ui_deleted_value, it),
+                            )
                         }
                         showDeleteDialog = false
                     }
                 ) {
                     Text(
-                        text = "Delete",
+                        text = stringResource(R.string.ui_delete),
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.ui_cancel))
+                }
             },
         )
     }

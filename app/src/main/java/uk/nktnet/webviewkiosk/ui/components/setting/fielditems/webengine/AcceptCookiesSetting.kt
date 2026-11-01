@@ -17,7 +17,7 @@ fun AcceptCookiesSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_engine_accept_cookies_title),
-        infoText = "Allow websites to store and read cookies.",
+        infoText = stringResource(R.string.setting_info_accept_cookies),
         initialValue = userSettings.acceptCookies,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

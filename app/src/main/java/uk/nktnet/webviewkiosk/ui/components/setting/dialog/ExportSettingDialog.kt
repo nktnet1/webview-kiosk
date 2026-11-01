@@ -37,12 +37,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import java.io.OutputStream
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
@@ -125,12 +127,21 @@ fun ExportSettingsDialog(
                         writeSettingsExport(textDisplay) {
                             context.contentResolver.openOutputStream(uri)
                         }
-                        ToastManager.show(context, "Exported to $uri")
+                        ToastManager.show(
+                            context,
+                            context.getString(R.string.ui_exported_to_value, uri),
+                        )
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
                         Log.e(Constants.APP_SCHEME, "Failed to export", e)
-                        ToastManager.show(context, "Export Error: ${e.message}")
+                        ToastManager.show(
+                            context,
+                            context.getString(
+                                R.string.ui_export_error_value,
+                                e.message,
+                            ),
+                        )
                     }
                 }
             }
@@ -147,7 +158,7 @@ fun ExportSettingsDialog(
                     Modifier.fillMaxWidth().heightIn(max = 600.dp).padding(16.dp)
             ) {
                 Text(
-                    text = "Export Settings",
+                    text = stringResource(R.string.ui_export_settings),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
@@ -186,7 +197,10 @@ fun ExportSettingsDialog(
                 if (textDisplay.length > EXPORT_PREVIEW_MAX_CHARS) {
                     Text(
                         text =
-                            "Preview shortened. Copy or save the file to view all settings.",
+                            stringResource(
+                                R.string
+                                    .ui_preview_shortened_copy_or_save_the_file_to_view_all_se
+                            ),
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 8.dp),
                     )
@@ -201,7 +215,7 @@ fun ExportSettingsDialog(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "Prettify",
+                            text = stringResource(R.string.ui_prettify),
                             style = MaterialTheme.typography.bodySmall,
                         )
                         Checkbox(
@@ -229,7 +243,13 @@ fun ExportSettingsDialog(
                                         "Failed to launch file picker for export",
                                         e,
                                     )
-                                    ToastManager.show(context, "Error: ${e.message}")
+                                    ToastManager.show(
+                                        context,
+                                        context.getString(
+                                            R.string.ui_error_value,
+                                            e.message,
+                                        ),
+                                    )
                                 }
                             }
                         },
@@ -238,7 +258,7 @@ fun ExportSettingsDialog(
                                 contentColor = MaterialTheme.colorScheme.tertiary
                             ),
                     ) {
-                        Text("Save File")
+                        Text(stringResource(R.string.ui_save_file))
                     }
 
                     Row {
@@ -249,7 +269,7 @@ fun ExportSettingsDialog(
                                     contentColor = MaterialTheme.colorScheme.error
                                 ),
                         ) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.ui_cancel))
                         }
                         Spacer(Modifier.width(8.dp))
                         TextButton(
@@ -257,7 +277,9 @@ fun ExportSettingsDialog(
                                 scope.launch {
                                     val clipData =
                                         ClipData.newPlainText(
-                                            "Exported Data",
+                                            context.getString(
+                                                R.string.ui_exported_data
+                                            ),
                                             textDisplay,
                                         )
                                     clipboard.setClipEntry(clipData.toClipEntry())
@@ -265,7 +287,7 @@ fun ExportSettingsDialog(
                                 }
                             }
                         ) {
-                            Text("Copy")
+                            Text(stringResource(R.string.ui_copy))
                         }
                     }
                 }

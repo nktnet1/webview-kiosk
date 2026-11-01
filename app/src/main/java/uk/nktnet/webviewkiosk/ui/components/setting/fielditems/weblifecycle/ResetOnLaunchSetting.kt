@@ -17,14 +17,7 @@ fun ResetOnLaunchSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_lifecycle_reset_on_launch_title),
-        infoText =
-            """
-            When enabled, the app will always start fresh at the Home URL when
-            closed and re-opened, as opposed to the last visited URL.
-
-            The navigation history will also be cleared.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_reset_on_launch),
         initialValue = userSettings.resetOnLaunch,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -58,12 +59,23 @@ private fun formatDatetime(context: Context, timestamp: Long): String {
     val diff = now - timestamp
     val timeAgo =
         when {
-            diff < TimeUnit.MINUTES.toMillis(1) -> "Just now"
+            diff < TimeUnit.MINUTES.toMillis(1) ->
+                context.getString(R.string.ui_just_now)
             diff < TimeUnit.HOURS.toMillis(1) ->
-                "${TimeUnit.MILLISECONDS.toMinutes(diff)} min ago"
+                context.getString(
+                    R.string.ui_value_min_ago,
+                    TimeUnit.MILLISECONDS.toMinutes(diff).toString(),
+                )
             diff < TimeUnit.DAYS.toMillis(1) ->
-                "${TimeUnit.MILLISECONDS.toHours(diff)} h ago"
-            else -> "${TimeUnit.MILLISECONDS.toDays(diff)} d ago"
+                context.getString(
+                    R.string.ui_value_h_ago,
+                    TimeUnit.MILLISECONDS.toHours(diff).toString(),
+                )
+            else ->
+                context.getString(
+                    R.string.ui_value_d_ago,
+                    TimeUnit.MILLISECONDS.toDays(diff).toString(),
+                )
         }
 
     val dateTime =
@@ -71,7 +83,7 @@ private fun formatDatetime(context: Context, timestamp: Long): String {
             " " +
             DateFormat.getTimeFormat(context).format(Date(timestamp))
 
-    return "$timeAgo • $dateTime"
+    return context.getString(R.string.ui_value_value_4, timeAgo, dateTime)
 }
 
 @Composable
@@ -138,7 +150,10 @@ fun HistoryDialog(
             shape = MaterialTheme.shapes.medium,
         ) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                Text("History", style = MaterialTheme.typography.headlineMedium)
+                Text(
+                    stringResource(R.string.ui_history),
+                    style = MaterialTheme.typography.headlineMedium,
+                )
                 Spacer(Modifier.height(16.dp))
 
                 LazyColumn(
@@ -235,7 +250,8 @@ fun HistoryDialog(
                                             painterResource(
                                                 R.drawable.baseline_clear_24
                                             ),
-                                        contentDescription = "Delete",
+                                        contentDescription =
+                                            stringResource(R.string.ui_delete),
                                         tint =
                                             if (!isUpdating && !isCurrent) {
                                                 MaterialTheme.colorScheme.error
@@ -271,10 +287,10 @@ fun HistoryDialog(
                             isUpdating = false
                         },
                     ) {
-                        Text("Clear All")
+                        Text(stringResource(R.string.ui_clear_all))
                     }
                     TextButton(onClick = onDismiss) {
-                        Text("Close")
+                        Text(stringResource(R.string.ui_close))
                     }
                 }
             }

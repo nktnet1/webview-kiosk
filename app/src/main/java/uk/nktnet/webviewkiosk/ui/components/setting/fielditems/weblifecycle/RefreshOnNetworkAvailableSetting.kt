@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.RefreshOnNetworkAvailableOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun RefreshOnNetworkAvailableSetting() {
@@ -22,20 +23,12 @@ fun RefreshOnNetworkAvailableSetting() {
                 R.string.web_lifecycle_refresh_on_network_available_title
             ),
         infoText =
-            """
-            Select when the page should automatically refresh when network
-            connectivity is restored.
-
-            - Always: refresh whenever a network connection is available
-            - On Page Error: only refresh if the previous page load failed
-            - Never: do not refresh automatically
-            """
-                .trimIndent(),
+            stringResource(R.string.setting_info_refresh_on_network_available),
         options = RefreshOnNetworkAvailableOption.entries,
         initialValue = userSettings.refreshOnNetworkAvailable,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
         onSave = {
             userSettings.refreshOnNetworkAvailable = it
         },

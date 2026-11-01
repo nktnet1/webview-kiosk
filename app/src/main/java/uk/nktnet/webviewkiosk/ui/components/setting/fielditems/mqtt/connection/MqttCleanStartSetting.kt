@@ -17,15 +17,7 @@ fun MqttCleanStartSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_clean_start_title),
-        infoText =
-            """
-            When enabled, the MQTT client will start a new session on connect,
-            discarding any previous session state stored by the broker.
-
-            When disabled, the client will resume the previous session
-            (subscriptions, in-flight messages, etc.) if it exists.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_mqtt_clean_start),
         initialValue = userSettings.mqttCleanStart,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

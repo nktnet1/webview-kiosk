@@ -18,15 +18,9 @@ fun MqttHomeAssistantEnableDiscoverySetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_home_assistant_enabled_title),
         infoText =
-            """
-            Publish the kiosk's status, controls, and settings in Home Assistant.
-            Reconnect MQTT after changing this setting.
-
-            Online/offline status is managed automatically while discovery is
-            enabled.
-            Custom MQTT Will settings apply when discovery is disabled.
-            """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_mqtt_home_assistant_enable_discovery
+            ),
         initialValue = userSettings.mqttHomeAssistantEnabled,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

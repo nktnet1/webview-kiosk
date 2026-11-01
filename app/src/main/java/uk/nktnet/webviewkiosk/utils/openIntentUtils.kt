@@ -15,6 +15,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
@@ -30,14 +31,17 @@ fun safeStartActivity(context: Context, intent: Intent, bundle: Bundle? = null) 
             val shortName = intent.action?.substringAfterLast('.') ?: "Unknown"
             ToastManager.show(
                 context,
-                "No activity for intent: $shortName",
+                context.getString(
+                    R.string.ui_no_activity_for_intent_value,
+                    shortName,
+                ),
             )
         }
     } catch (e: Exception) {
         Log.e(Constants.APP_SCHEME, "Failed to start activity", e)
         ToastManager.show(
             context,
-            "Error: ${e.message}",
+            context.getString(R.string.ui_error_value, e.message),
         )
     }
 }
@@ -106,7 +110,12 @@ fun openPackage(
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             ToastManager.show(
                 context,
-                "Error: kiosk launch requires Android API ${Build.VERSION_CODES.P}+ (current: ${Build.VERSION.SDK_INT}).",
+                context.getString(
+                    R.string
+                        .ui_error_kiosk_launch_requires_android_api_value_current,
+                    Build.VERSION_CODES.P.toString(),
+                    Build.VERSION.SDK_INT.toString(),
+                ),
             )
             return
         }
@@ -116,21 +125,31 @@ fun openPackage(
         if (!dpm.isLockTaskPermitted(context.packageName)) {
             ToastManager.show(
                 context,
-                "Error: ${context.packageName} must be lock task permitted to launch apps.",
+                context.getString(
+                    R.string
+                        .ui_error_value_must_be_lock_task_permitted_to_launch_apps,
+                    context.packageName,
+                ),
             )
             return
         }
         if (!dpm.isLockTaskPermitted(packageName)) {
             ToastManager.show(
                 context,
-                "Error: $packageName is not lock task permitted in settings.",
+                context.getString(
+                    R.string.ui_error_value_is_not_lock_task_permitted_in_settings,
+                    packageName,
+                ),
             )
             return
         }
         if (!userSettings.lockTaskFeatureHome) {
             ToastManager.show(
                 context,
-                "Error: lock task feature HOME (under device owner) is required.",
+                context.getString(
+                    R.string
+                        .ui_error_lock_task_feature_home_under_device_owner_is_req
+                ),
             )
             return
         }
@@ -166,10 +185,16 @@ fun openPackage(
                 options?.toBundle(),
             )
         } else {
-            ToastManager.show(context, "Error: $packageName cannot be opened.")
+            ToastManager.show(
+                context,
+                context.getString(
+                    R.string.ui_error_value_cannot_be_opened,
+                    packageName,
+                ),
+            )
         }
     } catch (e: Exception) {
-        ToastManager.show(context, "Error: $e")
+        ToastManager.show(context, context.getString(R.string.ui_error_value, e))
     }
 }
 
@@ -193,7 +218,10 @@ fun handleExternalSchemeUrl(context: Context, url: String) {
         if (packageName == null) {
             ToastManager.show(
                 context,
-                "Error handling intent: no package available for $url",
+                context.getString(
+                    R.string.ui_error_handling_intent_no_package_available_for_value,
+                    url,
+                ),
             )
             return
         }

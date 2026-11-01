@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -136,7 +137,10 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
                             return@launch
                         }
                         isError = true
-                        ToastManager.show(context, "Incorrect password")
+                        ToastManager.show(
+                            context,
+                            context.getString(R.string.ui_incorrect_password),
+                        )
                     }
                 } finally {
                     waiting = false
@@ -169,8 +173,10 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
                         }
                     },
                     isError = isError,
-                    label = { Text("Password") },
-                    placeholder = { Text("Enter your password") },
+                    label = { Text(stringResource(R.string.ui_password)) },
+                    placeholder = {
+                        Text(stringResource(R.string.ui_enter_your_password))
+                    },
                     visualTransformation =
                         if (showPassword) {
                             VisualTransformation.None
@@ -205,7 +211,8 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
                             Icon(
                                 painter =
                                     painterResource(R.drawable.baseline_clear_24),
-                                contentDescription = "Clear",
+                                contentDescription =
+                                    stringResource(R.string.ui_clear),
                             )
                         }
                     },
@@ -224,7 +231,7 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
                     )
 
                     Text(
-                        text = "Show password",
+                        text = stringResource(R.string.ui_show_password),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier =
                             Modifier.combinedClickable(
@@ -261,7 +268,7 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
                             ),
                         enabled = !waiting,
                     ) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.ui_cancel))
                     }
 
                     Button(
@@ -269,7 +276,7 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
                         modifier = Modifier.weight(1f),
                         enabled = !waiting,
                     ) {
-                        Text("Unlock")
+                        Text(stringResource(R.string.ui_unlock))
                     }
                 }
             }

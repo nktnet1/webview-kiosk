@@ -18,10 +18,7 @@ fun MqttPublishResponseRetainSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_publish_response_retain_title),
         infoText =
-            """
-            Keep response topic messages retained for new subscribers.
-            """
-                .trimIndent(),
+            stringResource(R.string.setting_info_mqtt_publish_response_retain),
         initialValue = userSettings.mqttPublishResponseRetain,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

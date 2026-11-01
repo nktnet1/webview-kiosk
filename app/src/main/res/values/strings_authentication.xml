@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="ui_authentication_failed" formatted="false">"Authentication failed"</string>
+    <string name="ui_authentication_required" formatted="false">"Authentication Required"</string>
+    <string name="ui_confirm_password" formatted="false">"Confirm password"</string>
+    <string name="ui_enter_your_password" formatted="false">"Enter your password"</string>
+    <string name="ui_failed_to_create_cipher_value">"Failed to create cipher: %1$s"</string>
+    <string name="ui_hide_password" formatted="false">"Hide password"</string>
+    <string name="ui_host_value">"Host: %1$s"</string>
+    <string name="ui_incorrect_password" formatted="false">"Incorrect password"</string>
+    <string name="ui_login" formatted="false">"Login"</string>
+    <string name="ui_no_biometric_or_credentials_enrolled" formatted="false">"No biometric or credentials enrolled"</string>
+    <string name="ui_passwords_do_not_match" formatted="false">"Passwords do not match."</string>
+    <string name="ui_please_authenticate_to_access_settings" formatted="false">"Please authenticate to access settings"</string>
+    <string name="ui_re_enter_password" formatted="false">"Re-enter password"</string>
+    <string name="ui_realm_value">"Realm: %1$s"</string>
+    <string name="ui_remove_custom_password" formatted="false">"Remove Custom Password"</string>
+    <string name="ui_remove_custom_password_confirmation" formatted="false">"Are you sure you want to remove your custom password?\n\nYour device credentials or biometrics will be used instead."</string>
+    <string name="ui_show_password" formatted="false">"Show password"</string>
+    <string name="ui_unlock" formatted="false">"Unlock"</string>
+    <string name="ui_unlock_authenticate">"Please authenticate to unlock %1$s"</string>
+    <string name="ui_username" formatted="false">"Username"</string>
+    <string name="ui_waiting_for_authentication" tools:ignore="TypographyEllipsis" formatted="false">"Waiting for authentication..."</string>
+</resources>

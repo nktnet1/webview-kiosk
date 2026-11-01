@@ -909,7 +909,10 @@ fun WebviewScreen(navController: NavController) {
                     is InboundErrorCommand -> {
                         ToastManager.show(
                             context,
-                            "Received invalid MQTT command. See debug logs in MQTT settings.",
+                            context.getString(
+                                R.string
+                                    .ui_received_invalid_mqtt_command_see_debug_logs_in_mqtt_s
+                            ),
                         )
                     }
                     else -> Unit

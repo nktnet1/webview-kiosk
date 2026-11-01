@@ -18,32 +18,17 @@ fun WebsiteBlacklistSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.web_content_website_blacklist_title),
-        infoText =
-            """
-            Specify regular expressions (regex), one per line.
-
-            Escaping with backslash (\) is required for special characters
-            in regex like '.' and '?'.
-
-            These patterns also use partial matching.
-            If you need strict control, anchor your regex with `^` and `$`.
-
-            Whitelist patterns take precedence over blacklist patterns.
-            """
-                .trimIndent(),
-        placeholder =
-            """
-            e.g.
-                ^.*$
-                ^https://.*\.?google\.com/?.*
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_website_blacklist),
+        placeholder = stringResource(R.string.ui_website_blacklist_example),
         initialValue = userSettings.websiteBlacklist,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         isMultiline = true,
         validator = { validateMultilineRegex(it) },
-        validationMessage = "Some lines contain invalid regular expressions.",
+        validationMessage =
+            stringResource(
+                R.string.ui_some_lines_contain_invalid_regular_expressions
+            ),
         onSave = { userSettings.websiteBlacklist = it },
     )
 }

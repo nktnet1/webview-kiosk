@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -65,6 +66,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.requestFocusWhenPlaced
@@ -96,7 +98,7 @@ private fun AddressBarCopyButton(iconSize: Dp, onCopy: () -> Unit) {
     IconButton(onClick = onCopy, modifier = Modifier.size(iconSize)) {
         Icon(
             painter = painterResource(R.drawable.baseline_content_copy_24),
-            contentDescription = "Copy full URL",
+            contentDescription = stringResource(R.string.ui_copy_full_url),
             modifier = Modifier.fillMaxSize().padding(6.dp),
         )
     }
@@ -111,7 +113,7 @@ private fun AddressBarSearchButton(
     IconButton(modifier = Modifier.size(iconSize), onClick = onSearch) {
         Icon(
             painter = painterResource(R.drawable.baseline_search_24),
-            contentDescription = "Search",
+            contentDescription = stringResource(R.string.ui_search),
             modifier = Modifier.fillMaxSize().padding(iconPadding),
         )
     }
@@ -124,14 +126,15 @@ private fun AddressBarMenuItem(
     onClick: () -> Unit,
     iconRes: Int,
 ) {
+    val label = stringResource(action.displayLabelRes)
     DropdownMenuItem(
-        text = { Text(action.label) },
+        text = { Text(label) },
         enabled = enabled,
         onClick = onClick,
         leadingIcon = {
             Icon(
                 painter = painterResource(iconRes),
-                contentDescription = action.label,
+                contentDescription = label,
             )
         },
     )
@@ -169,7 +172,11 @@ fun AddressBar(
         val currentUrl = urlBarText.text
         scope.launch {
             clipboard.setClipEntry(
-                ClipData.newPlainText("Page URL", currentUrl).toClipEntry()
+                ClipData.newPlainText(
+                        context.getString(R.string.ui_page_url),
+                        currentUrl,
+                    )
+                    .toClipEntry()
             )
         }
     }
@@ -251,7 +258,10 @@ fun AddressBar(
                                             R.drawable.baseline_arrow_back_24
                                         ),
                                     contentDescription =
-                                        WebviewControlActionOption.BACK.label,
+                                        stringResource(
+                                            WebviewControlActionOption.BACK
+                                                .displayLabelRes
+                                        ),
                                 )
                             }
 
@@ -274,7 +284,10 @@ fun AddressBar(
                                             R.drawable.baseline_arrow_forward_24
                                         ),
                                     contentDescription =
-                                        WebviewControlActionOption.FORWARD.label,
+                                        stringResource(
+                                            WebviewControlActionOption.FORWARD
+                                                .displayLabelRes
+                                        ),
                                 )
                             }
                         }
@@ -477,7 +490,8 @@ fun AddressBar(
                 Box(
                     modifier =
                         Modifier.weight(1f).fillMaxHeight().clickable(
-                            onClickLabel = "Enter a replacement URL"
+                            onClickLabel =
+                                stringResource(R.string.ui_enter_a_replacement_url)
                         ) {
                             pastedOversizedUrl = false
                             replacingOversizedUrl = true
@@ -584,9 +598,17 @@ fun AddressBar(
                                     text =
                                         when {
                                             oversizedUrl && pastedOversizedUrl ->
-                                                "Long URL ready — press Search"
-                                            oversizedUrl -> "Enter a replacement URL"
-                                            else -> "Search"
+                                                stringResource(
+                                                    R.string
+                                                        .ui_long_url_ready_press_search
+                                                )
+                                            oversizedUrl ->
+                                                stringResource(
+                                                    R.string
+                                                        .ui_enter_a_replacement_url
+                                                )
+                                            else ->
+                                                stringResource(R.string.ui_search)
                                         },
                                     style =
                                         LocalTextStyle.current.copy(
@@ -669,7 +691,7 @@ fun AddressBar(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.outline_more_vert_24),
-                        contentDescription = "Menu",
+                        contentDescription = stringResource(R.string.ui_menu),
                         modifier = Modifier.fillMaxSize(),
                     )
                 }

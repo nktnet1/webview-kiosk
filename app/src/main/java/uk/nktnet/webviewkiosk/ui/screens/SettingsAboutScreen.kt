@@ -52,7 +52,9 @@ fun InfoItem(label: String, value: String) {
                     onClick = {
                         ToastManager.show(
                             context,
-                            "Tap and hold to copy value.",
+                            context.getString(
+                                R.string.ui_tap_and_hold_to_copy_value
+                            ),
                         )
                     },
                     onLongClick = {
@@ -152,7 +154,7 @@ fun SettingsAboutScreen(navController: NavController) {
             )
             InfoItem(
                 label = stringResource(R.string.about_app_installer),
-                value = systemInfo.app.installer ?: "N/A",
+                value = systemInfo.app.installer ?: stringResource(R.string.ui_n_a),
             )
             InfoItem(
                 label = stringResource(R.string.about_app_device_owner),
@@ -193,22 +195,33 @@ fun SettingsAboutScreen(navController: NavController) {
             InfoItem(
                 label = stringResource(R.string.about_device_android_version),
                 value =
-                    "${systemInfo.device.releaseVersion} " +
-                        "(SDK ${systemInfo.device.sdkVersion})",
+                    stringResource(
+                        R.string.ui_value_sdk_value,
+                        systemInfo.device.releaseVersion,
+                        systemInfo.device.sdkVersion,
+                    ),
             )
             InfoItem(
                 label = stringResource(R.string.about_device_webview_version),
-                value = systemInfo.device.webViewVersion ?: "N/A",
+                value =
+                    systemInfo.device.webViewVersion
+                        ?: stringResource(R.string.ui_n_a),
             )
             InfoItem(
                 label = stringResource(R.string.about_device_screen_display),
                 value =
-                    "${systemInfo.device.screenWidth} x ${systemInfo.device.screenHeight} px, " +
-                        "density: ${systemInfo.device.screenDensity}",
+                    stringResource(
+                        R.string.ui_value_x_value_px_density_value,
+                        systemInfo.device.screenWidth,
+                        systemInfo.device.screenHeight,
+                        systemInfo.device.screenDensity,
+                    ),
             )
             InfoItem(
                 label = stringResource(R.string.about_device_managed_profile),
-                value = systemInfo.device.isManagedProfile?.toString() ?: "N/A",
+                value =
+                    systemInfo.device.isManagedProfile?.toString()
+                        ?: stringResource(R.string.ui_n_a),
             )
             InfoItem(
                 label = stringResource(R.string.about_device_time_zone),
@@ -260,7 +273,9 @@ fun SettingsAboutScreen(navController: NavController) {
             )
             InfoItem(
                 label = stringResource(R.string.about_device_security_patch),
-                value = systemInfo.device.securityPatch ?: "N/A",
+                value =
+                    systemInfo.device.securityPatch
+                        ?: stringResource(R.string.ui_n_a),
             )
             InfoItem(
                 label = stringResource(R.string.about_device_supported_abis),

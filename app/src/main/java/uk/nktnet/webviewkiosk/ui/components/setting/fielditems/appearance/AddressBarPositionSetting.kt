@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun AddressBarPositionSetting() {
@@ -18,16 +19,12 @@ fun AddressBarPositionSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.appearance_address_bar_position_title),
-        infoText =
-            """
-            Customise the position of the address bar - either top or bottom.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_address_bar_position),
         options = AddressBarPositionOption.entries,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.addressBarPosition,
         onSave = { userSettings.addressBarPosition = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

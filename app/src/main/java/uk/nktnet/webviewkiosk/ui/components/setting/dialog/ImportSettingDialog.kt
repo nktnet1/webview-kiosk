@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.CancellationException
@@ -51,7 +52,10 @@ import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 
 private const val MAX_IMPORT_FILE_BYTES = 1024 * 1024
 
-private fun readBoundedText(stream: java.io.InputStream): String {
+private fun readBoundedText(
+    context: android.content.Context,
+    stream: java.io.InputStream,
+): String {
     val output = ByteArrayOutputStream()
     val buffer = ByteArray(8192)
     var totalBytes = 0
@@ -64,7 +68,7 @@ private fun readBoundedText(stream: java.io.InputStream): String {
 
         totalBytes += bytesRead
         require(totalBytes <= MAX_IMPORT_FILE_BYTES) {
-            "Settings file exceeds the 1 MiB limit."
+            context.getString(R.string.ui_settings_file_exceeds_the_1_mib_limit)
         }
         output.write(buffer, 0, bytesRead)
     }
@@ -105,16 +109,22 @@ fun ImportSettingsDialog(
                     try {
                         val loadedText =
                             withContext(Dispatchers.IO) {
-                                context.contentResolver
-                                    .openInputStream(uri)
-                                    ?.use(::readBoundedText)
+                                context.contentResolver.openInputStream(uri)?.use {
+                                    readBoundedText(context, it)
+                                }
                                     ?: error(
-                                        "Unable to open selected settings file."
+                                        context.getString(
+                                            R.string
+                                                .ui_unable_to_open_selected_settings_file
+                                        )
                                     )
                             }
                         importText = loadedText
                         importError = false
-                        ToastManager.show(context, "Loaded file successfully.")
+                        ToastManager.show(
+                            context,
+                            context.getString(R.string.ui_loaded_file_successfully),
+                        )
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -126,7 +136,10 @@ fun ImportSettingsDialog(
                         )
                         ToastManager.show(
                             context,
-                            "Failed to read file: ${e.message}",
+                            context.getString(
+                                R.string.ui_failed_to_read_file_value,
+                                e.message,
+                            ),
                         )
                     }
                 }
@@ -144,7 +157,7 @@ fun ImportSettingsDialog(
                     Modifier.fillMaxWidth().heightIn(max = 600.dp).padding(16.dp)
             ) {
                 Text(
-                    text = "Import Settings",
+                    text = stringResource(R.string.ui_import_settings),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
@@ -174,9 +187,13 @@ fun ImportSettingsDialog(
                         placeholder = {
                             Text(
                                 if (selectedTab == ImportTab.Base64) {
-                                    "Paste your Base64 config string."
+                                    stringResource(
+                                        R.string.ui_paste_your_base64_config_string
+                                    )
                                 } else {
-                                    "Paste your JSON string."
+                                    stringResource(
+                                        R.string.ui_paste_your_json_string
+                                    )
                                 }
                             )
                         },
@@ -200,7 +217,8 @@ fun ImportSettingsDialog(
                             Icon(
                                 painter =
                                     painterResource(R.drawable.baseline_clear_24),
-                                contentDescription = "Clear",
+                                contentDescription =
+                                    stringResource(R.string.ui_clear),
                                 tint = MaterialTheme.colorScheme.error,
                             )
                         }
@@ -222,7 +240,8 @@ fun ImportSettingsDialog(
                                     painterResource(
                                         R.drawable.outline_content_paste_24
                                     ),
-                                contentDescription = "Paste",
+                                contentDescription =
+                                    stringResource(R.string.ui_paste),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                         }
@@ -248,7 +267,13 @@ fun ImportSettingsDialog(
                                     "Failed to launch file picker for import",
                                     e,
                                 )
-                                ToastManager.show(context, "Error: ${e.message}")
+                                ToastManager.show(
+                                    context,
+                                    context.getString(
+                                        R.string.ui_error_value,
+                                        e.message,
+                                    ),
+                                )
                             }
                         },
                         colors =
@@ -256,7 +281,7 @@ fun ImportSettingsDialog(
                                 contentColor = MaterialTheme.colorScheme.tertiary
                             ),
                     ) {
-                        Text("From File")
+                        Text(stringResource(R.string.ui_from_file))
                     }
 
                     Row {
@@ -267,7 +292,7 @@ fun ImportSettingsDialog(
                                     contentColor = MaterialTheme.colorScheme.error
                                 ),
                         ) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.ui_cancel))
                         }
 
                         Spacer(Modifier.width(8.dp))
@@ -285,7 +310,10 @@ fun ImportSettingsDialog(
                                     updateDeviceSettings(context)
                                     ToastManager.show(
                                         context,
-                                        "Imported settings successfully",
+                                        context.getString(
+                                            R.string
+                                                .ui_imported_settings_successfully
+                                        ),
                                     )
                                     onDismiss()
                                 } else {
@@ -293,15 +321,21 @@ fun ImportSettingsDialog(
                                     ToastManager.show(
                                         context,
                                         if (selectedTab == ImportTab.Base64) {
-                                            "Failed to import Base64. You may need to switch tabs."
+                                            context.getString(
+                                                R.string
+                                                    .ui_failed_to_import_base64_you_may_need_to_switch_tabs
+                                            )
                                         } else {
-                                            "Failed to import JSON. You may need to switch tabs."
+                                            context.getString(
+                                                R.string
+                                                    .ui_failed_to_import_json_you_may_need_to_switch_tabs
+                                            )
                                         },
                                     )
                                 }
                             }
                         ) {
-                            Text("Import")
+                            Text(stringResource(R.string.ui_import))
                         }
                     }
                 }

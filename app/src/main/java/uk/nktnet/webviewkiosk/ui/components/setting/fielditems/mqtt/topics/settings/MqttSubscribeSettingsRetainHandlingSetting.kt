@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.MqttRetainHandlingOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun MqttSubscribeSettingsRetainHandlingSetting() {
@@ -20,16 +21,15 @@ fun MqttSubscribeSettingsRetainHandlingSetting() {
         label =
             stringResource(R.string.mqtt_subscribe_settings_retain_handling_title),
         infoText =
-            """
-            Control whether ${stringResource(R.string.app_name)} should receive existing
-            retained messages when subscribing.
-        """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_mqtt_subscribe_settings_retain_handling,
+                stringResource(R.string.app_name),
+            ),
         options = MqttRetainHandlingOption.entries,
         initialValue = userSettings.mqttSubscribeSettingsRetainHandling,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mqttSubscribeSettingsRetainHandling = it },
-        itemText = { it.getSettingLabel() },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }

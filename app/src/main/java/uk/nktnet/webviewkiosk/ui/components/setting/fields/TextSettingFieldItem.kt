@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.KeyboardType
@@ -60,7 +61,7 @@ fun TextSettingFieldItem(
             MaterialTheme.typography.bodyMedium
         }
     },
-    saveText: String = "Save",
+    saveText: String? = null,
     extraContent:
         (@Composable
         ((
@@ -98,9 +99,11 @@ fun TextSettingFieldItem(
             descriptionFormatter?.invoke(v)
                 ?: run {
                     if (isMultiline) {
-                        v.split("\n").joinToString(" | ").ifBlank { "(blank)" }
+                        v.split("\n").joinToString(" | ").ifBlank {
+                            stringResource(R.string.ui_blank)
+                        }
                     } else {
-                        v.ifBlank { "(blank)" }
+                        v.ifBlank { stringResource(R.string.ui_blank) }
                     }
                 }
 
@@ -211,7 +214,8 @@ fun TextSettingFieldItem(
                                             painterResource(
                                                 R.drawable.baseline_clear_24
                                             ),
-                                        contentDescription = "Clear",
+                                        contentDescription =
+                                            stringResource(R.string.ui_clear),
                                     )
                                 }
                             }
@@ -236,7 +240,8 @@ fun TextSettingFieldItem(
                             Icon(
                                 painter =
                                     painterResource(R.drawable.baseline_clear_24),
-                                contentDescription = "Clear",
+                                contentDescription =
+                                    stringResource(R.string.ui_clear),
                                 tint = MaterialTheme.colorScheme.error,
                             )
                         }
@@ -260,7 +265,8 @@ fun TextSettingFieldItem(
                                     painterResource(
                                         R.drawable.outline_content_paste_24
                                     ),
-                                contentDescription = "Paste",
+                                contentDescription =
+                                    stringResource(R.string.ui_paste),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                         }
@@ -269,7 +275,9 @@ fun TextSettingFieldItem(
 
                 if (draftError) {
                     Text(
-                        text = validationMessage ?: "Invalid input",
+                        text =
+                            validationMessage
+                                ?: stringResource(R.string.ui_invalid_input),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),

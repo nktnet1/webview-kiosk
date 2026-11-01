@@ -18,8 +18,7 @@ fun AllowBackwardsNavigationSetting() {
     BooleanSettingFieldItem(
         label =
             stringResource(R.string.web_browsing_allow_backwards_navigation_title),
-        infoText =
-            "Whether the user can use the device 'back' button to go back one page in history.",
+        infoText = stringResource(R.string.setting_info_allow_backwards_navigation),
         initialValue = userSettings.allowBackwardsNavigation,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -78,6 +79,7 @@ import uk.nktnet.webviewkiosk.ui.components.auth.CustomAuthPasswordDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.ClientCertificateInstaller
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.utils.ImmersiveModeRecovery
@@ -271,9 +273,10 @@ open class MainActivity : AppCompatActivity() {
                 if (webViewReady) {
                     null
                 } else if (rulesReady) {
-                    "Starting WebView…"
+                    stringResource(R.string.ui_starting_webview)
                 } else {
-                    ruleLoadStage?.description ?: "Preparing content blocking…"
+                    ruleLoadStage?.let { stringResource(it.displayLabelRes) }
+                        ?: stringResource(R.string.ui_preparing_content_blocking)
                 }
             KeepScreenOnOption()
 

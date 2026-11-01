@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_admin_restrictions_notice" formatted="false">"Your IT Administrator has applied new configurations.\n\nSome settings may have been restricted."</string>
+    <string name="ui_i_understand" formatted="false">"I understand."</string>
+    <string name="ui_returning_automatically_in" formatted="false">"Returning automatically in "</string>
+    <string name="ui_tap_and_hold_to_copy_value" formatted="false">"Tap and hold to copy value."</string>
+    <string name="ui_value_sdk_value">"%1$s (SDK %2$s)"</string>
+    <string name="ui_value_x_value_px_density_value">"%1$s x %2$s px, density: %3$s"</string>
+</resources>

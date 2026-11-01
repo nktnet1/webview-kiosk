@@ -21,18 +21,12 @@ fun MqttPublishEventTopicSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_publish_event_topic_title),
         infoText =
-            $$"""
-            The MQTT topic to publish event messages.
-
-            Supported variables:
-            - $${MqttVariableName.EVENT_TYPE.name}
-            - $${MqttVariableName.APP_INSTANCE_ID.name}
-            - $${MqttVariableName.USERNAME.name}
-
-            Example:
-            - wk/event/${$${MqttVariableName.EVENT_TYPE.name}}
-        """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_mqtt_publish_event_topic,
+                MqttVariableName.EVENT_TYPE.name,
+                MqttVariableName.APP_INSTANCE_ID.name,
+                MqttVariableName.USERNAME.name,
+            ),
         placeholder = $$"e.g. wk/event/${$${MqttVariableName.EVENT_TYPE.name}}",
         initialValue = userSettings.mqttPublishEventTopic,
         descriptionFormatter = {

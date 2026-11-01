@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.EnumListSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun KioskControlPanelActionsSetting() {
@@ -19,22 +20,9 @@ fun KioskControlPanelActionsSetting() {
     EnumListSettingFieldItem(
         label =
             stringResource(R.string.web_browsing_kiosk_control_panel_actions_title),
-        infoText =
-            """
-            Manage visible actions in the kiosk control panel.
-
-            Use the drag handle at the end to reorder the items.
-
-            When in locked mode, the "UNLOCK" action will be appended to the
-            end if not configured.
-
-            When in unlocked mode, if "Appearance -> Floating Toolbar Mode" is
-            set to Hidden, the "SETTINGS" action will be appended to the end
-            if not configured.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_kiosk_control_panel_actions),
         entries = WebviewControlActionOption.entries,
-        getLabel = { it.label },
+        getLabel = { stringResource(it.displayLabelRes) },
         getDefault = {
             WebviewControlActionOption.getDefaultKioskControlPanelOptions()
         },

@@ -60,24 +60,16 @@ fun CustomAuthPasswordSetting() {
 
     val focusRequester = remember { FocusRequester() }
 
+    val blankCredentialsLabel = stringResource(R.string.ui_blank_device_credentials)
+
     TextSettingFieldItem(
         label = stringResource(R.string.device_custom_auth_password_title),
         infoText =
-            """
-            Specify a custom password to protect your settings or when unlocking from
-            the kiosk state.
-
-            For user-owned devices that utilises screen pinning, this will only work
-            if you are using an unlock method provided by the app.
-
-            Device-level unpin methods (e.g. gestures/holding overview + back button
-            simultaneously) will bypass this setting. To enhance security, please
-            see: ${Constants.DOCUMENTATION_URL}/security
-
-            Leave this setting blank to use your device's biometrics or credentials.
-        """
-                .trimIndent(),
-        placeholder = "(blank = device credentials)",
+            stringResource(
+                R.string.setting_info_custom_auth_password,
+                Constants.DOCUMENTATION_URL,
+            ),
+        placeholder = stringResource(R.string.ui_blank_device_credentials),
         initialValue = userSettings.customAuthPassword,
         settingKey = settingKey,
         restricted = restricted,
@@ -86,15 +78,19 @@ fun CustomAuthPasswordSetting() {
         validator = {
             it.length <= maxCharacters
         },
-        validationMessage = "Please enter fewer than $maxCharacters characters.",
+        validationMessage =
+            stringResource(
+                R.string.ui_please_enter_fewer_than_value_characters,
+                maxCharacters,
+            ),
         descriptionFormatter = { value ->
             if (value.isNotBlank()) {
                 "*".repeat(20)
             } else {
-                "(blank = device credentials)"
+                blankCredentialsLabel
             }
         },
-        saveText = "Next",
+        saveText = stringResource(R.string.ui_next),
         onSaveDeferred = { password, commit ->
             if (password.isBlank()) {
                 pendingRemoveCommit = commit
@@ -120,7 +116,7 @@ fun CustomAuthPasswordSetting() {
             title = {
                 Text(
                     style = MaterialTheme.typography.titleMedium,
-                    text = "Re-enter password",
+                    text = stringResource(R.string.ui_re_enter_password),
                 )
             },
             text = {
@@ -132,7 +128,7 @@ fun CustomAuthPasswordSetting() {
                             passwordMismatch = false
                         },
                         label = {
-                            Text("Confirm password")
+                            Text(stringResource(R.string.ui_confirm_password))
                         },
                         singleLine = true,
                         visualTransformation =
@@ -153,7 +149,8 @@ fun CustomAuthPasswordSetting() {
                                         painterResource(
                                             R.drawable.baseline_clear_24
                                         ),
-                                    contentDescription = "Clear",
+                                    contentDescription =
+                                        stringResource(R.string.ui_clear),
                                 )
                             }
                         },
@@ -176,7 +173,7 @@ fun CustomAuthPasswordSetting() {
                         )
 
                         Text(
-                            text = "Show password",
+                            text = stringResource(R.string.ui_show_password),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier =
                                 Modifier.combinedClickable(
@@ -196,7 +193,8 @@ fun CustomAuthPasswordSetting() {
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
-                            text = "Passwords do not match.",
+                            text =
+                                stringResource(R.string.ui_passwords_do_not_match),
                             color = MaterialTheme.colorScheme.error,
                         )
                     }
@@ -216,7 +214,7 @@ fun CustomAuthPasswordSetting() {
                         }
                     }
                 ) {
-                    Text("Confirm")
+                    Text(stringResource(R.string.ui_confirm))
                 }
             },
             dismissButton = {
@@ -227,7 +225,7 @@ fun CustomAuthPasswordSetting() {
                         passwordMismatch = false
                     }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
             },
         )
@@ -242,18 +240,15 @@ fun CustomAuthPasswordSetting() {
             title = {
                 Text(
                     style = MaterialTheme.typography.titleMedium,
-                    text = "Remove Custom Password",
+                    text = stringResource(R.string.ui_remove_custom_password),
                 )
             },
             text = {
                 Text(
                     normaliseInfoText(
-                        """
-                        Are you sure you want to remove your custom password?
-
-                        Your device credentials or biometrics will be used instead.
-                        """
-                            .trimIndent()
+                        stringResource(
+                            R.string.ui_remove_custom_password_confirmation
+                        )
                     )
                 )
             },
@@ -270,7 +265,7 @@ fun CustomAuthPasswordSetting() {
                         showRemovePasswordDialog = false
                     },
                 ) {
-                    Text("Remove")
+                    Text(stringResource(R.string.ui_remove))
                 }
             },
             dismissButton = {
@@ -280,7 +275,7 @@ fun CustomAuthPasswordSetting() {
                         pendingRemoveCommit = null
                     }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
             },
         )

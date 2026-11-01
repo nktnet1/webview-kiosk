@@ -41,33 +41,38 @@ fun SearchProviderUrlSetting() {
 
     val searchProviders =
         listOf(
-            "Google" to "https://google.com/search?q=",
-            "DuckDuckGo" to "https://duckduckgo.com?q=",
-            "Bing" to "https://bing.com/search?q=",
-            "Yahoo" to "https://search.yahoo.com/search?p=",
-            "Start page" to "https://startpage.com/do/search?q=",
-            "Ecosia" to "https://ecosia.org/search?q=",
-            "Unduck" to "https://unduck.link?q=",
-            "Unduckified" to "https://s.dunkirk.sh?q=",
+            stringResource(R.string.ui_search_provider_google) to
+                "https://google.com/search?q=",
+            stringResource(R.string.ui_search_provider_duckduckgo) to
+                "https://duckduckgo.com?q=",
+            stringResource(R.string.ui_search_provider_bing) to
+                "https://bing.com/search?q=",
+            stringResource(R.string.ui_search_provider_yahoo) to
+                "https://search.yahoo.com/search?p=",
+            stringResource(R.string.ui_search_provider_start_page) to
+                "https://startpage.com/do/search?q=",
+            stringResource(R.string.ui_search_provider_ecosia) to
+                "https://ecosia.org/search?q=",
+            stringResource(R.string.ui_search_provider_unduck) to
+                "https://unduck.link?q=",
+            stringResource(R.string.ui_search_provider_unduckified) to
+                "https://s.dunkirk.sh?q=",
         )
 
     TextSettingFieldItem(
         label = stringResource(R.string.web_browsing_search_provider_url_title),
         infoText =
-            """
-            The URL used for search queries in the address bar.
-
-            This URL must include a query parameter, e.g.
-              ${Constants.DEFAULT_SEARCH_PROVIDER_URL}
-        """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_search_provider_url,
+                Constants.DEFAULT_SEARCH_PROVIDER_URL,
+            ),
         placeholder = Constants.DEFAULT_SEARCH_PROVIDER_URL,
         initialValue = userSettings.searchProviderUrl,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,
         validator = { validateUrl(it) },
-        validationMessage = "Invalid search provider URL.",
+        validationMessage = stringResource(R.string.ui_invalid_search_provider_url),
         onSave = { userSettings.searchProviderUrl = it },
         extraContent = { _, setValue ->
             if (restricted) {

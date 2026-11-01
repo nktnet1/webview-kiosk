@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.OverScrollModeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @Composable
 fun OverScrollModeSetting() {
@@ -18,21 +19,12 @@ fun OverScrollModeSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.web_engine_over_scroll_mode_title),
-        infoText =
-            """
-            Configures the WebView's overscroll behavior.
-
-            Options:
-            - Always: Shows the overscroll effect whenever the content is scrolled.
-            - If Content Scrolls: allow over-scrolling only if the view content is larger than the container
-            - Never: Disables the overscroll effect entirely.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_over_scroll_mode),
         options = OverScrollModeOption.entries,
         initialValue = userSettings.overScrollMode,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.overScrollMode = it },
-        itemText = { it.label },
+        itemText = { stringResource(it.displayLabelRes) },
     )
 }
