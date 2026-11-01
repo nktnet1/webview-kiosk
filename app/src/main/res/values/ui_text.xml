@@ -1,0 +1,667 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Original on-screen punctuation and numeric examples must be preserved. -->
+    <string name="setting_info_accept_cookies" formatted="false">"Allow websites to store and read cookies."</string>
+    <string name="setting_info_accept_third_party_cookies" formatted="false">"Allow third-party websites to set cookies in this WebView."</string>
+    <string name="setting_info_address_bar_actions" formatted="false">"Manage visible actions in the address bar.\n\nUse the drag handle at the end to reorder the items."</string>
+    <string name="setting_info_address_bar_mode" formatted="false">"Customise the visibility of the address bar."</string>
+    <string name="setting_info_address_bar_position" formatted="false">"Customise the position of the address bar - either top or bottom."</string>
+    <string name="setting_info_address_bar_size" formatted="false">"Customise the size of the address bar, which will determine the\nheight, font size, padding and icon size."</string>
+    <string name="setting_info_allow_backwards_navigation" formatted="false">"Whether the user can use the device \'back\' button to go back one page in history."</string>
+    <string name="setting_info_allow_bookmark_access" formatted="false">"Whether the user can access saved bookmarks from the address bar."</string>
+    <string name="setting_info_allow_camera" formatted="false">"Set to true to give WebView access to your device\'s camera.\n\nYou will need to grant the CAMERA permission, which is required for the\nWebView\'s RESOURCE_VIDEO_CAPTURE feature."</string>
+    <string name="setting_info_allow_default_long_press" formatted="false">"When enabled, long-pressing areas in the WebView will trigger the native\nWebView behaviour, e.g. text selection.\n\nSpecifically for links, even if this is set to false, it can be overridden\nby the \"Allow Link Long Press Context Menu\" setting."</string>
+    <string name="setting_info_allow_file_access_from_file_url" formatted="false">"This method was deprecated in API level 30 (Android 11).\n\nSets whether cross-origin requests in the context of a file scheme URL\nshould be allowed to access content from other file scheme URLs. Note\nthat some accesses such as image HTML elements don\'t follow same-origin\nrules and aren\'t affected by this setting.\n\nDon\'t enable this setting if you open files that may be created or altered\nby external sources. Enabling this setting allows malicious scripts loaded\nin a file:// context to access arbitrary local files including WebView\ncookies and app private data."</string>
+    <string name="setting_info_allow_file_download">"Allow files to be downloaded from websites to:\n\n- %1$s\n\nFor Android 9.0 (SDK 28) and below, the WRITE_EXTERNAL_STORAGE\npermission is required."</string>
+    <string name="setting_info_allow_file_picker" formatted="false">"Allow websites to open the system file picker, e.g. for uploading files."</string>
+    <string name="setting_info_allow_go_home" formatted="false">"Whether the user can return to the configured home page."</string>
+    <string name="setting_info_allow_history_access" formatted="false">"Whether the user can access browsing history from the address bar."</string>
+    <string name="setting_info_allow_link_long_press_context_menu">"When enabled, long-pressing links or images will trigger a\ncustom context menu.\n\nThis will take precedence over the \"Allow Default Long Press\"\nsetting (i.e. overrides it).\n\nFor links, the options are:\n- Copy Link\n- Open Link\n- Open in Browser (when unlocked)\n- Share Link (when unlocked)\n\nFor images, there is an additional option:\n- Download Image (requires %1$s)"</string>
+    <string name="setting_info_allow_local_files" formatted="false">"Allow the WebView to open uploaded local files such as HTML, PDF, images,\naudio, video and text.\n\nUpload and manage files using \"Web Content -&gt; Manage Local Files\".\nOpen them with the Files action in the address bar menu or kiosk\ncontrol panel when that action is enabled."</string>
+    <string name="setting_info_allow_location" formatted="false">"When enabled, websites can request the device\'s location.\n\nYou can choose to request precise location (FINE) or approximate location (COARSE).\n\nYou will need to grant either ACCESS_FINE_LOCATION or ACCESS_COARSE_LOCATION,\nrequired for the WebView\'s GeolocationPermissions."</string>
+    <string name="setting_info_allow_microphone" formatted="false">"Set to true to give WebView access to your device\'s microphone.\n\nYou will need to grant the RECORD_AUDIO permission, which is required for the\nWebView\'s RESOURCE_AUDIO_CAPTURE feature."</string>
+    <string name="setting_info_allow_nfc" formatted="false">"Set to true to enable NFC support via a Web NFC compatibility bridge.\n\nThis allows websites to read and write NFC tags using the device\'s NFC hardware.\n\nPlease note that this does not use Web NFC directly, as Web NFC is not yet\navailable in Android System WebView. Instead, a compatibility layer is provided\nbetween native NFC and JavaScript. As a result, it is not subject to the same\nsecurity limitations as Web NFC:\n\n- https://developer.chrome.com/docs/capabilities/nfc#security-and-permissions\n\nand can also operate on insecure (non-HTTPS) websites."</string>
+    <string name="setting_info_allow_notifications">"Set to true to allow %1$s to send notifications.\nFor example, this will allow the MQTT notify command to create alerts.\n\nYou will need to grant the POST_NOTIFICATIONS android permission.\n\nPlease note that for foreground services, e.g. when using lock task mode\nkiosk-launch or MQTT, the notification will always be created irrespective\nof this setting. You can disable notifications at the device level if you\ndo not want them."</string>
+    <string name="setting_info_allow_other_url_schemes" formatted="false">"Allow the handling of non-http/https URL schemes (i.e. intents)\nsuch as intent:, mailto:, sms:, tel:, spotify:, whatsapp:, unifiedpush:,\netc in other apps.\n\nWhen in Lock Task Mode, the apps responsible for handling these\nintents needs to be present in the Lock Task Permitted list under\nthe device owner settings to function."</string>
+    <string name="setting_info_allow_pull_to_refresh" tools:ignore="TypographyFractions" formatted="false">"Set to true to allow the user to refresh the page by pulling down\nfrom the top 1/4 of the screen.\n\nNote that this requires:\n- the \"Allow Refresh\" setting to also be true\n- the page to have been scrolled fully to the top prior to the gesture\n- a single finger (touch) is used"</string>
+    <string name="setting_info_allow_refresh" formatted="false">"Set to true to allow the user to refresh the page, e.g. using the\n- address bar actions\n- kiosk control panel\n- pull to refresh (can be configured separately)"</string>
+    <string name="setting_info_allow_universal_access_from_file_urls" formatted="false">"This method was deprecated in API level 30 (Android 11).\n\nSets whether cross-origin requests in the context of a file scheme URL\nshould be allowed to access content from any origin. This includes access\nto content from other file scheme URLs or web contexts. Note that some\naccess such as image HTML elements doesn\'t follow same-origin rules and\nisn\'t affected by this setting.\n\nDon\'t enable this setting if you open files that may be created or altered\nby external sources. Enabling this setting allows malicious scripts loaded\nin a file:// context to launch cross-site scripting attacks, either accessing\narbitrary local files including WebView cookies, app private data or even\ncredentials used on arbitrary web sites."</string>
+    <string name="setting_info_apply_app_theme">"This script injects JavaScript code that will set prefers-color-scheme\naccording to your selected theme in %1$s\nAppearance settings, thus keeping the Webpage\'s theme consistent with the\nApp\'s theme.\n\nThis script will run immediately \"on page start\".\n\nIf the theme setting is \"System\", this script is a no-op (does nothing)."</string>
+    <string name="setting_info_apply_desktop_viewport_width">"This script creates or updates the page\'s viewport meta element,\nsetting its content to \'width=YOUR_WIDTH_VALUE\' to request a\ndesktop-sized viewport.\n\nJS history state changes will also be subscribed to\n(e.g. from Single Page Applications), and the script\nwill be re-triggered as needed.\n\nYou should only enable this option if setting the user\nagent was insufficient to force Desktop mode, as the\nadditional JS here will slow down the page.\n\nYou may also want to enable the following options under\nSettings -&gt; Web Engine:\n  - User Agent: Desktop\n  - Use Wide Viewport: True\n  - Load with Overview Mode: True\n\nThe minimum possible value is %1$s.\n\nTo disable, use the value 0."</string>
+    <string name="setting_info_back_button_hold_action" formatted="false">"Customise the behaviour when the back button is held down (long pressed)."</string>
+    <string name="setting_info_block_screen_capture" formatted="false">"Prevent screenshots, screen recording and content previews in Recent Apps.\nThis is done by setting the FLAG_SECURE window flag."</string>
+    <string name="setting_info_block_volume_keys" formatted="false">"Prevent users from changing the device volume using hardware keys while in the kiosk app."</string>
+    <string name="setting_info_blocked_message" formatted="false">"Custom message shown on blocked pages."</string>
+    <string name="setting_info_brightness" formatted="false">"Set the app window brightness from 0 (very dim) to 100 (very bright).\n\nUse -1 to disable (i.e. the system default brightness will be used)."</string>
+    <string name="setting_info_built_in_zoom_controls" formatted="false">"Sets whether the WebView should use its built-in zoom mechanisms.\n\nThe built-in zoom mechanisms comprise on-screen zoom controls, which are displayed\nover the WebView\'s content, and the use of a pinch gesture to control zooming."</string>
+    <string name="setting_info_cache_mode" formatted="false">"Control how the WebView uses its cache when loading pages."</string>
+    <string name="setting_info_clear_history_on_home" formatted="false">"Clear the browser history whenever the user triggers an action to return home."</string>
+    <string name="setting_info_custom_auth_password">"Specify a custom password to protect your settings or when unlocking from\nthe kiosk state.\n\nFor user-owned devices that utilises screen pinning, this will only work\nif you are using an unlock method provided by the app.\n\nDevice-level unpin methods (e.g. gestures/holding overview + back button\nsimultaneously) will bypass this setting. To enhance security, please\nsee: %1$s/security\n\nLeave this setting blank to use your device\'s biometrics or credentials."</string>
+    <string name="setting_info_custom_block_page_html" formatted="false">"Define the custom HTML content to show when a page is blocked.\n\nLeave blank to use the default block page."</string>
+    <string name="setting_info_custom_script_on_page_finish" formatted="false">"JavaScript to run after the page has fully loaded.\nUseful for DOM updates, styling, or injecting behavior.\n\nYour code content will be wrapped as follows to prevent\npolluting the global scope and avoid conflicts with\nother scripts:\n    (function() {\n        // &lt;YOUR CODE&gt;\n    })()"</string>
+    <string name="setting_info_custom_script_on_page_start" formatted="false">"JavaScript to run immediately when the page starts loading.\nYou can use this for early DOM manipulation or overriding functions.\n\nYour code content will be wrapped as follows to prevent\npolluting the global scope and avoid conflicts with\nother scripts:\n    (function() {\n        // &lt;YOUR CODE&gt;\n    })()"</string>
+    <string name="setting_info_custom_unlock_shortcut" formatted="false">"Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)\nin combination with another standard key to unlock/unpin the application.\n\nFor example, CTRL+1.\n\nThis is useful for devices with no navigation buttons on screen and instead\nhas a physical keyboard connected."</string>
+    <string name="setting_info_device_rotation" formatted="false">"Choose a fixed device rotation or select \'Auto\' to allow\nthe system to rotate the screen automatically."</string>
+    <string name="setting_info_dhizuku_request_permission_on_launch">"When enabled, if Dhizuku is installed and has not granted\n%1$s access to Device\nOwner privileges, prompt the user for permission."</string>
+    <string name="setting_info_dim_screen_on_inactivity_seconds">"Number of seconds of inactivity before the screen is dimmed.\n\nThis will set the brightness to 0, and will restore the brightness to\nyour device -&gt; brightness setting upon new user interactions.\n\nMinimum: %1$s\n\nTo disable, use the value 0."</string>
+    <string name="setting_info_display_zoom_controls" formatted="false">"Sets whether the WebView should display on-screen zoom controls\nwhen using the built-in zoom mechanisms."</string>
+    <string name="setting_info_enable_battery_api" formatted="false">"Allow web pages to access device battery status through a JavaScript\ninterface. Web pages can use:\n\nJSON.parse(window.WebviewKioskBatteryInterface.getBatteryStatus())\n\nto retrieve battery level, charging status, temperature and other\nbattery information."</string>
+    <string name="setting_info_enable_brightness_api" tools:ignore="TypographyDashes" formatted="false">"Allow web pages to use:\n\n1. window.WebviewKioskBrightnessInterface.getBrightness(): number\n2. window.WebviewKioskBrightnessInterface.setBrightness(value: number)\n\nto read or change the current screen brightness percentage.\n\nValues are integers between 0-100, with\n   -1: use system brightness\n    0: very dim\n  100: very bright"</string>
+    <string name="setting_info_enable_content_blocking" formatted="false">"Block ads, malware and trackers using enabled filter lists.\n\nIn Content Blocking, select Add list to choose a preset, enter a URL,\nor paste or import custom rules."</string>
+    <string name="setting_info_enable_dark_reader" formatted="false">"Automatically inject Dark Reader into web pages.\n\n- https://github.com/darkreader/darkreader\n\nThis applies dynamic CSS transformations to force dark mode on websites\nthat do not support it natively.\n\nNote: Some websites may render incorrectly due to CSS overrides."</string>
+    <string name="setting_info_enable_dom_storage" formatted="false">"Allow web pages to use DOM storage APIs like local storage and session storage."</string>
+    <string name="setting_info_enable_eruda_console" formatted="false">"Automatically inject the Eruda console into web pages.\n\n- https://github.com/liriliri/eruda\n\nThis provides a mobile browser developer console for inspecting:\n\n- JavaScript errors\n- Console output\n- Network requests\n- DOM elements\n- Storage and cookies\n\nUseful for debugging web applications on Android devices without\ndesktop developer tools."</string>
+    <string name="setting_info_enable_java_script" formatted="false">"Allow the execution of JavaScript in web pages."</string>
+    <string name="setting_info_enable_vibration_api" formatted="false">"Allow web pages to vibrate the device using navigator.vibrate(pattern).\n\nThe pattern can be a duration in milliseconds or an array of alternating\nvibration and pause durations. A user interaction may be required by the\nWebView before vibration is allowed."</string>
+    <string name="setting_info_floating_toolbar_mode" formatted="false">"Control the visibility and behaviour of the floating toolbar menu button.\n\nWhen set to \"Hidden\", the \"Settings\" button will be visible from the\nKiosk Control Panel."</string>
+    <string name="setting_info_home_url" formatted="false">"The URL that can be returned to by:\n  1. tapping the configured Kiosk Control Panel region 10 times\n     to open the panel, then choosing Home\n  2. using the floating toolbar menu\n  3. using the address bar menu\n\nThis is also controlled by the \"Allow Go Home\" setting under web browsing."</string>
+    <string name="setting_info_immersive_mode" formatted="false">"In immersive mode, your system bars (status and navigation) are hidden.\n\nYou can temporarily reveal the system bars with gestures such as swiping\nfrom the edge of the screen where the bar is hidden from.\n\nNote: immersive mode is enabled automatically when entering fullscreen\n(for example, when watching a video), irrespective of this setting."</string>
+    <string name="setting_info_initial_scale" formatted="false">"Sets the initial scale for this WebView as a percentage. 0 means default.\n\nThe behavior for the default scale depends on the state of\n- useWideViewPort\n- loadWithOverviewMode\n\nIf the content fits into the WebView control by width, the zoom is set to 100%.\n\nFor wide content, the behaviour depends on the state of loadWithOverviewMode.\nIf its value is true, the content will be zoomed out to be fit by width into\nthe WebView control, otherwise not.\n\nIf initial scale is greater than 0, WebView starts with this value as initial\nscale. Please note that unlike the scale properties in the viewport meta tag,\nthis method doesn\'t take the screen density into account."</string>
+    <string name="setting_info_keep_screen_on" formatted="false">"Enable this option to keep your device awake (no screen timeout)."</string>
+    <string name="setting_info_kiosk_control_panel_actions" formatted="false">"Manage visible actions in the kiosk control panel.\n\nUse the drag handle at the end to reorder the items.\n\nWhen in locked mode, the \"UNLOCK\" action will be appended to the\nend if not configured.\n\nWhen in unlocked mode, if \"Appearance -&gt; Floating Toolbar Mode\" is\nset to Hidden, the \"SETTINGS\" action will be appended to the end\nif not configured."</string>
+    <string name="setting_info_kiosk_control_panel_region" formatted="false">"Controls which part of the screen can be multi-tapped 10 times in quick\nsuccession to show the Kiosk Control Panel.\n\nThe default is Top Left (upper-left quadrant of the screen).\n\nYou cannot disable the multi-tap region when both of these apply:\n  1. [Appearance -&gt; Floating Toolbar Mode] is set to Hidden\n  2. [Device -&gt; Back Button Hold Action] is not set to \"Open Kiosk Control Panel\"\nIn that case, the region stays at Top Left so the panel remains accessible."</string>
+    <string name="setting_info_layout_algorithm" formatted="false">"- NORMAL: no rendering changes\n\n- SINGLE_COLUMN: all content in one column the width of the view\n\n- NARROW_COLUMNS: columns no wider than screen (pre-KitKat)\n\n- TEXT_AUTOSIZING: boosts font size heuristically (API 19+)"</string>
+    <string name="setting_info_load_with_overview_mode" formatted="false">"Load the WebView content fully zoomed out to fit the screen width."</string>
+    <string name="setting_info_lock_on_launch" formatted="false">"When enabled, the app will immediately enter locked/pinned mode on startup,\npreventing exit until unpinned.\n\nOn some devices, you may still be prompted with a confirmation screen."</string>
+    <string name="setting_info_lock_task_feature_block_activity_start_in_task" formatted="false">"Enable blocking of non-allowlisted activities from being started\ninto a locked task.\n\nThis requires Android 11 (API Level 30)."</string>
+    <string name="setting_info_lock_task_feature_global_actions" formatted="false">"Enables the global actions dialog that shows when long-pressing the power button.\n\nThis is the only feature that\'s enabled when setLockTaskFeatures() hasn\'t been called.\nA user typically can\'t power off the device if you disable this dialog."</string>
+    <string name="setting_info_lock_task_feature_home" formatted="false">"Shows the Home button.\n\nEnable for custom launchers - tapping an enabled Home button has no\naction unless you allowlist the default Android launcher."</string>
+    <string name="setting_info_lock_task_feature_keyguard" formatted="false">"Enables any lock screen that might be set on the device.\nTypically not suitable for devices with public users such as kiosks or digital signage."</string>
+    <string name="setting_info_lock_task_feature_notifications" formatted="false">"Enables notifications for all apps.\n\nThis shows notification icons in the status bar, heads-up notifications, and\nthe expandable notification shade.\n\nIf you enable this button, you must also enable the Home button.\n\nTapping notification actions and buttons that open new panels doesn\'t\nwork in lock task mode."</string>
+    <string name="setting_info_lock_task_feature_overview" formatted="false">"Shows the Overview button (tapping this button opens the Recents screen).\n\nIf you enable this button, you must also enable the Home button."</string>
+    <string name="setting_info_lock_task_feature_system_info" formatted="false">"Enables the status bar\'s system info area that contains indicators\nsuch as connectivity, battery, and sound/vibrate options."</string>
+    <string name="setting_info_media_playback_requires_user_gesture" formatted="false">"Sets whether the WebView requires a user gesture (e.g. tap) to play media."</string>
+    <string name="setting_info_mixed_content_mode" formatted="false">"Configures the WebView\'s behavior when a secure origin attempts to load\na resource from an insecure origin.\n\nThe preferred and most secure mode of operation is \"Never Allow\".\n\nThe use of \"Always Allow\" is strongly discouraged and could compromise\nyour security. With \"Compatibility Mode\", use it with caution."</string>
+    <string name="setting_info_mqtt_automatic_reconnect">"When enabled, attempt to automatically reconnect to the MQTT broker after\nan unexpected disconnect.\n\nIn %1$s, this is implemented linearly\nat a fixed %2$s-second interval."</string>
+    <string name="setting_info_mqtt_clean_start" formatted="false">"When enabled, the MQTT client will start a new session on connect,\ndiscarding any previous session state stored by the broker.\n\nWhen disabled, the client will resume the previous session\n(subscriptions, in-flight messages, etc.) if it exists."</string>
+    <string name="setting_info_mqtt_client_id">"A unique identifier for this client when connecting to the MQTT broker.\n\nLeave this field blank if you want the broker server to generate a\nclient ID for %1$s.\n\nSupports global variables such as APP_INSTANCE_ID and USERNAME, which\nyou can use like:\n- %2$s"</string>
+    <string name="setting_info_mqtt_connect_timeout" formatted="false">"The timeout between sending the Connect and receiving the ConnAck message.\n\nUse 0 to disable the timeout."</string>
+    <string name="setting_info_mqtt_enabled">"When enabled, %1$s will connect to your\nconfigured MQTT broker and subscribe/publish to the defined topics.\n\nThis will take effect for new app launches.\n\nIf you are currently in a disconnected state, you will need to manually click\nthe \"Connect\" button after enabling this option (or simply restarts the app)."</string>
+    <string name="setting_info_mqtt_home_assistant_device_name">"Optional display name, such as Home kiosk.\nLeave blank to use %1$s and this app\'s\ninstance ID.\nRenaming does not change the device or entity identifiers.\nReconnect MQTT after changing it."</string>
+    <string name="setting_info_mqtt_home_assistant_discovery_prefix" formatted="false">"Match Home Assistant\'s MQTT discovery prefix.\nLeave the default homeassistant unless Home Assistant uses a custom\nprefix.\nReconnect MQTT after changing it."</string>
+    <string name="setting_info_mqtt_home_assistant_enable_discovery" formatted="false">"Publish the kiosk\'s status, controls, and settings in Home Assistant.\nReconnect MQTT after changing this setting.\n\nOnline/offline status is managed automatically while discovery is\nenabled.\nCustom MQTT Will settings apply when discovery is disabled."</string>
+    <string name="setting_info_mqtt_home_assistant_status_topic" formatted="false">"Match Home Assistant\'s MQTT birth/status topic.\nLeave homeassistant/status unless Home Assistant uses a custom topic.\nReconnect MQTT after changing it."</string>
+    <string name="setting_info_mqtt_keep_alive" formatted="false">"The time interval (in seconds) in which the client sends a ping to the broker\nif no other MQTT packets are sent during this period of time.\n\nIt is used to determine if the connection is still up."</string>
+    <string name="setting_info_mqtt_password" formatted="false">"The password used to authenticate with the MQTT broker."</string>
+    <string name="setting_info_mqtt_publish_event_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees\nin case of connection failures."</string>
+    <string name="setting_info_mqtt_publish_event_retain" formatted="false">"Keep event topic messages retained for new subscribers."</string>
+    <string name="setting_info_mqtt_publish_event_topic">"The MQTT topic to publish event messages.\n\nSupported variables:\n- %1$s\n- %2$s\n- %3$s\n\nExample:\n- wk/event/${%1$s}"</string>
+    <string name="setting_info_mqtt_publish_response_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees\nfor response messages in case of connection failures."</string>
+    <string name="setting_info_mqtt_publish_response_retain" formatted="false">"Keep response topic messages retained for new subscribers."</string>
+    <string name="setting_info_mqtt_publish_response_topic">"Default MQTT topic to publish reply messages to requests.\n\nIf a responseTopic is specified in the request, either in the\npayload or in MQTT V5\'s metadata, the reply will be published\nto that responseTopic instead.\n\nSupported variables:\n- %1$s\n- %2$s\n- %3$s\n\nExample:\n- wk/response/${%1$s}"</string>
+    <string name="setting_info_mqtt_restrictions_maximum_packet_size" formatted="false">"Maximum size in bytes of MQTT packets the client can receive."</string>
+    <string name="setting_info_mqtt_restrictions_receive_maximum" formatted="false">"Maximum number of MQTT messages the client can receive simultaneously."</string>
+    <string name="setting_info_mqtt_restrictions_request_problem_information" formatted="false">"When enabled, the client requests additional problem information\nfrom the broker in MQTT responses."</string>
+    <string name="setting_info_mqtt_restrictions_request_response_information" formatted="false">"When enabled, the client requests additional response information\nfrom the broker in MQTT responses."</string>
+    <string name="setting_info_mqtt_restrictions_send_maximum" formatted="false">"Maximum number of MQTT messages the client can send simultaneously."</string>
+    <string name="setting_info_mqtt_restrictions_send_maximum_packet_size" formatted="false">"Maximum size in bytes of MQTT packets the client can send."</string>
+    <string name="setting_info_mqtt_restrictions_send_topic_alias_maximum" formatted="false">"Maximum number of topic aliases the client can send."</string>
+    <string name="setting_info_mqtt_restrictions_topic_alias_maximum" formatted="false">"Maximum number of topic aliases the client can receive."</string>
+    <string name="setting_info_mqtt_server_host" formatted="false">"The hostname or IP address of the MQTT broker the app should connect to.\n\nFor example,\n- 192.168.1.190\n- broker.hivemq.com\n- broker.emqx.io"</string>
+    <string name="setting_info_mqtt_server_port" formatted="false">"The TCP port of the MQTT broker the app should connect to.\n\nTypically,\n- 1883 - MQTT (TCP)\n- 8883 - MQTTS (TCP with SSL/TLS)\n- 80 - WS (WebSocket, same port as HTTP)\n- 443 - WSS (WebSocket Secure, same port as HTTPS)"</string>
+    <string name="setting_info_mqtt_session_expiry_interval" formatted="false">"Specify the maximum time a session is retained on the server after\ndisconnecting from the network.\n\nThe server will discard the corresponding session state when the\nexpiration time is reached."</string>
+    <string name="setting_info_mqtt_socket_connect_timeout" formatted="false">"The timeout for connecting the socket to the server.\n\nUse 0 to disable the timeout."</string>
+    <string name="setting_info_mqtt_subscribe_command_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees\nin case of connection failures."</string>
+    <string name="setting_info_mqtt_subscribe_command_retain_as_published" formatted="false">"Controls whether retained messages from the broker keep their original\nretained flag when delivered to the subscriber."</string>
+    <string name="setting_info_mqtt_subscribe_command_retain_handling">"Control whether %1$s should receive existing\nretained messages when subscribing."</string>
+    <string name="setting_info_mqtt_subscribe_command_topic">"The MQTT topic name to receive commands.\n\nSupported variables:\n- %1$s\n- %2$s\n\nExample:\n- wk/${%1$s}/command"</string>
+    <string name="setting_info_mqtt_subscribe_request_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees\nin case of connection failures."</string>
+    <string name="setting_info_mqtt_subscribe_request_retain_as_published" formatted="false">"Controls whether retained messages from the broker keep their original\nretained flag when delivered to the subscriber."</string>
+    <string name="setting_info_mqtt_subscribe_request_retain_handling">"Control whether %1$s should receive existing\nretained messages when subscribing."</string>
+    <string name="setting_info_mqtt_subscribe_request_topic">"The MQTT topic name to receive requests.\n\nSupported variables:\n- %1$s\n- %2$s\n\nExample:\n- wk/${%1$s}/request"</string>
+    <string name="setting_info_mqtt_subscribe_settings_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees\nfor settings subscriptions."</string>
+    <string name="setting_info_mqtt_subscribe_settings_retain_as_published" formatted="false">"Controls whether retained messages from the broker keep their original\nretained flag when delivered to the subscriber."</string>
+    <string name="setting_info_mqtt_subscribe_settings_retain_handling">"Control whether %1$s should receive existing\nretained messages when subscribing."</string>
+    <string name="setting_info_mqtt_subscribe_settings_topic">"The MQTT topic name to receive commands.\n\nSupported variables:\n- %1$s\n- %2$s\n\nExample:\n- wk/${%1$s}/settings"</string>
+    <string name="setting_info_mqtt_use_foreground_service">"Start a Foreground Service to keep the MQTT connection alive.\n\nThis will maintain the connection even when %1$s\ngoes to the background (e.g. another app is opened) or the device screen is\nturned off (by using PowerManager.PARTIAL_WAKE_LOCK).\n\nTurn on notifications to see the current MQTT status being updated\nby the foreground service every second.\n\nAlso, It is highly recommended that you disable battery optimisation\nfor %1$s to stop the service from\nbeing killed.\n\nFor more information, visit:\n- https://dontkillmyapp.com"</string>
+    <string name="setting_info_mqtt_use_tls" formatted="false">"When enabled, the client will connect securely to the broker\nusing TLS. Ensure the broker supports TLS on the configured port."</string>
+    <string name="setting_info_mqtt_use_web_socket" formatted="false">"When enabled, MQTT uses WebSocket transport instead of a direct\nTCP connection. TLS is configured separately with \"Use TLS\".\nEnable both settings to use WSS (secure WebSocket).\n\nEnsure the broker supports WebSocket on the selected port,\nwhich is typically\n- 80 for WS\n- 443 for WSS (WebSocket Secure)\n\nYou should only enable WebSocket when strictly necessary, as it\nwill consume more resources. A valid use case would be when you\nare connected to a network with a firewall that blocks non-standard\nports like 8883."</string>
+    <string name="setting_info_mqtt_username" formatted="false">"The username used to authenticate with the MQTT broker."</string>
+    <string name="setting_info_mqtt_web_socket_server_path" formatted="false">"The path the MQTT broker WebSocket server listens on.\n\nMust start with a \'/\', e.g. /mqtt"</string>
+    <string name="setting_info_mqtt_will_delay_interval" formatted="false">"Time in seconds the broker will wait before sending the last will message\nafter the client disconnects unexpectedly. A value of 0 means immediate delivery."</string>
+    <string name="setting_info_mqtt_will_message_expiry_interval" formatted="false">"The lifetime in seconds of the last will message on the broker\nafter it is sent. A value of 0 means the message does not expire."</string>
+    <string name="setting_info_mqtt_will_payload">"The MQTT payload to send for the last will message if the client\ndisconnects unexpectedly.\n\nFor example,\n  {\n    \"message\": \"Client has disconnected.\",\n    \"username\": \"${%1$s}\",\n    \"appInstanceId\": \"${%2$s}\"\n  }"</string>
+    <string name="setting_info_mqtt_will_qos" formatted="false">"Quality of Service (QoS) for the MQTT last will message.\nDetermines the guarantee of message delivery in case of client disconnect."</string>
+    <string name="setting_info_mqtt_will_retain" formatted="false">"Set to true to retain the last will message on the broker after it is sent."</string>
+    <string name="setting_info_mqtt_will_topic">"The MQTT topic to publish the last will message if the client\ndisconnects unexpectedly.\n\nAll global variables are supported, e.g. you can use\n- wk/${%1$s}/${%2$s}/will"</string>
+    <string name="setting_info_mutual_tls">"Configure exact sites that may use a client certificate for Mutual TLS (mTLS).\n\nThe client certificate installer accepts PKCS#12 credentials with a private key.\nIt does not install a root CA for HTTPS server verification. To trust a private\nHTTPS server, install its CA certificate through Android Settings. WebView Kiosk\ntrusts Android-installed user CAs throughout the app, not only for these sites.\n\nAdd one entry per line in the format:\n\n    host[:port][=KeyChain alias]\n\nThe port defaults to `443`. Wildcards, schemes, paths, query strings and\nfragments are not supported. This prevents a client certificate from being\nsent to a site that was not explicitly configured.\n\nAn alias can be provided explicitly for managed devices where the app already\nhas access to that KeyChain entry.\n\nWhen %1$s is the device/profile owner,\nan explicitly configured alias is also returned from Android\'s private-key selection\ncallback for %1$s\'s own matching site, allowing\nAndroid to grant access without showing the certificate picker."</string>
+    <string name="setting_info_over_scroll_mode" formatted="false">"Configures the WebView\'s overscroll behavior.\n\nOptions:\n- Always: Shows the overscroll effect whenever the content is scrolled.\n- If Content Scrolls: allow over-scrolling only if the view content is larger than the container\n- Never: Disables the overscroll effect entirely."</string>
+    <string name="setting_info_override_url_loading_block_action" formatted="false">"Action to take when a URL navigation (via shouldOverrideUrlLoading)\nmatches the blacklist regex.\n\nTypically, this is from clicking links (&lt;a&gt; tags) on a webpage\'s HTML.\n\nActions are:\n- Show Block Page (display a HTML block page)\n- Prevent Navigation (does nothing when links are clicked)\n- Show Toast (shows a toast with your custom block message)\n\nThis option will NOT take effect for:\n- JavaScript navigation\n- Custom URL loading, e.g. from the Address Bar, Bookmarks, History, etc\n\nIn those other cases, the block page will simply be shown."</string>
+    <string name="setting_info_refresh_on_loading_error_interval_seconds">"Interval in seconds between automatic refresh attempts when a page fails\nto load, including main-page HTTP 5xx server errors on Android 6 and\nnewer. HTTP 4xx responses and failed images or iframes do not trigger\nretries.\n\nMinimum: %1$s\n\nTo disable, use the value 0."</string>
+    <string name="setting_info_refresh_on_network_available" formatted="false">"Select when the page should automatically refresh when network\nconnectivity is restored.\n\n- Always: refresh whenever a network connection is available\n- On Page Error: only refresh if the previous page load failed\n- Never: do not refresh automatically"</string>
+    <string name="setting_info_refresh_on_screen_wake" formatted="false">"Refresh the current page once when the device wakes from sleep.\nThe kiosk page must be in the foreground before and after sleep."</string>
+    <string name="setting_info_replace_history_url_on_redirect" formatted="false">"Set to true to replace the current history entry with the final URL if\nany page redirections occurs, rather than adding multiple entries to the\nhistory navigation stack."</string>
+    <string name="setting_info_request_focus_on_page_start" formatted="false">"Sets whether the WebView should request focus when a page starts loading."</string>
+    <string name="setting_info_reset_actions" formatted="false">"Choose what to clear when an inactivity reset returns to the home URL.\n\nReturning home always happens, even when no actions are selected.\n\nUse the drag handle at the end to reorder the items.\n\nActions run in the selected order, except WebView recreation,\nwhich always happens after the other actions.\n\nCookies and website storage are shared across all websites in the app.\nClearing them may sign users out of websites.\n\nRecreating the WebView also ends the current in-memory page session."</string>
+    <string name="setting_info_reset_on_inactivity_seconds">"Number of seconds of inactivity before the app resets to the home URL.\n\nWhen there is 5 seconds left, a warning countdown will be shown on\nthe screen.\n\nUser interactions with the screen reset the timer.\n\nChoose which browsing data to clear using Reset Actions.\n\nMinimum: %1$s\n\nTo disable, use the value 0."</string>
+    <string name="setting_info_reset_on_launch" formatted="false">"When enabled, the app will always start fresh at the Home URL when\nclosed and re-opened, as opposed to the last visited URL.\n\nThe navigation history will also be cleared."</string>
+    <string name="setting_info_search_provider_url">"The URL used for search queries in the address bar.\n\nThis URL must include a query parameter, e.g.\n  %1$s"</string>
+    <string name="setting_info_search_suggestion_engine" formatted="false">"Configure the search engine for text suggestions (autocomplete/hints)\nwhen typing in the address bar.\n\nFor example, when searching for \"new\", you may get suggested\n- news\n- new recipes\n- new york times"</string>
+    <string name="setting_info_show_loading_progress_bar" formatted="false">"Show a progress bar at the top of the WebView while the main page loads.\n\nBackground iframe loads after the page finishes do not reopen the bar.\n\nDisable this to hide the bar during all page loads."</string>
+    <string name="setting_info_ssl_error_mode" formatted="false">"Controls how the WebView handles SSL errors when loading pages.\n\n- BLOCK: cancels all failed SSL requests (default).\n- PROMPT: opens a dialog for the user to decide.\n- PROCEED: always proceeds despite SSL errors (dangerous, NOT RECOMMENDED).\n\nPlease use this setting carefully. Proceeding on SSL errors can compromise security."</string>
+    <string name="setting_info_support_pdf_rendering">"Set to true to support PDF Rendering using Mozilla\'s PDF.js renderer:\n\n- https://github.com/mozilla/pdf.js\n\nYou will first need to download the renderer by opening the popup menu for this\nsetting and clicking the \"Download PDF.js assets\" button.\n\n---\n\nPDF.js assets and PDF source requests are routed through\n%1$s and handled locally by the app using the\nWebViewAssetLoader API.\n\nFor more details, see:\n\nhttps://developer.android.com/reference/androidx/webkit/WebViewAssetLoader"</string>
+    <string name="setting_info_support_zoom" formatted="false">"Sets whether the WebView should support zooming using its on-screen\nzoom controls and gestures."</string>
+    <string name="setting_info_theme" formatted="false">"Select the app theme: System (default), Dark or Light.\n\nSee also: Settings -&gt; JS Scripts -&gt; Apply App Theme ."</string>
+    <string name="setting_info_unified_push_distributor">"The package name of the distributor, e.g.\n\n- org.unifiedpush.distributor.sunup\n- io.heckel.ntfy\n\nThe distributor app serves as the middle-man that receives the app notification\nfrom the push server and forwarding it to %1$s."</string>
+    <string name="setting_info_unified_push_enabled">"Allow %1$s to process\nnew push messages or register new endpoints."</string>
+    <string name="setting_info_unified_push_instance">"Registration instance. Can be used to create multiple registrations.\n\nSupported variables:\n- %1$s\n\nExample:\n- %2$s\n\nIf left blank, %3$s will be used."</string>
+    <string name="setting_info_unified_push_message_for_distributor" formatted="false">"A customised message that may be shown by the distributor UI to\nidentify this registration."</string>
+    <string name="setting_info_unified_push_process_unencrypted_messages">"When enabled, %1$s will also handle\nUnifiedPush messages that did not successfully decrypt.\n\nA valid use case for this would be to enable simple curl requests\nto ntfy.sh without encryption for testing or convenience, although\nthis reduces security."</string>
+    <string name="setting_info_unified_push_store_endpoint_credentials">"When enabled, %1$s will persist\nthe following values after registration:\n\n- Endpoint URL\n- Endpoint Public Key\n- Endpoint Auth Secret\n\nIdeally, these values should not be stored at all, and are instead\nsent directly to the application server at the point of registration.\n\nHowever, %1$s does not yet have an\napplication server. These values are thus stored locally in the\napplication so they can be copied. They can be optionally redacted\nafterwards through the settings UI."</string>
+    <string name="setting_info_unified_push_vapid_public_key" formatted="false">"VAPID public key (RFC8292), base64url, in uncompressed form (87 chars long).\n\nFor more details, see:\n- https://www.rfc-editor.org/rfc/rfc8292"</string>
+    <string name="setting_info_unlock_auth_requirement">"This setting only applies to in-app unlock methods, e.g. when unlocking\nusing Kiosk Control Panel or Custom Unlock Shortcut.\n\nAvailable options are:\n\n  - DEFAULT: require authentication for lock task mode (device owner,\nfully-managed/company-owned devices), off for screen pinning (user-owned devices)\n\n  - OFF: unlock without requiring authentication\n\n  - REQUIRE: Prompt for biometrics or device credentials when unlocking\n\nFor user-owned devices without lock task mode, the device will auto-lock when\nunpinning, which is outside the control of %1$s."</string>
+    <string name="setting_info_use_wide_view_port" formatted="false">"Enable wide viewport support in the WebView for responsive pages."</string>
+    <string name="setting_info_user_agent" formatted="false">"The User Agent string controls how the web engine identifies itself\nto websites. Some sites may behave differently depending on this value.\n\nLeave blank to use the system default User Agent."</string>
+    <string name="setting_info_web_view_inset" formatted="false">"Select which WindowInsets the WebView should respect for padding."</string>
+    <string name="setting_info_website_blacklist" formatted="false">"Specify regular expressions (regex), one per line.\n\nEscaping with backslash (\\) is required for special characters\nin regex like \'.\' and \'?\'.\n\nThese patterns also use partial matching.\nIf you need strict control, anchor your regex with `^` and `$`.\n\nWhitelist patterns take precedence over blacklist patterns."</string>
+    <string name="setting_info_website_bookmarks">"Specify bookmarked URLs one per line. Blank lines will be ignored.\n\nThis is accessible in the address bar. See the relevant setting \"Web Browsing -&gt; Allow Bookmark Access\".\n\nYou can also specify a title for display in the format: \"&lt;URL&gt; | &lt;Title&gt;\".\n\nFor example:\n\n```\n\n%1$s | Webview Kiosk\n\nhttps://duckduckgo.com | DuckDuckGo\n\nhttps://f-droid.org | F-Droid\n\n```"</string>
+    <string name="setting_info_website_whitelist" formatted="false">"Specify regular expressions (regex), one per line.\n\nEscaping with backslash (\\) is required for special characters\nin regex like \'.\' and \'?\'.\n\nThese patterns also use partial matching.\nIf you need strict control, anchor your regex with `^` and `$`.\n\nWhitelist patterns take precedence over blacklist patterns."</string>
+    <string name="ui_0_disabled" formatted="false">"0 (disabled)"</string>
+    <string name="ui_a_url_list_with_this_address_already_exists" formatted="false">"A URL list with this address already exists"</string>
+    <string name="ui_actions" formatted="false">"Actions"</string>
+    <string name="ui_add" formatted="false">"Add"</string>
+    <string name="ui_add_default" formatted="false">"Add Default"</string>
+    <string name="ui_add_default_lists" formatted="false">"Add default lists"</string>
+    <string name="ui_add_filter_list" formatted="false">"Add filter list"</string>
+    <string name="ui_add_list" formatted="false">"Add list"</string>
+    <string name="ui_add_lock_task_package" formatted="false">"Add Lock Task Package"</string>
+    <string name="ui_admin_restrictions_notice" formatted="false">"Your IT Administrator has applied new configurations.\n\nSome settings may have been restricted."</string>
+    <string name="ui_all_lists_disabled" formatted="false">"All lists disabled"</string>
+    <string name="ui_all_lists_enabled" formatted="false">"All lists enabled"</string>
+    <string name="ui_all_permissions_will_be_removed" formatted="false">"All permissions will be removed."</string>
+    <string name="ui_allow" formatted="false">"Allow"</string>
+    <string name="ui_already_added" formatted="false">"Already added"</string>
+    <string name="ui_already_cancelling_please_wait_up_to_value_seconds">"Already cancelling - please wait up to %1$s seconds."</string>
+    <string name="ui_app" formatted="false">"App"</string>
+    <string name="ui_app_launcher_no_apps_in_kiosk">"No apps available.\n\nIn kiosk/locked mode, you can only launch apps that have been added to\nthe lock task permitted list (under device owner settings).\n\nFor user devices that utilise screen pinning, you will not be able to\nlaunch other apps.\n\nRefer to the documentations for how device owner can be obtained - this\nrequires one of: ADB, Shizuku or Dhizuku.\n\n- %1$s"</string>
+    <string name="ui_append_the_current_url" formatted="false">"Append the current URL:"</string>
+    <string name="ui_applies_to_intercepted_network_requests_and_page_navig_2" formatted="false">"Applies to intercepted network requests and page navigation. Popup and inline script/font filtering are unavailable."</string>
+    <string name="ui_apps" formatted="false">"Apps"</string>
+    <string name="ui_are_you_sure_you_want_to_remove_all_permissions_for_th" formatted="false">"Are you sure you want to remove ALL permissions for this site?"</string>
+    <string name="ui_are_you_sure_you_want_to_transfer_ownership_to_value">"Are you sure you want to transfer ownership to %1$s?"</string>
+    <string name="ui_authentication_failed" formatted="false">"Authentication failed"</string>
+    <string name="ui_authentication_required" formatted="false">"Authentication Required"</string>
+    <string name="ui_automatic" formatted="false">"Automatic"</string>
+    <string name="ui_back" formatted="false">"Back"</string>
+    <string name="ui_blank" formatted="false">"(blank)"</string>
+    <string name="ui_blank_device_credentials" formatted="false">"(blank = device credentials)"</string>
+    <string name="ui_blocking_couldn_t_be_updated" formatted="false">"Blocking couldn\'t be updated."</string>
+    <string name="ui_bookmarks" formatted="false">"Bookmarks"</string>
+    <string name="ui_bullet" formatted="false">"•"</string>
+    <string name="ui_cancel" formatted="false">"Cancel"</string>
+    <string name="ui_cancel_connection" formatted="false">"Cancel Connection"</string>
+    <string name="ui_cancelling_max_value_seconds" tools:ignore="TypographyEllipsis">"Cancelling... (max %1$s seconds)"</string>
+    <string name="ui_cannot_execute_notify_command_notifications_disabled_i" formatted="false">"Cannot execute notify command - notifications disabled in settings"</string>
+    <string name="ui_cannot_lock_device_without_device_owner_privileges" formatted="false">"Cannot lock device without device owner privileges"</string>
+    <string name="ui_cannot_open_the_selected_file" formatted="false">"Cannot open the selected file"</string>
+    <string name="ui_category" formatted="false">"Category"</string>
+    <string name="ui_change_file" formatted="false">"Change file"</string>
+    <string name="ui_change_replacement_file" formatted="false">"Change replacement file"</string>
+    <string name="ui_clear" formatted="false">"Clear"</string>
+    <string name="ui_clear_all" formatted="false">"Clear All"</string>
+    <string name="ui_clear_certificate_preferences" formatted="false">"Clear certificate preferences"</string>
+    <string name="ui_clear_logs" formatted="false">"Clear Logs"</string>
+    <string name="ui_click_and_hold_to_copy_message" formatted="false">"Click and hold to copy message."</string>
+    <string name="ui_client_certificate_file_exceeds_the_10_mib_limit" formatted="false">"Client certificate file exceeds the 10 MiB limit."</string>
+    <string name="ui_client_certificate_installed" formatted="false">"Client certificate installed."</string>
+    <string name="ui_client_certificate_preferences_cleared" formatted="false">"Client certificate preferences cleared."</string>
+    <string name="ui_clone" formatted="false">"Clone"</string>
+    <string name="ui_close" formatted="false">"Close"</string>
+    <string name="ui_confirm" formatted="false">"Confirm"</string>
+    <string name="ui_confirm_delete_local_file">"Are you sure you want to delete this file?\n\n  %1$s\n\nThis will only remove the app\'s copy and not the original file on your device."</string>
+    <string name="ui_confirm_password" formatted="false">"Confirm password"</string>
+    <string name="ui_confirm_remove_device_owner">"Are you sure you want to unset %1$s\nas the device owner?\n\nThis means Lock Task Mode will no longer be available, meaning\nthe kiosk lock feature will utilise Screen Pinning instead."</string>
+    <string name="ui_connect" formatted="false">"Connect"</string>
+    <string name="ui_content_blocking_is_disabled_the_settings_below_will_n" formatted="false">"Content blocking is disabled. The settings below will not take effect."</string>
+    <string name="ui_copy" formatted="false">"Copy"</string>
+    <string name="ui_copy_file" formatted="false">"Copy file://"</string>
+    <string name="ui_copy_full_url" formatted="false">"Copy full URL"</string>
+    <string name="ui_copy_link" formatted="false">"Copy Link"</string>
+    <string name="ui_copy_link_2" formatted="false">"Copy link"</string>
+    <string name="ui_cosmetic" formatted="false">"Cosmetic"</string>
+    <string name="ui_couldn_t_open_this_list_please_try_again" formatted="false">"Couldn\'t open this list. Please try again."</string>
+    <string name="ui_create" formatted="false">"Create"</string>
+    <string name="ui_create_shortcut" formatted="false">"Create Shortcut"</string>
+    <string name="ui_custom" formatted="false">"Custom"</string>
+    <string name="ui_custom_block_page_html_example">"e.g.\n    &lt;div style=\"text-align:center; margin-top:10%%;\"&gt;\n      &lt;h1 style=\"font-size:4rem;\"&gt;Blocked&lt;/h1&gt;\n      &lt;p style=\"font-size:3rem;\"&gt;This site is not accessible.&lt;/p&gt;\n    &lt;/div&gt;\n\nor as a redirect:\n    &lt;meta http-equiv=\"refresh\" content=\"0; url=%1$s\"&gt;"</string>
+    <string name="ui_deactivate" formatted="false">"Deactivate"</string>
+    <string name="ui_deactivate_device_owner" formatted="false">"Deactivate Device Owner"</string>
+    <string name="ui_delete" formatted="false">"Delete"</string>
+    <string name="ui_delete_file" formatted="false">"Delete File"</string>
+    <string name="ui_delete_pdf_js_assets" formatted="false">"Delete PDF.js assets"</string>
+    <string name="ui_deleted_value">"Deleted %1$s"</string>
+    <string name="ui_deleting_pdf_js" tools:ignore="TypographyEllipsis" formatted="false">"Deleting PDF.js..."</string>
+    <string name="ui_deny" formatted="false">"Deny"</string>
+    <string name="ui_device_owner_not_configured">"%1$s is not set as the device owner.\nThe settings below will not take effect."</string>
+    <string name="ui_dhizuku" formatted="false">"Dhizuku"</string>
+    <string name="ui_disable_all" formatted="false">"Disable all"</string>
+    <string name="ui_disable_in_app_info" formatted="false">"Disable in App Info"</string>
+    <string name="ui_disable_selected" formatted="false">"Disable selected"</string>
+    <string name="ui_disabled" formatted="false">"Disabled"</string>
+    <string name="ui_disabled_2" formatted="false">"disabled."</string>
+    <string name="ui_disconnect" formatted="false">"Disconnect"</string>
+    <string name="ui_distributorvalue">"Distributor%1$s"</string>
+    <string name="ui_done" formatted="false">"Done"</string>
+    <string name="ui_download" formatted="false">"Download"</string>
+    <string name="ui_download_complete" formatted="false">"Download complete"</string>
+    <string name="ui_download_failed_value">"Download failed: %1$s"</string>
+    <string name="ui_download_file" formatted="false">"Download File"</string>
+    <string name="ui_download_image" formatted="false">"Download Image"</string>
+    <string name="ui_download_is_disabled_in_settings_value">"Download is disabled in settings (%1$s)"</string>
+    <string name="ui_download_pdf_js_assets" formatted="false">"Download PDF.js assets"</string>
+    <string name="ui_downloading_file" tools:ignore="TypographyEllipsis" formatted="false">"Downloading file..."</string>
+    <string name="ui_downloading_filter_list" formatted="false">"Downloading filter list…"</string>
+    <string name="ui_downloading_filter_lists" formatted="false">"Downloading filter lists…"</string>
+    <string name="ui_downloading_pdf_js" tools:ignore="TypographyEllipsis" formatted="false">"Downloading PDF.js..."</string>
+    <string name="ui_downloading_selected_filter_lists" formatted="false">"Downloading selected filter lists…"</string>
+    <string name="ui_downloading_ublock_origin_defaults" formatted="false">"Downloading uBlock Origin defaults…"</string>
+    <string name="ui_downloading_value">"Downloading %1$s…"</string>
+    <string name="ui_dpm_value_error_value">"DPM %1$s) error: %2$s"</string>
+    <string name="ui_drag_handle" formatted="false">"Drag Handle"</string>
+    <string name="ui_e_g" formatted="false">"e.g. **********"</string>
+    <string name="ui_e_g_0" formatted="false">"e.g. 0"</string>
+    <string name="ui_e_g_100" formatted="false">"e.g. 100"</string>
+    <string name="ui_e_g_1024" formatted="false">"e.g. 1024"</string>
+    <string name="ui_e_g_1024_or_0_to_disable" formatted="false">"e.g. 1024 (or 0 to disable)"</string>
+    <string name="ui_e_g_120" formatted="false">"e.g. 120"</string>
+    <string name="ui_e_g_16" formatted="false">"e.g. 16"</string>
+    <string name="ui_e_g_1883" formatted="false">"e.g. 1883"</string>
+    <string name="ui_e_g_20" formatted="false">"e.g. 20"</string>
+    <string name="ui_e_g_2048" formatted="false">"e.g. 2048"</string>
+    <string name="ui_e_g_30" formatted="false">"e.g. 30"</string>
+    <string name="ui_e_g_32" formatted="false">"e.g. 32"</string>
+    <string name="ui_e_g_3600_for_1_hour" formatted="false">"e.g. 3600 (for 1 hour)"</string>
+    <string name="ui_e_g_5" formatted="false">"e.g. 5"</string>
+    <string name="ui_e_g_60" formatted="false">"e.g. 60"</string>
+    <string name="ui_e_g_broker_example_com" formatted="false">"e.g. broker.example.com"</string>
+    <string name="ui_e_g_document_body_style_backgroundcolor_green" formatted="false">"e.g. document.body.style.backgroundColor = \'green\';"</string>
+    <string name="ui_e_g_io_heckel_ntfy" formatted="false">"e.g. io.heckel.ntfy"</string>
+    <string name="ui_e_g_my_filters" formatted="false">"e.g. My filters"</string>
+    <string name="ui_e_g_registering_value">"e.g. Registering %1$s"</string>
+    <string name="ui_e_g_this_site_is_blocked_by_company_name" formatted="false">"e.g. This site is blocked by &lt;Company Name&gt;"</string>
+    <string name="ui_e_g_user001" formatted="false">"e.g. user001"</string>
+    <string name="ui_e_g_value">"e.g. %1$s"</string>
+    <string name="ui_e_g_wk_command" formatted="false">"e.g. wk/command"</string>
+    <string name="ui_e_g_wk_request" formatted="false">"e.g. wk/request"</string>
+    <string name="ui_e_g_wk_settings" formatted="false">"e.g. wk/settings"</string>
+    <string name="ui_e_g_wk_will" formatted="false">"e.g. wk/will"</string>
+    <string name="ui_edit" formatted="false">"Edit"</string>
+    <string name="ui_edit_file" formatted="false">"Edit file"</string>
+    <string name="ui_edit_filter_list" formatted="false">"Edit filter list"</string>
+    <string name="ui_enable_all" formatted="false">"Enable all"</string>
+    <string name="ui_enable_in_app_info" formatted="false">"Enable in App Info"</string>
+    <string name="ui_enable_selected" formatted="false">"Enable selected"</string>
+    <string name="ui_enabled" formatted="false">"Enabled"</string>
+    <string name="ui_enabled_2" formatted="false">"enabled."</string>
+    <string name="ui_endpoint_auth_secret" formatted="false">"Endpoint Auth Secret"</string>
+    <string name="ui_endpoint_public_key" formatted="false">"Endpoint Public Key"</string>
+    <string name="ui_endpoint_url" formatted="false">"Endpoint URL"</string>
+    <string name="ui_enter_a_non_empty_mqtt_topic_without_or" formatted="false">"Enter a non-empty MQTT topic without + or #."</string>
+    <string name="ui_enter_a_number_between_value_and_value">"Enter a number between %1$s and %2$s"</string>
+    <string name="ui_enter_a_number_value_or_0_to_disable">"Enter a number ≥ %1$s (or 0 to disable)"</string>
+    <string name="ui_enter_a_number_value_or_0_to_disable_2">"Enter a number ≤ %1$s (or 0 to disable)"</string>
+    <string name="ui_enter_a_replacement_url" formatted="false">"Enter a replacement URL"</string>
+    <string name="ui_enter_your_password" formatted="false">"Enter your password"</string>
+    <string name="ui_error_distributor_cannot_be_blank" formatted="false">"Error: distributor cannot be blank"</string>
+    <string name="ui_error_distributor_is_not_installed" formatted="false">"Error: distributor is not installed"</string>
+    <string name="ui_error_handling_intent_no_package_available_for_value">"Error handling intent: no package available for %1$s"</string>
+    <string name="ui_error_invalid_vapid_public_key" formatted="false">"Error: invalid VAPID public key"</string>
+    <string name="ui_error_kiosk_launch_requires_android_api_value_current">"Error: kiosk launch requires Android API %1$s+ (current: %2$s)."</string>
+    <string name="ui_error_lock_task_feature_home_under_device_owner_is_req" formatted="false">"Error: lock task feature HOME (under device owner) is required."</string>
+    <string name="ui_error_no_activities_for_app" formatted="false">"Error: no activities for app."</string>
+    <string name="ui_error_owner_permission_is_not_granted" formatted="false">"Error: owner permission is not granted."</string>
+    <string name="ui_error_please_enable_value">"Error: please enable %1$s"</string>
+    <string name="ui_error_restarting_value">"Error restarting: %1$s"</string>
+    <string name="ui_error_value">"Error: %1$s"</string>
+    <string name="ui_error_value_cannot_be_opened">"Error: %1$s cannot be opened."</string>
+    <string name="ui_error_value_is_not_lock_task_permitted_in_settings">"Error: %1$s is not lock task permitted in settings."</string>
+    <string name="ui_error_value_must_be_lock_task_permitted_to_launch_apps">"Error: %1$s must be lock task permitted to launch apps."</string>
+    <string name="ui_exception" formatted="false">"Exception:"</string>
+    <string name="ui_export" formatted="false">"Export"</string>
+    <string name="ui_export_error_value">"Export Error: %1$s"</string>
+    <string name="ui_export_settings" formatted="false">"Export Settings"</string>
+    <string name="ui_exported_data" formatted="false">"Exported Data"</string>
+    <string name="ui_exported_to_value">"Exported to %1$s"</string>
+    <string name="ui_failed_to_create_cipher_value">"Failed to create cipher: %1$s"</string>
+    <string name="ui_failed_to_delete_value">"Failed to delete %1$s"</string>
+    <string name="ui_failed_to_finish_download_value">"Failed to finish download: %1$s"</string>
+    <string name="ui_failed_to_import_base64_you_may_need_to_switch_tabs" formatted="false">"Failed to import Base64. You may need to switch tabs."</string>
+    <string name="ui_failed_to_import_json_you_may_need_to_switch_tabs" formatted="false">"Failed to import JSON. You may need to switch tabs."</string>
+    <string name="ui_failed_to_leave_screen_pinning_value">"Failed to leave screen pinning: %1$s"</string>
+    <string name="ui_failed_to_lock_app_is_not_permitted_for_lock_task_mode" formatted="false">"Failed to lock: app is not permitted for lock task mode."</string>
+    <string name="ui_failed_to_lock_device_value">"Failed to lock device: %1$s"</string>
+    <string name="ui_failed_to_lock_value">"Failed to lock: %1$s"</string>
+    <string name="ui_failed_to_read_file_value">"Failed to read file: %1$s"</string>
+    <string name="ui_failed_to_save_file" formatted="false">"Failed to save file"</string>
+    <string name="ui_failed_to_unlock_value">"Failed to unlock: %1$s"</string>
+    <string name="ui_false" formatted="false">"False"</string>
+    <string name="ui_false_value">"False %1$s"</string>
+    <string name="ui_file_link" formatted="false">"File Link"</string>
+    <string name="ui_file_picker_is_disabled_in_value_s_web_engine_settings">"File picker is disabled in %1$s\'s Web Engine settings."</string>
+    <string name="ui_file_saved" formatted="false">"File saved"</string>
+    <string name="ui_file_size" formatted="false">"File size"</string>
+    <string name="ui_file_uploaded" formatted="false">"File uploaded"</string>
+    <string name="ui_files" formatted="false">"Files"</string>
+    <string name="ui_filter_lists" formatted="false">"Filter Lists"</string>
+    <string name="ui_filter_rules" formatted="false">"Filter rules"</string>
+    <string name="ui_filter_value">"Filter %1$s"</string>
+    <string name="ui_find_in_page" formatted="false">"Find in page"</string>
+    <string name="ui_forward" formatted="false">"Forward"</string>
+    <string name="ui_from_file" formatted="false">"From File"</string>
+    <string name="ui_go_to_webview" formatted="false">"Go to WebView"</string>
+    <string name="ui_help" formatted="false">"Help"</string>
+    <string name="ui_hide_password" formatted="false">"Hide password"</string>
+    <string name="ui_history" formatted="false">"History"</string>
+    <string name="ui_home_kiosk" formatted="false">"Home kiosk"</string>
+    <string name="ui_homeassistant" formatted="false">"homeassistant"</string>
+    <string name="ui_homeassistant_status" formatted="false">"homeassistant/status"</string>
+    <string name="ui_host_value">"Host: %1$s"</string>
+    <string name="ui_i_understand" formatted="false">"I understand."</string>
+    <string name="ui_id_value">"ID: %1$s"</string>
+    <string name="ui_image_url" formatted="false">"Image URL"</string>
+    <string name="ui_import" formatted="false">"Import"</string>
+    <string name="ui_import_file" formatted="false">"Import file"</string>
+    <string name="ui_import_settings" formatted="false">"Import Settings"</string>
+    <string name="ui_imported_filter_list" formatted="false">"Imported filter list"</string>
+    <string name="ui_imported_settings_successfully" formatted="false">"Imported settings successfully"</string>
+    <string name="ui_incorrect_password" formatted="false">"Incorrect password"</string>
+    <string name="ui_info" formatted="false">"Info"</string>
+    <string name="ui_install_client_certificate" formatted="false">"Install client certificate"</string>
+    <string name="ui_invalid" formatted="false">"Invalid"</string>
+    <string name="ui_invalid_characters_in_value_label">"Invalid characters in %1$s label"</string>
+    <string name="ui_invalid_filename_value">"Invalid filename: \'%1$s\'"</string>
+    <string name="ui_invalid_home_url_provided" formatted="false">"Invalid Home URL provided."</string>
+    <string name="ui_invalid_input" formatted="false">"Invalid input"</string>
+    <string name="ui_invalid_number" formatted="false">"Invalid number"</string>
+    <string name="ui_invalid_search_provider_url" formatted="false">"Invalid search provider URL."</string>
+    <string name="ui_invalid_url" formatted="false">"Invalid URL"</string>
+    <string name="ui_invalid_vapid_public_key" formatted="false">"Invalid VAPID public key."</string>
+    <string name="ui_just_now" formatted="false">"Just now"</string>
+    <string name="ui_kiosk_control_panel" formatted="false">"Kiosk Control Panel"</string>
+    <string name="ui_last_updated" formatted="false">"Last updated"</string>
+    <string name="ui_launcher" formatted="false">"Launcher"</string>
+    <string name="ui_leave_blank_for_system_default" formatted="false">"(leave blank for system default)"</string>
+    <string name="ui_legacy_file" formatted="false">"legacy file://"</string>
+    <string name="ui_link" formatted="false">"Link"</string>
+    <string name="ui_list_added" formatted="false">"List added"</string>
+    <string name="ui_list_cloned_disabled" formatted="false">"List cloned (disabled)"</string>
+    <string name="ui_list_details" formatted="false">"List details"</string>
+    <string name="ui_list_information_is_unavailable_please_try_again" formatted="false">"List information is unavailable. Please try again."</string>
+    <string name="ui_list_refreshed" formatted="false">"List refreshed"</string>
+    <string name="ui_list_saved" formatted="false">"List saved"</string>
+    <string name="ui_list_type" formatted="false">"List type"</string>
+    <string name="ui_listening" tools:ignore="TypographyEllipsis" formatted="false">"Listening..."</string>
+    <string name="ui_lists_enabled_count">"%1$s/%2$s enabled"</string>
+    <string name="ui_loaded_file_successfully" formatted="false">"Loaded file successfully."</string>
+    <string name="ui_loading_content_blocking_rules" formatted="false">"Loading content-blocking rules…"</string>
+    <string name="ui_loading_value">"Loading %1$s"</string>
+    <string name="ui_location_permission_not_available">"%1$s requested access to your location.\n\nHowever, location permission is either disabled in settings or\nnot yet granted to %2$s."</string>
+    <string name="ui_lock_task_features" formatted="false">"Lock Task Features"</string>
+    <string name="ui_lock_task_packages" formatted="false">"Lock Task Packages"</string>
+    <string name="ui_login" formatted="false">"Login"</string>
+    <string name="ui_long_label" formatted="false">"Long Label"</string>
+    <string name="ui_long_label_2" formatted="false">"Long label"</string>
+    <string name="ui_long_url_ready_press_search" formatted="false">"Long URL ready — press Search"</string>
+    <string name="ui_manage" formatted="false">"Manage"</string>
+    <string name="ui_manage_device_owner" formatted="false">"Manage Device Owner"</string>
+    <string name="ui_manage_lock_task_packages" formatted="false">"Manage Lock Task Packages"</string>
+    <string name="ui_manage_site_permissions" formatted="false">"Manage Site Permissions"</string>
+    <string name="ui_max_value_characters">"Max %1$s characters"</string>
+    <string name="ui_menu" formatted="false">"Menu"</string>
+    <string name="ui_messageid_value">"messageId: %1$s"</string>
+    <string name="ui_more" formatted="false">"More"</string>
+    <string name="ui_mqtt" formatted="false">"/mqtt"</string>
+    <string name="ui_mqtt_client_id" formatted="false">"MQTT Client ID"</string>
+    <string name="ui_mqtt_connected_successfully" formatted="false">"MQTT connected successfully."</string>
+    <string name="ui_mqtt_connection_failed_value">"MQTT connection failed: %1$s"</string>
+    <string name="ui_mqtt_disconnected_failed_value">"MQTT disconnected failed: %1$s"</string>
+    <string name="ui_mqtt_disconnected_successfully" formatted="false">"MQTT disconnected successfully"</string>
+    <string name="ui_mqtt_homeassistant_prefix_validation" formatted="false">"Enter a non-empty MQTT prefix without wildcards.\nRemove any leading/trailing spaces or slashes."</string>
+    <string name="ui_mqtt_invalid_request_see_debug_logs" formatted="false">"MQTT: invalid request. See debug logs."</string>
+    <string name="ui_mqtt_websocket_port_warning">"NOTE: if your broker accepts WebSocket connections on port %1$s,\nenable:\n\n - MQTT &gt; Connection &gt; Use WebSocket"</string>
+    <string name="ui_mqtt_will_payload_example">"{\n  \"message\": \"Client has disconnected.\",\n  \"appInstanceId\": \"${%1$s}\"\n}"</string>
+    <string name="ui_mutual_tls_host_placeholder" formatted="false">"secure.example.com\napi.example.com:8443\nmanaged.example.com=work-client-cert"</string>
+    <string name="ui_n_a" formatted="false">"N/A"</string>
+    <string name="ui_name" formatted="false">"Name"</string>
+    <string name="ui_network" formatted="false">"Network"</string>
+    <string name="ui_next" formatted="false">"Next"</string>
+    <string name="ui_nfc_disabled" formatted="false">"(NFC disabled)"</string>
+    <string name="ui_nfc_is_not_supported_on_this_device" formatted="false">"NFC is not supported on this device."</string>
+    <string name="ui_nfc_not_supported" formatted="false">"(NFC not supported)"</string>
+    <string name="ui_no_activity_for_intent_value">"No activity for intent: %1$s"</string>
+    <string name="ui_no_apps_available" formatted="false">"No apps available."</string>
+    <string name="ui_no_biometric_or_credentials_enrolled" formatted="false">"No biometric or credentials enrolled"</string>
+    <string name="ui_no_bookmarks_saved" formatted="false">"No bookmarks saved."</string>
+    <string name="ui_no_files_uploaded_yet" formatted="false">"No files uploaded yet."</string>
+    <string name="ui_no_filter_lists_have_been_added" formatted="false">"No filter lists have been added"</string>
+    <string name="ui_no_local_files_available" formatted="false">"No local files available."</string>
+    <string name="ui_no_logs_yet" formatted="false">"No logs yet."</string>
+    <string name="ui_no_permission" formatted="false">"(no permission)"</string>
+    <string name="ui_no_site_permissions_have_been_granted" formatted="false">"No site permissions have been granted."</string>
+    <string name="ui_non_sticky" formatted="false">"Non-Sticky"</string>
+    <string name="ui_none" formatted="false">"None"</string>
+    <string name="ui_not_applicable" formatted="false">"Not applicable"</string>
+    <string name="ui_note_this_may_break_existing_links_bookmarks" formatted="false">"NOTE: this may break existing links/bookmarks."</string>
+    <string name="ui_open_dhizuku" formatted="false">"Open Dhizuku"</string>
+    <string name="ui_open_file" formatted="false">"Open file://"</string>
+    <string name="ui_open_image" formatted="false">"Open Image"</string>
+    <string name="ui_open_in_browser" formatted="false">"Open in Browser"</string>
+    <string name="ui_open_link" formatted="false">"Open Link"</string>
+    <string name="ui_open_link_2" formatted="false">"Open link"</string>
+    <string name="ui_open_nfc_settings" formatted="false">"Open NFC Settings"</string>
+    <string name="ui_options_for_value">"Options for %1$s"</string>
+    <string name="ui_package" formatted="false">"Package"</string>
+    <string name="ui_package_is_not_installed" formatted="false">"Package is not installed."</string>
+    <string name="ui_page_url" formatted="false">"Page URL"</string>
+    <string name="ui_partially_supported_rules" formatted="false">"Partially supported rules"</string>
+    <string name="ui_password" formatted="false">"Password"</string>
+    <string name="ui_passwords_do_not_match" formatted="false">"Passwords do not match."</string>
+    <string name="ui_paste" formatted="false">"Paste"</string>
+    <string name="ui_paste_clipboard" formatted="false">"Paste Clipboard"</string>
+    <string name="ui_paste_your_base64_config_string" formatted="false">"Paste your Base64 config string."</string>
+    <string name="ui_paste_your_json_string" formatted="false">"Paste your JSON string."</string>
+    <string name="ui_path_must_start_with" formatted="false">"Path must start with \'/\'"</string>
+    <string name="ui_pdf_js_asset_deleted" formatted="false">"PDF.js asset deleted."</string>
+    <string name="ui_pdf_js_asset_deletion_failed_value">"PDF.js asset deletion failed: %1$s"</string>
+    <string name="ui_pdf_rendering_cannot_be_used_until_pdf_js_assets_are_d" formatted="false">"PDF rendering cannot be used until PDF.js assets are downloaded."</string>
+    <string name="ui_permission_blocked" formatted="false">"Permission blocked"</string>
+    <string name="ui_permission_blocked_host">"|%1$s requested access to:"</string>
+    <string name="ui_permission_camera" formatted="false">"Camera"</string>
+    <string name="ui_permission_disabled_or_not_granted">"However, these permissions are either disabled in settings or not yet granted to %1$s."</string>
+    <string name="ui_permission_list">"• %1$s"</string>
+    <string name="ui_permission_microphone" formatted="false">"Microphone"</string>
+    <string name="ui_permission_request" formatted="false">"Permission request"</string>
+    <string name="ui_permission_request_host">"|%1$s is requesting access to:"</string>
+    <string name="ui_please_authenticate_to_access_settings" formatted="false">"Please authenticate to access settings"</string>
+    <string name="ui_please_enter_fewer_than_value_characters">"Please enter fewer than %1$s characters."</string>
+    <string name="ui_preset" formatted="false">"Preset"</string>
+    <string name="ui_preset_lists_are_read_only" formatted="false">"Preset lists are read-only"</string>
+    <string name="ui_prettify" formatted="false">"Prettify"</string>
+    <string name="ui_preview_shortened_copy_or_save_the_file_to_view_all_se" formatted="false">"Preview shortened. Copy or save the file to view all settings."</string>
+    <string name="ui_previous" formatted="false">"Previous"</string>
+    <string name="ui_re_enter_password" formatted="false">"Re-enter password"</string>
+    <string name="ui_reading_and_validating_the_filter_list" formatted="false">"Reading and validating the filter list…"</string>
+    <string name="ui_realm_value">"Realm: %1$s"</string>
+    <string name="ui_received_invalid_mqtt_command_see_debug_logs_in_mqtt_s" formatted="false">"Received invalid MQTT command. See debug logs in MQTT settings."</string>
+    <string name="ui_receiver" formatted="false">"Receiver"</string>
+    <string name="ui_redact" formatted="false">"Redact"</string>
+    <string name="ui_refresh" formatted="false">"Refresh"</string>
+    <string name="ui_refresh_all" formatted="false">"Refresh all"</string>
+    <string name="ui_register" formatted="false">"Register"</string>
+    <string name="ui_remember_my_choice" formatted="false">"Remember my choice"</string>
+    <string name="ui_remote_settings_value">"Remote: settings %1$s."</string>
+    <string name="ui_remove" formatted="false">"Remove"</string>
+    <string name="ui_remove_custom_password" formatted="false">"Remove Custom Password"</string>
+    <string name="ui_remove_custom_password_confirmation" formatted="false">"Are you sure you want to remove your custom password?\n\nYour device credentials or biometrics will be used instead."</string>
+    <string name="ui_remove_filter_list" formatted="false">"Remove filter list?"</string>
+    <string name="ui_remove_lock_task_package_confirmation">"Are you sure you want to remove %1$s from the allow\nlist of lock task packages?\n\nThis means lock task mode will no longer be available for this\napplication, and kiosk mode will fall back to screen pinning."</string>
+    <string name="ui_remove_permission" formatted="false">"Remove permission"</string>
+    <string name="ui_remove_selected" formatted="false">"Remove selected"</string>
+    <string name="ui_remove_value_filter_lists">"Remove %1$s filter lists?"</string>
+    <string name="ui_rename" formatted="false">"Rename"</string>
+    <string name="ui_rename_failed" formatted="false">"Rename failed"</string>
+    <string name="ui_rename_file" formatted="false">"Rename File"</string>
+    <string name="ui_reorder_value">"Reorder %1$s"</string>
+    <string name="ui_replace_from_file" formatted="false">"Replace from file"</string>
+    <string name="ui_request_camera_permission" formatted="false">"Request Camera Permission"</string>
+    <string name="ui_request_coarse_location_permission" formatted="false">"Request Coarse Location Permission"</string>
+    <string name="ui_request_dhizuku_permission" formatted="false">"Request Dhizuku Permission"</string>
+    <string name="ui_request_fine_location_permission" formatted="false">"Request Fine Location Permission"</string>
+    <string name="ui_request_microphone_permission" formatted="false">"Request Microphone Permission"</string>
+    <string name="ui_request_notification_permission" formatted="false">"Request Notification Permission"</string>
+    <string name="ui_request_permission_on_launch" formatted="false">"Request Permission on Launch"</string>
+    <string name="ui_request_precise_location" formatted="false">"Request precise location"</string>
+    <string name="ui_reset" formatted="false">"Reset"</string>
+    <string name="ui_resetting_in" formatted="false">"Resetting in"</string>
+    <string name="ui_restart" formatted="false">"Restart"</string>
+    <string name="ui_restarted_successfully" formatted="false">"Restarted successfully."</string>
+    <string name="ui_restricted" formatted="false">"[Restricted]"</string>
+    <string name="ui_retrieving_image_details" tools:ignore="TypographyEllipsis" formatted="false">"Retrieving image details..."</string>
+    <string name="ui_retry" formatted="false">"Retry"</string>
+    <string name="ui_returning_automatically_in" formatted="false">"Returning automatically in "</string>
+    <string name="ui_rules" formatted="false">"Rules"</string>
+    <string name="ui_save" formatted="false">"Save"</string>
+    <string name="ui_save_file" formatted="false">"Save File"</string>
+    <string name="ui_saving" tools:ignore="TypographyEllipsis" formatted="false">"Saving..."</string>
+    <string name="ui_scan_keyboard_shortcut" formatted="false">"Scan Keyboard Shortcut"</string>
+    <string name="ui_scriptlets" formatted="false">"Scriptlets"</string>
+    <string name="ui_scroll_for_more" formatted="false">"Scroll for more ↓"</string>
+    <string name="ui_scroll_to_bottom" formatted="false">"Scroll to bottom"</string>
+    <string name="ui_scroll_to_top" formatted="false">"Scroll to top"</string>
+    <string name="ui_search" formatted="false">"Search"</string>
+    <string name="ui_search_1_app" formatted="false">"Search 1 app."</string>
+    <string name="ui_search_provider_bing" formatted="false">"Bing"</string>
+    <string name="ui_search_provider_duckduckgo" formatted="false">"DuckDuckGo"</string>
+    <string name="ui_search_provider_ecosia" formatted="false">"Ecosia"</string>
+    <string name="ui_search_provider_google" formatted="false">"Google"</string>
+    <string name="ui_search_provider_start_page" formatted="false">"Start page"</string>
+    <string name="ui_search_provider_unduck" formatted="false">"Unduck"</string>
+    <string name="ui_search_provider_unduckified" formatted="false">"Unduckified"</string>
+    <string name="ui_search_provider_yahoo" formatted="false">"Yahoo"</string>
+    <string name="ui_search_the_last_value_logs">"Search the last %1$s logs"</string>
+    <string name="ui_search_value_apps">"Search %1$s apps"</string>
+    <string name="ui_select" formatted="false">"Select"</string>
+    <string name="ui_select_a_distributor" formatted="false">"Select a Distributor"</string>
+    <string name="ui_select_all_filter_lists" formatted="false">"Select all filter lists"</string>
+    <string name="ui_select_an_activity_to_launch" formatted="false">"Select an activity to launch:"</string>
+    <string name="ui_select_from_history" formatted="false">"Select from History"</string>
+    <string name="ui_select_value">"Select %1$s"</string>
+    <string name="ui_selected_file" formatted="false">"Selected file"</string>
+    <string name="ui_selected_lists_disabled" formatted="false">"Selected lists disabled"</string>
+    <string name="ui_selected_lists_enabled" formatted="false">"Selected lists enabled"</string>
+    <string name="ui_settings" formatted="false">"Settings"</string>
+    <string name="ui_settings_file_exceeds_the_1_mib_limit" formatted="false">"Settings file exceeds the 1 MiB limit."</string>
+    <string name="ui_share_link" formatted="false">"Share Link"</string>
+    <string name="ui_short_label" formatted="false">"Short Label"</string>
+    <string name="ui_short_label_2" formatted="false">"Short label"</string>
+    <string name="ui_shortcut_must_use_ctrl_shift_alt_meta" formatted="false">"Shortcut must use CTRL/SHIFT/ALT/META."</string>
+    <string name="ui_shortcut_preview" formatted="false">"Shortcut preview"</string>
+    <string name="ui_shortcut_value">"Shortcut: %1$s"</string>
+    <string name="ui_show_password" formatted="false">"Show password"</string>
+    <string name="ui_show_values" formatted="false">"Show Values"</string>
+    <string name="ui_size_value">"Size: %1$s"</string>
+    <string name="ui_skipped" formatted="false">"Skipped"</string>
+    <string name="ui_skipped_rules" formatted="false">"Skipped rules"</string>
+    <string name="ui_some_lines_contain_invalid_regular_expressions" formatted="false">"Some lines contain invalid regular expressions."</string>
+    <string name="ui_some_lines_contain_invalid_urls" formatted="false">"Some lines contain invalid URLs"</string>
+    <string name="ui_sort_order" formatted="false">"Sort Order"</string>
+    <string name="ui_source_url" formatted="false">"Source URL"</string>
+    <string name="ui_ssl_advanced" formatted="false">"Advanced"</string>
+    <string name="ui_ssl_ca_untrusted" formatted="false">"The certificate authority is not trusted."</string>
+    <string name="ui_ssl_certificate_error" formatted="false">"SSL Certificate Error"</string>
+    <string name="ui_ssl_error_details">"%1$s\n\nURL:\n    %2$s"</string>
+    <string name="ui_ssl_error_unknown" formatted="false">"Unknown SSL error."</string>
+    <string name="ui_ssl_expired" formatted="false">"The certificate has expired."</string>
+    <string name="ui_ssl_hostname_mismatch" formatted="false">"The certificate Hostname mismatch."</string>
+    <string name="ui_ssl_not_yet_valid" formatted="false">"The certificate is not yet valid."</string>
+    <string name="ui_ssl_proceed" formatted="false">"Proceed"</string>
+    <string name="ui_ssl_proceed_warning" formatted="false">"WARNING: Proceeding may compromise your security!"</string>
+    <string name="ui_starting_download_for_value">"Starting download for %1$s"</string>
+    <string name="ui_status" formatted="false">"Status: "</string>
+    <string name="ui_status_2" formatted="false">"Status"</string>
+    <string name="ui_sticky" formatted="false">"Sticky"</string>
+    <string name="ui_sticky_mode_value">"Sticky mode %1$s"</string>
+    <string name="ui_tap_and_hold_to_copy_value" formatted="false">"Tap and hold to copy value."</string>
+    <string name="ui_tap_to_cancel" formatted="false">"Tap to cancel"</string>
+    <string name="ui_tap_to_open" formatted="false">"Tap to open"</string>
+    <string name="ui_tap_value_more_times_to_open_the_kiosk_control_panel">"Tap %1$s more times to open the Kiosk Control Panel"</string>
+    <string name="ui_text_is_too_long_to_edit_here_128_kib_max_import_a_fil" formatted="false">"Text is too long to edit here (128 KiB max). Import a file instead."</string>
+    <string name="ui_the_following_lists_will_be_added" formatted="false">"The following lists will be added:"</string>
+    <string name="ui_the_kiosk_control_panel_needs_a_way_to_open_you_cannot" formatted="false">"The Kiosk Control Panel needs a way to open. You cannot disable\nthis region while the floating toolbar is Hidden and Back Button\nHold Action is not set to \"Open Kiosk Control Panel\"."</string>
+    <string name="ui_this_action_cannot_be_undone" formatted="false">"This action cannot be undone."</string>
+    <string name="ui_this_address_is_already_in_a_url_list" formatted="false">"This address is already in a URL list"</string>
+    <string name="ui_this_list_is_too_large_to_edit_inline_choose_a_replace" formatted="false">"This list is too large to edit inline. Choose a replacement text file instead."</string>
+    <string name="ui_this_setting_is_managed_by_your_it_admin" formatted="false">"This setting is managed by your IT Admin."</string>
+    <string name="ui_time_value">"Time: %1$s"</string>
+    <string name="ui_top_left_cannot_disable" formatted="false">"Top Left (cannot disable)"</string>
+    <string name="ui_total" formatted="false">"Total"</string>
+    <string name="ui_total_value">"Total: %1$s"</string>
+    <string name="ui_transfer" formatted="false">"Transfer"</string>
+    <string name="ui_transfer_ownership" formatted="false">"Transfer Ownership"</string>
+    <string name="ui_true" formatted="false">"True"</string>
+    <string name="ui_true_value">"True %1$s"</string>
+    <string name="ui_type" formatted="false">"Type"</string>
+    <string name="ui_type_or_paste_filter_rules" formatted="false">"Type or paste filter rules"</string>
+    <string name="ui_unable_to_clear_client_certificate_preferences" formatted="false">"Unable to clear client certificate preferences."</string>
+    <string name="ui_unable_to_install_client_certificate_value">"Unable to install client certificate: %1$s"</string>
+    <string name="ui_unable_to_open_certificate_file_picker" formatted="false">"Unable to open certificate file picker."</string>
+    <string name="ui_unable_to_open_file_picker" formatted="false">"Unable to open file picker."</string>
+    <string name="ui_unable_to_open_selected_certificate_file" formatted="false">"Unable to open selected certificate file."</string>
+    <string name="ui_unable_to_open_selected_settings_file" formatted="false">"Unable to open selected settings file."</string>
+    <string name="ui_unable_to_start_download_value">"Unable to start download: %1$s"</string>
+    <string name="ui_unavailable" formatted="false">"Unavailable"</string>
+    <string name="ui_unhandled_permissions" formatted="false">"Unhandled permissions:"</string>
+    <string name="ui_unifiedpush_distributors" formatted="false">"UnifiedPush Distributors"</string>
+    <string name="ui_unifiedpush_failed_to_handle_message_see_debug_logs_fo" formatted="false">"UnifiedPush: failed to handle message. See debug logs for details."</string>
+    <string name="ui_unifiedpush_instance" formatted="false">"UnifiedPush Instance"</string>
+    <string name="ui_unifiedpush_new_endpoint" formatted="false">"UnifiedPush: new endpoint."</string>
+    <string name="ui_unifiedpush_redact_confirmation">"Are you sure you want to redact the endpoint?\nThis action cannot be undone.\n\nThis will remove the following values stored in %1$s:\n  - Endpoint URL\n  - Endpoint Public Key\n  - Endpoint Auth Secret\n\nThis will not affect any UnifiedPush functionalities, although it\nis recommended that you copy and store these values in a secure\nlocation before redacting them."</string>
+    <string name="ui_unifiedpush_registration_failed" formatted="false">"UnifiedPush: registration failed."</string>
+    <string name="ui_unifiedpush_temporarily_unavailable" formatted="false">"UnifiedPush: temporarily unavailable."</string>
+    <string name="ui_unifiedpush_type_property_is_empty" formatted="false">"UnifiedPush: type property is empty"</string>
+    <string name="ui_unifiedpush_unregister_confirmation">"Are you sure you want to unregister from UnifiedPush for:\n\n- DISTRIBUTOR: %1$s\n- INSTANCE: %2$s\n\nThis action cannot be undone."</string>
+    <string name="ui_unifiedpush_unregistered_called" formatted="false">"UnifiedPush: unregistered called."</string>
+    <string name="ui_unifiedpush_unsupported_message_type_value">"UnifiedPush: unsupported message type: %1$s"</string>
+    <string name="ui_unknown" formatted="false">"Unknown"</string>
+    <string name="ui_unknown_error" formatted="false">"unknown error"</string>
+    <string name="ui_unlock" formatted="false">"Unlock"</string>
+    <string name="ui_unlock_authenticate">"Please authenticate to unlock %1$s"</string>
+    <string name="ui_unregister" formatted="false">"Unregister"</string>
+    <string name="ui_update_selected" formatted="false">"Update selected"</string>
+    <string name="ui_upload" formatted="false">"Upload"</string>
+    <string name="ui_upload_failed_value">"Upload failed: %1$s"</string>
+    <string name="ui_uploading_file" tools:ignore="TypographyEllipsis" formatted="false">"Uploading file..."</string>
+    <string name="ui_url" formatted="false">"URL"</string>
+    <string name="ui_use_desktop_agent" formatted="false">"Use Desktop Agent"</string>
+    <string name="ui_use_mobile_agent" formatted="false">"Use Mobile Agent"</string>
+    <string name="ui_use_one_unique_host_port_keychain_alias_entry_per_line" formatted="false">"Use one unique host[:port][=KeyChain alias] entry per line."</string>
+    <string name="ui_use_recommended" formatted="false">"Use recommended:"</string>
+    <string name="ui_use_system_default_1" formatted="false">"Use System Default (-1)"</string>
+    <string name="ui_use_text" formatted="false">"Use text"</string>
+    <string name="ui_use_the_current_url" formatted="false">"Use the current URL:"</string>
+    <string name="ui_username" formatted="false">"Username"</string>
+    <string name="ui_validating_and_saving_the_filter_list" formatted="false">"Validating and saving the filter list…"</string>
+    <string name="ui_value">"• %1$s"</string>
+    <string name="ui_value_3">"%1$s%%"</string>
+    <string name="ui_value_cannot_be_empty">"%1$s cannot be empty"</string>
+    <string name="ui_value_d_ago">"%1$s d ago"</string>
+    <string name="ui_value_downloaded">"%1$s downloaded"</string>
+    <string name="ui_value_h_ago">"%1$s h ago"</string>
+    <string name="ui_value_has_been_added_to_lock_task_packages">"%1$s has been added to lock task packages."</string>
+    <string name="ui_value_has_been_removed_from_lock_task_packages">"%1$s has been removed from lock task packages."</string>
+    <string name="ui_value_is_requesting_access_to_your_location">"%1$s is requesting access to your location"</string>
+    <string name="ui_value_min_ago">"%1$s min ago"</string>
+    <string name="ui_value_sdk_value">"%1$s (SDK %2$s)"</string>
+    <string name="ui_value_selected">"%1$s selected"</string>
+    <string name="ui_value_value">"%1$s/%2$s"</string>
+    <string name="ui_value_value_2">"%1$s - %2$s"</string>
+    <string name="ui_value_value_3">"%1$s · %2$s"</string>
+    <string name="ui_value_value_4">"%1$s • %2$s"</string>
+    <string name="ui_value_x_value_px_density_value">"%1$s x %2$s px, density: %3$s"</string>
+    <string name="ui_waiting_for_authentication" tools:ignore="TypographyEllipsis" formatted="false">"Waiting for authentication..."</string>
+    <string name="ui_website_blacklist_example" formatted="false">"e.g.\n    ^.*$\n    ^https://.*\\.?google\\.com/?.*"</string>
+    <string name="ui_website_bookmarks_example">"e.g.\n\n%1$s | Webview Kiosk\n\nhttps://duckduckgo.com | DuckDuckGo\n\nhttps://f-droid.org | F-Droid"</string>
+    <string name="ui_website_whitelist_example" formatted="false">"e.g.\n    ^https://trusted\\.org(/.*)?$\n    ^https://.*\\.trusted\\.org(/.*)?$"</string>
+    <string name="ui_webview_error" formatted="false">"WebView Error"</string>
+    <string name="ui_webview_missing_dependency">"%1$s requires Android System WebView\n(com.google.android.webview) to be installed on your device."</string>
+</resources>

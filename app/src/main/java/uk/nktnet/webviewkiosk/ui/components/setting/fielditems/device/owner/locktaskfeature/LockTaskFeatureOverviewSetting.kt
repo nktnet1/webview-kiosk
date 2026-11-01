@@ -17,13 +17,7 @@ fun LockTaskFeatureOverviewSetting() {
     BooleanSettingFieldItem(
         label =
             stringResource(R.string.device_owner_lock_task_feature_overview_title),
-        infoText =
-            """
-            Shows the Overview button (tapping this button opens the Recents screen).
-
-            If you enable this button, you must also enable the Home button.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_lock_task_feature_overview),
         initialValue = userSettings.lockTaskFeatureOverview,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

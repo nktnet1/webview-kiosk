@@ -39,15 +39,8 @@ fun UserAgentSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.web_engine_user_agent_title),
-        infoText =
-            """
-            The User Agent string controls how the web engine identifies itself
-            to websites. Some sites may behave differently depending on this value.
-
-            Leave blank to use the system default User Agent.
-            """
-                .trimIndent(),
-        placeholder = "(leave blank for system default)",
+        infoText = stringResource(R.string.setting_info_user_agent),
+        placeholder = stringResource(R.string.ui_leave_blank_for_system_default),
         initialValue = userSettings.userAgent,
         settingKey = settingKey,
         restricted = restricted,
@@ -66,7 +59,7 @@ fun UserAgentSetting() {
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "Use Desktop Agent",
+                            text = stringResource(R.string.ui_use_desktop_agent),
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary,
@@ -92,7 +85,7 @@ fun UserAgentSetting() {
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "Use Mobile Agent",
+                            text = stringResource(R.string.ui_use_mobile_agent),
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary,

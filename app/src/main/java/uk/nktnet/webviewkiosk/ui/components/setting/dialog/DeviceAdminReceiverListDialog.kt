@@ -28,8 +28,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
 import uk.nktnet.webviewkiosk.managers.AppFlowManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
@@ -63,7 +65,7 @@ fun DeviceAdminReceiverListDialog(
 
     BaseAppListDialog(
         onDismiss = onDismiss,
-        title = "Transfer Ownership",
+        title = stringResource(R.string.ui_transfer_ownership),
         apps = apps,
         progress = progress,
         getDescription = { it.admin.className },
@@ -130,12 +132,16 @@ private fun ConfirmTransferDialog(
                     Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    "Are you sure you want to transfer ownership to ${selectedAdminReceiver.name}?",
+                    stringResource(
+                        R.string
+                            .ui_are_you_sure_you_want_to_transfer_ownership_to_value,
+                        selectedAdminReceiver.name,
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    "This action cannot be undone.",
+                    stringResource(R.string.ui_this_action_cannot_be_undone),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(14.dp))
@@ -143,15 +149,15 @@ private fun ConfirmTransferDialog(
                 Spacer(Modifier.height(14.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     AdminLabelValueRow(
-                        "App",
+                        stringResource(R.string.ui_app),
                         selectedAdminReceiver.name,
                     )
                     AdminLabelValueRow(
-                        "Package",
+                        stringResource(R.string.ui_package),
                         selectedAdminReceiver.packageName,
                     )
                     AdminLabelValueRow(
-                        "Receiver",
+                        stringResource(R.string.ui_receiver),
                         selectedAdminReceiver.admin.className,
                     )
                 }
@@ -168,16 +174,22 @@ private fun ConfirmTransferDialog(
                         )
                         onConfirm()
                     } catch (e: Exception) {
-                        ToastManager.show(context, "Error: ${e.message}")
+                        ToastManager.show(
+                            context,
+                            context.getString(R.string.ui_error_value, e.message),
+                        )
                     }
                 }
             ) {
-                Text("Transfer", color = MaterialTheme.colorScheme.error)
+                Text(
+                    stringResource(R.string.ui_transfer),
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.ui_cancel))
             }
         },
     )

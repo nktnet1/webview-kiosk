@@ -17,8 +17,7 @@ fun MqttWillRetainSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_will_retain_title),
-        infoText =
-            "Set to true to retain the last will message on the broker after it is sent.",
+        infoText = stringResource(R.string.setting_info_mqtt_will_retain),
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.mqttWillRetain,

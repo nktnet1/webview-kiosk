@@ -25,6 +25,7 @@ import javax.crypto.spec.GCMParameterSpec
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 
@@ -425,7 +426,10 @@ object AuthenticationManager {
                     handleAuthError(pending, "Failed to create cipher: ${e.message}")
                     ToastManager.show(
                         activity,
-                        "Failed to create cipher: ${e.message}",
+                        activity.getString(
+                            R.string.ui_failed_to_create_cipher_value,
+                            e.message,
+                        ),
                     )
                     return
                 }

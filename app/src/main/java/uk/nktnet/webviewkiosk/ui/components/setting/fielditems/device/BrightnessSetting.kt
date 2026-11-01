@@ -26,19 +26,13 @@ fun BrightnessSetting() {
 
     NumberSettingFieldItem(
         label = stringResource(R.string.device_brightness_title),
-        infoText =
-            """
-            Set the app window brightness from 0 (very dim) to 100 (very bright).
-
-            Use -1 to disable (i.e. the system default brightness will be used).
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_brightness),
         initialValue = userSettings.brightness,
         settingKey = settingKey,
         restricted = restricted,
         min = -1,
         max = 100,
-        placeholder = "e.g. 20",
+        placeholder = stringResource(R.string.ui_e_g_20),
         descriptionFormatter = { v ->
             if (v == "-1") {
                 "-1 (system default)"
@@ -70,7 +64,7 @@ fun BrightnessSetting() {
                     onClick = { setValue("-1") },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Use System Default (-1)")
+                    Text(stringResource(R.string.ui_use_system_default_1))
                 }
             }
         },

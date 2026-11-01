@@ -17,12 +17,8 @@ fun MqttPasswordSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_password_title),
-        infoText =
-            """
-            The password used to authenticate with the MQTT broker.
-            """
-                .trimIndent(),
-        placeholder = "e.g. **********",
+        infoText = stringResource(R.string.setting_info_mqtt_password),
+        placeholder = stringResource(R.string.ui_e_g),
         initialValue = userSettings.mqttPassword,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

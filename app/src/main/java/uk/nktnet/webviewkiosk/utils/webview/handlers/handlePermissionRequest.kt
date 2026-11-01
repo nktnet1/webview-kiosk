@@ -65,14 +65,14 @@ fun handlePermissionRequest(
                 PermissionRequest.RESOURCE_VIDEO_CAPTURE ->
                     WebPermission(
                         res,
-                        "Camera",
+                        context.getString(R.string.ui_permission_camera),
                         userSettings.allowCamera &&
                             hasPermissionForResource(context, res),
                     )
                 PermissionRequest.RESOURCE_AUDIO_CAPTURE ->
                     WebPermission(
                         res,
-                        "Microphone",
+                        context.getString(R.string.ui_permission_microphone),
                         userSettings.allowMicrophone &&
                             hasPermissionForResource(context, res),
                     )
@@ -106,36 +106,59 @@ fun handlePermissionRequest(
     val message: String
 
     if (isBlockedDialog) {
-        title = "Permission blocked"
+        title = context.getString(R.string.ui_permission_blocked)
         message = buildString {
-            appendLine("|$host requested access to:")
+            appendLine(context.getString(R.string.ui_permission_blocked_host, host))
             appendLine()
-            append("• ${blockedPermissions.joinToString("\n|• ") { it.name }}")
+            append(
+                context.getString(
+                    R.string.ui_permission_list,
+                    blockedPermissions.joinToString("\n|• ") { it.name },
+                )
+            )
             if (unhandledPermissions.isNotEmpty()) {
                 appendLine()
                 appendLine()
-                append("Unhandled permissions:")
+                append(context.getString(R.string.ui_unhandled_permissions))
                 appendLine()
-                append("• ${unhandledPermissions.joinToString("\n• ")}")
+                append(
+                    context.getString(
+                        R.string.ui_permission_list,
+                        unhandledPermissions.joinToString("\n• "),
+                    )
+                )
             }
             appendLine()
             appendLine()
             append(
-                "However, these permissions are either disabled in settings or not yet granted to ${context.getString(R.string.app_name)}."
+                context.getString(
+                    R.string.ui_permission_disabled_or_not_granted,
+                    context.getString(R.string.app_name),
+                )
             )
         }
     } else {
-        title = "Permission request"
+        title = context.getString(R.string.ui_permission_request)
         message = buildString {
-            appendLine("|$host is requesting access to:")
+            appendLine(context.getString(R.string.ui_permission_request_host, host))
             appendLine()
-            append("• ${allowedPermissions.joinToString("\n|• ") { it.name }}")
+            append(
+                context.getString(
+                    R.string.ui_permission_list,
+                    allowedPermissions.joinToString("\n|• ") { it.name },
+                )
+            )
             if (unhandledPermissions.isNotEmpty()) {
                 appendLine()
                 appendLine()
-                append("Unhandled permissions:")
+                append(context.getString(R.string.ui_unhandled_permissions))
                 appendLine()
-                append("• ${unhandledPermissions.joinToString("\n• ")}")
+                append(
+                    context.getString(
+                        R.string.ui_permission_list,
+                        unhandledPermissions.joinToString("\n• "),
+                    )
+                )
             }
         }
     }
@@ -149,11 +172,14 @@ fun handlePermissionRequest(
             }
 
     if (isBlockedDialog) {
-        builder.setPositiveButton("Close") { _, _ ->
+        builder.setPositiveButton(context.getString(R.string.ui_close)) { _, _ ->
             respond()
         }
     } else {
-        val checkBox = CheckBox(context).apply { text = "Remember my choice" }
+        val checkBox =
+            CheckBox(context).apply {
+                text = context.getString(R.string.ui_remember_my_choice)
+            }
         checkBox.setOnClickListener {
             UserInteractionStateSingleton.onUserInteraction()
         }
@@ -166,7 +192,7 @@ fun handlePermissionRequest(
             }
         builder
             .setView(layout)
-            .setPositiveButton("Allow") { _, _ ->
+            .setPositiveButton(context.getString(R.string.ui_allow)) { _, _ ->
                 val granted =
                     respond(allowedPermissions.map { it.resource }.toTypedArray())
                 if (granted && checkBox.isChecked) {
@@ -175,7 +201,7 @@ fun handlePermissionRequest(
                     }
                 }
             }
-            .setNegativeButton("Deny") { _, _ ->
+            .setNegativeButton(context.getString(R.string.ui_deny)) { _, _ ->
                 respond()
             }
     }

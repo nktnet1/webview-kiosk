@@ -113,13 +113,19 @@ object RemoteInboundHandler {
                         Log.e(javaClass.simpleName, "Failed to lock device", e)
                         ToastManager.show(
                             context,
-                            "Failed to lock device: ${e.message}",
+                            context.getString(
+                                R.string.ui_failed_to_lock_device_value,
+                                e.message,
+                            ),
                         )
                     }
                 } else {
                     ToastManager.show(
                         context,
-                        "Cannot lock device without device owner privileges",
+                        context.getString(
+                            R.string
+                                .ui_cannot_lock_device_without_device_owner_privileges
+                        ),
                     )
                 }
             }
@@ -132,7 +138,10 @@ object RemoteInboundHandler {
                 } else {
                     ToastManager.show(
                         context,
-                        "Cannot execute notify command - notifications disabled in settings",
+                        context.getString(
+                            R.string
+                                .ui_cannot_execute_notify_command_notifications_disabled_i
+                        ),
                     )
                 }
             }
@@ -170,7 +179,10 @@ object RemoteInboundHandler {
                 } else {
                     "received"
                 }
-            ToastManager.show(context, "Remote: settings $action.")
+            ToastManager.show(
+                context,
+                context.getString(R.string.ui_remote_settings_value, action),
+            )
         }
     }
 
@@ -249,7 +261,9 @@ object RemoteInboundHandler {
             is InboundErrorRequest -> {
                 ToastManager.show(
                     context,
-                    "MQTT: invalid request. See debug logs.",
+                    context.getString(
+                        R.string.ui_mqtt_invalid_request_see_debug_logs
+                    ),
                 )
                 MqttManager.publishErrorResponse(request)
             }

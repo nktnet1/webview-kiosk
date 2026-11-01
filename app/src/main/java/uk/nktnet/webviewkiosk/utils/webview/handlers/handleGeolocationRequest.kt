@@ -55,17 +55,17 @@ fun handleGeolocationRequest(
     if (!isAllowed) {
         val prompt =
             AlertDialog.Builder(context)
-                .setTitle("Permission blocked")
+                .setTitle(context.getString(R.string.ui_permission_blocked))
                 .setMessage(
-                    """
-                $origin requested access to your location.
-
-                However, location permission is either disabled in settings or
-                not yet granted to ${context.getString(R.string.app_name)}.
-                """
-                        .trimIndent()
+                    context.getString(
+                        R.string.ui_location_permission_not_available,
+                        origin,
+                        context.getString(R.string.app_name),
+                    )
                 )
-                .setPositiveButton("Close") { _, _ -> respond() }
+                .setPositiveButton(context.getString(R.string.ui_close)) { _, _ ->
+                    respond()
+                }
                 .create()
         val dialog =
             dialogs.show(prompt, WebViewDialogController.GEOLOCATION_PROMPT) {
@@ -90,7 +90,10 @@ fun handleGeolocationRequest(
         return
     }
 
-    val checkBox = CheckBox(context).apply { text = "Remember my choice" }
+    val checkBox =
+        CheckBox(context).apply {
+            text = context.getString(R.string.ui_remember_my_choice)
+        }
     checkBox.setOnClickListener {
         UserInteractionStateSingleton.onUserInteraction()
     }
@@ -104,10 +107,15 @@ fun handleGeolocationRequest(
 
     val prompt =
         AlertDialog.Builder(context)
-            .setTitle("Permission request")
-            .setMessage("$origin is requesting access to your location")
+            .setTitle(context.getString(R.string.ui_permission_request))
+            .setMessage(
+                context.getString(
+                    R.string.ui_value_is_requesting_access_to_your_location,
+                    origin,
+                )
+            )
             .setView(layout)
-            .setPositiveButton("Allow") { _, _ ->
+            .setPositiveButton(context.getString(R.string.ui_allow)) { _, _ ->
                 val granted = respond(true)
                 if (granted && checkBox.isChecked) {
                     systemSettings.saveSitePermissions(
@@ -116,7 +124,7 @@ fun handleGeolocationRequest(
                     )
                 }
             }
-            .setNegativeButton("Deny") { _, _ ->
+            .setNegativeButton(context.getString(R.string.ui_deny)) { _, _ ->
                 respond()
             }
             .setOnCancelListener {

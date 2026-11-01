@@ -37,18 +37,12 @@ fun UnifiedPushVapidPublicKeySetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.unifiedpush_vapid_public_key_title),
         infoText =
-            """
-            VAPID public key (RFC8292), base64url, in uncompressed form (87 chars long).
-
-            For more details, see:
-            - https://www.rfc-editor.org/rfc/rfc8292
-            """
-                .trimIndent(),
+            stringResource(R.string.setting_info_unified_push_vapid_public_key),
         placeholder = "",
         validator = {
             it.isEmpty() || isValidVapidPublicKey(it)
         },
-        validationMessage = "Invalid VAPID public key.",
+        validationMessage = stringResource(R.string.ui_invalid_vapid_public_key),
         initialValue = userSettings.unifiedPushVapidPublicKey,
         settingKey = settingKey,
         restricted = restricted,
@@ -74,7 +68,7 @@ fun UnifiedPushVapidPublicKeySetting() {
                 colors = ButtonDefaults.buttonColors(),
             ) {
                 Text(
-                    text = "Paste Clipboard",
+                    text = stringResource(R.string.ui_paste_clipboard),
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

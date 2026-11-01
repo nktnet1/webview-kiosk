@@ -22,18 +22,11 @@ fun DimScreenOnInactivitySecondsSetting() {
                 R.string.web_lifecycle_dim_screen_on_inactivity_seconds_title
             ),
         infoText =
-            """
-            Number of seconds of inactivity before the screen is dimmed.
-
-            This will set the brightness to 0, and will restore the brightness to
-            your device -> brightness setting upon new user interactions.
-
-            Minimum: ${Constants.MIN_INACTIVITY_TIMEOUT_SECONDS}
-
-            To disable, use the value 0.
-        """
-                .trimIndent(),
-        placeholder = "e.g. 120",
+            stringResource(
+                R.string.setting_info_dim_screen_on_inactivity_seconds,
+                Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,
+            ),
+        placeholder = stringResource(R.string.ui_e_g_120),
         initialValue = userSettings.dimScreenOnInactivitySeconds,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

@@ -18,13 +18,8 @@ fun MqttWillDelayIntervalSetting() {
 
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_will_delay_interval_title),
-        infoText =
-            """
-            Time in seconds the broker will wait before sending the last will message
-            after the client disconnects unexpectedly. A value of 0 means immediate delivery.
-            """
-                .trimIndent(),
-        placeholder = "e.g. 0",
+        infoText = stringResource(R.string.setting_info_mqtt_will_delay_interval),
+        placeholder = stringResource(R.string.ui_e_g_0),
         initialValue = userSettings.mqttWillDelayInterval,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

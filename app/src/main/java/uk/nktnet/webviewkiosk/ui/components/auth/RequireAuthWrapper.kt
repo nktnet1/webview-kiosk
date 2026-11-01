@@ -9,18 +9,21 @@ import androidx.compose.runtime.NonSkippableComposable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 
-private fun showAuthPrompt() {
+private fun showAuthPrompt(context: android.content.Context) {
     AuthenticationManager.showAuthenticationPrompt(
-        title = "Authentication Required",
-        description = "Please authenticate to access settings",
+        title = context.getString(R.string.ui_authentication_required),
+        description =
+            context.getString(R.string.ui_please_authenticate_to_access_settings),
     )
 }
 
@@ -32,6 +35,7 @@ fun RequireAuthWrapper(
     navController: NavController,
     content: @Composable () -> Unit,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Box(modifier = Modifier.fillMaxSize()) {
         RequireAuthentication(
             onAuthenticated = content,
@@ -39,7 +43,7 @@ fun RequireAuthWrapper(
                 AuthenticationErrorDisplay(
                     errorResult = errorResult,
                     onRetry = {
-                        showAuthPrompt()
+                        showAuthPrompt(context)
                     },
                     onCancel = {
                         navigateToWebViewScreen(navController)
@@ -56,6 +60,7 @@ private fun RequireAuthentication(
     onAuthenticated: @Composable () -> Unit,
     onFailed: @Composable (AuthenticationManager.AuthenticationResult?) -> Unit,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val authenticationResult by AuthenticationManager.promptResults.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -84,7 +89,7 @@ private fun RequireAuthentication(
                         AuthenticationManager.AuthenticationResult.Pending &&
                         !AuthenticationManager.checkAuthAndRefreshSession()
                 ) {
-                    showAuthPrompt()
+                    showAuthPrompt(context)
                 }
             }
         }
@@ -116,21 +121,23 @@ private fun RequireAuthentication(
                         AuthenticationManager.AuthenticationResult
                             .AuthenticationNotSet)
         ) {
-            showAuthPrompt()
+            showAuthPrompt(context)
         }
     }
 
     when (authenticationResult) {
         is AuthenticationManager.AuthenticationResult.Loading,
         is AuthenticationManager.AuthenticationResult.Pending -> {
-            LoadingIndicator("Waiting for authentication...")
+            LoadingIndicator(stringResource(R.string.ui_waiting_for_authentication))
         }
         is AuthenticationManager.AuthenticationResult.AuthenticationSuccess,
         is AuthenticationManager.AuthenticationResult.AuthenticationNotSet -> {
             if (hasValidSession) {
                 onAuthenticated()
             } else {
-                LoadingIndicator("Waiting for authentication...")
+                LoadingIndicator(
+                    stringResource(R.string.ui_waiting_for_authentication)
+                )
             }
         }
         else -> onFailed(authenticationResult)

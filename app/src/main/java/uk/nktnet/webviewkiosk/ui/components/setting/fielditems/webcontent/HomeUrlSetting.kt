@@ -41,24 +41,14 @@ fun HomeUrlSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.web_content_home_url_title),
-        infoText =
-            """
-            The URL that can be returned to by:
-              1. tapping the configured Kiosk Control Panel region 10 times
-                 to open the panel, then choosing Home
-              2. using the floating toolbar menu
-              3. using the address bar menu
-
-            This is also controlled by the "Allow Go Home" setting under web browsing.
-            """
-                .trimIndent(),
-        placeholder = "e.g. ${Constants.WEBSITE_URL}",
+        infoText = stringResource(R.string.setting_info_home_url),
+        placeholder = stringResource(R.string.ui_e_g_value, Constants.WEBSITE_URL),
         initialValue = userSettings.homeUrl,
         settingKey = settingKey,
         restricted = restricted,
         isMultiline = false,
         validator = { validateUrl(it) },
-        validationMessage = "Invalid Home URL provided.",
+        validationMessage = stringResource(R.string.ui_invalid_home_url_provided),
         onSave = { userSettings.homeUrl = it },
         extraContent = { _, setValue ->
             if (restricted) {
@@ -75,7 +65,7 @@ fun HomeUrlSetting() {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Use the current URL:",
+                        text = stringResource(R.string.ui_use_the_current_url),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,
@@ -99,7 +89,7 @@ fun HomeUrlSetting() {
                 colors = ButtonDefaults.buttonColors(),
             ) {
                 Text(
-                    text = "Select from History",
+                    text = stringResource(R.string.ui_select_from_history),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimary,
                     textAlign = TextAlign.Center,

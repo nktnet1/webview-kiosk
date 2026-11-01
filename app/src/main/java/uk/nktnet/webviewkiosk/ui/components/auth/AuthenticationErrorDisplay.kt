@@ -14,7 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 
 @Composable
@@ -35,12 +37,15 @@ fun AuthenticationErrorDisplay(
             text =
                 when (errorResult) {
                     is AuthenticationManager.AuthenticationResult.AuthenticationError ->
-                        "Error: ${errorResult.error}"
+                        stringResource(R.string.ui_error_value, errorResult.error)
                     AuthenticationManager.AuthenticationResult
                         .AuthenticationNotSet ->
-                        "No biometric or credentials enrolled"
+                        stringResource(
+                            R.string.ui_no_biometric_or_credentials_enrolled
+                        )
                     AuthenticationManager.AuthenticationResult
-                        .AuthenticationFailed -> "Authentication failed"
+                        .AuthenticationFailed ->
+                        stringResource(R.string.ui_authentication_failed)
                     else -> errorResult.toString()
                 },
             color = MaterialTheme.colorScheme.error,
@@ -63,7 +68,7 @@ fun AuthenticationErrorDisplay(
                     ),
                 modifier = Modifier.defaultMinSize(minWidth = 100.dp),
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.ui_cancel))
             }
 
             Button(
@@ -75,7 +80,7 @@ fun AuthenticationErrorDisplay(
                     ),
                 modifier = Modifier.defaultMinSize(minWidth = 100.dp),
             ) {
-                Text("Retry")
+                Text(stringResource(R.string.ui_retry))
             }
         }
     }

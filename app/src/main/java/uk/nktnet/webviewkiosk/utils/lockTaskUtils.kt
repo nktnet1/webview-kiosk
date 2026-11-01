@@ -200,7 +200,9 @@ private fun prepareAndroid6LockTask(
     if (!lockTaskPermitted) {
         ToastManager.show(
             activity,
-            "Failed to lock: app is not permitted for lock task mode.",
+            activity.getString(
+                R.string.ui_failed_to_lock_app_is_not_permitted_for_lock_task_mode
+            ),
         )
         return Android6LockTaskPreparation.FAILED
     }
@@ -219,7 +221,10 @@ private fun prepareAndroid6LockTask(
                     onFailed = {
                         ToastManager.show(
                             activity,
-                            "Failed to leave screen pinning: $it",
+                            activity.getString(
+                                R.string.ui_failed_to_leave_screen_pinning_value,
+                                it,
+                            ),
                         )
                     },
                 )
@@ -247,7 +252,12 @@ fun tryLockTask(activity: Activity?): Boolean {
             return tryLockAction(
                 activity,
                 lockAction = { launchAndroid6KioskTask(this, lockRequested = true) },
-                onFailed = { ToastManager.show(activity, "Failed to lock: $it") },
+                onFailed = {
+                    ToastManager.show(
+                        activity,
+                        activity.getString(R.string.ui_failed_to_lock_value, it),
+                    )
+                },
             )
         }
 
@@ -271,7 +281,10 @@ fun tryLockTask(activity: Activity?): Boolean {
             // Handled MQTT publish in LockStateSingleton
         },
         onFailed = {
-            ToastManager.show(activity, "Failed to lock: $it")
+            ToastManager.show(
+                activity,
+                activity.getString(R.string.ui_failed_to_lock_value, it),
+            )
         },
     )
 }
@@ -326,7 +339,11 @@ fun tryUnlockTask(activity: Activity?): Boolean {
                     )
                     ToastManager.show(
                         activity,
-                        "DPM ${DeviceOwnerManager.status.value.mode}) error: ${e.message}",
+                        activity.getString(
+                            R.string.ui_dpm_value_error_value,
+                            DeviceOwnerManager.status.value.mode,
+                            e.message,
+                        ),
                     )
                 }
             }
@@ -336,7 +353,10 @@ fun tryUnlockTask(activity: Activity?): Boolean {
             // Handled MQTT publish in LockStateSingleton
         },
         onFailed = {
-            ToastManager.show(activity, "Failed to unlock: $it")
+            ToastManager.show(
+                activity,
+                activity.getString(R.string.ui_failed_to_unlock_value, it),
+            )
         },
     )
 }
@@ -400,9 +420,12 @@ fun unlockWithAuthIfRequired(activity: Activity) {
     if (requireAuthForUnlock(activity, userSettings)) {
         WaitingForUnlockStateSingleton.startWaiting()
         AuthenticationManager.showAuthenticationPrompt(
-            title = "Authentication Required",
+            title = activity.getString(R.string.ui_authentication_required),
             description =
-                "Please authenticate to unlock ${activity.getString(R.string.app_name)}",
+                activity.getString(
+                    R.string.ui_unlock_authenticate,
+                    activity.getString(R.string.app_name),
+                ),
         )
     } else if (tryUnlockTask(activity)) {
         // A rejected stopLockTask must not dismiss the controls as if the kiosk

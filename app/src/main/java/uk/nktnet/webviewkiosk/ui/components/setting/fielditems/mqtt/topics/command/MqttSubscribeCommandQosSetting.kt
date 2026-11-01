@@ -18,12 +18,7 @@ fun MqttSubscribeCommandQosSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.mqtt_subscribe_command_qos_title),
-        infoText =
-            """
-            Quality of Service (QoS) ensures different message delivery guarantees
-            in case of connection failures.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_mqtt_subscribe_command_qos),
         options = MqttQosOption.entries,
         initialValue = userSettings.mqttSubscribeCommandQos,
         settingKey = settingKey,

@@ -58,30 +58,21 @@ fun AllowLocationSetting() {
         when {
             fineState.granted -> "(precise)"
             coarseState.granted -> "(approximate)"
-            else -> "(no permission)"
+            else -> context.getString(R.string.ui_no_permission)
         }
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_allow_location_title),
-        infoText =
-            """
-            When enabled, websites can request the device's location.
-
-            You can choose to request precise location (FINE) or approximate location (COARSE).
-
-            You will need to grant either ACCESS_FINE_LOCATION or ACCESS_COARSE_LOCATION,
-            required for the WebView's GeolocationPermissions.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_allow_location),
         initialValue = userSettings.allowLocation,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowLocation = it },
         itemText = { v ->
             if (v) {
-                "True $statusText"
+                context.getString(R.string.ui_true_value, statusText)
             } else {
-                "False $statusText"
+                context.getString(R.string.ui_false_value, statusText)
             }
         },
         extraContent = {
@@ -91,7 +82,7 @@ fun AllowLocationSetting() {
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = "Request precise location",
+                        text = stringResource(R.string.ui_request_precise_location),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier =
                             Modifier.weight(1f)
@@ -114,15 +105,19 @@ fun AllowLocationSetting() {
                 ) {
                     val buttonText =
                         if (permissionState.granted) {
-                            "Disable in App Info"
+                            stringResource(R.string.ui_disable_in_app_info)
                         } else if (!permissionState.shouldShowRationale) {
                             if (requestFine) {
-                                "Request Fine Location Permission"
+                                stringResource(
+                                    R.string.ui_request_fine_location_permission
+                                )
                             } else {
-                                "Request Coarse Location Permission"
+                                stringResource(
+                                    R.string.ui_request_coarse_location_permission
+                                )
                             }
                         } else {
-                            "Enable in App Info"
+                            stringResource(R.string.ui_enable_in_app_info)
                         }
 
                     Text(

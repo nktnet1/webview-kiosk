@@ -19,16 +19,12 @@ fun MqttHomeAssistantStatusTopicSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_home_assistant_status_topic_title),
         infoText =
-            """
-            Match Home Assistant's MQTT birth/status topic.
-            Leave homeassistant/status unless Home Assistant uses a custom topic.
-            Reconnect MQTT after changing it.
-            """
-                .trimIndent(),
-        placeholder = "homeassistant/status",
+            stringResource(R.string.setting_info_mqtt_home_assistant_status_topic),
+        placeholder = stringResource(R.string.ui_homeassistant_status),
         initialValue = userSettings.mqttHomeAssistantStatusTopic,
         validator = ::isValidMqttPublishTopic,
-        validationMessage = "Enter a non-empty MQTT topic without + or #.",
+        validationMessage =
+            stringResource(R.string.ui_enter_a_non_empty_mqtt_topic_without_or),
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,

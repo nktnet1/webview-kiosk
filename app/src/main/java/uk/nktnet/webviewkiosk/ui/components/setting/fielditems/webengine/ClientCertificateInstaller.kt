@@ -15,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.ToastManager
 
 private const val MAX_PKCS12_FILE_BYTES = 10 * 1024 * 1024
@@ -44,6 +45,8 @@ internal class ClientCertificateInstaller(
         ToastManager.show(context.applicationContext, message)
     },
 ) {
+    private val appContext = context.applicationContext
+
     private enum class Phase {
         IDLE,
         PICKING,
@@ -61,7 +64,9 @@ internal class ClientCertificateInstaller(
         ) { result ->
             phase = Phase.IDLE
             if (result.resultCode == Activity.RESULT_OK) {
-                notify("Client certificate installed.")
+                notify(
+                    appContext.getString(R.string.ui_client_certificate_installed)
+                )
             }
         }
 
@@ -89,7 +94,14 @@ internal class ClientCertificateInstaller(
                     } catch (e: Exception) {
                         phase = Phase.IDLE
                         notify(
-                            "Unable to install client certificate: ${e.message ?: "unknown error"}"
+                            appContext.getString(
+                                R.string
+                                    .ui_unable_to_install_client_certificate_value,
+                                e.message
+                                    ?: appContext.getString(
+                                        R.string.ui_unknown_error
+                                    ),
+                            )
                         )
                     }
                 }
@@ -105,7 +117,11 @@ internal class ClientCertificateInstaller(
             fileLauncher.launch(arrayOf("*/*"))
         } catch (_: Exception) {
             phase = Phase.IDLE
-            notify("Unable to open certificate file picker.")
+            notify(
+                appContext.getString(
+                    R.string.ui_unable_to_open_certificate_file_picker
+                )
+            )
         }
     }
 }
@@ -141,7 +157,9 @@ internal fun readPkcs12File(context: Context, uri: Uri): ByteArray {
         }
 
     require(reportedSize == null || reportedSize <= MAX_PKCS12_FILE_BYTES) {
-        "Client certificate file exceeds the 10 MiB limit."
+        context.getString(
+            R.string.ui_client_certificate_file_exceeds_the_10_mib_limit
+        )
     }
 
     return contentResolver.openInputStream(uri)?.use { input ->
@@ -161,11 +179,16 @@ internal fun readPkcs12File(context: Context, uri: Uri): ByteArray {
 
             totalBytes += bytesRead
             require(totalBytes <= MAX_PKCS12_FILE_BYTES) {
-                "Client certificate file exceeds the 10 MiB limit."
+                context.getString(
+                    R.string.ui_client_certificate_file_exceeds_the_10_mib_limit
+                )
             }
             output.write(buffer, 0, bytesRead)
         }
 
         output.toByteArray()
-    } ?: error("Unable to open selected certificate file.")
+    }
+        ?: error(
+            context.getString(R.string.ui_unable_to_open_selected_certificate_file)
+        )
 }

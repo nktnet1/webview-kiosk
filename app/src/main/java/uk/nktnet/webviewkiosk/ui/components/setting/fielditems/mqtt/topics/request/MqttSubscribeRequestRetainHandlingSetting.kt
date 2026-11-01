@@ -20,11 +20,10 @@ fun MqttSubscribeRequestRetainHandlingSetting() {
         label =
             stringResource(R.string.mqtt_subscribe_request_retain_handling_title),
         infoText =
-            """
-            Control whether ${stringResource(R.string.app_name)} should receive existing
-            retained messages when subscribing.
-        """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_mqtt_subscribe_request_retain_handling,
+                stringResource(R.string.app_name),
+            ),
         options = MqttRetainHandlingOption.entries,
         initialValue = userSettings.mqttSubscribeRequestRetainHandling,
         settingKey = settingKey,

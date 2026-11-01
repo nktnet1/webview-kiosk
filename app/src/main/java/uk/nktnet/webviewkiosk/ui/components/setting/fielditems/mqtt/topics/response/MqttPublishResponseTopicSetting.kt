@@ -21,22 +21,12 @@ fun MqttPublishResponseTopicSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_publish_response_topic_title),
         infoText =
-            $$"""
-            Default MQTT topic to publish reply messages to requests.
-
-            If a responseTopic is specified in the request, either in the
-            payload or in MQTT V5's metadata, the reply will be published
-            to that responseTopic instead.
-
-            Supported variables:
-            - $${MqttVariableName.RESPONSE_TYPE.name}
-            - $${MqttVariableName.APP_INSTANCE_ID.name}
-            - $${MqttVariableName.USERNAME.name}
-
-            Example:
-            - wk/response/${$${MqttVariableName.RESPONSE_TYPE.name}}
-        """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_mqtt_publish_response_topic,
+                MqttVariableName.RESPONSE_TYPE.name,
+                MqttVariableName.APP_INSTANCE_ID.name,
+                MqttVariableName.USERNAME.name,
+            ),
         placeholder =
             $$"e.g. wk/response/${$${MqttVariableName.RESPONSE_TYPE.name}}",
         initialValue = userSettings.mqttPublishResponseTopic,

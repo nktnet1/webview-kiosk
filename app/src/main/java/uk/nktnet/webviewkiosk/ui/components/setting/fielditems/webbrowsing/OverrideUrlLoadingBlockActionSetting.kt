@@ -22,24 +22,7 @@ fun OverrideUrlLoadingBlockActionSetting() {
                 R.string.web_browsing_override_url_loading_block_action_title
             ),
         infoText =
-            """
-            Action to take when a URL navigation (via shouldOverrideUrlLoading)
-            matches the blacklist regex.
-
-            Typically, this is from clicking links (<a> tags) on a webpage's HTML.
-
-            Actions are:
-            - Show Block Page (display a HTML block page)
-            - Prevent Navigation (does nothing when links are clicked)
-            - Show Toast (shows a toast with your custom block message)
-
-            This option will NOT take effect for:
-            - JavaScript navigation
-            - Custom URL loading, e.g. from the Address Bar, Bookmarks, History, etc
-
-            In those other cases, the block page will simply be shown.
-            """
-                .trimIndent(),
+            stringResource(R.string.setting_info_override_url_loading_block_action),
         options = OverrideUrlLoadingBlockActionOption.entries,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

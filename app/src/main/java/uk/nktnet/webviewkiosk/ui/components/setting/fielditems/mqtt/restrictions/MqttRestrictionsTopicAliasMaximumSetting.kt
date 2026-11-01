@@ -18,11 +18,10 @@ fun MqttRestrictionsTopicAliasMaximumSetting() {
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_restrictions_topic_alias_maximum_title),
         infoText =
-            """
-            Maximum number of topic aliases the client can receive.
-            """
-                .trimIndent(),
-        placeholder = "e.g. 0",
+            stringResource(
+                R.string.setting_info_mqtt_restrictions_topic_alias_maximum
+            ),
+        placeholder = stringResource(R.string.ui_e_g_0),
         initialValue = userSettings.mqttRestrictionsTopicAliasMaximum,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

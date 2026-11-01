@@ -15,6 +15,7 @@ import org.unifiedpush.android.connector.INSTANCE_DEFAULT
 import org.unifiedpush.android.connector.UnifiedPush
 import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandJsonParser
@@ -94,7 +95,10 @@ object UnifiedPushManager {
                 """
                     .trimIndent(),
             )
-            ToastManager.show(context, "Error: distributor cannot be blank")
+            ToastManager.show(
+                context,
+                context.getString(R.string.ui_error_distributor_cannot_be_blank),
+            )
             return
         }
 
@@ -108,7 +112,10 @@ object UnifiedPushManager {
                 """
                     .trimIndent(),
             )
-            ToastManager.show(context, "Error: distributor is not installed")
+            ToastManager.show(
+                context,
+                context.getString(R.string.ui_error_distributor_is_not_installed),
+            )
             return
         }
         if (
@@ -124,7 +131,10 @@ object UnifiedPushManager {
                 """
                     .trimIndent(),
             )
-            ToastManager.show(context, "Error: invalid VAPID public key")
+            ToastManager.show(
+                context,
+                context.getString(R.string.ui_error_invalid_vapid_public_key),
+            )
             return
         }
 
@@ -342,13 +352,19 @@ object UnifiedPushManager {
                     "" -> {
                         ToastManager.show(
                             context,
-                            "UnifiedPush: type property is empty",
+                            context.getString(
+                                R.string.ui_unifiedpush_type_property_is_empty
+                            ),
                         )
                     }
                     else -> {
                         ToastManager.show(
                             context,
-                            "UnifiedPush: unsupported message type: $messageType",
+                            context.getString(
+                                R.string
+                                    .ui_unifiedpush_unsupported_message_type_value,
+                                messageType,
+                            ),
                         )
                     }
                 }
@@ -373,7 +389,10 @@ object UnifiedPushManager {
                     )
                     ToastManager.show(
                         context,
-                        "UnifiedPush: failed to handle message. See debug logs for details.",
+                        context.getString(
+                            R.string
+                                .ui_unifiedpush_failed_to_handle_message_see_debug_logs_fo
+                        ),
                     )
                 }
         }
@@ -409,7 +428,10 @@ object UnifiedPushManager {
         if (!acceptsInstance(context, instance, "new endpoint")) {
             return
         }
-        ToastManager.show(context, "UnifiedPush: new endpoint.")
+        ToastManager.show(
+            context,
+            context.getString(R.string.ui_unifiedpush_new_endpoint),
+        )
         val systemSettings = SystemSettings(context)
         val userSettings = UserSettings(context)
         systemSettings.unifiedpushEndpoint =
@@ -438,7 +460,10 @@ object UnifiedPushManager {
         }
         val systemSettings = SystemSettings(context)
         systemSettings.unifiedpushEndpoint = null
-        ToastManager.show(context, "UnifiedPush: unregistered called.")
+        ToastManager.show(
+            context,
+            context.getString(R.string.ui_unifiedpush_unregistered_called),
+        )
         addDebugLog(
             "unregistered",
             "instance: $instance",
@@ -449,7 +474,10 @@ object UnifiedPushManager {
         if (!acceptsInstance(context, instance, "temp unavailable")) {
             return
         }
-        ToastManager.show(context, "UnifiedPush: temporarily unavailable.")
+        ToastManager.show(
+            context,
+            context.getString(R.string.ui_unifiedpush_temporarily_unavailable),
+        )
         addDebugLog(
             "temp unavailable",
             "instance: $instance",
@@ -464,7 +492,10 @@ object UnifiedPushManager {
         if (!acceptsInstance(context, instance, "register failed")) {
             return
         }
-        ToastManager.show(context, "UnifiedPush: registration failed.")
+        ToastManager.show(
+            context,
+            context.getString(R.string.ui_unifiedpush_registration_failed),
+        )
         addDebugLog(
             "register failed",
             """

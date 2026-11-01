@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,6 +30,7 @@ import kotlin.math.max
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
@@ -113,14 +115,22 @@ fun ResetOnInactivityTimeoutHandler(
                         .padding(24.dp),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Resetting in", fontSize = 16.sp, color = Color.White)
+                    Text(
+                        stringResource(R.string.ui_resetting_in),
+                        fontSize = 16.sp,
+                        color = Color.White,
+                    )
                     Text(
                         "$countdown",
                         fontSize = 64.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                     )
-                    Text("Tap to cancel", fontSize = 16.sp, color = Color.White)
+                    Text(
+                        stringResource(R.string.ui_tap_to_cancel),
+                        fontSize = 16.sp,
+                        color = Color.White,
+                    )
                 }
             }
         }

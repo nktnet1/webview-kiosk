@@ -32,6 +32,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -135,7 +136,7 @@ fun WebViewFindBar(
                     ) {
                         if (query.isEmpty()) {
                             Text(
-                                "Find in page",
+                                stringResource(R.string.ui_find_in_page),
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(
                                         color =
@@ -156,7 +157,11 @@ fun WebViewFindBar(
                                 currentMatch
                             }
                         Text(
-                            "$displayMatch/$totalMatches",
+                            stringResource(
+                                R.string.ui_value_value,
+                                displayMatch,
+                                totalMatches,
+                            ),
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
                                     color =
@@ -185,19 +190,19 @@ fun WebViewFindBar(
             RoundIconButton(
                 enabled = totalMatches > 1,
                 iconRes = R.drawable.keyboard_arrow_up_24,
-                contentDesc = "Next",
+                contentDesc = stringResource(R.string.ui_next),
                 onClick = { webView.findNext(false) },
             )
             RoundIconButton(
                 enabled = totalMatches > 1,
                 iconRes = R.drawable.keyboard_arrow_down_24,
-                contentDesc = "Previous",
+                contentDesc = stringResource(R.string.ui_previous),
                 onClick = { webView.findNext(true) },
             )
             RoundIconButton(
                 iconRes = R.drawable.baseline_clear_24,
                 iconTint = MaterialTheme.colorScheme.error,
-                contentDesc = "Close",
+                contentDesc = stringResource(R.string.ui_close),
                 onClick = {
                     onActiveChange(false)
                     webView.clearMatches()

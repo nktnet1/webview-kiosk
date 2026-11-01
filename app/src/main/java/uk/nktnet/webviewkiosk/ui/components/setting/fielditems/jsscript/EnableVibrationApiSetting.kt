@@ -16,15 +16,7 @@ fun EnableVibrationApiSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.js_scripts_enable_vibration_api_title),
-        infoText =
-            """
-            Allow web pages to vibrate the device using navigator.vibrate(pattern).
-
-            The pattern can be a duration in milliseconds or an array of alternating
-            vibration and pause durations. A user interaction may be required by the
-            WebView before vibration is allowed.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_enable_vibration_api),
         initialValue = userSettings.enableVibrationApi,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

@@ -18,17 +18,7 @@ fun ImmersiveModeSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.appearance_immersive_mode_title),
-        infoText =
-            """
-            In immersive mode, your system bars (status and navigation) are hidden.
-
-            You can temporarily reveal the system bars with gestures such as swiping
-            from the edge of the screen where the bar is hidden from.
-
-            Note: immersive mode is enabled automatically when entering fullscreen
-            (for example, when watching a video), irrespective of this setting.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_immersive_mode),
         options = ImmersiveModeOption.entries,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

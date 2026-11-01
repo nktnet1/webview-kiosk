@@ -19,14 +19,8 @@ fun MqttSocketConnectTimeoutSetting() {
     NumberSettingFieldItem(
         label =
             stringResource(R.string.mqtt_connection_socket_connect_timeout_title),
-        infoText =
-            """
-            The timeout for connecting the socket to the server.
-
-            Use 0 to disable the timeout.
-            """
-                .trimIndent(),
-        placeholder = "e.g. 5",
+        infoText = stringResource(R.string.setting_info_mqtt_socket_connect_timeout),
+        placeholder = stringResource(R.string.ui_e_g_5),
         initialValue = userSettings.mqttSocketConnectTimeout,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

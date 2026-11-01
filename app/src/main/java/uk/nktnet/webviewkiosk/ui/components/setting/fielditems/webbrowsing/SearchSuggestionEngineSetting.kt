@@ -18,17 +18,7 @@ fun SearchSuggestionEngineSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.web_browsing_search_suggestion_engine_title),
-        infoText =
-            """
-            Configure the search engine for text suggestions (autocomplete/hints)
-            when typing in the address bar.
-
-            For example, when searching for "new", you may get suggested
-            - news
-            - new recipes
-            - new york times
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_search_suggestion_engine),
         options = SearchSuggestionEngineOption.entries,
         initialValue = userSettings.searchSuggestionEngine,
         settingKey = settingKey,

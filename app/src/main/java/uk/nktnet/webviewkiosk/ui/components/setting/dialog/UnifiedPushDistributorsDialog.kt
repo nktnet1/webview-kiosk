@@ -8,6 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.data.AppInfo
 import uk.nktnet.webviewkiosk.managers.AppFlowManager
 
@@ -34,7 +36,7 @@ fun UnifiedPushSelectorDialog(
 
     BaseAppListDialog(
         onDismiss = onDismiss,
-        title = "UnifiedPush Distributors",
+        title = stringResource(R.string.ui_unifiedpush_distributors),
         apps = apps,
         progress = progress,
         onSelectApp = onSelectedApp,

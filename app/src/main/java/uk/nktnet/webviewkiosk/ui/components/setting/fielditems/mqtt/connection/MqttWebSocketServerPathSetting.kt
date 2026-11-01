@@ -17,19 +17,13 @@ fun MqttWebSocketServerPathSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_websocket_server_path_title),
-        infoText =
-            """
-            The path the MQTT broker WebSocket server listens on.
-
-            Must start with a '/', e.g. /mqtt
-            """
-                .trimIndent(),
-        placeholder = "/mqtt",
+        infoText = stringResource(R.string.setting_info_mqtt_web_socket_server_path),
+        placeholder = stringResource(R.string.ui_mqtt),
         initialValue = userSettings.mqttWebSocketServerPath,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         validator = { it.isEmpty() || it.startsWith('/') },
-        validationMessage = "Path must start with '/'",
+        validationMessage = stringResource(R.string.ui_path_must_start_with),
         isMultiline = false,
         onSave = { userSettings.mqttWebSocketServerPath = it },
     )

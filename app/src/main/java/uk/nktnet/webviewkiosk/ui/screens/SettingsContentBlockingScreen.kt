@@ -204,7 +204,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             val result =
                 snackbar.showSnackbar(
                     message = message,
-                    actionLabel = "Retry",
+                    actionLabel = context.getString(R.string.ui_retry),
                     withDismissAction = true,
                     duration = SnackbarDuration.Long,
                 )
@@ -321,7 +321,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     fun downloadDefaults(requested: List<SuggestedFilterList>) {
         var summary = FilterRefreshResult(0, 0, emptyList())
         update(
-            progressMessage = "Downloading uBlock Origin defaults…",
+            progressMessage =
+                context.getString(R.string.ui_downloading_ublock_origin_defaults),
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.ADD_DEFAULTS) {
                     downloadDefaults(requested)
@@ -335,7 +336,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     fun refreshAll() {
         var summary = FilterRefreshResult(0, 0, emptyList())
         update(
-            progressMessage = "Downloading filter lists…",
+            progressMessage =
+                context.getString(R.string.ui_downloading_filter_lists),
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.REFRESH) { refreshAll() }
             },
@@ -351,7 +353,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 lists.any {
                     it.id in ids && it.enabled && it.sourceUrl != null
                 },
-            progressMessage = "Downloading selected filter lists…",
+            progressMessage =
+                context.getString(R.string.ui_downloading_selected_filter_lists),
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.REFRESH) {
                     refreshSelected(ids)
@@ -406,7 +409,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     }
                 }
         }
-            .getOrNull() ?: "Imported filter list"
+            .getOrNull() ?: context.getString(R.string.ui_imported_filter_list)
 
     val replaceFilePicker =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
@@ -444,7 +447,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 } catch (e: Exception) {
                     if (pendingEdit?.id == item.id) {
                         Log.w("ContentBlocking", "Cannot open filter list", e)
-                        editError = "Couldn't open this list. Please try again."
+                        editError =
+                            context.getString(
+                                R.string.ui_couldn_t_open_this_list_please_try_again
+                            )
                     }
                 } finally {
                     if (pendingEdit?.id == item.id) {
@@ -455,6 +461,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         }
     }
 
+    val selectAllDescription = stringResource(R.string.ui_select_all_filter_lists)
     Column(
         modifier =
             Modifier.fillMaxSize()
@@ -489,8 +496,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 if (!blockingEnabled) {
                     item(key = "blocking-disabled") {
                         Text(
-                            "Content blocking is disabled. " +
-                                "The settings below will not take effect.",
+                            stringResource(
+                                R.string
+                                    .ui_content_blocking_is_disabled_the_settings_below_will_n
+                            ),
                             modifier =
                                 Modifier.fillMaxWidth()
                                     .padding(horizontal = 6.dp)
@@ -519,7 +528,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                         (!managing || selectedLists.isNotEmpty()),
                             ) {
                                 Text(
-                                    "Actions",
+                                    stringResource(R.string.ui_actions),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -536,7 +545,13 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             ) {
                                 if (managing) {
                                     DropdownMenuItem(
-                                        text = { Text("Enable selected") },
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    R.string.ui_enable_selected
+                                                )
+                                            )
+                                        },
                                         enabled =
                                             !busy &&
                                                 selectedLists.any { !it.enabled },
@@ -546,14 +561,23 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                                 selectedLists.map { it.id }.toSet()
                                             update(
                                                 successMessage =
-                                                    "Selected lists enabled"
+                                                    context.getString(
+                                                        R.string
+                                                            .ui_selected_lists_enabled
+                                                    )
                                             ) {
                                                 store.setEnabled(ids, true)
                                             }
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Disable selected") },
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    R.string.ui_disable_selected
+                                                )
+                                            )
+                                        },
                                         enabled =
                                             !busy &&
                                                 selectedLists.any { it.enabled },
@@ -563,14 +587,23 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                                 selectedLists.map { it.id }.toSet()
                                             update(
                                                 successMessage =
-                                                    "Selected lists disabled"
+                                                    context.getString(
+                                                        R.string
+                                                            .ui_selected_lists_disabled
+                                                    )
                                             ) {
                                                 store.setEnabled(ids, false)
                                             }
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Update selected") },
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    R.string.ui_update_selected
+                                                )
+                                            )
+                                        },
                                         enabled =
                                             !busy &&
                                                 selectedLists.any {
@@ -586,7 +619,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                     DropdownMenuItem(
                                         text = {
                                             Text(
-                                                "Remove selected",
+                                                stringResource(
+                                                    R.string.ui_remove_selected
+                                                ),
                                                 color =
                                                     MaterialTheme.colorScheme.error,
                                             )
@@ -600,7 +635,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                     )
                                 } else {
                                     DropdownMenuItem(
-                                        text = { Text("Manage") },
+                                        text = {
+                                            Text(stringResource(R.string.ui_manage))
+                                        },
                                         enabled = !busy && lists.isNotEmpty(),
                                         onClick = {
                                             bulkActionsExpanded = false
@@ -609,31 +646,56 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Enable all") },
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    R.string.ui_enable_all
+                                                )
+                                            )
+                                        },
                                         enabled = !busy && lists.any { !it.enabled },
                                         onClick = {
                                             bulkActionsExpanded = false
                                             update(
-                                                successMessage = "All lists enabled"
+                                                successMessage =
+                                                    context.getString(
+                                                        R.string.ui_all_lists_enabled
+                                                    )
                                             ) {
                                                 store.setAllEnabled(true)
                                             }
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Disable all") },
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    R.string.ui_disable_all
+                                                )
+                                            )
+                                        },
                                         enabled = !busy && lists.any { it.enabled },
                                         onClick = {
                                             bulkActionsExpanded = false
                                             update(
-                                                successMessage = "All lists disabled"
+                                                successMessage =
+                                                    context.getString(
+                                                        R.string
+                                                            .ui_all_lists_disabled
+                                                    )
                                             ) {
                                                 store.setAllEnabled(false)
                                             }
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Refresh all") },
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    R.string.ui_refresh_all
+                                                )
+                                            )
+                                        },
                                         enabled =
                                             !busy &&
                                                 lists.any { it.sourceUrl != null },
@@ -643,7 +705,13 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Add Default") },
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    R.string.ui_add_default
+                                                )
+                                            )
+                                        },
                                         enabled =
                                             !busy && missingDefaults.isNotEmpty(),
                                         onClick = {
@@ -659,7 +727,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                 onClick = { finishManaging() },
                                 enabled = !busy,
                             ) {
-                                Text("Done")
+                                Text(stringResource(R.string.ui_done))
                             }
                         } else {
                             Button(
@@ -671,7 +739,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                 enabled = !busy,
                             ) {
                                 Text(
-                                    "Add list",
+                                    stringResource(R.string.ui_add_list),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -686,7 +754,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                "Blocking couldn't be updated.",
+                                stringResource(
+                                    R.string.ui_blocking_couldn_t_be_updated
+                                ),
                                 modifier = Modifier.weight(1f),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -694,7 +764,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                 onClick = { blocker.reload() },
                                 enabled = !busy,
                             ) {
-                                Text("Retry")
+                                Text(stringResource(R.string.ui_retry))
                             }
                         }
                     }
@@ -707,14 +777,18 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "Filter Lists",
+                            stringResource(R.string.ui_filter_lists),
                             modifier = Modifier.weight(1f),
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
-                            "${lists.count { it.enabled }}/${lists.size} enabled",
+                            stringResource(
+                                R.string.ui_lists_enabled_count,
+                                lists.count { it.enabled }.toString(),
+                                lists.size.toString(),
+                            ),
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.End,
                             style = MaterialTheme.typography.bodySmall,
@@ -748,12 +822,14 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                     },
                                     modifier =
                                         Modifier.semantics {
-                                            contentDescription =
-                                                "Select all filter lists"
+                                            contentDescription = selectAllDescription
                                         },
                                 )
                                 Text(
-                                    "${selectedLists.size} selected",
+                                    stringResource(
+                                        R.string.ui_value_selected,
+                                        selectedLists.size,
+                                    ),
                                     style = MaterialTheme.typography.bodyMedium,
                                 )
                             }
@@ -819,10 +895,16 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                         onRefresh = {
                                             update(
                                                 affectsRules = item.enabled,
-                                                successMessage = "List refreshed",
+                                                successMessage =
+                                                    context.getString(
+                                                        R.string.ui_list_refreshed
+                                                    ),
                                                 progressMessage =
-                                                    "Downloading " +
-                                                        "${item.displayName()}…",
+                                                    context.getString(
+                                                        R.string
+                                                            .ui_downloading_value,
+                                                        item.displayName(),
+                                                    ),
                                             ) {
                                                 downloader.refresh(item, store)
                                             }
@@ -833,7 +915,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                             update(
                                                 affectsRules = false,
                                                 successMessage =
-                                                    "List cloned (disabled)",
+                                                    context.getString(
+                                                        R.string
+                                                            .ui_list_cloned_disabled
+                                                    ),
                                             ) {
                                                 store.cloneList(item.id)
                                             }
@@ -858,7 +943,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                                         R.drawable.drag_indicator_24
                                                     ),
                                                     contentDescription =
-                                                        "Reorder ${item.displayName()}",
+                                                        stringResource(
+                                                            R.string
+                                                                .ui_reorder_value,
+                                                            item.displayName(),
+                                                        ),
                                                     tint =
                                                         MaterialTheme.colorScheme
                                                             .onSurfaceVariant,
@@ -937,7 +1026,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         val adding = pendingDefaults
         AlertDialog(
             onDismissRequest = { pendingDefaults = emptyList() },
-            title = { Text("Add default lists") },
+            title = { Text(stringResource(R.string.ui_add_default_lists)) },
             text = {
                 Column(
                     modifier =
@@ -945,7 +1034,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text("The following lists will be added:")
+                    Text(
+                        stringResource(R.string.ui_the_following_lists_will_be_added)
+                    )
                     adding.forEach { preset -> FilterListBullet(preset.name) }
                 }
             },
@@ -957,12 +1048,12 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     },
                     enabled = !busy,
                 ) {
-                    Text("Add")
+                    Text(stringResource(R.string.ui_add))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingDefaults = emptyList() }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
             },
         )
@@ -979,9 +1070,12 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             title = {
                 Text(
                     if (removing.size == 1) {
-                        "Remove filter list?"
+                        stringResource(R.string.ui_remove_filter_list)
                     } else {
-                        "Remove ${removing.size} filter lists?"
+                        stringResource(
+                            R.string.ui_remove_value_filter_lists,
+                            removing.size,
+                        )
                     }
                 )
             },
@@ -1007,7 +1101,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     },
                     enabled = !busy,
                 ) {
-                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                    Text(
+                        stringResource(R.string.ui_remove),
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             },
             dismissButton = {
@@ -1015,7 +1112,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     onClick = { pendingRemoval = emptyList() },
                     enabled = !busy,
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
             },
         )
@@ -1055,7 +1152,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             onClearReplacement = { replacementUri = null },
             error =
                 if (duplicateUrl) {
-                    "A URL list with this address already exists"
+                    context.getString(
+                        R.string.ui_a_url_list_with_this_address_already_exists
+                    )
                 } else {
                     editError
                 },
@@ -1085,9 +1184,12 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         }
                 update(
                     affectsRules = affectsRules,
-                    successMessage = "List saved",
+                    successMessage = context.getString(R.string.ui_list_saved),
                     onFailure = { editError = it },
-                    progressMessage = "Validating and saving the filter list…",
+                    progressMessage =
+                        context.getString(
+                            R.string.ui_validating_and_saving_the_filter_list
+                        ),
                     onStored = { pendingEdit = null },
                 ) {
                     when (item.type) {
@@ -1099,7 +1201,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                             sourceUri
                                         )
                                             ?: throw IOException(
-                                                "Cannot open the selected file"
+                                                context.getString(
+                                                    R.string
+                                                        .ui_cannot_open_the_selected_file
+                                                )
                                             )
 
                                     typedContent != null ->
@@ -1115,7 +1220,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
 
                         FilterListType.PRESET ->
                             throw IllegalArgumentException(
-                                "Preset lists are read-only"
+                                context.getString(
+                                    R.string.ui_preset_lists_are_read_only
+                                )
                             )
                     }
                 }
@@ -1138,15 +1245,22 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             },
             onAddCustom = { name, text, uri ->
                 update(
-                    successMessage = "List added",
-                    progressMessage = "Reading and validating the filter list…",
+                    successMessage = context.getString(R.string.ui_list_added),
+                    progressMessage =
+                        context.getString(
+                            R.string.ui_reading_and_validating_the_filter_list
+                        ),
                     onStored = { showAddDialog = false },
                     onFailure = { addError = it },
                 ) {
                     val input =
                         if (uri != null) {
                             context.contentResolver.openInputStream(uri)
-                                ?: throw IOException("Cannot open the selected file")
+                                ?: throw IOException(
+                                    context.getString(
+                                        R.string.ui_cannot_open_the_selected_file
+                                    )
+                                )
                         } else {
                             text.byteInputStream(Charsets.UTF_8)
                         }
@@ -1155,8 +1269,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             },
             onDownloadUrl = { url, name ->
                 update(
-                    successMessage = "List added",
-                    progressMessage = "Downloading filter list…",
+                    successMessage = context.getString(R.string.ui_list_added),
+                    progressMessage =
+                        context.getString(R.string.ui_downloading_filter_list),
                     onStored = { showAddDialog = false },
                     onFailure = { addError = it },
                 ) {
@@ -1165,8 +1280,12 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             },
             onDownloadPreset = { suggestion ->
                 update(
-                    successMessage = "List added",
-                    progressMessage = "Downloading ${suggestion.name}…",
+                    successMessage = context.getString(R.string.ui_list_added),
+                    progressMessage =
+                        context.getString(
+                            R.string.ui_downloading_value,
+                            suggestion.name,
+                        ),
                     onStored = { showAddDialog = false },
                     onFailure = { addError = it },
                 ) {
@@ -1180,7 +1299,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
 @Composable
 private fun FilterListBullet(name: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            stringResource(R.string.ui_bullet),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Text(name, modifier = Modifier.weight(1f))
     }
 }
@@ -1200,11 +1322,13 @@ private fun EmptyFilterListsCard(enabled: Boolean, onAddDefault: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                "No filter lists have been added",
+                stringResource(R.string.ui_no_filter_lists_have_been_added),
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
             )
-            Button(onClick = onAddDefault, enabled = enabled) { Text("Add Default") }
+            Button(onClick = onAddDefault, enabled = enabled) {
+                Text(stringResource(R.string.ui_add_default))
+            }
         }
     }
 }
@@ -1230,7 +1354,10 @@ private fun FilterListInfoDialog(
             throw e
         } catch (e: Exception) {
             Log.w("ContentBlocking", "Cannot read filter list info", e)
-            failure = "List information is unavailable. Please try again."
+            failure =
+                context.getString(
+                    R.string.ui_list_information_is_unavailable_please_try_again
+                )
         }
     }
     SystemSafeDialog(onDismissRequest = onDismiss) {
@@ -1276,7 +1403,7 @@ private fun FilterListInfoDialog(
                         val details = info
                         val unavailable = failure != null
                         item.sourceUrl?.let { source ->
-                            InfoSection("Source URL") {
+                            InfoSection(stringResource(R.string.ui_source_url)) {
                                 SelectionContainer {
                                     Text(
                                         source,
@@ -1287,37 +1414,41 @@ private fun FilterListInfoDialog(
                                 }
                             }
                         }
-                        InfoSection("List details") {
+                        InfoSection(stringResource(R.string.ui_list_details)) {
                             InfoStat(
-                                "Type",
+                                stringResource(R.string.ui_type),
                                 when (item.type) {
-                                    FilterListType.FILE -> "Custom"
-                                    FilterListType.URL -> "URL"
-                                    FilterListType.PRESET -> "Preset"
+                                    FilterListType.FILE ->
+                                        stringResource(R.string.ui_custom)
+                                    FilterListType.URL ->
+                                        stringResource(R.string.ui_url)
+                                    FilterListType.PRESET ->
+                                        stringResource(R.string.ui_preset)
                                 },
                             )
                             InfoStat(
-                                "Status",
+                                stringResource(R.string.ui_status_2),
                                 if (item.enabled) {
-                                    "Enabled"
+                                    stringResource(R.string.ui_enabled)
                                 } else {
-                                    "Disabled"
+                                    stringResource(R.string.ui_disabled)
                                 },
                             )
                             InfoStat(
-                                "File size",
+                                stringResource(R.string.ui_file_size),
                                 fileSize?.let {
                                     Formatter.formatShortFileSize(context, it)
                                 },
                                 unavailable,
                             )
                             InfoStat(
-                                "Last updated",
+                                stringResource(R.string.ui_last_updated),
                                 when {
                                     item.type == FilterListType.FILE ->
-                                        "Not applicable"
+                                        stringResource(R.string.ui_not_applicable)
 
-                                    item.lastRefreshedAt == null -> "Unknown"
+                                    item.lastRefreshedAt == null ->
+                                        stringResource(R.string.ui_unknown)
 
                                     else ->
                                         remember(item.lastRefreshedAt) {
@@ -1330,34 +1461,34 @@ private fun FilterListInfoDialog(
                                 },
                             )
                         }
-                        InfoSection("Rules") {
+                        InfoSection(stringResource(R.string.ui_rules)) {
                             InfoStat(
-                                "Network",
+                                stringResource(R.string.ui_network),
                                 details?.let { numbers.format(it.networkRules) },
                                 unavailable,
                             )
                             InfoStat(
-                                "Cosmetic",
+                                stringResource(R.string.ui_cosmetic),
                                 details?.let { numbers.format(it.cosmeticRules) },
                                 unavailable,
                             )
                             InfoStat(
-                                "Scriptlets",
+                                stringResource(R.string.ui_scriptlets),
                                 details?.let { numbers.format(it.scriptletRules) },
                                 unavailable,
                             )
                             InfoStat(
-                                "Skipped",
+                                stringResource(R.string.ui_skipped),
                                 details?.let { numbers.format(it.skippedRules) },
                                 unavailable,
                             )
                             InfoStat(
-                                "Invalid",
+                                stringResource(R.string.ui_invalid),
                                 details?.let { numbers.format(it.invalidRules) },
                                 unavailable,
                             )
                             InfoStat(
-                                "Total",
+                                stringResource(R.string.ui_total),
                                 details?.let { numbers.format(it.totalRules) },
                                 unavailable,
                             )
@@ -1365,14 +1496,20 @@ private fun FilterListInfoDialog(
                         details
                             ?.takeIf { it.partialRules > 0 }
                             ?.let { info ->
-                                InfoSection("Partially supported rules") {
+                                InfoSection(
+                                    stringResource(
+                                        R.string.ui_partially_supported_rules
+                                    )
+                                ) {
                                     InfoStat(
                                         $$"$all",
                                         numbers.format(info.partialRules),
                                     )
                                     Text(
-                                        "Applies to intercepted network requests and page navigation. " +
-                                            "Popup and inline script/font filtering are unavailable.",
+                                        stringResource(
+                                            R.string
+                                                .ui_applies_to_intercepted_network_requests_and_page_navig_2
+                                        ),
                                         modifier = Modifier.padding(12.dp),
                                         style = MaterialTheme.typography.bodySmall,
                                     )
@@ -1382,7 +1519,9 @@ private fun FilterListInfoDialog(
                             ?.skipReasons
                             ?.takeIf { it.isNotEmpty() }
                             ?.let { reasons ->
-                                InfoSection("Skipped rules") {
+                                InfoSection(
+                                    stringResource(R.string.ui_skipped_rules)
+                                ) {
                                     reasons.entries
                                         .sortedBy { it.key.ordinal }
                                         .forEach { (reason, count) ->
@@ -1416,7 +1555,7 @@ private fun FilterListInfoDialog(
                             contentAlignment = Alignment.BottomCenter,
                         ) {
                             Text(
-                                "Scroll for more \u2193",
+                                stringResource(R.string.ui_scroll_for_more),
                                 modifier = Modifier.padding(bottom = 4.dp),
                                 style = MaterialTheme.typography.labelMedium,
                                 color =
@@ -1432,7 +1571,9 @@ private fun FilterListInfoDialog(
                         Modifier.fillMaxWidth().padding(top = 4.dp, end = 16.dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Close") }
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.ui_close))
+                    }
                 }
             }
         }
@@ -1463,6 +1604,7 @@ private fun InfoStat(
     stacked: Boolean = false,
     singleLine: Boolean = false,
 ) {
+    val loadingDescription = stringResource(R.string.ui_loading_value, label)
     Column {
         if (stacked) {
             Text(
@@ -1498,7 +1640,7 @@ private fun InfoStat(
             ) {
                 if (value != null || unavailable) {
                     Text(
-                        value ?: "Unavailable",
+                        value ?: stringResource(R.string.ui_unavailable),
                         style = MaterialTheme.typography.bodySmall,
                         maxLines =
                             if (singleLine) {
@@ -1518,7 +1660,7 @@ private fun InfoStat(
                     CircularProgressIndicator(
                         modifier =
                             Modifier.size(16.dp).semantics {
-                                contentDescription = "Loading $label"
+                                contentDescription = loadingDescription
                             },
                         strokeWidth = 2.dp,
                     )
@@ -1545,6 +1687,8 @@ private fun FilterListRow(
     dragHandle: @Composable () -> Unit,
 ) {
     val name = item.displayName()
+    val selectDescription = stringResource(R.string.ui_select_value, name)
+    val filterDescription = stringResource(R.string.ui_filter_value, name)
     var menuExpanded by remember { mutableStateOf(false) }
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -1561,7 +1705,9 @@ private fun FilterListRow(
                     enabled = !busy,
                     onCheckedChange = onSelectedChange,
                     modifier =
-                        Modifier.semantics { contentDescription = "Select $name" },
+                        Modifier.semantics {
+                            contentDescription = selectDescription
+                        },
                 )
             } else {
                 Switch(
@@ -1569,7 +1715,9 @@ private fun FilterListRow(
                     enabled = !busy,
                     onCheckedChange = onEnabledChange,
                     modifier =
-                        Modifier.semantics { contentDescription = "Filter $name" },
+                        Modifier.semantics {
+                            contentDescription = filterDescription
+                        },
                 )
             }
             Column(modifier = Modifier.weight(1f).padding(vertical = 12.dp)) {
@@ -1599,19 +1747,20 @@ private fun FilterListRow(
                     )
                     val type =
                         when (item.type) {
-                            FilterListType.FILE -> "Custom"
-                            FilterListType.URL -> "URL"
-                            FilterListType.PRESET -> "Preset"
+                            FilterListType.FILE -> stringResource(R.string.ui_custom)
+                            FilterListType.URL -> stringResource(R.string.ui_url)
+                            FilterListType.PRESET ->
+                                stringResource(R.string.ui_preset)
                         }
                     val status =
                         if (item.enabled) {
-                            "Enabled"
+                            stringResource(R.string.ui_enabled)
                         } else {
-                            "Disabled"
+                            stringResource(R.string.ui_disabled)
                         }
                     Text(
                         if (managing) {
-                            "$type · $status"
+                            stringResource(R.string.ui_value_value_3, type, status)
                         } else {
                             type
                         },
@@ -1629,7 +1778,8 @@ private fun FilterListRow(
                     IconButton(onClick = { menuExpanded = true }, enabled = !busy) {
                         Icon(
                             painterResource(R.drawable.outline_more_vert_24),
-                            contentDescription = "Options for $name",
+                            contentDescription =
+                                stringResource(R.string.ui_options_for_value, name),
                         )
                     }
                     DropdownMenu(
@@ -1638,7 +1788,7 @@ private fun FilterListRow(
                     ) {
                         if (item.type != FilterListType.PRESET) {
                             DropdownMenuItem(
-                                text = { Text("Edit") },
+                                text = { Text(stringResource(R.string.ui_edit)) },
                                 leadingIcon = {
                                     Icon(
                                         painterResource(R.drawable.baseline_edit_24),
@@ -1654,7 +1804,7 @@ private fun FilterListRow(
                         }
                         if (item.sourceUrl != null) {
                             DropdownMenuItem(
-                                text = { Text("Refresh") },
+                                text = { Text(stringResource(R.string.ui_refresh)) },
                                 leadingIcon = {
                                     Icon(
                                         painterResource(
@@ -1671,7 +1821,7 @@ private fun FilterListRow(
                             )
                         }
                         DropdownMenuItem(
-                            text = { Text("Info") },
+                            text = { Text(stringResource(R.string.ui_info)) },
                             leadingIcon = {
                                 Icon(
                                     painterResource(R.drawable.baseline_info_24),
@@ -1686,7 +1836,7 @@ private fun FilterListRow(
                         )
                         if (item.type == FilterListType.FILE) {
                             DropdownMenuItem(
-                                text = { Text("Clone") },
+                                text = { Text(stringResource(R.string.ui_clone)) },
                                 leadingIcon = {
                                     Icon(
                                         painterResource(
@@ -1703,7 +1853,7 @@ private fun FilterListRow(
                             )
                         }
                         DropdownMenuItem(
-                            text = { Text("Delete") },
+                            text = { Text(stringResource(R.string.ui_delete)) },
                             leadingIcon = {
                                 Icon(
                                     painterResource(R.drawable.baseline_delete_24),
@@ -1734,10 +1884,11 @@ private fun ListTypeDropdown(
     val density = LocalDensity.current
     val label =
         when (value) {
-            FilterListType.FILE -> "Custom"
-            FilterListType.URL -> "URL"
-            FilterListType.PRESET -> "Preset"
+            FilterListType.FILE -> stringResource(R.string.ui_custom)
+            FilterListType.URL -> stringResource(R.string.ui_url)
+            FilterListType.PRESET -> stringResource(R.string.ui_preset)
         }
+    val listTypeDescription = stringResource(R.string.ui_list_type)
     Box(
         modifier = Modifier.fillMaxWidth().onSizeChanged { anchorWidth = it.width }
     ) {
@@ -1747,7 +1898,7 @@ private fun ListTypeDropdown(
             shape = RoundedCornerShape(12.dp),
             modifier =
                 Modifier.fillMaxWidth().semantics {
-                    contentDescription = "List type"
+                    contentDescription = listTypeDescription
                 },
         ) {
             Text(
@@ -1773,9 +1924,12 @@ private fun ListTypeDropdown(
                         text = {
                             Text(
                                 when (type) {
-                                    FilterListType.FILE -> "Custom"
-                                    FilterListType.URL -> "URL"
-                                    FilterListType.PRESET -> "Preset"
+                                    FilterListType.FILE ->
+                                        stringResource(R.string.ui_custom)
+                                    FilterListType.URL ->
+                                        stringResource(R.string.ui_url)
+                                    FilterListType.PRESET ->
+                                        stringResource(R.string.ui_preset)
                                 }
                             )
                         },
@@ -1815,7 +1969,15 @@ private fun AddFilterListDialog(
     var name by rememberSaveable { mutableStateOf("") }
     // Uploaded files stay as URIs. Never read their contents into the text field.
     var selectedFile by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedFileName by remember { mutableStateOf("Selected file") }
+    val selectedFileLabel = stringResource(R.string.ui_selected_file)
+    val tooLongErrorLabel =
+        stringResource(
+            R.string.ui_text_is_too_long_to_edit_here_128_kib_max_import_a_fil
+        )
+    val nameDescription = stringResource(R.string.ui_name)
+    val urlDescription = stringResource(R.string.ui_url)
+    val presetDescription = stringResource(R.string.ui_preset)
+    var selectedFileName by remember { mutableStateOf(selectedFileLabel) }
     var text by rememberSaveable { mutableStateOf("") }
     var textError by rememberSaveable { mutableStateOf<String?>(null) }
     var suggestion by remember { mutableStateOf(SuggestedFilterLists.all.first()) }
@@ -1836,7 +1998,7 @@ private fun AddFilterListDialog(
             }
         }
     LaunchedEffect(selectedFile) {
-        selectedFileName = "Selected file"
+        selectedFileName = selectedFileLabel
         val uri = selectedFile?.let(Uri::parse) ?: return@LaunchedEffect
         selectedFileName =
             withContext(Dispatchers.IO) {
@@ -1861,12 +2023,12 @@ private fun AddFilterListDialog(
                             }
                         }
                 }
-                    .getOrNull() ?: "Selected file"
+                    .getOrNull() ?: selectedFileLabel
             }
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add filter list") },
+        title = { Text(stringResource(R.string.ui_add_filter_list)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(
@@ -1876,7 +2038,7 @@ private fun AddFilterListDialog(
                             .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    FilterListField("List type") {
+                    FilterListField(stringResource(R.string.ui_list_type)) {
                         ListTypeDropdown(
                             value = type,
                             onChange = {
@@ -1887,7 +2049,7 @@ private fun AddFilterListDialog(
                         )
                     }
                     if (type != FilterListType.PRESET) {
-                        FilterListField("Name") {
+                        FilterListField(stringResource(R.string.ui_name)) {
                             OutlinedTextField(
                                 value = name,
                                 onValueChange = {
@@ -1896,9 +2058,11 @@ private fun AddFilterListDialog(
                                 },
                                 modifier =
                                     Modifier.fillMaxWidth().semantics {
-                                        contentDescription = "Name"
+                                        contentDescription = nameDescription
                                     },
-                                placeholder = { Text("e.g. My filters") },
+                                placeholder = {
+                                    Text(stringResource(R.string.ui_e_g_my_filters))
+                                },
                                 singleLine = true,
                                 enabled = !busy,
                                 isError = name.isNotEmpty() && !validListName(name),
@@ -1908,7 +2072,9 @@ private fun AddFilterListDialog(
                     when (type) {
                         FilterListType.FILE -> {
                             if (selectedFile == null) {
-                                FilterListField("Filter rules") {
+                                FilterListField(
+                                    stringResource(R.string.ui_filter_rules)
+                                ) {
                                     OutlinedTextField(
                                         value = text,
                                         onValueChange = { value ->
@@ -1926,15 +2092,17 @@ private fun AddFilterListDialog(
                                                 textError = null
                                                 onClearError()
                                             } else {
-                                                textError =
-                                                    "Text is too long to edit " +
-                                                        "here (128 KiB max). " +
-                                                        "Import a file instead."
+                                                textError = tooLongErrorLabel
                                             }
                                         },
                                         modifier = Modifier.fillMaxWidth(),
                                         placeholder = {
-                                            Text("Type or paste filter rules")
+                                            Text(
+                                                stringResource(
+                                                    R.string
+                                                        .ui_type_or_paste_filter_rules
+                                                )
+                                            )
                                         },
                                         minLines = 5,
                                         maxLines = 8,
@@ -1954,7 +2122,9 @@ private fun AddFilterListDialog(
                                             Arrangement.spacedBy(4.dp),
                                     ) {
                                         Text(
-                                            "Selected file",
+                                            stringResource(
+                                                R.string.ui_selected_file
+                                            ),
                                             style =
                                                 MaterialTheme.typography.labelMedium,
                                             color =
@@ -1993,9 +2163,9 @@ private fun AddFilterListDialog(
                                     Spacer(Modifier.width(6.dp))
                                     Text(
                                         if (selectedFile == null) {
-                                            "Import file"
+                                            stringResource(R.string.ui_import_file)
                                         } else {
-                                            "Change file"
+                                            stringResource(R.string.ui_change_file)
                                         },
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
@@ -2011,7 +2181,7 @@ private fun AddFilterListDialog(
                                         modifier = Modifier.weight(1f),
                                     ) {
                                         Text(
-                                            "Use text",
+                                            stringResource(R.string.ui_use_text),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
@@ -2021,7 +2191,7 @@ private fun AddFilterListDialog(
                         }
 
                         FilterListType.URL -> {
-                            FilterListField("URL") {
+                            FilterListField(stringResource(R.string.ui_url)) {
                                 OutlinedTextField(
                                     value = url,
                                     onValueChange = {
@@ -2030,7 +2200,7 @@ private fun AddFilterListDialog(
                                     },
                                     modifier =
                                         Modifier.fillMaxWidth().semantics {
-                                            contentDescription = "URL"
+                                            contentDescription = urlDescription
                                         },
                                     singleLine = true,
                                     enabled = !busy,
@@ -2039,8 +2209,10 @@ private fun AddFilterListDialog(
                                         if (duplicateUrl) {
                                             ({
                                                 Text(
-                                                    "This address is already " +
-                                                        "in a URL list"
+                                                    stringResource(
+                                                        R.string
+                                                            .ui_this_address_is_already_in_a_url_list
+                                                    )
                                                 )
                                             })
                                         } else {
@@ -2051,7 +2223,7 @@ private fun AddFilterListDialog(
                         }
 
                         FilterListType.PRESET -> {
-                            FilterListField("Preset") {
+                            FilterListField(stringResource(R.string.ui_preset)) {
                                 Box(
                                     modifier =
                                         Modifier.fillMaxWidth().onSizeChanged {
@@ -2064,7 +2236,8 @@ private fun AddFilterListDialog(
                                         shape = RoundedCornerShape(12.dp),
                                         modifier =
                                             Modifier.fillMaxWidth().semantics {
-                                                contentDescription = "Preset"
+                                                contentDescription =
+                                                    presetDescription
                                             },
                                     ) {
                                         Text(
@@ -2130,7 +2303,7 @@ private fun AddFilterListDialog(
                                             Arrangement.spacedBy(2.dp)
                                     ) {
                                         Text(
-                                            "Category",
+                                            stringResource(R.string.ui_category),
                                             style =
                                                 MaterialTheme.typography.labelSmall,
                                             color =
@@ -2148,7 +2321,7 @@ private fun AddFilterListDialog(
                                             Arrangement.spacedBy(2.dp)
                                     ) {
                                         Text(
-                                            "Source URL",
+                                            stringResource(R.string.ui_source_url),
                                             style =
                                                 MaterialTheme.typography.labelSmall,
                                             color =
@@ -2181,7 +2354,7 @@ private fun AddFilterListDialog(
                 }
                 if (type == FilterListType.PRESET && installed) {
                     Text(
-                        "Already added",
+                        stringResource(R.string.ui_already_added),
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.End,
                         color = MaterialTheme.colorScheme.error,
@@ -2231,15 +2404,17 @@ private fun AddFilterListDialog(
                 }
                 Text(
                     if (type == FilterListType.FILE) {
-                        "Add"
+                        stringResource(R.string.ui_add)
                     } else {
-                        "Download"
+                        stringResource(R.string.ui_download)
                     }
                 )
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancel") }
+            TextButton(onClick = onDismiss, enabled = !busy) {
+                Text(stringResource(R.string.ui_cancel))
+            }
         },
     )
 }
@@ -2265,7 +2440,7 @@ private fun EditFilterListDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit filter list") },
+        title = { Text(stringResource(R.string.ui_edit_filter_list)) },
         text = {
             Column(
                 modifier =
@@ -2276,7 +2451,7 @@ private fun EditFilterListDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = onNameChange,
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.ui_name)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     enabled = !busy,
@@ -2286,7 +2461,7 @@ private fun EditFilterListDialog(
                     OutlinedTextField(
                         value = url,
                         onValueChange = onUrlChange,
-                        label = { Text("URL") },
+                        label = { Text(stringResource(R.string.ui_url)) },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !busy,
                         maxLines = 3,
@@ -2298,7 +2473,9 @@ private fun EditFilterListDialog(
                         OutlinedTextField(
                             value = fileText,
                             onValueChange = onFileTextChange,
-                            label = { Text("Filter rules") },
+                            label = {
+                                Text(stringResource(R.string.ui_filter_rules))
+                            },
                             modifier =
                                 Modifier.fillMaxWidth().heightIn(min = 130.dp),
                             minLines = 5,
@@ -2307,8 +2484,10 @@ private fun EditFilterListDialog(
                         )
                     } else {
                         Text(
-                            "This list is too large to edit inline. " +
-                                "Choose a replacement text file instead.",
+                            stringResource(
+                                R.string
+                                    .ui_this_list_is_too_large_to_edit_inline_choose_a_replace
+                            ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -2320,9 +2499,9 @@ private fun EditFilterListDialog(
                     ) {
                         Text(
                             if (replacementName == null) {
-                                "Replace from file"
+                                stringResource(R.string.ui_replace_from_file)
                             } else {
-                                "Change replacement file"
+                                stringResource(R.string.ui_change_replacement_file)
                             }
                         )
                     }
@@ -2338,7 +2517,7 @@ private fun EditFilterListDialog(
                                 onClick = onClearReplacement,
                                 enabled = !busy,
                             ) {
-                                Text("Clear")
+                                Text(stringResource(R.string.ui_clear))
                             }
                         }
                     }
@@ -2347,10 +2526,14 @@ private fun EditFilterListDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onSave, enabled = canSave) { Text("Save") }
+            TextButton(onClick = onSave, enabled = canSave) {
+                Text(stringResource(R.string.ui_save))
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancel") }
+            TextButton(onClick = onDismiss, enabled = !busy) {
+                Text(stringResource(R.string.ui_cancel))
+            }
         },
     )
 }

@@ -39,45 +39,20 @@ fun MutualTlsSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.web_engine_mutual_tls_title),
         infoText =
-            """
-            Configure exact sites that may use a client certificate for Mutual TLS (mTLS).
-
-            The client certificate installer accepts PKCS#12 credentials with a private key.
-            It does not install a root CA for HTTPS server verification. To trust a private
-            HTTPS server, install its CA certificate through Android Settings. WebView Kiosk
-            trusts Android-installed user CAs throughout the app, not only for these sites.
-
-            Add one entry per line in the format:
-
-                host[:port][=KeyChain alias]
-
-            The port defaults to `443`. Wildcards, schemes, paths, query strings and
-            fragments are not supported. This prevents a client certificate from being
-            sent to a site that was not explicitly configured.
-
-            An alias can be provided explicitly for managed devices where the app already
-            has access to that KeyChain entry.
-
-            When ${stringResource(R.string.app_name)} is the device/profile owner,
-            an explicitly configured alias is also returned from Android's private-key selection
-            callback for ${stringResource(R.string.app_name)}'s own matching site, allowing
-            Android to grant access without showing the certificate picker.
-        """
-                .trimIndent(),
-        placeholder =
-            """
-            secure.example.com
-            api.example.com:8443
-            managed.example.com=work-client-cert
-            """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_mutual_tls,
+                stringResource(R.string.app_name),
+            ),
+        placeholder = stringResource(R.string.ui_mutual_tls_host_placeholder),
         initialValue = userSettings.mutualTls,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         isMultiline = true,
         validator = ::validateMutualTls,
         validationMessage =
-            "Use one unique host[:port][=KeyChain alias] entry per line.",
+            stringResource(
+                R.string.ui_use_one_unique_host_port_keychain_alias_entry_per_line
+            ),
         descriptionFormatter = { value ->
             val count = parseMutualTlsRules(value)?.size ?: 0
             when (count) {
@@ -108,19 +83,28 @@ fun MutualTlsSetting() {
                             WebView.clearClientCertPreferences {
                                 ToastManager.show(
                                     context,
-                                    "Client certificate preferences cleared.",
+                                    context.getString(
+                                        R.string
+                                            .ui_client_certificate_preferences_cleared
+                                    ),
                                 )
                             }
                         } catch (_: Exception) {
                             ToastManager.show(
                                 context,
-                                "Unable to clear client certificate preferences.",
+                                context.getString(
+                                    R.string
+                                        .ui_unable_to_clear_client_certificate_preferences
+                                ),
                             )
                         }
                     },
                 ) {
                     Text(
-                        text = "Clear certificate preferences",
+                        text =
+                            stringResource(
+                                R.string.ui_clear_certificate_preferences
+                            ),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelMedium,
                     )
@@ -139,19 +123,26 @@ fun MutualTlsSetting() {
                             } else {
                                 ToastManager.show(
                                     context,
-                                    "Unable to open certificate file picker.",
+                                    context.getString(
+                                        R.string
+                                            .ui_unable_to_open_certificate_file_picker
+                                    ),
                                 )
                             }
                         } catch (_: Exception) {
                             ToastManager.show(
                                 context,
-                                "Unable to open certificate file picker.",
+                                context.getString(
+                                    R.string
+                                        .ui_unable_to_open_certificate_file_picker
+                                ),
                             )
                         }
                     },
                 ) {
                     Text(
-                        text = "Install client certificate",
+                        text =
+                            stringResource(R.string.ui_install_client_certificate),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelMedium,
                     )

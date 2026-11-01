@@ -17,12 +17,7 @@ fun LockTaskFeatureKeyguardSetting() {
     BooleanSettingFieldItem(
         label =
             stringResource(R.string.device_owner_lock_task_feature_keyguard_title),
-        infoText =
-            """
-            Enables any lock screen that might be set on the device.
-            Typically not suitable for devices with public users such as kiosks or digital signage.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_lock_task_feature_keyguard),
         initialValue = userSettings.lockTaskFeatureKeyguard,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

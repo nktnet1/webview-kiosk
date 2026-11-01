@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.json.JSONArray
 import sh.calvin.reorderable.ReorderableColumn
@@ -92,7 +93,8 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                                         painterResource(
                                             R.drawable.drag_indicator_24
                                         ),
-                                    contentDescription = "Drag Handle",
+                                    contentDescription =
+                                        stringResource(R.string.ui_drag_handle),
                                     modifier = Modifier.draggableHandle(),
                                 )
                             }
@@ -113,7 +115,7 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                                     containerColor = MaterialTheme.colorScheme.error
                                 ),
                         ) {
-                            Text("Reset")
+                            Text(stringResource(R.string.ui_reset))
                         }
 
                         Box {
@@ -124,10 +126,11 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                                 Icon(
                                     painter =
                                         painterResource(R.drawable.baseline_add_24),
-                                    contentDescription = "Add",
+                                    contentDescription =
+                                        stringResource(R.string.ui_add),
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Add")
+                                Text(stringResource(R.string.ui_add))
                             }
                             DropdownMenu(
                                 expanded = addExpanded,
@@ -172,7 +175,7 @@ private fun EnumListSelectedItem(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.baseline_clear_24),
-                    contentDescription = "Remove",
+                    contentDescription = stringResource(R.string.ui_remove),
                     tint = MaterialTheme.colorScheme.error,
                 )
             }

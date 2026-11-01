@@ -18,6 +18,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.net.toUri
 import org.json.JSONObject
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -44,7 +45,10 @@ fun handleDownloadPrompt(
     if (!userSettings.allowFileDownload) {
         ToastManager.show(
             context,
-            "Download is disabled in settings (${UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD})",
+            context.getString(
+                R.string.ui_download_is_disabled_in_settings_value,
+                UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD,
+            ),
         )
         return
     }
@@ -57,7 +61,7 @@ fun handleDownloadPrompt(
 
     val titleView =
         TextView(context).apply {
-            text = "Download File"
+            text = context.getString(R.string.ui_download_file)
             textSize = 25f
             setPadding(0, 0, 0, 20)
         }
@@ -118,12 +122,14 @@ fun handleDownloadPrompt(
             UserInteractionStateSingleton.onUserInteraction()
         } ?: return
 
-    val cancelButton = Button(context).apply { text = "Cancel" }
+    val cancelButton =
+        Button(context).apply { text = context.getString(R.string.ui_cancel) }
     cancelButton.setOnClickListener {
         dialogs.dismiss(dialog)
     }
 
-    val downloadButton = Button(context).apply { text = "Download" }
+    val downloadButton =
+        Button(context).apply { text = context.getString(R.string.ui_download) }
     downloadButton.setOnClickListener {
         if (!dialogs.isActive()) {
             dialogs.dismiss(dialog)
@@ -147,10 +153,16 @@ fun handleDownloadPrompt(
 
             downloadStarted = true
             dialogs.dismiss(dialog)
-            ToastManager.show(context, "Starting download for $filename")
+            ToastManager.show(
+                context,
+                context.getString(R.string.ui_starting_download_for_value, filename),
+            )
         } catch (e: Exception) {
             Log.e(Constants.APP_SCHEME, "Download failed", e)
-            ToastManager.show(context, "Error: ${e.message}")
+            ToastManager.show(
+                context,
+                context.getString(R.string.ui_error_value, e.message),
+            )
         }
     }
 
@@ -175,7 +187,7 @@ fun downloadNormal(
             setMimeType(mimeType)
             userAgent?.let { addRequestHeader("User-Agent", it) }
             getWebViewRequestCookie(url)?.let { addRequestHeader("Cookie", it) }
-            setDescription("Downloading file...")
+            setDescription(context.getString(R.string.ui_downloading_file))
             setTitle(filename)
             setNotificationVisibility(
                 DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED

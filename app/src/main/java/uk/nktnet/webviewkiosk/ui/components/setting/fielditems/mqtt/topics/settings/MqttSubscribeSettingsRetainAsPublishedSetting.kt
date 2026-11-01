@@ -22,11 +22,9 @@ fun MqttSubscribeSettingsRetainAsPublishedSetting() {
                 R.string.mqtt_subscribe_settings_retain_as_published_title
             ),
         infoText =
-            """
-            Controls whether retained messages from the broker keep their original
-            retained flag when delivered to the subscriber.
-            """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_mqtt_subscribe_settings_retain_as_published
+            ),
         initialValue = userSettings.mqttSubscribeSettingsRetainAsPublished,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

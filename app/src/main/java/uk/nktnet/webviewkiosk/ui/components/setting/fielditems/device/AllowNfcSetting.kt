@@ -67,22 +67,7 @@ fun AllowNfcSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_allow_nfc_title),
-        infoText =
-            """
-            Set to true to enable NFC support via a Web NFC compatibility bridge.
-
-            This allows websites to read and write NFC tags using the device's NFC hardware.
-
-            Please note that this does not use Web NFC directly, as Web NFC is not yet
-            available in Android System WebView. Instead, a compatibility layer is provided
-            between native NFC and JavaScript. As a result, it is not subject to the same
-            security limitations as Web NFC:
-
-            - https://developer.chrome.com/docs/capabilities/nfc#security-and-permissions
-
-            and can also operate on insecure (non-HTTPS) websites.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_allow_nfc),
         initialValue = userSettings.allowNfc,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
@@ -93,15 +78,15 @@ fun AllowNfcSetting() {
                     if (nfcEnabled) {
                         ""
                     } else {
-                        "(NFC disabled)"
+                        context.getString(R.string.ui_nfc_disabled)
                     }
                 } else {
-                    "(NFC not supported)"
+                    context.getString(R.string.ui_nfc_not_supported)
                 }
             if (value) {
-                "True $supportText"
+                context.getString(R.string.ui_true_value, supportText)
             } else {
-                "False $supportText"
+                context.getString(R.string.ui_false_value, supportText)
             }
         },
         extraContent = {
@@ -116,14 +101,17 @@ fun AllowNfcSetting() {
                     },
                 ) {
                     Text(
-                        text = "Open NFC Settings",
+                        text = stringResource(R.string.ui_open_nfc_settings),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelMedium,
                     )
                 }
             } else {
                 Text(
-                    text = "NFC is not supported on this device.",
+                    text =
+                        stringResource(
+                            R.string.ui_nfc_is_not_supported_on_this_device
+                        ),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.error,

@@ -18,11 +18,8 @@ fun MqttRestrictionsReceiveMaximumSetting() {
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_restrictions_receive_maximum_title),
         infoText =
-            """
-            Maximum number of MQTT messages the client can receive simultaneously.
-            """
-                .trimIndent(),
-        placeholder = "e.g. 16",
+            stringResource(R.string.setting_info_mqtt_restrictions_receive_maximum),
+        placeholder = stringResource(R.string.ui_e_g_16),
         initialValue = userSettings.mqttRestrictionsReceiveMaximum,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
 
@@ -51,7 +52,7 @@ fun <T> DropdownSelector(
             }
             Icon(
                 painter = painterResource(R.drawable.outline_keyboard_arrow_down_24),
-                contentDescription = "Select",
+                contentDescription = stringResource(R.string.ui_select),
             )
         }
         DropdownMenu(

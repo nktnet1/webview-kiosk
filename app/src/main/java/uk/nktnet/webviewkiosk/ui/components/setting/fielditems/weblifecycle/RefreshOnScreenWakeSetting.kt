@@ -17,12 +17,7 @@ fun RefreshOnScreenWakeSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_lifecycle_refresh_on_screen_wake_title),
-        infoText =
-            """
-            Refresh the current page once when the device wakes from sleep.
-            The kiosk page must be in the foreground before and after sleep.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_refresh_on_screen_wake),
         initialValue = userSettings.refreshOnScreenWake,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

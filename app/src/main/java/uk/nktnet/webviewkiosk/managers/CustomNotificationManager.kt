@@ -248,7 +248,7 @@ object CustomNotificationManager {
                 )
                 .setSmallIcon(R.drawable.outline_cloud_download_24)
                 .setContentTitle(filename)
-                .setContentText("Tap to open")
+                .setContentText(context.getString(R.string.ui_tap_to_open))
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)

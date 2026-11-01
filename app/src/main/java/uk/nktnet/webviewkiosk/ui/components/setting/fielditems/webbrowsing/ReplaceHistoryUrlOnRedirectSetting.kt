@@ -21,12 +21,7 @@ fun ReplaceHistoryUrlOnRedirectSetting() {
                 R.string.web_browsing_replace_history_url_on_redirect_title
             ),
         infoText =
-            """
-            Set to true to replace the current history entry with the final URL if
-            any page redirections occurs, rather than adding multiple entries to the
-            history navigation stack.
-            """
-                .trimIndent(),
+            stringResource(R.string.setting_info_replace_history_url_on_redirect),
         initialValue = userSettings.replaceHistoryUrlOnRedirect,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

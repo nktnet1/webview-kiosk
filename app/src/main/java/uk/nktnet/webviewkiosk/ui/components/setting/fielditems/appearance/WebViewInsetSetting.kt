@@ -18,8 +18,7 @@ fun WebViewInsetSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.appearance_webview_inset_title),
-        infoText =
-            "Select which WindowInsets the WebView should respect for padding.",
+        infoText = stringResource(R.string.setting_info_web_view_inset),
         options = WebViewInsetOption.entries,
         initialValue = userSettings.webViewInset,
         settingKey = settingKey,

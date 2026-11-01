@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -83,7 +84,7 @@ fun CreateShortcutDialog(
 
     fun setShortLabel(value: String) {
         shortLabel = value
-        shortLabelError = validateShortLabel(value)
+        shortLabelError = validateShortLabel(context, value)
         generatedIcon = IconUtils.buildLetterIcon(value)
     }
 
@@ -92,7 +93,7 @@ fun CreateShortcutDialog(
         url = trimmed
         urlError =
             if (!validateUrl(trimmed)) {
-                "Invalid URL"
+                context.getString(R.string.ui_invalid_url)
             } else {
                 null
             }
@@ -100,7 +101,7 @@ fun CreateShortcutDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create Shortcut") },
+        title = { Text(stringResource(R.string.ui_create_shortcut)) },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 SimpleOutlinedTextField(
@@ -108,7 +109,7 @@ fun CreateShortcutDialog(
                     onValueChange = {
                         setShortLabel(it)
                     },
-                    label = "Short Label",
+                    label = stringResource(R.string.ui_short_label),
                     error = shortLabelError,
                 )
 
@@ -118,9 +119,9 @@ fun CreateShortcutDialog(
                     value = longLabel,
                     onValueChange = {
                         longLabel = it
-                        longLabelError = validateLongLabel(it)
+                        longLabelError = validateLongLabel(context, it)
                     },
-                    label = "Long Label",
+                    label = stringResource(R.string.ui_long_label),
                     error = longLabelError,
                 )
 
@@ -131,7 +132,7 @@ fun CreateShortcutDialog(
                     onValueChange = {
                         setUrl(it)
                     },
-                    label = "URL",
+                    label = stringResource(R.string.ui_url),
                     error = urlError,
                 )
 
@@ -145,7 +146,7 @@ fun CreateShortcutDialog(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "Use the current URL:",
+                            text = stringResource(R.string.ui_use_the_current_url),
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary,
@@ -171,7 +172,7 @@ fun CreateShortcutDialog(
                     colors = ButtonDefaults.buttonColors(),
                 ) {
                     Text(
-                        text = "Select from History",
+                        text = stringResource(R.string.ui_select_from_history),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimary,
                         textAlign = TextAlign.Center,
@@ -183,7 +184,8 @@ fun CreateShortcutDialog(
 
                 Image(
                     bitmap = generatedIcon.bitmap.asImageBitmap(),
-                    contentDescription = "Shortcut preview",
+                    contentDescription =
+                        stringResource(R.string.ui_shortcut_preview),
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                 )
             }
@@ -216,12 +218,12 @@ fun CreateShortcutDialog(
                     onDismiss()
                 },
             ) {
-                Text("Create")
+                Text(stringResource(R.string.ui_create))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.ui_cancel))
             }
         },
     )
@@ -328,7 +330,7 @@ private fun SimpleOutlinedTextField(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.baseline_clear_24),
-                    contentDescription = "Clear",
+                    contentDescription = stringResource(R.string.ui_clear),
                 )
             }
         },
@@ -347,6 +349,7 @@ private fun SimpleOutlinedTextField(
 }
 
 private fun validateLabel(
+    context: android.content.Context,
     value: String,
     fieldName: String,
     maxLength: Int,
@@ -354,31 +357,45 @@ private fun validateLabel(
     val trimmed = value.trim()
 
     if (trimmed.isBlank()) {
-        return "$fieldName cannot be empty"
+        return context.getString(R.string.ui_value_cannot_be_empty, fieldName)
     }
     if (trimmed.length > maxLength) {
-        return "Max $maxLength characters"
+        return context.getString(
+            R.string.ui_max_value_characters,
+            maxLength.toString(),
+        )
     }
 
     if (trimmed.any { it.isISOControl() }) {
-        return "Invalid characters in $fieldName label"
+        return context.getString(
+            R.string.ui_invalid_characters_in_value_label,
+            fieldName,
+        )
     }
 
     return null
 }
 
-private fun validateShortLabel(value: String): String? {
+private fun validateShortLabel(
+    context: android.content.Context,
+    value: String,
+): String? {
     return validateLabel(
+        context = context,
         value = value,
-        fieldName = "Short label",
+        fieldName = context.getString(R.string.ui_short_label_2),
         maxLength = 10,
     )
 }
 
-private fun validateLongLabel(value: String): String? {
+private fun validateLongLabel(
+    context: android.content.Context,
+    value: String,
+): String? {
     return validateLabel(
+        context = context,
         value = value,
-        fieldName = "Long label",
+        fieldName = context.getString(R.string.ui_long_label_2),
         maxLength = 25,
     )
 }

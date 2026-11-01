@@ -50,7 +50,10 @@ fun SupportPdfRenderingSetting() {
         coroutineScope.launch {
             try {
                 if (download) {
-                    ToastManager.show(context, "Downloading PDF.js...")
+                    ToastManager.show(
+                        context,
+                        context.getString(R.string.ui_downloading_pdf_js),
+                    )
                     PdfJsManager.downloadAssets(context)
                 } else {
                     PdfJsManager.clearAssets(context)
@@ -65,25 +68,10 @@ fun SupportPdfRenderingSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_content_support_pdf_rendering_title),
         infoText =
-            """
-            Set to true to support PDF Rendering using Mozilla's PDF.js renderer:
-
-            - https://github.com/mozilla/pdf.js
-
-            You will first need to download the renderer by opening the popup menu for this
-            setting and clicking the "Download PDF.js assets" button.
-
-            ---
-
-            PDF.js assets and PDF source requests are routed through
-            ${Constants.PDF_JS_ASSETS_DUMMY_URL} and handled locally by the app using the
-            WebViewAssetLoader API.
-
-            For more details, see:
-
-            https://developer.android.com/reference/androidx/webkit/WebViewAssetLoader
-        """
-                .trimIndent(),
+            stringResource(
+                R.string.setting_info_support_pdf_rendering,
+                Constants.PDF_JS_ASSETS_DUMMY_URL,
+            ),
         initialValue = userSettings.supportPdfRendering,
         settingKey = settingKey,
         restricted = restricted,
@@ -96,9 +84,9 @@ fun SupportPdfRenderingSetting() {
                     "(missing assets)"
                 }
             if (value) {
-                "True $supportText"
+                context.getString(R.string.ui_true_value, supportText)
             } else {
-                "False $supportText"
+                context.getString(R.string.ui_false_value, supportText)
             }
         },
         extraContent = {
@@ -118,9 +106,9 @@ fun SupportPdfRenderingSetting() {
                         Text(
                             text =
                                 if (assetsBusy) {
-                                    "Deleting PDF.js..."
+                                    stringResource(R.string.ui_deleting_pdf_js)
                                 } else {
-                                    "Delete PDF.js assets"
+                                    stringResource(R.string.ui_delete_pdf_js_assets)
                                 },
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.labelMedium,
@@ -135,9 +123,11 @@ fun SupportPdfRenderingSetting() {
                         Text(
                             text =
                                 if (assetsBusy) {
-                                    "Downloading PDF.js..."
+                                    stringResource(R.string.ui_downloading_pdf_js)
                                 } else {
-                                    "Download PDF.js assets"
+                                    stringResource(
+                                        R.string.ui_download_pdf_js_assets
+                                    )
                                 },
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.labelMedium,
@@ -145,7 +135,10 @@ fun SupportPdfRenderingSetting() {
                     }
                     Text(
                         text =
-                            "PDF rendering cannot be used until PDF.js assets are downloaded.",
+                            stringResource(
+                                R.string
+                                    .ui_pdf_rendering_cannot_be_used_until_pdf_js_assets_are_d
+                            ),
                         modifier = Modifier.padding(top = 6.dp),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.labelMedium,

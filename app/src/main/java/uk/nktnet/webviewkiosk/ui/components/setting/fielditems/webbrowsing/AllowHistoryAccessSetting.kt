@@ -17,8 +17,7 @@ fun AllowHistoryAccessSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_browsing_allow_history_access_title),
-        infoText =
-            "Whether the user can access browsing history from the address bar.",
+        infoText = stringResource(R.string.setting_info_allow_history_access),
         initialValue = userSettings.allowHistoryAccess,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

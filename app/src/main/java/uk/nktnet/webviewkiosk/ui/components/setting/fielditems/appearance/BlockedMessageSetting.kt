@@ -17,8 +17,9 @@ fun BlockedMessageSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.appearance_blocked_message_title),
-        infoText = "Custom message shown on blocked pages.",
-        placeholder = "e.g. This site is blocked by <Company Name>",
+        infoText = stringResource(R.string.setting_info_blocked_message),
+        placeholder =
+            stringResource(R.string.ui_e_g_this_site_is_blocked_by_company_name),
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.blockedMessage,

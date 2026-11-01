@@ -18,8 +18,7 @@ fun KeepScreenOnSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_keep_screen_on_title),
-        infoText =
-            "Enable this option to keep your device awake (no screen timeout).",
+        infoText = stringResource(R.string.setting_info_keep_screen_on),
         initialValue = userSettings.keepScreenOn,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

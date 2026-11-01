@@ -15,9 +15,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.blocking.BlockingStatus
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 
@@ -35,7 +37,8 @@ internal fun ContentBlockingGate(
         rulesPending || !initialLoadComplete || status == BlockingStatus.LOADING
     val message =
         if (waiting) {
-            stage?.description ?: "Loading content-blocking rules…"
+            stage?.description
+                ?: stringResource(R.string.ui_loading_content_blocking_rules)
         } else {
             null
         }

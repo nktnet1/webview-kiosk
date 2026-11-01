@@ -16,12 +16,7 @@ fun DisplayZoomControlsSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_engine_display_zoom_controls_title),
-        infoText =
-            """
-            Sets whether the WebView should display on-screen zoom controls
-            when using the built-in zoom mechanisms.
-            """
-                .trimIndent(),
+        infoText = stringResource(R.string.setting_info_display_zoom_controls),
         initialValue = userSettings.displayZoomControls,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
