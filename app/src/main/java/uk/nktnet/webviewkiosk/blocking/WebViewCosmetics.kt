@@ -138,19 +138,25 @@ private constructor(
         }
     }
 
-    fun dispose() {
+    fun dispose(rendererGone: Boolean = false) {
         if (disposed) {
             return
         }
         disposed = true
         scope.cancel()
+        val scriptHandler = handler
+        handler = null
+        // Only local cleanup is safe once the renderer has terminated.
+        if (rendererGone) {
+            return
+        }
         withOptionalWebViewFeature(WebViewFeature.DOCUMENT_START_SCRIPT) {
             if (
                 WebViewFeature.isFeatureSupported(
                     WebViewFeature.DOCUMENT_START_SCRIPT
                 )
             ) {
-                runCatching { handler?.remove() }
+                runCatching { scriptHandler?.remove() }
             }
         }
         if (bridgeInstalled) {

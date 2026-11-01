@@ -48,6 +48,48 @@ class WebViewScriptletsTest {
     }
 
     @Test
+    fun rendererDeathAbandonsRegistrationWithoutCallingDeadWebView() {
+        val calls = mutableListOf<String>()
+        val first = ScriptletInjection("first", setOf("*"))
+        val binding =
+            DocumentStartScriptBinding(true) { injection ->
+                calls += "add ${injection.source}"
+                val remove: () -> Unit = { calls += "remove ${injection.source}" }
+                remove
+            }
+
+        binding.replace(first)
+        binding.dispose(rendererGone = true)
+        binding.dispose()
+        binding.replace(ScriptletInjection("second", first.allowedOrigins))
+
+        // The renderer no longer owns this registration; no WebView calls may
+        // follow its death, even if Compose later disposes the old WebView.
+        assertEquals(listOf("add first"), calls)
+    }
+
+    @Test
+    fun failedUnregistrationStillPermanentlyDisposesTheBinding() {
+        val first = ScriptletInjection("first", setOf("*"))
+        var removals = 0
+        val binding =
+            DocumentStartScriptBinding(true) {
+                val remove: () -> Unit = {
+                    removals++
+                    throw IllegalStateException("provider unavailable")
+                }
+                remove
+            }
+        binding.replace(first)
+
+        runCatching { binding.dispose() }
+        binding.dispose()
+        binding.replace(first)
+
+        assertEquals(1, removals)
+    }
+
+    @Test
     fun unsupportedDocumentStartDoesNotAttemptLateOrPartialInjection() {
         val binding =
             DocumentStartScriptBinding(false) { error("Must not register") }

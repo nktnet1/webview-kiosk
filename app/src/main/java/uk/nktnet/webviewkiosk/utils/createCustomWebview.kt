@@ -15,6 +15,7 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.ClientCertRequest
+import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
 import android.webkit.HttpAuthHandler
 import android.webkit.PermissionRequest
@@ -29,6 +30,7 @@ import android.webkit.WebView
 import android.widget.FrameLayout
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,6 +68,7 @@ import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
+import uk.nktnet.webviewkiosk.utils.webview.WebViewLifetime
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigationSession
 import uk.nktnet.webviewkiosk.utils.webview.blockedPageHtml
@@ -341,6 +344,7 @@ fun createCustomWebview(
             }
         var hideFullscreen: () -> Unit = {}
         val navigation = WebViewNavigationSession(config.isActive)
+        val lifetime = WebViewLifetime()
         // Only a main-frame start can reopen progress after completion.
         // WebChromeClient also reports later iframe activity.
         var trackLoadingProgress = false
@@ -353,6 +357,34 @@ fun createCustomWebview(
         var cosmetics: WebViewCosmetics? = null
         var scriptlets: WebViewScriptlets? = null
         var requests: WebViewRequests? = null
+
+        fun releaseWebView(view: WebView, rendererGone: Boolean): Boolean {
+            val wasActive = navigation.isActive()
+            val released =
+                lifetime.release(view, rendererGone) {
+                    navigation.dispose()
+                    if (rendererGone && wasActive) {
+                        finishLoadingProgress()
+                    }
+                    hideFullscreen()
+                    cancelPdfSourceRequests(
+                        view.getTag(R.id.pdf_source_token) as? String
+                    )
+                    completeFileChooser(null, view)
+                    if (wasActive) {
+                        config.onHttpAuthRequest(null)
+                    }
+                    dialogs.dispose()
+                    // Always cancel local work and deactivate JS bridges. The
+                    // bindings skip WebView calls if its renderer has died.
+                    cosmetics?.dispose(rendererGone)
+                    scriptlets?.dispose(rendererGone)
+                    requests?.dispose(rendererGone)
+                    blobInterface?.dispose()
+                    NfcBridgeManager.detachWebView(view)
+                }
+            return released && wasActive
+        }
 
         fun beginLoad(url: String) {
             scriptlets?.refresh()
@@ -1429,35 +1461,19 @@ fun createCustomWebview(
                                 }
                             }
 
+                            // Framework invokes this callback only from API 26
+                            // onward.
+                            @RequiresApi(Build.VERSION_CODES.O)
                             override fun onRenderProcessGone(
                                 view: WebView,
                                 detail: RenderProcessGoneDetail,
                             ): Boolean {
-                                val wasActive = navigation.isActive()
-                                if (!navigation.dispose()) {
-                                    return true
-                                }
-                                if (wasActive) {
-                                    finishLoadingProgress()
-                                }
                                 Log.e(
                                     Constants.APP_SCHEME,
-                                    "WebView renderer gone. crashed=${detail}",
+                                    "WebView renderer gone. crashed=${detail.didCrash()}, " +
+                                        "priority=${detail.rendererPriorityAtExit()}",
                                 )
-                                hideFullscreen()
-                                cancelPdfSourceRequests(
-                                    view.getTag(R.id.pdf_source_token) as? String
-                                )
-                                completeFileChooser(null, view)
-                                if (wasActive) {
-                                    config.onHttpAuthRequest(null)
-                                }
-                                dialogs.dispose()
-                                (view.parent as? ViewGroup)?.removeView(view)
-                                NfcBridgeManager.detachWebView(view)
-                                blobInterface?.dispose()
-                                view.destroy()
-                                if (wasActive) {
+                                if (releaseWebView(view, rendererGone = true)) {
                                     config.onRenderProcessGone()
                                 }
                                 return true
@@ -1782,22 +1798,13 @@ fun createCustomWebview(
                     }
                 }
 
+        CookieManager.getInstance().apply {
+            setAcceptCookie(userSettings.acceptCookies)
+            setAcceptThirdPartyCookies(webView, userSettings.acceptThirdPartyCookies)
+        }
+
         return WebViewCreation.Success(webView) {
-            val wasActive = navigation.isActive()
-            if (!navigation.dispose()) {
-                return@Success
-            }
-            hideFullscreen()
-            cancelPdfSourceRequests(webView.getTag(R.id.pdf_source_token) as? String)
-            completeFileChooser(null, webView)
-            if (wasActive) {
-                config.onHttpAuthRequest(null)
-            }
-            dialogs.dispose()
-            cosmetics?.dispose()
-            scriptlets?.dispose()
-            requests?.dispose()
-            blobInterface?.dispose()
+            releaseWebView(webView, rendererGone = false)
         }
     }
 

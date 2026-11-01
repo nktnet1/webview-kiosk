@@ -12,7 +12,7 @@ import uk.nktnet.webviewkiosk.utils.webview.withOptionalWebViewFeature
  * Synchronous, boolean-only policy lookup for APIs absent from native interception.
  */
 internal class WebViewRequests
-private constructor(
+internal constructor(
     private val webView: WebView,
     internal val rules: Rules,
 ) {
@@ -59,15 +59,24 @@ private constructor(
         }
     }
 
-    fun dispose() {
+    fun dispose(rendererGone: Boolean = false) {
+        if (rules.disposed) {
+            return
+        }
         rules.disposed = true
+        val scriptHandler = handler
+        handler = null
+        // Disable the JavaScript bridge even if its renderer is already gone.
+        if (rendererGone) {
+            return
+        }
         withOptionalWebViewFeature(WebViewFeature.DOCUMENT_START_SCRIPT) {
             if (
                 WebViewFeature.isFeatureSupported(
                     WebViewFeature.DOCUMENT_START_SCRIPT
                 )
             ) {
-                runCatching { handler?.remove() }
+                runCatching { scriptHandler?.remove() }
             }
         }
         webView.removeJavascriptInterface(BRIDGE)
