@@ -1,0 +1,11 @@
+## Changes
+
+- Fixed app disappearing from Android Recents
+- Improved task switching, authentication, and MQTT handling
+- Improved WebView stability and performance
+- Clarified settings and fixed notification status on older Android versions
+- Added string resources for translations
+
+## Warning
+
+- You may need to reselect the default home app (launcher) after upgrading
