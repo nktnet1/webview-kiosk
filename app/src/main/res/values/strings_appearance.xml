@@ -3,13 +3,27 @@
     <!-- Settings help text -->
     <string name="setting_info_address_bar_mode" formatted="false">"Customise the visibility of the address bar."</string>
     <string name="setting_info_address_bar_position" formatted="false">"Customise the position of the address bar - either top or bottom."</string>
-    <string name="setting_info_address_bar_size" formatted="false">"Customise the size of the address bar, which will determine the\nheight, font size, padding and icon size."</string>
+    <string name="setting_info_address_bar_size" formatted="false">"Customise the size of the address bar, which will determine the height, font size, padding and icon size."</string>
     <string name="setting_info_blocked_message" formatted="false">"Custom message shown on blocked pages."</string>
-    <string name="setting_info_custom_block_page_html" formatted="false">"Define the custom HTML content to show when a page is blocked.\n\nLeave blank to use the default block page."</string>
-    <string name="setting_info_floating_toolbar_mode" formatted="false">"Control the visibility and behaviour of the floating toolbar menu button.\n\nWhen set to \"Hidden\", the \"Settings\" button will be visible from the\nKiosk Control Panel."</string>
-    <string name="setting_info_immersive_mode" formatted="false">"In immersive mode, your system bars (status and navigation) are hidden.\n\nYou can temporarily reveal the system bars with gestures such as swiping\nfrom the edge of the screen where the bar is hidden from.\n\nNote: immersive mode is enabled automatically when entering fullscreen\n(for example, when watching a video), irrespective of this setting."</string>
-    <string name="setting_info_show_loading_progress_bar" formatted="false">"Show a progress bar at the top of the WebView while the main page loads.\n\nBackground iframe loads after the page finishes do not reopen the bar.\n\nDisable this to hide the bar during all page loads."</string>
-    <string name="setting_info_theme" formatted="false">"Select the app theme: System (default), Dark or Light.\n\nSee also: Settings -&gt; JS Scripts -&gt; Apply App Theme ."</string>
+    <string name="setting_info_custom_block_page_html" formatted="false">"Define the custom HTML content to show when a page is blocked.
+
+Leave blank to use the default block page."</string>
+    <string name="setting_info_floating_toolbar_mode" formatted="false">"Control the visibility and behaviour of the floating toolbar menu button.
+
+When set to \"Hidden\", the \"Settings\" button will be visible from the Kiosk Control Panel."</string>
+    <string name="setting_info_immersive_mode" formatted="false">"In immersive mode, your system bars (status and navigation) are hidden.
+
+You can temporarily reveal the system bars with gestures such as swiping from the edge of the screen where the bar is hidden from.
+
+Note: immersive mode is enabled automatically when entering fullscreen (for example, when watching a video), irrespective of this setting."</string>
+    <string name="setting_info_show_loading_progress_bar" formatted="false">"Show a progress bar at the top of the WebView while the main page loads.
+
+Background iframe loads after the page finishes do not reopen the bar.
+
+Disable this to hide the bar during all page loads."</string>
+    <string name="setting_info_theme" formatted="false">"Select the app theme: System (default), Dark or Light.
+
+See also: Settings -&gt; JS Scripts -&gt; Apply App Theme."</string>
     <string name="setting_info_web_view_inset" formatted="false">"Select which WindowInsets the WebView should respect for padding."</string>
     <!-- UI labels, placeholders, and messages -->
     <!-- Translators: Preserve the HTML tags, attribute names, 10%% escape and %1$s URL placeholder. -->

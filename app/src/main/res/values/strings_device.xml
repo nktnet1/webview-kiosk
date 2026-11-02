@@ -1,28 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Settings help text -->
-    <string name="setting_info_allow_camera" formatted="false">"Set to true to give WebView access to your device\'s camera.\n\nYou will need to grant the CAMERA permission, which is required for the\nWebView\'s RESOURCE_VIDEO_CAPTURE feature."</string>
-    <string name="setting_info_allow_location" formatted="false">"When enabled, websites can request the device\'s location.\n\nYou can choose to request precise location (FINE) or approximate location (COARSE).\n\nYou will need to grant either ACCESS_FINE_LOCATION or ACCESS_COARSE_LOCATION,\nrequired for the WebView\'s GeolocationPermissions."</string>
-    <string name="setting_info_allow_microphone" formatted="false">"Set to true to give WebView access to your device\'s microphone.\n\nYou will need to grant the RECORD_AUDIO permission, which is required for the\nWebView\'s RESOURCE_AUDIO_CAPTURE feature."</string>
-    <string name="setting_info_allow_nfc" formatted="false">"Set to true to enable NFC support via a Web NFC compatibility bridge.\n\nThis allows websites to read and write NFC tags using the device\'s NFC hardware.\n\nPlease note that this does not use Web NFC directly, as Web NFC is not yet\navailable in Android System WebView. Instead, a compatibility layer is provided\nbetween native NFC and JavaScript. As a result, it is not subject to the same\nsecurity limitations as Web NFC:\n\n- https://developer.chrome.com/docs/capabilities/nfc#security-and-permissions\n\nand can also operate on insecure (non-HTTPS) websites."</string>
-    <string name="setting_info_allow_notifications">"Set to true to allow %1$s to send notifications.\nFor example, this will allow the MQTT notify command to create alerts.\n\nYou will need to grant the POST_NOTIFICATIONS android permission.\n\nPlease note that for foreground services, e.g. when using lock task mode\nkiosk-launch or MQTT, the notification will always be created irrespective\nof this setting. You can disable notifications at the device level if you\ndo not want them."</string>
+    <string name="setting_info_allow_camera" formatted="false">"Set to true to give WebView access to your device\'s camera.
+
+You will need to grant the CAMERA permission, which is required for the WebView\'s RESOURCE_VIDEO_CAPTURE feature."</string>
+    <string name="setting_info_allow_location" formatted="false">"When enabled, websites can request the device\'s location.
+
+You can choose to request precise location (FINE) or approximate location (COARSE).
+
+You will need to grant either ACCESS_FINE_LOCATION or ACCESS_COARSE_LOCATION, required for the WebView\'s GeolocationPermissions."</string>
+    <string name="setting_info_allow_microphone" formatted="false">"Set to true to give WebView access to your device\'s microphone.
+
+You will need to grant the RECORD_AUDIO permission, which is required for the WebView\'s RESOURCE_AUDIO_CAPTURE feature."</string>
+    <string name="setting_info_allow_nfc" formatted="false">"Set to true to enable NFC support via a Web NFC compatibility bridge.
+
+This allows websites to read and write NFC tags using the device\'s NFC hardware.
+
+This uses a native NFC-to-JavaScript compatibility layer rather than Web NFC, which is not yet supported by Android System WebView. It is not subject to the same security limitations as Web NFC and can also operate on insecure (non-HTTPS) websites.
+
+Web NFC security information:
+- https://developer.chrome.com/docs/capabilities/nfc#security-and-permissions"</string>
+    <string name="setting_info_allow_notifications">"Set to true to allow %1$s to send notifications. For example, this will allow the MQTT notify command to create alerts.
+
+On Android 13 and later, you must grant the POST_NOTIFICATIONS permission to show app notifications.
+
+Please note that for foreground services, e.g. when using lock task mode kiosk-launch or MQTT, the notification will always be created irrespective of this setting. You can disable notifications at the device level if you do not want them."</string>
     <string name="setting_info_back_button_hold_action" formatted="false">"Customise the behaviour when the back button is held down (long pressed)."</string>
-    <string name="setting_info_block_screen_capture" formatted="false">"Prevent screenshots, screen recording and content previews in Recent Apps.\nThis is done by setting the FLAG_SECURE window flag."</string>
+    <string name="setting_info_block_screen_capture" formatted="false">"Prevent screenshots, screen recording and content previews in Recent Apps. This is done by setting the FLAG_SECURE window flag."</string>
     <string name="setting_info_block_volume_keys" formatted="false">"Prevent users from changing the device volume using hardware keys while in the kiosk app."</string>
-    <string name="setting_info_brightness" formatted="false">"Set the app window brightness from 0 (very dim) to 100 (very bright).\n\nUse -1 to disable (i.e. the system default brightness will be used)."</string>
-    <string name="setting_info_custom_auth_password">"Specify a custom password to protect your settings or when unlocking from\nthe kiosk state.\n\nFor user-owned devices that utilises screen pinning, this will only work\nif you are using an unlock method provided by the app.\n\nDevice-level unpin methods (e.g. gestures/holding overview + back button\nsimultaneously) will bypass this setting. To enhance security, please\nsee: %1$s/security\n\nLeave this setting blank to use your device\'s biometrics or credentials."</string>
-    <string name="setting_info_custom_unlock_shortcut" formatted="false">"Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)\nin combination with another standard key to unlock/unpin the application.\n\nFor example, CTRL+1.\n\nThis is useful for devices with no navigation buttons on screen and instead\nhas a physical keyboard connected."</string>
-    <string name="setting_info_device_rotation" formatted="false">"Choose a fixed device rotation or select \'Auto\' to allow\nthe system to rotate the screen automatically."</string>
-    <string name="setting_info_dhizuku_request_permission_on_launch">"When enabled, if Dhizuku is installed and has not granted\n%1$s access to Device\nOwner privileges, prompt the user for permission."</string>
+    <string name="setting_info_brightness" formatted="false">"Set the app window brightness from 0 (very dim) to 100 (very bright).
+
+Use -1 to disable (i.e. the system default brightness will be used)."</string>
+    <string name="setting_info_custom_auth_password">"Specify a custom password to protect your settings or when unlocking from the kiosk state.
+
+For user-owned devices that use screen pinning, this will only work if you are using an unlock method provided by the app.
+
+Device-level unpin methods (e.g. gestures/holding overview + back button simultaneously) will bypass this setting. To enhance security, please see: %1$s/security
+
+Leave this setting blank to use your device\'s biometrics or credentials."</string>
+    <string name="setting_info_custom_unlock_shortcut" formatted="false">"Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META) in combination with another standard key to unlock/unpin the application.
+
+For example, CTRL+1.
+
+This is useful for devices with no navigation buttons on screen and instead has a physical keyboard connected."</string>
+    <string name="setting_info_device_rotation" formatted="false">"Choose a fixed device rotation or select \'Auto\' to allow the system to rotate the screen automatically."</string>
+    <string name="setting_info_dhizuku_request_permission_on_launch">"When enabled, if Dhizuku is installed and has not granted %1$s access to Device Owner privileges, prompt the user for permission."</string>
     <string name="setting_info_keep_screen_on" formatted="false">"Enable this option to keep your device awake (no screen timeout)."</string>
-    <string name="setting_info_lock_task_feature_block_activity_start_in_task" formatted="false">"Enable blocking of non-allowlisted activities from being started\ninto a locked task.\n\nThis requires Android 11 (API Level 30)."</string>
-    <string name="setting_info_lock_task_feature_global_actions" formatted="false">"Enables the global actions dialog that shows when long-pressing the power button.\n\nThis is the only feature that\'s enabled when setLockTaskFeatures() hasn\'t been called.\nA user typically can\'t power off the device if you disable this dialog."</string>
-    <string name="setting_info_lock_task_feature_home" formatted="false">"Shows the Home button.\n\nEnable for custom launchers - tapping an enabled Home button has no\naction unless you allowlist the default Android launcher."</string>
-    <string name="setting_info_lock_task_feature_keyguard" formatted="false">"Enables any lock screen that might be set on the device.\nTypically not suitable for devices with public users such as kiosks or digital signage."</string>
-    <string name="setting_info_lock_task_feature_notifications" formatted="false">"Enables notifications for all apps.\n\nThis shows notification icons in the status bar, heads-up notifications, and\nthe expandable notification shade.\n\nIf you enable this button, you must also enable the Home button.\n\nTapping notification actions and buttons that open new panels doesn\'t\nwork in lock task mode."</string>
-    <string name="setting_info_lock_task_feature_overview" formatted="false">"Shows the Overview button (tapping this button opens the Recents screen).\n\nIf you enable this button, you must also enable the Home button."</string>
-    <string name="setting_info_lock_task_feature_system_info" formatted="false">"Enables the status bar\'s system info area that contains indicators\nsuch as connectivity, battery, and sound/vibrate options."</string>
-    <string name="setting_info_unlock_auth_requirement">"This setting only applies to in-app unlock methods, e.g. when unlocking\nusing Kiosk Control Panel or Custom Unlock Shortcut.\n\nAvailable options are:\n\n  - DEFAULT: require authentication for lock task mode (device owner,\nfully-managed/company-owned devices), off for screen pinning (user-owned devices)\n\n  - OFF: unlock without requiring authentication\n\n  - REQUIRE: Prompt for biometrics or device credentials when unlocking\n\nFor user-owned devices without lock task mode, the device will auto-lock when\nunpinning, which is outside the control of %1$s."</string>
+    <string name="setting_info_lock_task_feature_block_activity_start_in_task" formatted="false">"Enable blocking of non-allowlisted activities from being started into a locked task.
+
+This requires Android 11 (API Level 30)."</string>
+    <string name="setting_info_lock_task_feature_global_actions" formatted="false">"Enables the global actions dialog that shows when long-pressing the power button.
+
+This is the only feature that\'s enabled when setLockTaskFeatures() hasn\'t been called. A user typically can\'t power off the device if you disable this dialog."</string>
+    <string name="setting_info_lock_task_feature_home" formatted="false">"Shows the Home button.
+
+Enable for custom launchers - tapping an enabled Home button has no action unless you allowlist the default Android launcher."</string>
+    <string name="setting_info_lock_task_feature_keyguard" formatted="false">"Enables any lock screen that might be set on the device. Typically not suitable for devices with public users such as kiosks or digital signage."</string>
+    <string name="setting_info_lock_task_feature_notifications" formatted="false">"Enables notifications for all apps.
+
+This shows notification icons in the status bar, heads-up notifications, and the expandable notification shade.
+
+If you enable this button, you must also enable the Home button.
+
+Tapping notification actions and buttons that open new panels doesn\'t work in lock task mode."</string>
+    <string name="setting_info_lock_task_feature_overview" formatted="false">"Shows the Overview button (tapping this button opens the Recents screen).
+
+If you enable this button, you must also enable the Home button."</string>
+    <string name="setting_info_lock_task_feature_system_info" formatted="false">"Enables the status bar\'s system info area that contains indicators such as connectivity, battery, and sound/vibrate options."</string>
+    <string name="setting_info_unlock_auth_requirement">"This setting only applies to in-app unlock methods, e.g. when unlocking using Kiosk Control Panel or Custom Unlock Shortcut.
+
+Available options are:
+- DEFAULT: require authentication for lock task mode (device owner, fully-managed/company-owned devices), off for screen pinning (user-owned devices)
+- OFF: unlock without requiring authentication
+- REQUIRE: Prompt for biometrics or device credentials when unlocking
+
+For user-owned devices without lock task mode, the device will auto-lock when unpinning, which is outside the control of %1$s."</string>
     <!-- UI labels, placeholders, and messages -->
     <string name="ui_blank_device_credentials" formatted="false">"(blank = device credentials)"</string>
     <string name="ui_cannot_lock_device_without_device_owner_privileges" formatted="false">"Cannot lock device without device owner privileges"</string>
@@ -36,6 +88,7 @@
     <string name="ui_nfc_disabled" formatted="false">"(NFC disabled)"</string>
     <string name="ui_nfc_is_not_supported_on_this_device" formatted="false">"NFC is not supported on this device."</string>
     <string name="ui_nfc_not_supported" formatted="false">"(NFC not supported)"</string>
+    <string name="ui_notifications_disabled_in_android_settings" formatted="false">"(disabled in Android settings)"</string>
     <string name="ui_open_nfc_settings" formatted="false">"Open NFC Settings"</string>
     <string name="ui_please_enter_fewer_than_value_characters">"Please enter fewer than %1$s characters."</string>
     <string name="ui_request_permission_on_launch" formatted="false">"Request Permission on Launch"</string>

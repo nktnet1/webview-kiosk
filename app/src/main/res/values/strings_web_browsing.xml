@@ -1,23 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Settings help text -->
-    <string name="setting_info_address_bar_actions" formatted="false">"Manage visible actions in the address bar.\n\nUse the drag handle at the end to reorder the items."</string>
+    <string name="setting_info_address_bar_actions" formatted="false">"Manage visible actions in the address bar.
+
+Use the drag handle at the end to reorder the items."</string>
     <string name="setting_info_allow_backwards_navigation" formatted="false">"Whether the user can use the device \'back\' button to go back one page in history."</string>
     <string name="setting_info_allow_bookmark_access" formatted="false">"Whether the user can access saved bookmarks from the address bar."</string>
-    <string name="setting_info_allow_default_long_press" formatted="false">"When enabled, long-pressing areas in the WebView will trigger the native\nWebView behaviour, e.g. text selection.\n\nSpecifically for links, even if this is set to false, it can be overridden\nby the \"Allow Link Long Press Context Menu\" setting."</string>
+    <string name="setting_info_allow_default_long_press" formatted="false">"When enabled, long-pressing areas in the WebView will trigger the native WebView behaviour, e.g. text selection.
+
+Specifically for links, even if this is set to false, it can be overridden by the \"Allow Link Long Press Context Menu\" setting."</string>
     <string name="setting_info_allow_go_home" formatted="false">"Whether the user can return to the configured home page."</string>
     <string name="setting_info_allow_history_access" formatted="false">"Whether the user can access browsing history from the address bar."</string>
-    <string name="setting_info_allow_link_long_press_context_menu">"When enabled, long-pressing links or images will trigger a\ncustom context menu.\n\nThis will take precedence over the \"Allow Default Long Press\"\nsetting (i.e. overrides it).\n\nFor links, the options are:\n- Copy Link\n- Open Link\n- Open in Browser (when unlocked)\n- Share Link (when unlocked)\n\nFor images, there is an additional option:\n- Download Image (requires %1$s)"</string>
-    <string name="setting_info_allow_other_url_schemes" formatted="false">"Allow the handling of non-http/https URL schemes (i.e. intents)\nsuch as intent:, mailto:, sms:, tel:, spotify:, whatsapp:, unifiedpush:,\netc in other apps.\n\nWhen in Lock Task Mode, the apps responsible for handling these\nintents needs to be present in the Lock Task Permitted list under\nthe device owner settings to function."</string>
-    <string name="setting_info_allow_pull_to_refresh" tools:ignore="TypographyFractions" formatted="false">"Set to true to allow the user to refresh the page by pulling down\nfrom the top 1/4 of the screen.\n\nNote that this requires:\n- the \"Allow Refresh\" setting to also be true\n- the page to have been scrolled fully to the top prior to the gesture\n- a single finger (touch) is used"</string>
-    <string name="setting_info_allow_refresh" formatted="false">"Set to true to allow the user to refresh the page, e.g. using the\n- address bar actions\n- kiosk control panel\n- pull to refresh (can be configured separately)"</string>
+    <string name="setting_info_allow_link_long_press_context_menu">"When enabled, long-pressing links or images will trigger a custom context menu.
+
+This will take precedence over the \"Allow Default Long Press\" setting (i.e. overrides it).
+
+For links, the options are:
+- Copy Link
+- Open Link
+- Open in Browser (when unlocked)
+- Share Link (when unlocked)
+
+For images, there is an additional option:
+- Download Image (requires %1$s)"</string>
+    <string name="setting_info_allow_other_url_schemes" formatted="false">"Allow the handling of non-http/https URL schemes (i.e. intents) such as intent:, mailto:, sms:, tel:, spotify:, whatsapp:, unifiedpush:, etc in other apps.
+
+When in Lock Task Mode, the apps responsible for handling these intents needs to be present in the Lock Task Permitted list under the device owner settings to function."</string>
+    <string name="setting_info_allow_pull_to_refresh" tools:ignore="TypographyFractions" formatted="false">"Set to true to allow the user to refresh the page by pulling down from the top 1/4 of the screen.
+
+Note that this requires:
+- the \"Allow Refresh\" setting to also be true
+- the page to have been scrolled fully to the top prior to the gesture
+- a single finger (touch) is used"</string>
+    <string name="setting_info_allow_refresh" formatted="false">"Allow the user to refresh the page using:
+- address bar actions
+- kiosk control panel
+- pull to refresh (can be configured separately)"</string>
     <string name="setting_info_clear_history_on_home" formatted="false">"Clear the browser history whenever the user triggers an action to return home."</string>
-    <string name="setting_info_kiosk_control_panel_actions" formatted="false">"Manage visible actions in the kiosk control panel.\n\nUse the drag handle at the end to reorder the items.\n\nWhen in locked mode, the \"UNLOCK\" action will be appended to the\nend if not configured.\n\nWhen in unlocked mode, if \"Appearance -&gt; Floating Toolbar Mode\" is\nset to Hidden, the \"SETTINGS\" action will be appended to the end\nif not configured."</string>
-    <string name="setting_info_kiosk_control_panel_region" formatted="false">"Controls which part of the screen can be multi-tapped 10 times in quick\nsuccession to show the Kiosk Control Panel.\n\nThe default is Top Left (upper-left quadrant of the screen).\n\nYou cannot disable the multi-tap region when both of these apply:\n  1. [Appearance -&gt; Floating Toolbar Mode] is set to Hidden\n  2. [Device -&gt; Back Button Hold Action] is not set to \"Open Kiosk Control Panel\"\nIn that case, the region stays at Top Left so the panel remains accessible."</string>
-    <string name="setting_info_override_url_loading_block_action" formatted="false">"Action to take when a URL navigation (via shouldOverrideUrlLoading)\nmatches the blacklist regex.\n\nTypically, this is from clicking links (&lt;a&gt; tags) on a webpage\'s HTML.\n\nActions are:\n- Show Block Page (display a HTML block page)\n- Prevent Navigation (does nothing when links are clicked)\n- Show Toast (shows a toast with your custom block message)\n\nThis option will NOT take effect for:\n- JavaScript navigation\n- Custom URL loading, e.g. from the Address Bar, Bookmarks, History, etc\n\nIn those other cases, the block page will simply be shown."</string>
-    <string name="setting_info_replace_history_url_on_redirect" formatted="false">"Set to true to replace the current history entry with the final URL if\nany page redirections occurs, rather than adding multiple entries to the\nhistory navigation stack."</string>
-    <string name="setting_info_search_provider_url">"The URL used for search queries in the address bar.\n\nThis URL must include a query parameter, e.g.\n  %1$s"</string>
-    <string name="setting_info_search_suggestion_engine" formatted="false">"Configure the search engine for text suggestions (autocomplete/hints)\nwhen typing in the address bar.\n\nFor example, when searching for \"new\", you may get suggested\n- news\n- new recipes\n- new york times"</string>
+    <string name="setting_info_kiosk_control_panel_actions" formatted="false">"Manage visible actions in the kiosk control panel.
+
+Use the drag handle at the end to reorder the items.
+
+When in locked mode, the \"UNLOCK\" action will be appended to the end if not configured.
+
+When in unlocked mode, if \"Appearance -&gt; Floating Toolbar Mode\" is set to Hidden, the \"SETTINGS\" action will be appended to the end if not configured."</string>
+    <string name="setting_info_kiosk_control_panel_region" formatted="false">"Controls which part of the screen can be multi-tapped 10 times in quick succession to show the Kiosk Control Panel.
+
+The default is Top Left (upper-left quadrant of the screen).
+
+You cannot disable the multi-tap region when both of these apply:
+1. [Appearance -&gt; Floating Toolbar Mode] is set to Hidden
+2. [Device -&gt; Back Button Hold Action] is not set to \"Open Kiosk Control Panel\"
+
+In that case, the region stays at Top Left so the panel remains accessible."</string>
+    <string name="setting_info_override_url_loading_block_action" formatted="false">"Action to take when a URL navigation (via shouldOverrideUrlLoading) matches the blacklist regex.
+
+Typically, this is from clicking links (&lt;a&gt; tags) on a webpage\'s HTML.
+
+Actions are:
+- Show Block Page (display a HTML block page)
+- Prevent Navigation (does nothing when links are clicked)
+- Show Toast (shows a toast with your custom block message)
+
+This option will NOT take effect for:
+- JavaScript navigation
+- Custom URL loading, e.g. from the Address Bar, Bookmarks, History, etc
+
+In those other cases, the block page will simply be shown."</string>
+    <string name="setting_info_replace_history_url_on_redirect" formatted="false">"Set to true to replace the current history entry with the final URL if any page redirections occurs, rather than adding multiple entries to the history navigation stack."</string>
+    <string name="setting_info_search_provider_url">"The URL used for search queries in the address bar.
+
+This URL must include a query parameter, e.g.
+  %1$s"</string>
+    <string name="setting_info_search_suggestion_engine" formatted="false">"Configure the search engine for text suggestions (autocomplete/hints) when typing in the address bar.
+
+For example, when searching for \"new\", you may get suggested
+- news
+- new recipes
+- new york times"</string>
     <!-- UI labels, placeholders, and messages -->
     <string name="ui_bookmarks" formatted="false">"Bookmarks"</string>
     <string name="ui_copy_full_url" formatted="false">"Copy full URL"</string>

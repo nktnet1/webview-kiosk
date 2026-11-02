@@ -2,58 +2,158 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Settings help text -->
     <!-- Translators: Preserve MQTT topics, ${VARIABLE} tokens, JSON keys, and %N$s placeholders in examples. -->
-    <string name="setting_info_mqtt_automatic_reconnect">"When enabled, attempt to automatically reconnect to the MQTT broker after\nan unexpected disconnect.\n\nIn %1$s, this is implemented linearly\nat a fixed %2$s-second interval."</string>
-    <string name="setting_info_mqtt_clean_start" formatted="false">"When enabled, the MQTT client will start a new session on connect,\ndiscarding any previous session state stored by the broker.\n\nWhen disabled, the client will resume the previous session\n(subscriptions, in-flight messages, etc.) if it exists."</string>
-    <string name="setting_info_mqtt_client_id">"A unique identifier for this client when connecting to the MQTT broker.\n\nLeave this field blank if you want the broker server to generate a\nclient ID for %1$s.\n\nSupports global variables such as APP_INSTANCE_ID and USERNAME, which\nyou can use like:\n- %2$s"</string>
-    <string name="setting_info_mqtt_connect_timeout" formatted="false">"The timeout between sending the Connect and receiving the ConnAck message.\n\nUse 0 to disable the timeout."</string>
-    <string name="setting_info_mqtt_enabled">"When enabled, %1$s will connect to your\nconfigured MQTT broker and subscribe/publish to the defined topics.\n\nThis will take effect for new app launches.\n\nIf you are currently in a disconnected state, you will need to manually click\nthe \"Connect\" button after enabling this option (or simply restarts the app)."</string>
-    <string name="setting_info_mqtt_home_assistant_device_name">"Optional display name, such as Home kiosk.\nLeave blank to use %1$s and this app\'s\ninstance ID.\nRenaming does not change the device or entity identifiers.\nReconnect MQTT after changing it."</string>
-    <string name="setting_info_mqtt_home_assistant_discovery_prefix" formatted="false">"Match Home Assistant\'s MQTT discovery prefix.\nLeave the default homeassistant unless Home Assistant uses a custom\nprefix.\nReconnect MQTT after changing it."</string>
-    <string name="setting_info_mqtt_home_assistant_enable_discovery" formatted="false">"Publish the kiosk\'s status, controls, and settings in Home Assistant.\nReconnect MQTT after changing this setting.\n\nOnline/offline status is managed automatically while discovery is\nenabled.\nCustom MQTT Will settings apply when discovery is disabled."</string>
-    <string name="setting_info_mqtt_home_assistant_status_topic" formatted="false">"Match Home Assistant\'s MQTT birth/status topic.\nLeave homeassistant/status unless Home Assistant uses a custom topic.\nReconnect MQTT after changing it."</string>
-    <string name="setting_info_mqtt_keep_alive" formatted="false">"The time interval (in seconds) in which the client sends a ping to the broker\nif no other MQTT packets are sent during this period of time.\n\nIt is used to determine if the connection is still up."</string>
+    <string name="setting_info_mqtt_automatic_reconnect">"When enabled, attempt to automatically reconnect to the MQTT broker after an unexpected disconnect.
+
+In %1$s, this is implemented linearly at a fixed %2$s-second interval."</string>
+    <string name="setting_info_mqtt_clean_start" formatted="false">"When enabled, the MQTT client will start a new session on connect, discarding any previous session state stored by the broker.
+
+When disabled, the client will resume the previous session (subscriptions, in-flight messages, etc.) if it exists."</string>
+    <string name="setting_info_mqtt_client_id">"A unique identifier for this client when connecting to the MQTT broker.
+
+Leave this field blank if you want the broker server to generate a client ID for %1$s.
+
+Supports global variables such as APP_INSTANCE_ID and USERNAME, which you can use like:
+- %2$s"</string>
+    <string name="setting_info_mqtt_connect_timeout" formatted="false">"The timeout between sending the Connect and receiving the ConnAck message.
+
+Use 0 to disable the timeout."</string>
+    <string name="setting_info_mqtt_enabled">"When enabled, %1$s will connect to your configured MQTT broker and subscribe/publish to the defined topics.
+
+This will take effect for new app launches.
+
+If you are currently in a disconnected state, you will need to manually click the \"Connect\" button after enabling this option (or simply restart the app)."</string>
+    <string name="setting_info_mqtt_home_assistant_device_name">"Optional display name, such as Home kiosk. Leave blank to use %1$s and this app\'s instance ID. Renaming does not change the device or entity identifiers. Reconnect MQTT after changing it."</string>
+    <string name="setting_info_mqtt_home_assistant_discovery_prefix" formatted="false">"Match Home Assistant\'s MQTT discovery prefix. Leave the default homeassistant unless Home Assistant uses a custom prefix. Reconnect MQTT after changing it."</string>
+    <string name="setting_info_mqtt_home_assistant_enable_discovery" formatted="false">"Publish the kiosk\'s status, controls, and settings in Home Assistant. Reconnect MQTT after changing this setting.
+
+Online/offline status is managed automatically while discovery is enabled. Custom MQTT Will settings apply when discovery is disabled."</string>
+    <string name="setting_info_mqtt_home_assistant_status_topic" formatted="false">"Match Home Assistant\'s MQTT birth/status topic. Leave homeassistant/status unless Home Assistant uses a custom topic. Reconnect MQTT after changing it."</string>
+    <string name="setting_info_mqtt_keep_alive" formatted="false">"The time interval (in seconds) in which the client sends a ping to the broker if no other MQTT packets are sent during this period of time.
+
+It is used to determine if the connection is still up."</string>
     <string name="setting_info_mqtt_password" formatted="false">"The password used to authenticate with the MQTT broker."</string>
-    <string name="setting_info_mqtt_publish_event_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees\nin case of connection failures."</string>
+    <string name="setting_info_mqtt_publish_event_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees in case of connection failures."</string>
     <string name="setting_info_mqtt_publish_event_retain" formatted="false">"Keep event topic messages retained for new subscribers."</string>
-    <string name="setting_info_mqtt_publish_event_topic">"The MQTT topic to publish event messages.\n\nSupported variables:\n- %1$s\n- %2$s\n- %3$s\n\nExample:\n- wk/event/${%1$s}"</string>
-    <string name="setting_info_mqtt_publish_response_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees\nfor response messages in case of connection failures."</string>
+    <string name="setting_info_mqtt_publish_event_topic">"The MQTT topic to publish event messages.
+
+Supported variables:
+- %1$s
+- %2$s
+- %3$s
+
+Example:
+- wk/event/${%1$s}"</string>
+    <string name="setting_info_mqtt_publish_response_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees for response messages in case of connection failures."</string>
     <string name="setting_info_mqtt_publish_response_retain" formatted="false">"Keep response topic messages retained for new subscribers."</string>
-    <string name="setting_info_mqtt_publish_response_topic">"Default MQTT topic to publish reply messages to requests.\n\nIf a responseTopic is specified in the request, either in the\npayload or in MQTT V5\'s metadata, the reply will be published\nto that responseTopic instead.\n\nSupported variables:\n- %1$s\n- %2$s\n- %3$s\n\nExample:\n- wk/response/${%1$s}"</string>
+    <string name="setting_info_mqtt_publish_response_topic">"Default MQTT topic to publish reply messages to requests.
+
+If a responseTopic is specified in the request, either in the payload or in MQTT V5\'s metadata, the reply will be published to that responseTopic instead.
+
+Supported variables:
+- %1$s
+- %2$s
+- %3$s
+
+Example:
+- wk/response/${%1$s}"</string>
     <string name="setting_info_mqtt_restrictions_maximum_packet_size" formatted="false">"Maximum size in bytes of MQTT packets the client can receive."</string>
     <string name="setting_info_mqtt_restrictions_receive_maximum" formatted="false">"Maximum number of MQTT messages the client can receive simultaneously."</string>
-    <string name="setting_info_mqtt_restrictions_request_problem_information" formatted="false">"When enabled, the client requests additional problem information\nfrom the broker in MQTT responses."</string>
-    <string name="setting_info_mqtt_restrictions_request_response_information" formatted="false">"When enabled, the client requests additional response information\nfrom the broker in MQTT responses."</string>
+    <string name="setting_info_mqtt_restrictions_request_problem_information" formatted="false">"When enabled, the client requests additional problem information from the broker in MQTT responses."</string>
+    <string name="setting_info_mqtt_restrictions_request_response_information" formatted="false">"When enabled, the client requests additional response information from the broker in MQTT responses."</string>
     <string name="setting_info_mqtt_restrictions_send_maximum" formatted="false">"Maximum number of MQTT messages the client can send simultaneously."</string>
     <string name="setting_info_mqtt_restrictions_send_maximum_packet_size" formatted="false">"Maximum size in bytes of MQTT packets the client can send."</string>
     <string name="setting_info_mqtt_restrictions_send_topic_alias_maximum" formatted="false">"Maximum number of topic aliases the client can send."</string>
     <string name="setting_info_mqtt_restrictions_topic_alias_maximum" formatted="false">"Maximum number of topic aliases the client can receive."</string>
-    <string name="setting_info_mqtt_server_host" formatted="false">"The hostname or IP address of the MQTT broker the app should connect to.\n\nFor example,\n- 192.168.1.190\n- broker.hivemq.com\n- broker.emqx.io"</string>
-    <string name="setting_info_mqtt_server_port" formatted="false">"The TCP port of the MQTT broker the app should connect to.\n\nTypically,\n- 1883 - MQTT (TCP)\n- 8883 - MQTTS (TCP with SSL/TLS)\n- 80 - WS (WebSocket, same port as HTTP)\n- 443 - WSS (WebSocket Secure, same port as HTTPS)"</string>
-    <string name="setting_info_mqtt_session_expiry_interval" formatted="false">"Specify the maximum time a session is retained on the server after\ndisconnecting from the network.\n\nThe server will discard the corresponding session state when the\nexpiration time is reached."</string>
-    <string name="setting_info_mqtt_socket_connect_timeout" formatted="false">"The timeout for connecting the socket to the server.\n\nUse 0 to disable the timeout."</string>
-    <string name="setting_info_mqtt_subscribe_command_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees\nin case of connection failures."</string>
-    <string name="setting_info_mqtt_subscribe_command_retain_as_published" formatted="false">"Controls whether retained messages from the broker keep their original\nretained flag when delivered to the subscriber."</string>
-    <string name="setting_info_mqtt_subscribe_command_retain_handling">"Control whether %1$s should receive existing\nretained messages when subscribing."</string>
-    <string name="setting_info_mqtt_subscribe_command_topic">"The MQTT topic name to receive commands.\n\nSupported variables:\n- %1$s\n- %2$s\n\nExample:\n- wk/${%1$s}/command"</string>
-    <string name="setting_info_mqtt_subscribe_request_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees\nin case of connection failures."</string>
-    <string name="setting_info_mqtt_subscribe_request_retain_as_published" formatted="false">"Controls whether retained messages from the broker keep their original\nretained flag when delivered to the subscriber."</string>
-    <string name="setting_info_mqtt_subscribe_request_retain_handling">"Control whether %1$s should receive existing\nretained messages when subscribing."</string>
-    <string name="setting_info_mqtt_subscribe_request_topic">"The MQTT topic name to receive requests.\n\nSupported variables:\n- %1$s\n- %2$s\n\nExample:\n- wk/${%1$s}/request"</string>
-    <string name="setting_info_mqtt_subscribe_settings_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees\nfor settings subscriptions."</string>
-    <string name="setting_info_mqtt_subscribe_settings_retain_as_published" formatted="false">"Controls whether retained messages from the broker keep their original\nretained flag when delivered to the subscriber."</string>
-    <string name="setting_info_mqtt_subscribe_settings_retain_handling">"Control whether %1$s should receive existing\nretained messages when subscribing."</string>
-    <string name="setting_info_mqtt_subscribe_settings_topic">"The MQTT topic name to receive commands.\n\nSupported variables:\n- %1$s\n- %2$s\n\nExample:\n- wk/${%1$s}/settings"</string>
-    <string name="setting_info_mqtt_use_foreground_service">"Start a Foreground Service to keep the MQTT connection alive.\n\nThis will maintain the connection even when %1$s\ngoes to the background (e.g. another app is opened) or the device screen is\nturned off (by using PowerManager.PARTIAL_WAKE_LOCK).\n\nTurn on notifications to see the current MQTT status being updated\nby the foreground service every second.\n\nAlso, It is highly recommended that you disable battery optimisation\nfor %1$s to stop the service from\nbeing killed.\n\nFor more information, visit:\n- https://dontkillmyapp.com"</string>
-    <string name="setting_info_mqtt_use_tls" formatted="false">"When enabled, the client will connect securely to the broker\nusing TLS. Ensure the broker supports TLS on the configured port."</string>
-    <string name="setting_info_mqtt_use_web_socket" formatted="false">"When enabled, MQTT uses WebSocket transport instead of a direct\nTCP connection. TLS is configured separately with \"Use TLS\".\nEnable both settings to use WSS (secure WebSocket).\n\nEnsure the broker supports WebSocket on the selected port,\nwhich is typically\n- 80 for WS\n- 443 for WSS (WebSocket Secure)\n\nYou should only enable WebSocket when strictly necessary, as it\nwill consume more resources. A valid use case would be when you\nare connected to a network with a firewall that blocks non-standard\nports like 8883."</string>
+    <string name="setting_info_mqtt_server_host" formatted="false">"The hostname or IP address of the MQTT broker the app should connect to.
+
+For example,
+- 192.168.1.190
+- broker.hivemq.com
+- broker.emqx.io"</string>
+    <string name="setting_info_mqtt_server_port" formatted="false">"The TCP port of the MQTT broker the app should connect to.
+
+Typically,
+- 1883 - MQTT (TCP)
+- 8883 - MQTTS (TCP with SSL/TLS)
+- 80 - WS (WebSocket, same port as HTTP)
+- 443 - WSS (WebSocket Secure, same port as HTTPS)"</string>
+    <string name="setting_info_mqtt_session_expiry_interval" formatted="false">"Specify the maximum time a session is retained on the server after disconnecting from the network.
+
+The server will discard the corresponding session state when the expiration time is reached."</string>
+    <string name="setting_info_mqtt_socket_connect_timeout" formatted="false">"The timeout for connecting the socket to the server.
+
+Use 0 to disable the timeout."</string>
+    <string name="setting_info_mqtt_subscribe_command_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees in case of connection failures."</string>
+    <string name="setting_info_mqtt_subscribe_command_retain_as_published" formatted="false">"Controls whether retained messages from the broker keep their original retained flag when delivered to the subscriber."</string>
+    <string name="setting_info_mqtt_subscribe_command_retain_handling">"Control whether %1$s should receive existing retained messages when subscribing."</string>
+    <string name="setting_info_mqtt_subscribe_command_topic">"The MQTT topic name to receive commands.
+
+Supported variables:
+- %1$s
+- %2$s
+
+Example:
+- wk/${%1$s}/command"</string>
+    <string name="setting_info_mqtt_subscribe_request_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees in case of connection failures."</string>
+    <string name="setting_info_mqtt_subscribe_request_retain_as_published" formatted="false">"Controls whether retained messages from the broker keep their original retained flag when delivered to the subscriber."</string>
+    <string name="setting_info_mqtt_subscribe_request_retain_handling">"Control whether %1$s should receive existing retained messages when subscribing."</string>
+    <string name="setting_info_mqtt_subscribe_request_topic">"The MQTT topic name to receive requests.
+
+Supported variables:
+- %1$s
+- %2$s
+
+Example:
+- wk/${%1$s}/request"</string>
+    <string name="setting_info_mqtt_subscribe_settings_qos" formatted="false">"Quality of Service (QoS) ensures different message delivery guarantees for settings subscriptions."</string>
+    <string name="setting_info_mqtt_subscribe_settings_retain_as_published" formatted="false">"Controls whether retained messages from the broker keep their original retained flag when delivered to the subscriber."</string>
+    <string name="setting_info_mqtt_subscribe_settings_retain_handling">"Control whether %1$s should receive existing retained messages when subscribing."</string>
+    <string name="setting_info_mqtt_subscribe_settings_topic">"The MQTT topic name to receive settings updates.
+
+Supported variables:
+- %1$s
+- %2$s
+
+Example:
+- wk/${%1$s}/settings"</string>
+    <string name="setting_info_mqtt_use_foreground_service">"Start a Foreground Service to keep the MQTT connection alive.
+
+This will maintain the connection even when %1$s goes to the background (e.g. another app is opened) or the device screen is turned off (by using PowerManager.PARTIAL_WAKE_LOCK).
+
+Turn on notifications to see the current MQTT status being updated by the foreground service every second.
+
+Also, It is highly recommended that you disable battery optimisation for %1$s to stop the service from being killed.
+
+For more information, visit:
+- https://dontkillmyapp.com"</string>
+    <string name="setting_info_mqtt_use_tls" formatted="false">"When enabled, the client will connect securely to the broker using TLS. Ensure the broker supports TLS on the configured port."</string>
+    <string name="setting_info_mqtt_use_web_socket" formatted="false">"When enabled, MQTT uses WebSocket transport instead of a direct TCP connection. TLS is configured separately with \"Use TLS\". Enable both settings to use WSS (secure WebSocket).
+
+Ensure the broker supports WebSocket on the selected port, which is typically
+- 80 for WS
+- 443 for WSS (WebSocket Secure)
+
+You should only enable WebSocket when strictly necessary, as it will consume more resources. A valid use case would be when you are connected to a network with a firewall that blocks non-standard ports like 8883."</string>
     <string name="setting_info_mqtt_username" formatted="false">"The username used to authenticate with the MQTT broker."</string>
-    <string name="setting_info_mqtt_web_socket_server_path" formatted="false">"The path the MQTT broker WebSocket server listens on.\n\nMust start with a \'/\', e.g. /mqtt"</string>
-    <string name="setting_info_mqtt_will_delay_interval" formatted="false">"Time in seconds the broker will wait before sending the last will message\nafter the client disconnects unexpectedly. A value of 0 means immediate delivery."</string>
-    <string name="setting_info_mqtt_will_message_expiry_interval" formatted="false">"The lifetime in seconds of the last will message on the broker\nafter it is sent. A value of 0 means the message does not expire."</string>
-    <string name="setting_info_mqtt_will_payload">"The MQTT payload to send for the last will message if the client\ndisconnects unexpectedly.\n\nFor example,\n  {\n    \"message\": \"Client has disconnected.\",\n    \"username\": \"${%1$s}\",\n    \"appInstanceId\": \"${%2$s}\"\n  }"</string>
-    <string name="setting_info_mqtt_will_qos" formatted="false">"Quality of Service (QoS) for the MQTT last will message.\nDetermines the guarantee of message delivery in case of client disconnect."</string>
+    <string name="setting_info_mqtt_web_socket_server_path" formatted="false">"The path the MQTT broker WebSocket server listens on.
+
+Must start with a \'/\', e.g. /mqtt"</string>
+    <string name="setting_info_mqtt_will_delay_interval" formatted="false">"Time in seconds the broker will wait before sending the last will message after the client disconnects unexpectedly. A value of 0 means immediate delivery."</string>
+    <string name="setting_info_mqtt_will_message_expiry_interval" formatted="false">"The lifetime in seconds of the last will message on the broker after it is sent. A value of 0 means the message does not expire."</string>
+    <string name="setting_info_mqtt_will_payload">"The MQTT payload to send for the last will message if the client disconnects unexpectedly.
+
+For example,
+  {
+    \"message\": \"Client has disconnected.\",
+    \"username\": \"${%1$s}\",
+    \"appInstanceId\": \"${%2$s}\"
+  }"</string>
+    <string name="setting_info_mqtt_will_qos" formatted="false">"Quality of Service (QoS) for the MQTT last will message. Determines the guarantee of message delivery in case of client disconnect."</string>
     <string name="setting_info_mqtt_will_retain" formatted="false">"Set to true to retain the last will message on the broker after it is sent."</string>
-    <string name="setting_info_mqtt_will_topic">"The MQTT topic to publish the last will message if the client\ndisconnects unexpectedly.\n\nAll global variables are supported, e.g. you can use\n- wk/${%1$s}/${%2$s}/will"</string>
+    <string name="setting_info_mqtt_will_topic">"The MQTT topic to publish the last will message if the client disconnects unexpectedly.
+
+All global variables are supported, e.g. you can use
+- wk/${%1$s}/${%2$s}/will"</string>
     <!-- UI labels, placeholders, and messages -->
     <string name="ui_already_cancelling_please_wait_up_to_value_seconds">"Already cancelling - please wait up to %1$s seconds."</string>
     <string name="ui_automatic" formatted="false">"Automatic"</string>

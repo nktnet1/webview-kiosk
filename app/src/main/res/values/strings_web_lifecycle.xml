@@ -1,14 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Settings help text -->
-    <string name="setting_info_dim_screen_on_inactivity_seconds">"Number of seconds of inactivity before the screen is dimmed.\n\nThis will set the brightness to 0, and will restore the brightness to\nyour device -&gt; brightness setting upon new user interactions.\n\nMinimum: %1$s\n\nTo disable, use the value 0."</string>
-    <string name="setting_info_lock_on_launch" formatted="false">"When enabled, the app will immediately enter locked/pinned mode on startup,\npreventing exit until unpinned.\n\nOn some devices, you may still be prompted with a confirmation screen."</string>
-    <string name="setting_info_refresh_on_loading_error_interval_seconds">"Interval in seconds between automatic refresh attempts when a page fails\nto load, including main-page HTTP 5xx server errors on Android 6 and\nnewer. HTTP 4xx responses and failed images or iframes do not trigger\nretries.\n\nMinimum: %1$s\n\nTo disable, use the value 0."</string>
-    <string name="setting_info_refresh_on_network_available" formatted="false">"Select when the page should automatically refresh when network\nconnectivity is restored.\n\n- Always: refresh whenever a network connection is available\n- On Page Error: only refresh if the previous page load failed\n- Never: do not refresh automatically"</string>
-    <string name="setting_info_refresh_on_screen_wake" formatted="false">"Refresh the current page once when the device wakes from sleep.\nThe kiosk page must be in the foreground before and after sleep."</string>
-    <string name="setting_info_reset_actions" formatted="false">"Choose what to clear when an inactivity reset returns to the home URL.\n\nReturning home always happens, even when no actions are selected.\n\nUse the drag handle at the end to reorder the items.\n\nActions run in the selected order, except WebView recreation,\nwhich always happens after the other actions.\n\nCookies and website storage are shared across all websites in the app.\nClearing them may sign users out of websites.\n\nRecreating the WebView also ends the current in-memory page session."</string>
-    <string name="setting_info_reset_on_inactivity_seconds">"Number of seconds of inactivity before the app resets to the home URL.\n\nWhen there is 5 seconds left, a warning countdown will be shown on\nthe screen.\n\nUser interactions with the screen reset the timer.\n\nChoose which browsing data to clear using Reset Actions.\n\nMinimum: %1$s\n\nTo disable, use the value 0."</string>
-    <string name="setting_info_reset_on_launch" formatted="false">"When enabled, the app will always start fresh at the Home URL when\nclosed and re-opened, as opposed to the last visited URL.\n\nThe navigation history will also be cleared."</string>
+    <string name="setting_info_dim_screen_on_inactivity_seconds">"Number of seconds of inactivity before the screen is dimmed.
+
+This will set the brightness to 0, and will restore the brightness to your device -&gt; brightness setting upon new user interactions.
+
+Minimum: %1$s
+
+To disable, use the value 0."</string>
+    <string name="setting_info_lock_on_launch" formatted="false">"When enabled, the app will immediately enter locked/pinned mode on startup, preventing exit until unpinned.
+
+On some devices, you may still be prompted with a confirmation screen."</string>
+    <string name="setting_info_refresh_on_loading_error_interval_seconds">"Interval in seconds between automatic refresh attempts when a page fails to load, including main-page HTTP 5xx server errors on Android 6 and newer. HTTP 4xx responses and failed images or iframes do not trigger retries.
+
+Minimum: %1$s
+
+To disable, use the value 0."</string>
+    <string name="setting_info_refresh_on_network_available" formatted="false">"Select when the page should automatically refresh when network connectivity is restored.
+
+- Always: refresh whenever a network connection is available
+- On Page Error: only refresh if the previous page load failed
+- Never: do not refresh automatically"</string>
+    <string name="setting_info_refresh_on_screen_wake" formatted="false">"Refresh the current page once when the device wakes from sleep. The kiosk page must be in the foreground before and after sleep."</string>
+    <string name="setting_info_reset_actions" formatted="false">"Choose what to clear when an inactivity reset returns to the home URL.
+
+Returning home always happens, even when no actions are selected.
+
+Use the drag handle at the end to reorder the items.
+
+Actions run in the selected order, except WebView recreation, which always happens after the other actions.
+
+Cookies and website storage are shared across all websites in the app. Clearing them may sign users out of websites.
+
+Recreating the WebView also ends the current in-memory page session."</string>
+    <string name="setting_info_reset_on_inactivity_seconds">"Number of seconds of inactivity before the app resets to the home URL.
+
+When there is 5 seconds left, a warning countdown will be shown on the screen.
+
+User interactions with the screen reset the timer.
+
+Choose which browsing data to clear using Reset Actions.
+
+Minimum: %1$s
+
+To disable, use the value 0."</string>
+    <string name="setting_info_reset_on_launch" formatted="false">"When enabled, the app will always start fresh at the Home URL when closed and re-opened, as opposed to the last visited URL.
+
+The navigation history will also be cleared."</string>
     <!-- UI labels, placeholders, and messages -->
     <string name="ui_e_g_120" formatted="false">"e.g. 120"</string>
     <string name="ui_e_g_3600_for_1_hour" formatted="false">"e.g. 3600 (for 1 hour)"</string>

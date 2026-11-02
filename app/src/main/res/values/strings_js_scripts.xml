@@ -1,15 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Settings help text -->
-    <string name="setting_info_apply_app_theme">"This script injects JavaScript code that will set prefers-color-scheme\naccording to your selected theme in %1$s\nAppearance settings, thus keeping the Webpage\'s theme consistent with the\nApp\'s theme.\n\nThis script will run immediately \"on page start\".\n\nIf the theme setting is \"System\", this script is a no-op (does nothing)."</string>
-    <string name="setting_info_apply_desktop_viewport_width">"This script creates or updates the page\'s viewport meta element,\nsetting its content to \'width=YOUR_WIDTH_VALUE\' to request a\ndesktop-sized viewport.\n\nJS history state changes will also be subscribed to\n(e.g. from Single Page Applications), and the script\nwill be re-triggered as needed.\n\nYou should only enable this option if setting the user\nagent was insufficient to force Desktop mode, as the\nadditional JS here will slow down the page.\n\nYou may also want to enable the following options under\nSettings -&gt; Web Engine:\n  - User Agent: Desktop\n  - Use Wide Viewport: True\n  - Load with Overview Mode: True\n\nThe minimum possible value is %1$s.\n\nTo disable, use the value 0."</string>
-    <string name="setting_info_custom_script_on_page_finish" formatted="false">"JavaScript to run after the page has fully loaded.\nUseful for DOM updates, styling, or injecting behavior.\n\nYour code content will be wrapped as follows to prevent\npolluting the global scope and avoid conflicts with\nother scripts:\n    (function() {\n        // &lt;YOUR CODE&gt;\n    })()"</string>
-    <string name="setting_info_custom_script_on_page_start" formatted="false">"JavaScript to run immediately when the page starts loading.\nYou can use this for early DOM manipulation or overriding functions.\n\nYour code content will be wrapped as follows to prevent\npolluting the global scope and avoid conflicts with\nother scripts:\n    (function() {\n        // &lt;YOUR CODE&gt;\n    })()"</string>
-    <string name="setting_info_enable_battery_api" formatted="false">"Allow web pages to access device battery status through a JavaScript\ninterface. Web pages can use:\n\nJSON.parse(window.WebviewKioskBatteryInterface.getBatteryStatus())\n\nto retrieve battery level, charging status, temperature and other\nbattery information."</string>
-    <string name="setting_info_enable_brightness_api" tools:ignore="TypographyDashes" formatted="false">"Allow web pages to use:\n\n1. window.WebviewKioskBrightnessInterface.getBrightness(): number\n2. window.WebviewKioskBrightnessInterface.setBrightness(value: number)\n\nto read or change the current screen brightness percentage.\n\nValues are integers between 0-100, with\n   -1: use system brightness\n    0: very dim\n  100: very bright"</string>
-    <string name="setting_info_enable_dark_reader" formatted="false">"Automatically inject Dark Reader into web pages.\n\n- https://github.com/darkreader/darkreader\n\nThis applies dynamic CSS transformations to force dark mode on websites\nthat do not support it natively.\n\nNote: Some websites may render incorrectly due to CSS overrides."</string>
-    <string name="setting_info_enable_eruda_console" formatted="false">"Automatically inject the Eruda console into web pages.\n\n- https://github.com/liriliri/eruda\n\nThis provides a mobile browser developer console for inspecting:\n\n- JavaScript errors\n- Console output\n- Network requests\n- DOM elements\n- Storage and cookies\n\nUseful for debugging web applications on Android devices without\ndesktop developer tools."</string>
-    <string name="setting_info_enable_vibration_api" formatted="false">"Allow web pages to vibrate the device using navigator.vibrate(pattern).\n\nThe pattern can be a duration in milliseconds or an array of alternating\nvibration and pause durations. A user interaction may be required by the\nWebView before vibration is allowed."</string>
+    <string name="setting_info_apply_app_theme">"This script injects JavaScript code that will set prefers-color-scheme according to your selected theme in %1$s Appearance settings, thus keeping the Webpage\'s theme consistent with the App\'s theme.
+
+This script will run immediately \"on page start\".
+
+If the theme setting is \"System\", this script is a no-op (does nothing)."</string>
+    <string name="setting_info_apply_desktop_viewport_width">"This script creates or updates the page\'s viewport meta element, setting its content to \'width=YOUR_WIDTH_VALUE\' to request a desktop-sized viewport.
+
+JS history state changes will also be subscribed to (e.g. from Single Page Applications), and the script will be re-triggered as needed.
+
+You should only enable this option if setting the user agent was insufficient to force Desktop mode, as the additional JS here will slow down the page.
+
+You may also want to enable the following options under Settings -&gt; Web Engine:
+  - User Agent: Desktop
+  - Use Wide Viewport: True
+  - Load with Overview Mode: True
+
+The minimum possible value is %1$s.
+
+To disable, use the value 0."</string>
+    <string name="setting_info_custom_script_on_page_finish" formatted="false">"JavaScript to run after the page has fully loaded. Useful for DOM updates, styling, or injecting behavior.
+
+Your code content will be wrapped as follows to prevent polluting the global scope and avoid conflicts with other scripts:
+    (function() {
+        // &lt;YOUR CODE&gt;
+    })()"</string>
+    <string name="setting_info_custom_script_on_page_start" formatted="false">"JavaScript to run immediately when the page starts loading. You can use this for early DOM manipulation or overriding functions.
+
+Your code content will be wrapped as follows to prevent polluting the global scope and avoid conflicts with other scripts:
+    (function() {
+        // &lt;YOUR CODE&gt;
+    })()"</string>
+    <string name="setting_info_enable_battery_api" formatted="false">"Allow web pages to access device battery status through a JavaScript interface. To retrieve battery level, charging status, temperature and other battery information, use:
+
+JSON.parse(window.WebviewKioskBatteryInterface.getBatteryStatus())"</string>
+    <string name="setting_info_enable_brightness_api" tools:ignore="TypographyDashes" formatted="false">"Allow web pages to read or change the current screen brightness percentage:
+
+1. window.WebviewKioskBrightnessInterface.getBrightness(): number
+2. window.WebviewKioskBrightnessInterface.setBrightness(value: number)
+
+Brightness values:
+- -1: use system brightness
+- 0: very dim
+- 100: very bright"</string>
+    <string name="setting_info_enable_dark_reader" formatted="false">"Automatically inject Dark Reader into web pages.
+
+- https://github.com/darkreader/darkreader
+
+This applies dynamic CSS transformations to force dark mode on websites that do not support it natively.
+
+Note: Some websites may render incorrectly due to CSS overrides."</string>
+    <string name="setting_info_enable_eruda_console" formatted="false">"Automatically inject the Eruda console into web pages.
+
+- https://github.com/liriliri/eruda
+
+This provides a mobile browser developer console for inspecting:
+
+- JavaScript errors
+- Console output
+- Network requests
+- DOM elements
+- Storage and cookies
+
+Useful for debugging web applications on Android devices without desktop developer tools."</string>
+    <string name="setting_info_enable_vibration_api" formatted="false">"Allow web pages to vibrate the device using navigator.vibrate(pattern).
+
+The pattern can be a duration in milliseconds or an array of alternating vibration and pause durations. A user interaction may be required by the WebView before vibration is allowed."</string>
     <!-- UI labels, placeholders, and messages -->
     <string name="ui_e_g_1024_or_0_to_disable" formatted="false">"e.g. 1024 (or 0 to disable)"</string>
     <string name="ui_e_g_document_body_style_backgroundcolor_green" translatable="false" formatted="false">"e.g. document.body.style.backgroundColor = \'green\';"</string>

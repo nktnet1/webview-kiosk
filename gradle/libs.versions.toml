@@ -1,10 +1,10 @@
 [versions]
-agp = "9.4.1"
+agp = "9.5.0"
 androidRetrofix = "1.1.0"
 androidRetrostreams = "1.7.4"
 biometric = "1.1.0"
 connector = "3.3.5"
-dhizukuApi = "2.6.0"
+dhizukuApi = "2.7.0"
 detekt = "1.23.8"
 hiddenapibypass = "6.2"
 hivemqMqttClient = "1.4.1"
