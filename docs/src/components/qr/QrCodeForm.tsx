@@ -112,7 +112,7 @@ export default function QRCodeForm() {
   const [result, setResult] = useState<{
     payload: QrData;
     downloadSource: QrInstallationSource;
-    formValues: string;
+    payloadJson: string;
   } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -147,7 +147,7 @@ export default function QRCodeForm() {
       setResult({
         payload,
         downloadSource: value.downloadSource,
-        formValues: JSON.stringify(value),
+        payloadJson: JSON.stringify(payload),
       });
     },
   });
@@ -376,15 +376,21 @@ export default function QRCodeForm() {
         </form>
 
         <form.Subscribe
-          selector={(s) => ({
-            formValues: JSON.stringify(s.values),
-            canSubmit: s.canSubmit,
-          })}
-          children={({ formValues, canSubmit }) => (
-            <QrCodePreview
-              result={result}
-              hasChanges={result !== null && result.formValues !== formValues}
-              canSubmit={canSubmit}
+          selector={(s) =>
+            JSON.stringify(buildQrProvisioningPayload(s.values).payload)
+          }
+          children={(payloadJson) => (
+            <form.Subscribe
+              selector={(s) => s.canSubmit}
+              children={(canSubmit) => (
+                <QrCodePreview
+                  result={result}
+                  hasChanges={
+                    result !== null && result.payloadJson !== payloadJson
+                  }
+                  canSubmit={canSubmit}
+                />
+              )}
             />
           )}
         />

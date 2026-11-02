@@ -254,13 +254,14 @@ describe("Android-managed settings catalogue", () => {
     );
     const arrayValues = new Map<string, string[]>();
     for (const match of arraysXml.matchAll(
-      /<string-array name="([^"]+)">([\s\S]*?)<\/string-array>/g,
+      /<string-array\b[^>]*\bname="([^"]+)"[^>]*>([\s\S]*?)<\/string-array>/g,
     )) {
       arrayValues.set(
         match[1],
         [...match[2].matchAll(/<item>(.*?)<\/item>/g)].map((item) => item[1]),
       );
     }
+    expect(arrayValues.size).toBeGreaterThan(0);
     const restrictions = [
       ...restrictionsXml.matchAll(/<restriction\s+([\s\S]*?)\/>/g),
     ].map((match) => {
@@ -288,9 +289,11 @@ describe("Android-managed settings catalogue", () => {
         }[restriction.restrictionType],
       );
       if (restriction.entryValues) {
-        expect(setting?.options).toEqual(
-          arrayValues.get(restriction.entryValues.replace("@array/", "")),
+        const values = arrayValues.get(
+          restriction.entryValues.replace("@array/", ""),
         );
+        expect(values, `Missing ${restriction.entryValues}`).toBeDefined();
+        expect(setting?.options).toEqual(values);
       }
     }
   });

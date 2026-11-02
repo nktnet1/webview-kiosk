@@ -147,6 +147,35 @@ test("changed settings replace an outdated QR with an update action", async ({
   await expect(page.getByRole("status")).toHaveText("Ready to scan");
 });
 
+test("equivalent form edits keep the generated QR available", async ({
+  page,
+}) => {
+  const qr = page.getByTestId("provisioning-qr");
+  const initialPayload = await generatePayload(page);
+  const ssid = page.getByLabel("Network name (SSID)", { exact: true });
+
+  await ssid.fill("Temporary network");
+  await expect(qr).toHaveCount(0);
+  await ssid.fill("");
+  await expect(qr.locator("svg")).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("Ready to scan");
+  expect(
+    JSON.parse((await qr.getAttribute("data-provisioning-payload")) ?? "{}"),
+  ).toEqual(initialPayload);
+
+  await page.getByRole("button", { name: "Advanced options" }).click();
+  const extras = page.getByLabel("Admin extras (JSON)", { exact: true });
+  await extras.fill('{"key":"value"}');
+  const payloadWithExtras = await generatePayload(page);
+  await extras.fill('{\n  "key": "value"\n}');
+
+  await expect(qr.locator("svg")).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("Ready to scan");
+  expect(
+    JSON.parse((await qr.getAttribute("data-provisioning-payload")) ?? "{}"),
+  ).toEqual(payloadWithExtras);
+});
+
 test("Wi-Fi password visibility does not change the encoded password", async ({
   page,
 }) => {
