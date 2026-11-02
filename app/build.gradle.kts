@@ -108,6 +108,14 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
+        // Locally test the release shrinker without a production signing key.
+        // This builds a separate APK: the ordinary release variant is unchanged.
+        create("smokeRelease") {
+            initWith(getByName("release"))
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+        }
     }
 }
 
