@@ -56,6 +56,13 @@ jobs:
       - name: Run unit tests
         run: sh gradlew :adblock:test :app:testDebugUnitTest --build-cache --profile --stacktrace
 
+      # smokeRelease has release R8/shrinking but uses Android's test-only debug
+      # signing key. No production keystore or emulator is needed. On release
+      # tags, release.yaml checks the actual APK instead of rebuilding here.
+      - name: Check minified release DEX with test signing
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        run: python3 scripts/check_release_dex.py
+
       - name: Upload JVM test reports
         if: always()
         uses: actions/upload-artifact@v4
