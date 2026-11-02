@@ -649,6 +649,17 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (
+            this in startedHosts &&
+                !pendingAndroid6HomeRedirect &&
+                !isApplicationEventHost()
+        ) {
+            // A started task can resume without another onStart (e.g. when
+            // switching between visible tasks). Keep UI and auth ownership on
+            // the foreground activity, not the last activity that started.
+            activeEventHost = this
+            AuthenticationManager.init(this)
+        }
         backButtonService.onBackPressedCallback.isEnabled = true
         enableNfcForegroundDispatch()
 
@@ -690,8 +701,10 @@ open class MainActivity : AppCompatActivity() {
         startedHosts.remove(this)
         if (activeEventHost === this && startedHosts.isNotEmpty()) {
             // When another task is still started, transfer ownership rather than
-            // stranding process-wide events on the stopped activity.
-            activeEventHost = startedHosts.last()
+            // stranding process-wide events or authentication on the stopped host.
+            val nextHost = startedHosts.last()
+            activeEventHost = nextHost
+            AuthenticationManager.init(nextHost)
         }
         if (!isChangingConfigurations && startedHosts.isEmpty()) {
             AuthenticationManager.resetAuthentication(
@@ -804,7 +817,11 @@ open class MainActivity : AppCompatActivity() {
         unregisterMqttCommandHost?.invoke()
         unregisterMqttCommandHost = null
         if (activeEventHost === this) {
-            activeEventHost = startedHosts.lastOrNull() ?: createdHosts.lastOrNull()
+            val nextStartedHost = startedHosts.lastOrNull()
+            activeEventHost = nextStartedHost ?: createdHosts.lastOrNull()
+            if (nextStartedHost != null) {
+                AuthenticationManager.init(nextStartedHost)
+            }
         }
         unregisterReceiver(broadcastReceiver)
         if (!isChangingConfigurations && createdHosts.isEmpty()) {

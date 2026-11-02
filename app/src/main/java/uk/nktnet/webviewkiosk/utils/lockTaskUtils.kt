@@ -129,24 +129,30 @@ fun launchAndroid6KioskTask(
         }
     activity.startActivity(launchIntent)
 
-    // Hide the routing task, not the kiosk host. Keep the private task available in
-    // Recents
-    // and do not clear or finish it when HOME is pressed after an unlock.
-    try {
-        val activityManager =
-            activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        @Suppress("DEPRECATION") // RecentTaskInfo.taskId is not available on API 23.
-        val routingTask =
-            activityManager.appTasks.firstOrNull {
-                it.taskInfo?.id == activity.taskId
-            }
-        routingTask?.setExcludeFromRecents(true)
-    } catch (e: Exception) {
-        Log.w(
-            Constants.APP_SCHEME,
-            "Failed to hide Android 6 routing task from Recents",
-            e,
-        )
+    // Only the HOME routing task belongs outside Recents. After splitting HOME
+    // from LAUNCHER, excluding MainActivity's task would make ordinary app
+    // launches disappear from Recents again after an API 23 lock request.
+    // The private kiosk task remains independently available after unlocking.
+    if (activity is HomeActivity) {
+        try {
+            val activityManager =
+                activity.getSystemService(Context.ACTIVITY_SERVICE)
+                    as ActivityManager
+            @Suppress(
+                "DEPRECATION"
+            ) // RecentTaskInfo.taskId is not available on API 23.
+            val routingTask =
+                activityManager.appTasks.firstOrNull {
+                    it.taskInfo?.id == activity.taskId
+                }
+            routingTask?.setExcludeFromRecents(true)
+        } catch (e: Exception) {
+            Log.w(
+                Constants.APP_SCHEME,
+                "Failed to hide Android 6 routing task from Recents",
+                e,
+            )
+        }
     }
 }
 
