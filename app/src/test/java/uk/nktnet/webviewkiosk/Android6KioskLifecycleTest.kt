@@ -116,7 +116,7 @@ class Android6KioskLifecycleTest {
 
     @Test
     fun homeLaunchRedirectsOnlyAfterResumeIntoAnUnrequestedPrivateTask() {
-        val controller = mainActivity(homeIntent()).start()
+        val controller = homeActivity(homeIntent()).start()
         assertNull(shadowOf(controller.get()).nextStartedActivity)
 
         controller.resume()
@@ -144,7 +144,7 @@ class Android6KioskLifecycleTest {
     @Test
     fun homeLaunchTakesPrecedenceOverLockOnLaunch() {
         settings.lockOnLaunch = true
-        val controller = mainActivity(homeIntent()).start().resume()
+        val controller = homeActivity(homeIntent()).start().resume()
 
         assertPrivateTaskIntent(
             controller.get(),
@@ -166,21 +166,39 @@ class Android6KioskLifecycleTest {
     }
 
     @Test
-    fun laterHomeIntentOverridesAnUnconsumedLaunchLockRequest() {
-        settings.lockOnLaunch = true
-        val controller = mainActivity(launcherIntent()).start()
-        controller.newIntent(homeIntent()).resume()
-
+    fun explicitLockOnHomeActivityUsesThePrivateTaskOnAndroid6() {
+        val controller = homeActivity(homeIntent()).start()
+        assertTrue(tryLockTask(controller.get()))
         assertPrivateTaskIntent(
             controller.get(),
-            fromHome = true,
-            lockRequested = false,
+            fromHome = false,
+            lockRequested = true,
+        )
+    }
+
+    @Test
+    fun homeLaunchDoesNotOverridePendingNormalAppLockRequest() {
+        settings.lockOnLaunch = true
+        val launcher = mainActivity(launcherIntent()).start()
+        val home = homeActivity(homeIntent()).start().resume()
+
+        assertPrivateTaskIntent(home.get(), fromHome = true, lockRequested = false)
+        launcher.resume()
+        assertPrivateTaskIntent(
+            launcher.get(),
+            fromHome = false,
+            lockRequested = true,
         )
     }
 
     @Test
     fun repeatedHomeIntentsCoalesceIntoOneRedirectOnResume() {
-        val controller = mainActivity(launcherIntent()).start().resume()
+        val controller = homeActivity(homeIntent()).start().resume()
+        assertPrivateTaskIntent(
+            controller.get(),
+            fromHome = true,
+            lockRequested = false,
+        )
         controller.newIntent(homeIntent())
         controller.newIntent(homeIntent())
         assertNull(shadowOf(controller.get()).nextStartedActivity)
@@ -328,13 +346,31 @@ class Android6KioskLifecycleTest {
     }
 
     @Test
-    fun android6EventHostCheckDoesNotRestrictOtherVersions() {
+    fun normalAndHomeTasksHaveOneActiveEventHostOnAndroid9() {
+        setSdk(Build.VERSION_CODES.P)
+        val launcher = mainActivity(launcherIntent()).start().resume()
+        val home = homeActivity(homeIntent()).start().resume()
+
+        assertFalse(launcher.get().isApplicationEventHost())
+        assertTrue(home.get().isApplicationEventHost())
+        assertNull(shadowOf(home.get()).nextStartedActivity)
+
+        home.pause().stop()
+        assertTrue(launcher.get().isApplicationEventHost())
+        assertFalse(home.get().isApplicationEventHost())
+        home.start().resume()
+        assertFalse(launcher.get().isApplicationEventHost())
+        assertTrue(home.get().isApplicationEventHost())
+    }
+
+    @Test
+    fun ownershipDoesNotChangeWhenTheSdkGateChanges() {
         val routing = mainActivity().start().resume()
         val private = privateActivity().start().resume()
         assertFalse(routing.get().isApplicationEventHost())
         setSdk(Build.VERSION_CODES.P)
         try {
-            assertTrue(routing.get().isApplicationEventHost())
+            assertFalse(routing.get().isApplicationEventHost())
             assertTrue(private.get().isApplicationEventHost())
         } finally {
             setSdk(Build.VERSION_CODES.M)
@@ -345,6 +381,13 @@ class Android6KioskLifecycleTest {
         intent: Intent = launcherIntent()
     ): ActivityController<MainActivity> =
         Robolectric.buildActivity(MainActivity::class.java, intent).create().also {
+            activities.add(it)
+        }
+
+    private fun homeActivity(
+        intent: Intent = homeIntent()
+    ): ActivityController<HomeActivity> =
+        Robolectric.buildActivity(HomeActivity::class.java, intent).create().also {
             activities.add(it)
         }
 
@@ -366,7 +409,7 @@ class Android6KioskLifecycleTest {
     private fun homeIntent() =
         Intent(Intent.ACTION_MAIN).apply {
             addCategory(Intent.CATEGORY_HOME)
-            setClass(app, MainActivity::class.java)
+            setClass(app, HomeActivity::class.java)
         }
 
     private fun assertPrivateTaskIntent(

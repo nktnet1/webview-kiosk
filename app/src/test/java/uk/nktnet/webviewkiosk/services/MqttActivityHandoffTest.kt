@@ -53,6 +53,7 @@ import org.robolectric.annotation.LooperMode
 import org.robolectric.shadows.ShadowPowerManager
 import org.robolectric.shadows.ShadowToast
 import org.robolectric.util.ReflectionHelpers
+import uk.nktnet.webviewkiosk.HomeActivity
 import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -646,6 +647,26 @@ class MqttActivityHandoffTest {
         dispatchToastAndAwait("after-destroy", RemoteMessage.Source.MQTT)
 
         assertEquals(toastCount, ShadowToast.shownToastCount())
+    }
+
+    @Test
+    fun homeAndNormalLauncherTasksTransferMqttOwnershipWithoutDuplicates() {
+        val home = createActivity(activityClass = HomeActivity::class.java)
+        connect()
+        assertTrue(home.controller.get().isApplicationEventHost())
+        assertBatchHandledOnce("home-active")
+
+        val launcher = createActivity()
+        awaitSubscriptions(2)
+        assertFalse(home.controller.get().isApplicationEventHost())
+        assertTrue(launcher.controller.get().isApplicationEventHost())
+        assertBatchHandledOnce("launcher-active")
+
+        launcher.destroy()
+        awaitSubscriptions(1)
+        assertTrue(home.controller.get().isApplicationEventHost())
+        assertBatchHandledOnce("home-restored")
+        assertConnectionReused()
     }
 
     @Test

@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.Android6KioskActivity
+import uk.nktnet.webviewkiosk.HomeActivity
 import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
@@ -244,11 +245,12 @@ fun tryLockTask(activity: Activity?): Boolean {
     }
 
     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-        if (activity.javaClass == MainActivity::class.java) {
-            // MainActivity may have been reused as HOME even after an app-menu
-            // launch.
-            // Only lock the separate task; the resumed host consumes this explicit
-            // request.
+        if (
+            activity.javaClass == MainActivity::class.java ||
+                activity.javaClass == HomeActivity::class.java
+        ) {
+            // The HOME and normal launcher routing tasks must never be locked
+            // directly on API 23. Redirect both to the private kiosk task.
             return tryLockAction(
                 activity,
                 lockAction = { launchAndroid6KioskTask(this, lockRequested = true) },

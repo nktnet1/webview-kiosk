@@ -85,12 +85,6 @@
             </intent-filter>
 
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.HOME" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-
-            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -131,7 +125,33 @@
         </activity>
 
         <!--
-            Android 6.0 only: MainActivity redirects HOME launches and lock requests here.
+            HOME tasks are excluded from Android Recents, even after the default
+            launcher changes. Keep HOME separate from the ordinary LAUNCHER task;
+            aliases share the target activity's task affinity and cannot do this.
+            Use the same UI host for both entry points, without a redirect/trampoline.
+        -->
+        <activity
+            android:name="uk.nktnet.webviewkiosk.HomeActivity"
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTask"
+            android:documentLaunchMode="never"
+            android:exported="true"
+            android:taskAffinity="${applicationId}.HOME"
+            android:theme="@style/Theme.WebviewKiosk"
+            android:configChanges="orientation|screenSize"
+            tools:targetApi="33"
+            android:enableOnBackInvokedCallback="@bool/enableOnBackInvokedCallback"
+        >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            Android 6.0 only: HomeActivity redirects HOME launches here; MainActivity
+            redirects lock requests here.
             Keeping the lock target in a separate task avoids the API 23 HOME-task bug where
             lock task mode can enter and immediately exit. No other Android version launches this
             private activity.
