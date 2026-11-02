@@ -118,18 +118,16 @@ open class MainActivity : AppCompatActivity() {
     private var deviceOwnerInitJob: Job? = null
     private var unregisterMqttCommandHost: (() -> Unit)? = null
 
-    // Android 6 can keep the HOME routing activity and private kiosk host alive
-    // together.
-    // Track their shared lifecycle on the main thread, retaining one event/UI host
-    // in background.
+    // HOME and normal LAUNCHER tasks can coexist on any Android version (API 23
+    // may also keep the private kiosk task alive). Only one activity should own
+    // process-wide MQTT events, authentication and the active WebView UI.
     companion object {
         private val createdHosts = mutableSetOf<MainActivity>()
         private val startedHosts = mutableSetOf<MainActivity>()
-        private var android6EventHost by mutableStateOf<MainActivity?>(null)
+        private var activeEventHost by mutableStateOf<MainActivity?>(null)
     }
 
-    internal fun isApplicationEventHost(): Boolean =
-        Build.VERSION.SDK_INT != Build.VERSION_CODES.M || android6EventHost === this
+    internal fun isApplicationEventHost(): Boolean = activeEventHost === this
 
     val broadcastReceiver =
         object : BroadcastReceiver() {
@@ -251,7 +249,7 @@ open class MainActivity : AppCompatActivity() {
             // lock again.
             val lockRequested = consumeAndroid6LockRequest(intent)
             pendingAndroid6HomeRedirect =
-                javaClass == MainActivity::class.java && isAndroid6HomeIntent(intent)
+                javaClass == HomeActivity::class.java && isAndroid6HomeIntent(intent)
             pendingAndroid6LockRequest =
                 !pendingAndroid6HomeRedirect &&
                     (userSettings.lockOnLaunch || lockRequested)
@@ -307,18 +305,14 @@ open class MainActivity : AppCompatActivity() {
                     pendingAdminRestrictionsNavigation = false
                 }
             }
+            // Only the active host may display or consume the process-wide
+            // authentication result. API 23 additionally requires RESUMED because
+            // its routing and private kiosk tasks may briefly overlap.
+            val lifecycleState by lifecycle.currentStateFlow.collectAsState()
             val handlesAuthentication =
-                if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-                    // The API 23 workaround keeps both MainActivity and
-                    // Android6KioskActivity alive.
-                    // Only the resumed host may display or consume the process-wide
-                    // auth prompt.
-                    val lifecycleState by lifecycle.currentStateFlow.collectAsState()
-                    handlesApplicationEvents &&
-                        lifecycleState == Lifecycle.State.RESUMED
-                } else {
-                    true
-                }
+                handlesApplicationEvents &&
+                    (Build.VERSION.SDK_INT != Build.VERSION_CODES.M ||
+                        lifecycleState == Lifecycle.State.RESUMED)
 
             LaunchedEffect(Unit) {
                 RemoteMessageManager.settingsAppliedFlow.collect { settings ->
@@ -327,7 +321,10 @@ open class MainActivity : AppCompatActivity() {
                     ) {
                         lifecycleScope.launch(Dispatchers.Main) {
                             delay(100.milliseconds)
-                            if (settings.message.reloadActivity) {
+                            if (
+                                settings.message.reloadActivity &&
+                                    isApplicationEventHost()
+                            ) {
                                 updateDeviceSettings(context)
                             }
                         }
@@ -355,10 +352,11 @@ open class MainActivity : AppCompatActivity() {
             ) {
                 val isAndroid6 = Build.VERSION.SDK_INT == Build.VERSION_CODES.M
                 if (
-                    isAndroid6 &&
-                        (!handlesAuthentication ||
-                            lifecycle.currentState != Lifecycle.State.RESUMED ||
-                            !WaitingForUnlockStateSingleton.waitingForUnlock.value)
+                    !handlesAuthentication ||
+                        (isAndroid6 &&
+                            (lifecycle.currentState != Lifecycle.State.RESUMED ||
+                                !WaitingForUnlockStateSingleton.waitingForUnlock
+                                    .value))
                 ) {
                     return@LaunchedEffect
                 }
@@ -606,10 +604,9 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun onStart() {
+        val isFirstStartedHost = startedHosts.isEmpty()
         startedHosts.add(this)
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-            android6EventHost = this
-        }
+        activeEventHost = this
         super.onStart()
         lastOnStartTime = System.currentTimeMillis()
         AuthenticationManager.init(this)
@@ -624,7 +621,9 @@ open class MainActivity : AppCompatActivity() {
                 val mode = DeviceOwnerManager.initWithDhizukuRetry(this@MainActivity)
                 if (mode == DeviceOwnerMode.Dhizuku) {
                     updateDeviceSettings(this@MainActivity)
-                    if (pendingDhizukuPermissionRequest) {
+                    if (
+                        pendingDhizukuPermissionRequest && isApplicationEventHost()
+                    ) {
                         pendingDhizukuPermissionRequest = false
                         DeviceOwnerManager.requestDhizukuPermission(
                             context = this@MainActivity,
@@ -638,7 +637,11 @@ open class MainActivity : AppCompatActivity() {
         }
         if (userSettings.mqttEnabled) {
             MqttManager.connect(applicationContext)
-            if (userSettings.mqttUseForegroundService && MqttManager.isConnected()) {
+            if (
+                isFirstStartedHost &&
+                    userSettings.mqttUseForegroundService &&
+                    MqttManager.isConnected()
+            ) {
                 MqttManager.publishAppForegroundEvent()
             }
         }
@@ -646,6 +649,17 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (
+            this in startedHosts &&
+                !pendingAndroid6HomeRedirect &&
+                !isApplicationEventHost()
+        ) {
+            // A started task can resume without another onStart (e.g. when
+            // switching between visible tasks). Keep UI and auth ownership on
+            // the foreground activity, not the last activity that started.
+            activeEventHost = this
+            AuthenticationManager.init(this)
+        }
         backButtonService.onBackPressedCallback.isEnabled = true
         enableNfcForegroundDispatch()
 
@@ -685,18 +699,12 @@ open class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         startedHosts.remove(this)
-        if (
-            Build.VERSION.SDK_INT == Build.VERSION_CODES.M &&
-                android6EventHost === this &&
-                startedHosts.isNotEmpty()
-        ) {
-            // The separate HOME and kiosk tasks may both stay alive. If the active
-            // owner
-            // stops while the other remains started, do not strand event/MQTT
-            // handling on
-            // the stopped activity until it is eventually destroyed or started
-            // again.
-            android6EventHost = startedHosts.last()
+        if (activeEventHost === this && startedHosts.isNotEmpty()) {
+            // When another task is still started, transfer ownership rather than
+            // stranding process-wide events or authentication on the stopped host.
+            val nextHost = startedHosts.last()
+            activeEventHost = nextHost
+            AuthenticationManager.init(nextHost)
         }
         if (!isChangingConfigurations && startedHosts.isEmpty()) {
             AuthenticationManager.resetAuthentication(
@@ -722,7 +730,7 @@ open class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
             setIntent(intent)
             if (
-                javaClass == MainActivity::class.java && isAndroid6HomeIntent(intent)
+                javaClass == HomeActivity::class.java && isAndroid6HomeIntent(intent)
             ) {
                 // Always route HOME back to the private task. Reusing that task must
                 // not
@@ -808,9 +816,12 @@ open class MainActivity : AppCompatActivity() {
         startedHosts.remove(this)
         unregisterMqttCommandHost?.invoke()
         unregisterMqttCommandHost = null
-        if (android6EventHost === this) {
-            android6EventHost =
-                startedHosts.lastOrNull() ?: createdHosts.lastOrNull()
+        if (activeEventHost === this) {
+            val nextStartedHost = startedHosts.lastOrNull()
+            activeEventHost = nextStartedHost ?: createdHosts.lastOrNull()
+            if (nextStartedHost != null) {
+                AuthenticationManager.init(nextStartedHost)
+            }
         }
         unregisterReceiver(broadcastReceiver)
         if (!isChangingConfigurations && createdHosts.isEmpty()) {

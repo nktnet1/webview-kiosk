@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk
 
+import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
 import android.content.Intent
@@ -11,6 +12,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -22,10 +24,12 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import org.robolectric.shadows.ShadowAppTask
 import org.robolectric.util.ReflectionHelpers
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 
@@ -116,7 +120,7 @@ class Android6KioskLifecycleTest {
 
     @Test
     fun homeLaunchRedirectsOnlyAfterResumeIntoAnUnrequestedPrivateTask() {
-        val controller = mainActivity(homeIntent()).start()
+        val controller = homeActivity(homeIntent()).start()
         assertNull(shadowOf(controller.get()).nextStartedActivity)
 
         controller.resume()
@@ -144,7 +148,7 @@ class Android6KioskLifecycleTest {
     @Test
     fun homeLaunchTakesPrecedenceOverLockOnLaunch() {
         settings.lockOnLaunch = true
-        val controller = mainActivity(homeIntent()).start().resume()
+        val controller = homeActivity(homeIntent()).start().resume()
 
         assertPrivateTaskIntent(
             controller.get(),
@@ -166,21 +170,60 @@ class Android6KioskLifecycleTest {
     }
 
     @Test
-    fun laterHomeIntentOverridesAnUnconsumedLaunchLockRequest() {
-        settings.lockOnLaunch = true
-        val controller = mainActivity(launcherIntent()).start()
-        controller.newIntent(homeIntent()).resume()
-
+    fun explicitLockOnHomeActivityUsesThePrivateTaskOnAndroid6() {
+        val controller = homeActivity(homeIntent()).start()
+        assertTrue(tryLockTask(controller.get()))
         assertPrivateTaskIntent(
             controller.get(),
-            fromHome = true,
-            lockRequested = false,
+            fromHome = false,
+            lockRequested = true,
+        )
+    }
+
+    @Test
+    fun android6HomeRedirectHidesOnlyTheHomeTaskFromRecents() {
+        val home = homeActivity(homeIntent()).start()
+        val homeTask = trackTaskForRecents(home.get())
+        home.resume()
+        assertTrue(shadowOf(homeTask).isExcludedFromRecents)
+
+        val launcher = mainActivity(launcherIntent()).start().resume()
+        val launcherTask = trackTaskForRecents(launcher.get())
+        assertTrue(tryLockTask(launcher.get()))
+        assertPrivateTaskIntent(
+            launcher.get(),
+            fromHome = false,
+            lockRequested = true,
+        )
+        assertFalse(
+            "normal LAUNCHER tasks must remain eligible for Recents",
+            shadowOf(launcherTask).isExcludedFromRecents,
+        )
+    }
+
+    @Test
+    fun homeLaunchDoesNotOverridePendingNormalAppLockRequest() {
+        settings.lockOnLaunch = true
+        val launcher = mainActivity(launcherIntent()).start()
+        val home = homeActivity(homeIntent()).start().resume()
+
+        assertPrivateTaskIntent(home.get(), fromHome = true, lockRequested = false)
+        launcher.resume()
+        assertPrivateTaskIntent(
+            launcher.get(),
+            fromHome = false,
+            lockRequested = true,
         )
     }
 
     @Test
     fun repeatedHomeIntentsCoalesceIntoOneRedirectOnResume() {
-        val controller = mainActivity(launcherIntent()).start().resume()
+        val controller = homeActivity(homeIntent()).start().resume()
+        assertPrivateTaskIntent(
+            controller.get(),
+            fromHome = true,
+            lockRequested = false,
+        )
         controller.newIntent(homeIntent())
         controller.newIntent(homeIntent())
         assertNull(shadowOf(controller.get()).nextStartedActivity)
@@ -192,6 +235,21 @@ class Android6KioskLifecycleTest {
             lockRequested = false,
         )
         assertNull(shadowOf(controller.get()).nextStartedActivity)
+    }
+
+    @Test
+    fun android6HomeRedirectDoesNotTakeOwnershipFromThePrivateKioskHost() {
+        val home = homeActivity(homeIntent()).start().resume()
+        assertPrivateTaskIntent(home.get(), fromHome = true, lockRequested = false)
+        val private = privateActivity().start().resume()
+
+        home.newIntent(homeIntent())
+        home.pause().resume()
+
+        assertPrivateTaskIntent(home.get(), fromHome = true, lockRequested = false)
+        assertFalse(home.get().isApplicationEventHost())
+        assertTrue(private.get().isApplicationEventHost())
+        assertSame(private.get(), authenticationActivity())
     }
 
     @Test
@@ -328,13 +386,59 @@ class Android6KioskLifecycleTest {
     }
 
     @Test
-    fun android6EventHostCheckDoesNotRestrictOtherVersions() {
+    fun normalAndHomeTasksHaveOneActiveEventHostOnAndroid9() {
+        setSdk(Build.VERSION_CODES.P)
+        val launcher = mainActivity(launcherIntent()).start().resume()
+        val home = homeActivity(homeIntent()).start().resume()
+
+        assertFalse(launcher.get().isApplicationEventHost())
+        assertTrue(home.get().isApplicationEventHost())
+        assertNull(shadowOf(home.get()).nextStartedActivity)
+
+        home.pause().stop()
+        assertTrue(launcher.get().isApplicationEventHost())
+        assertFalse(home.get().isApplicationEventHost())
+        home.start().resume()
+        assertFalse(launcher.get().isApplicationEventHost())
+        assertTrue(home.get().isApplicationEventHost())
+    }
+
+    @Test
+    fun stoppingHomeRebindsAuthenticationToTheRemainingStartedLauncher() {
+        setSdk(Build.VERSION_CODES.P)
+        val launcher = mainActivity(launcherIntent()).start().resume()
+        val home = homeActivity(homeIntent()).start().resume()
+
+        assertSame(home.get(), authenticationActivity())
+        home.pause().stop()
+
+        assertTrue(launcher.get().isApplicationEventHost())
+        assertSame(launcher.get(), authenticationActivity())
+    }
+
+    @Test
+    fun resumingAnAlreadyStartedLauncherRestoresUiAndAuthenticationOwnership() {
+        setSdk(Build.VERSION_CODES.P)
+        val launcher = mainActivity(launcherIntent()).start().resume()
+        launcher.pause()
+        val home = homeActivity(homeIntent()).start().resume()
+        home.pause()
+
+        launcher.resume()
+
+        assertTrue(launcher.get().isApplicationEventHost())
+        assertFalse(home.get().isApplicationEventHost())
+        assertSame(launcher.get(), authenticationActivity())
+    }
+
+    @Test
+    fun ownershipDoesNotChangeWhenTheSdkGateChanges() {
         val routing = mainActivity().start().resume()
         val private = privateActivity().start().resume()
         assertFalse(routing.get().isApplicationEventHost())
         setSdk(Build.VERSION_CODES.P)
         try {
-            assertTrue(routing.get().isApplicationEventHost())
+            assertFalse(routing.get().isApplicationEventHost())
             assertTrue(private.get().isApplicationEventHost())
         } finally {
             setSdk(Build.VERSION_CODES.M)
@@ -345,6 +449,13 @@ class Android6KioskLifecycleTest {
         intent: Intent = launcherIntent()
     ): ActivityController<MainActivity> =
         Robolectric.buildActivity(MainActivity::class.java, intent).create().also {
+            activities.add(it)
+        }
+
+    private fun homeActivity(
+        intent: Intent = homeIntent()
+    ): ActivityController<HomeActivity> =
+        Robolectric.buildActivity(HomeActivity::class.java, intent).create().also {
             activities.add(it)
         }
 
@@ -366,7 +477,7 @@ class Android6KioskLifecycleTest {
     private fun homeIntent() =
         Intent(Intent.ACTION_MAIN).apply {
             addCategory(Intent.CATEGORY_HOME)
-            setClass(app, MainActivity::class.java)
+            setClass(app, HomeActivity::class.java)
         }
 
     private fun assertPrivateTaskIntent(
@@ -395,6 +506,28 @@ class Android6KioskLifecycleTest {
             redirect.getBooleanExtra(Constants.INTENT_ANDROID6_LOCK_TASK, false),
         )
     }
+
+    @Suppress(
+        "DEPRECATION",
+        "UsePropertyAccessSyntax",
+    ) // RecentTaskInfo.id is used on API 23.
+    private fun trackTaskForRecents(
+        activity: MainActivity
+    ): ActivityManager.AppTask {
+        val task = ShadowAppTask.newInstance()
+        shadowOf(task)
+            .setTaskInfo(
+                ActivityManager.RecentTaskInfo().apply { id = activity.taskId }
+            )
+        val manager =
+            app.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        shadowOf(manager).setAppTasks(listOf(task))
+        return task
+    }
+
+    private fun authenticationActivity(): MainActivity? =
+        ReflectionHelpers.getField<Any>(AuthenticationManager, "activity")
+            as? MainActivity
 
     private fun canClaimMqtt(activity: MainActivity): Boolean =
         ReflectionHelpers.callInstanceMethod(activity, "canHandleMqttMessages")

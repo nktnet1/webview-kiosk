@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.Android6KioskActivity
+import uk.nktnet.webviewkiosk.HomeActivity
 import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
@@ -128,24 +129,30 @@ fun launchAndroid6KioskTask(
         }
     activity.startActivity(launchIntent)
 
-    // Hide the routing task, not the kiosk host. Keep the private task available in
-    // Recents
-    // and do not clear or finish it when HOME is pressed after an unlock.
-    try {
-        val activityManager =
-            activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        @Suppress("DEPRECATION") // RecentTaskInfo.taskId is not available on API 23.
-        val routingTask =
-            activityManager.appTasks.firstOrNull {
-                it.taskInfo?.id == activity.taskId
-            }
-        routingTask?.setExcludeFromRecents(true)
-    } catch (e: Exception) {
-        Log.w(
-            Constants.APP_SCHEME,
-            "Failed to hide Android 6 routing task from Recents",
-            e,
-        )
+    // Only the HOME routing task belongs outside Recents. After splitting HOME
+    // from LAUNCHER, excluding MainActivity's task would make ordinary app
+    // launches disappear from Recents again after an API 23 lock request.
+    // The private kiosk task remains independently available after unlocking.
+    if (activity is HomeActivity) {
+        try {
+            val activityManager =
+                activity.getSystemService(Context.ACTIVITY_SERVICE)
+                    as ActivityManager
+            @Suppress(
+                "DEPRECATION"
+            ) // RecentTaskInfo.taskId is not available on API 23.
+            val routingTask =
+                activityManager.appTasks.firstOrNull {
+                    it.taskInfo?.id == activity.taskId
+                }
+            routingTask?.setExcludeFromRecents(true)
+        } catch (e: Exception) {
+            Log.w(
+                Constants.APP_SCHEME,
+                "Failed to hide Android 6 routing task from Recents",
+                e,
+            )
+        }
     }
 }
 
@@ -244,11 +251,12 @@ fun tryLockTask(activity: Activity?): Boolean {
     }
 
     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-        if (activity.javaClass == MainActivity::class.java) {
-            // MainActivity may have been reused as HOME even after an app-menu
-            // launch.
-            // Only lock the separate task; the resumed host consumes this explicit
-            // request.
+        if (
+            activity.javaClass == MainActivity::class.java ||
+                activity.javaClass == HomeActivity::class.java
+        ) {
+            // The HOME and normal launcher routing tasks must never be locked
+            // directly on API 23. Redirect both to the private kiosk task.
             return tryLockAction(
                 activity,
                 lockAction = { launchAndroid6KioskTask(this, lockRequested = true) },
