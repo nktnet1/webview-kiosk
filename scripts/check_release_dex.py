@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Check the R8-shrunk release APK for the retrostreams startup regression.
+"""Build and check the R8-minified smokeRelease APK for the startup regression.
 
-Requires Android SDK Build Tools' dexdump, but no emulator, signing keys, or
-additional Python packages. This checks the *compiled DEX*, not ProGuard text.
+With no APK argument, use the release-equivalent smokeRelease variant signed by
+Android Gradle Plugin with the local debug key (never production credentials).
+Pass an APK path to inspect an existing release artifact without rebuilding.
+Requires Android SDK Build Tools' dexdump, but no emulator or extra packages.
 """
 
 import argparse
@@ -16,6 +18,8 @@ import zipfile
 from collections import deque
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+SMOKE_APK = ROOT / "app/build/outputs/apk/smokeRelease/app-smokeRelease.apk"
 TARGET = "Ljava9/util/concurrent/ThreadLocalRandom;"
 CLASS_HEADER = re.compile(r"^Class #\d+\s+-")
 CLASS_DESCRIPTOR = re.compile(r"^\s+Class descriptor\s+: '([^']+)'$")
@@ -37,7 +41,7 @@ def find_dexdump():
         return tool
 
     roots = [os.getenv("ANDROID_HOME"), os.getenv("ANDROID_SDK_ROOT")]
-    properties = Path(__file__).resolve().parents[1] / "local.properties"
+    properties = ROOT / "local.properties"
     if properties.is_file():
         for line in properties.read_text(encoding="utf-8").splitlines():
             if line.startswith("sdk.dir="):
@@ -56,6 +60,28 @@ def find_dexdump():
         "dexdump not found. Install Android SDK Build Tools and set ANDROID_HOME "
         "or ANDROID_SDK_ROOT."
     )
+
+
+def build_smoke_apk():
+    """Build a release-minified APK without requiring a production keystore."""
+    wrapper = ROOT / ("gradlew.bat" if os.name == "nt" else "gradlew")
+    if not wrapper.is_file():
+        raise DexCheckError(f"Gradle wrapper not found: {wrapper}")
+    print("Building R8-minified smokeRelease APK (signed with local debug key)...", flush=True)
+    try:
+        result = subprocess.run(
+            [str(wrapper), ":app:assembleSmokeRelease", "--build-cache", "--console=plain"],
+            cwd=ROOT,
+            timeout=1200,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise DexCheckError(f"Could not build smokeRelease APK: {error}") from error
+    if result.returncode:
+        raise DexCheckError(f"smokeRelease build failed (Gradle exit {result.returncode}).")
+    if not SMOKE_APK.is_file():
+        raise DexCheckError(f"Gradle succeeded but smokeRelease APK was not found: {SMOKE_APK}")
+    return SMOKE_APK
 
 
 def get_target_class(lines):
@@ -217,16 +243,21 @@ def check_apk(apk, dexdump):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("apk", type=Path, help="Existing R8-minified release APK")
+    parser.add_argument(
+        "apk", nargs="?", type=Path,
+        help="Existing minified APK (default: build smokeRelease with test signing)",
+    )
     parser.add_argument("--dexdump", help="Path to Android SDK Build Tools' dexdump")
     args = parser.parse_args(argv)
     try:
+        # No APK argument means test exactly what CI builds, with no release secrets.
+        apk = args.apk.expanduser().resolve() if args.apk else build_smoke_apk()
         dexdump = args.dexdump or find_dexdump()
-        dex = check_apk(args.apk, dexdump)
+        dex = check_apk(apk, dexdump)
     except DexCheckError as error:
         print(f"FAIL: release DEX check: {error}", file=sys.stderr)
         return 1
-    print(f"PASS: {args.apk} ({dex}): ThreadLocalRandom.setSeed() retains the constructor guard.")
+    print(f"PASS: {apk} ({dex}): ThreadLocalRandom.setSeed() retains the constructor guard.")
     return 0
 
 

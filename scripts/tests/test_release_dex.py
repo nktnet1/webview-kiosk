@@ -3,6 +3,7 @@
 import contextlib
 import io
 import os
+import subprocess
 import tempfile
 import unittest
 import zipfile
@@ -192,6 +193,98 @@ class ReleaseDexTest(unittest.TestCase):
                 os.environ, {"ANDROID_HOME": folder, "ANDROID_SDK_ROOT": folder}
             ):
                 self.assertEqual(str(sdk / "build-tools/36.0.0/dexdump"), dex.find_dexdump())
+
+    def test_default_cli_builds_smoke_apk_then_inspects_it(self):
+        with (
+            patch.object(dex, "build_smoke_apk", return_value=Path("/test/smoke.apk")) as build,
+            patch.object(dex, "find_dexdump", return_value="dexdump"),
+            patch.object(dex, "check_apk", return_value="classes2.dex") as check,
+        ):
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                status = dex.main([])
+        self.assertEqual(status, 0)
+        build.assert_called_once_with()
+        check.assert_called_once_with(Path("/test/smoke.apk"), "dexdump")
+        self.assertIn("PASS:", out.getvalue())
+
+    def test_existing_apk_cli_skips_build(self):
+        with (
+            patch.object(dex, "build_smoke_apk") as build,
+            patch.object(dex, "check_apk", return_value="classes.dex") as check,
+        ):
+            with contextlib.redirect_stdout(io.StringIO()):
+                status = dex.main(["existing.apk", "--dexdump", "dexdump"])
+        self.assertEqual(status, 0)
+        build.assert_not_called()
+        check.assert_called_once_with(Path("existing.apk").resolve(), "dexdump")
+
+    def test_build_uses_minified_smoke_release_and_cached_gradle(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "gradlew").touch()
+            apk = root / "app/build/outputs/apk/smokeRelease/app-smokeRelease.apk"
+            apk.parent.mkdir(parents=True)
+            apk.touch()
+            with (
+                patch.object(dex, "ROOT", root),
+                patch.object(dex, "SMOKE_APK", apk),
+                patch.object(
+                    dex.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)
+                ) as run,
+            ):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    result = dex.build_smoke_apk()
+            self.assertEqual(result, apk)
+            run.assert_called_once_with(
+                [str(root / "gradlew"), ":app:assembleSmokeRelease", "--build-cache", "--console=plain"],
+                cwd=root, timeout=1200, check=False,
+            )
+            self.assertNotIn(":app:assembleRelease", run.call_args.args[0])
+
+    def test_build_fails_if_gradle_fails_even_when_old_apk_exists(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "gradlew").touch()
+            apk = root / "existing-smoke.apk"
+            apk.touch()
+            with (
+                patch.object(dex, "ROOT", root),
+                patch.object(dex, "SMOKE_APK", apk),
+                patch.object(dex.subprocess, "run", return_value=subprocess.CompletedProcess([], 1)),
+            ):
+                with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(
+                    dex.DexCheckError, "Gradle exit 1"
+                ):
+                    dex.build_smoke_apk()
+
+    def test_build_fails_on_missing_output_even_if_gradle_succeeded(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "gradlew").touch()
+            with (
+                patch.object(dex, "ROOT", root),
+                patch.object(dex, "SMOKE_APK", root / "missing.apk"),
+                patch.object(dex.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)),
+            ):
+                with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(
+                    dex.DexCheckError, "APK was not found"
+                ):
+                    dex.build_smoke_apk()
+
+    def test_ci_builds_smoke_release_in_existing_android_job(self):
+        root = Path(__file__).resolve().parents[2]
+        tests = (root / ".github/workflows/tests.yaml").read_text()
+        gradle_setup = tests.index("gradle/actions/setup-gradle@")
+        jvm = tests.index("sh gradlew :adblock:test :app:testDebugUnitTest")
+        smoke = tests.index("run: python3 scripts/check_release_dex.py")
+        self.assertLess(gradle_setup, jvm)
+        self.assertLess(jvm, smoke)
+        self.assertIn("if: ${{ !startsWith(github.ref, 'refs/tags/') }}", tests)
+        self.assertNotIn("emulator-runner", tests)
+        build_type = (root / "app/build.gradle.kts").read_text()
+        self.assertIn('create("smokeRelease")', build_type)
+        self.assertIn('signingConfig = signingConfigs.getByName("debug")', build_type)
+        self.assertIn("isDebuggable = false", build_type)
 
     def test_release_ci_checks_the_actual_apk_before_upload(self):
         release = (Path(__file__).resolve().parents[2] / ".github/workflows/release.yaml").read_text()
