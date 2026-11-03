@@ -403,7 +403,12 @@ class R8RuntimeAuditTest(unittest.TestCase):
                 stack.enter_context(mock)
             stack.enter_context(patch.object(audit.smoke, "smoke_test"))
             outcomes = {n: ("pass", {"probe": n}) for n in audit.runtime.PROBES}
-            outcomes["mqtt_tcp"] = ("fail", {"error": "MQTT failed"})
+            outcomes["mqtt_tcp"] = (
+                "fail", {
+                    "error": "SUBACK missing",
+                    "cleanupError": "MQTT disconnect timed out",
+                },
+            )
             stack.enter_context(patch.object(audit.runtime, "run_runtime_probes",
                                            return_value=(outcomes, self.apk, "emulator-5554")))
             report = audit.run_audit(self.apk, dexdump="dexdump", device=True, runtime_probes=True)
@@ -411,6 +416,12 @@ class R8RuntimeAuditTest(unittest.TestCase):
         self.assertEqual("emulator-5554", report["runtime"]["serial"])
         check = next(c for c in report["checks"] if c["id"] == "runtime_mqtt_tcp")
         self.assertEqual("fail", check["status"])
+        self.assertEqual("SUBACK missing", check["details"]["error"])
+        report_path = Path(self.folder.name) / "r8-cleanup-diagnostics.json"
+        audit.write_report(report_path, report)
+        stored = json.loads(report_path.read_text(encoding="utf-8"))
+        saved = next(c for c in stored["checks"] if c["id"] == "runtime_mqtt_tcp")
+        self.assertEqual("MQTT disconnect timed out", saved["details"]["cleanupError"])
 
     def test_emulator_failure_skips_runtime_probe_without_masking_error(self):
         from contextlib import ExitStack

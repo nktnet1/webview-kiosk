@@ -38,6 +38,46 @@ class R8RuntimeTest(unittest.TestCase):
         self.assertEqual("url_changed", results["mqtt_tcp"][1]["outboundDelivery"])
         self.assertEqual("Test failure", results["mqtt_websocket"][1]["error"])
 
+    def test_preserves_primary_mqtt_error_and_reports_cleanup_error(self):
+        output = output_for(dict.fromkeys(runtime.PROBES, "pass"))
+        output = output.replace(
+            "INSTRUMENTATION_STATUS: r8_status=pass\n"
+            "INSTRUMENTATION_STATUS: r8_error=Test failure\n"
+            "INSTRUMENTATION_STATUS: r8_subscriptions=3",
+            "INSTRUMENTATION_STATUS: r8_status=fail\n"
+            "INSTRUMENTATION_STATUS: r8_error=IllegalStateException: SUBACK missing\n"
+            "INSTRUMENTATION_STATUS: r8_cleanup_error=IllegalStateException: MQTT disconnect timed out\n"
+            "INSTRUMENTATION_STATUS: r8_subscriptions=3",
+            1,
+        )
+        results = runtime.parse_instrumentation_output(output)
+        self.assertEqual("fail", results["mqtt_tcp"][0])
+        self.assertEqual("IllegalStateException: SUBACK missing", results["mqtt_tcp"][1]["error"])
+        self.assertEqual(
+            "IllegalStateException: MQTT disconnect timed out",
+            results["mqtt_tcp"][1]["cleanupError"],
+        )
+        self.assertNotIn("cleanupError", results["mqtt_websocket"][1])
+
+    def test_reports_disconnect_error_as_failed_mqtt_probe(self):
+        output = output_for(dict.fromkeys(runtime.PROBES, "pass"))
+        output = output.replace(
+            "INSTRUMENTATION_STATUS: r8_status=pass\n"
+            "INSTRUMENTATION_STATUS: r8_error=Test failure\n"
+            "INSTRUMENTATION_STATUS: r8_subscriptions=3",
+            "INSTRUMENTATION_STATUS: r8_status=fail\n"
+            "INSTRUMENTATION_STATUS: r8_error=IllegalStateException: MQTT disconnect failed: broker disconnected\n"
+            "INSTRUMENTATION_STATUS: r8_subscriptions=3",
+            1,
+        )
+        results = runtime.parse_instrumentation_output(output)
+        self.assertEqual("fail", results["mqtt_tcp"][0])
+        self.assertEqual(
+            "IllegalStateException: MQTT disconnect failed: broker disconnected",
+            results["mqtt_tcp"][1]["error"],
+        )
+        self.assertNotIn("cleanupError", results["mqtt_tcp"][1])
+
     def test_mqtt_pass_without_suback_or_delivery_evidence_is_rejected(self):
         with self.assertRaisesRegex(runtime.RuntimeProbeError, "omitted subscription evidence"):
             runtime.parse_instrumentation_output(

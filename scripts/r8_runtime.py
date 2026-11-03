@@ -70,6 +70,8 @@ def parse_instrumentation_output(output):
                 details = {"probe": name}
                 if status == "fail":
                     details["error"] = frame.get("r8_error", "No error reported")[:2000]
+                    if "r8_cleanup_error" in frame:
+                        details["cleanupError"] = frame["r8_cleanup_error"][:2000]
                 elif name.startswith("mqtt_"):
                     # A successful MQTT probe must prove more than a TCP connect.
                     try:

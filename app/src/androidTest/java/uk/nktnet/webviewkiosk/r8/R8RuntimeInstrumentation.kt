@@ -68,10 +68,16 @@ class R8RuntimeInstrumentation : Instrumentation() {
             } catch (error: Throwable) {
                 failures++
                 result.putString("r8_status", "fail")
-                result.putString(
-                    "r8_error",
-                    "${error.javaClass.simpleName}: ${error.message}",
-                )
+                result.putString("r8_error", describeError(error))
+                if (error.suppressed.isNotEmpty()) {
+                    result.putString(
+                        "r8_cleanup_error",
+                        error.suppressed.joinToString(
+                            "; ",
+                            transform = ::describeError,
+                        ),
+                    )
+                }
             }
             sendStatus(0, result)
         }
@@ -84,6 +90,9 @@ class R8RuntimeInstrumentation : Instrumentation() {
             Bundle().apply { putInt("r8_failures", failures) },
         )
     }
+
+    private fun describeError(error: Throwable): String =
+        "${error.javaClass.simpleName}: ${error.message}"
 
     private fun jsonSerialization() {
         val request =
@@ -218,6 +227,7 @@ class R8RuntimeInstrumentation : Instrumentation() {
                         }
                     }
                 }
+            var probeFailure: Throwable? = null
             try {
                 settings.mqttEnabled = true
                 settings.mqttServerHost = "127.0.0.1"
@@ -269,39 +279,75 @@ class R8RuntimeInstrumentation : Instrumentation() {
                     "Outbound MQTT url_changed PUBLISH did not reach broker"
                 }
                 broker.checkFault()
+            } catch (error: Throwable) {
+                probeFailure = error
+                throw error
             } finally {
-                inboundJob.cancel()
-                ackJob.cancel()
-                scope.cancel()
-                try {
-                    val disconnected = CountDownLatch(1)
-                    MqttManager.disconnect(
-                        uk.nktnet.webviewkiosk.config.remote.outbound
-                            .OutboundDisconnectingEvent
-                            .DisconnectCause
-                            .USER_INITIATED_DISCONNECT,
-                        onDisconnected = { disconnected.countDown() },
-                        onError = { disconnected.countDown() },
-                    )
-                    check(disconnected.await(7, TimeUnit.SECONDS)) {
-                        "MQTT disconnect timed out"
+                // Never replace a probe failure with a disconnect or preference
+                // restoration failure. Both failures are available in JSON.
+                val cleanupFailures = mutableListOf<Throwable>()
+                runCatching {
+                        inboundJob.cancel()
+                        ackJob.cancel()
+                        scope.cancel()
                     }
-                } finally {
-                    // Restores the exact pre-test settings, including on errors.
-                    settings.mqttEnabled = original.enabled
-                    settings.mqttServerHost = original.host
-                    settings.mqttServerPort = original.port
-                    settings.mqttUseTls = original.tls
-                    settings.mqttUseWebSocket = original.websocket
-                    settings.mqttWebSocketServerPath = original.path
-                    settings.mqttAutomaticReconnect = original.reconnect
-                    settings.mqttClientId = original.clientId
-                    settings.mqttHomeAssistantEnabled = original.homeAssistant
-                    settings.mqttSubscribeCommandTopic = original.commandTopic
-                    settings.mqttSubscribeSettingsTopic = original.settingsTopic
-                    settings.mqttSubscribeRequestTopic = original.requestTopic
-                    settings.mqttPublishEventTopic = original.eventTopic
-                    settings.mqttPublishEventQos = original.eventQos
+                    .exceptionOrNull()
+                    ?.let(cleanupFailures::add)
+                runCatching {
+                        val disconnected = CountDownLatch(1)
+                        val disconnectError = AtomicReference<String?>()
+                        MqttManager.disconnect(
+                            uk.nktnet.webviewkiosk.config.remote.outbound
+                                .OutboundDisconnectingEvent
+                                .DisconnectCause
+                                .USER_INITIATED_DISCONNECT,
+                            onDisconnected = { disconnected.countDown() },
+                            onError = { message ->
+                                disconnectError.set(
+                                    message?.takeIf { it.isNotBlank() }
+                                        ?: "Unknown MQTT disconnect failure"
+                                )
+                                disconnected.countDown()
+                            },
+                        )
+                        check(disconnected.await(7, TimeUnit.SECONDS)) {
+                            "MQTT disconnect timed out"
+                        }
+                        disconnectError.get()?.let { error ->
+                            throw IllegalStateException(
+                                "MQTT disconnect failed: $error"
+                            )
+                        }
+                    }
+                    .exceptionOrNull()
+                    ?.let(cleanupFailures::add)
+                runCatching {
+                        // Restore pre-test settings even if disconnect fails.
+                        settings.mqttEnabled = original.enabled
+                        settings.mqttServerHost = original.host
+                        settings.mqttServerPort = original.port
+                        settings.mqttUseTls = original.tls
+                        settings.mqttUseWebSocket = original.websocket
+                        settings.mqttWebSocketServerPath = original.path
+                        settings.mqttAutomaticReconnect = original.reconnect
+                        settings.mqttClientId = original.clientId
+                        settings.mqttHomeAssistantEnabled = original.homeAssistant
+                        settings.mqttSubscribeCommandTopic = original.commandTopic
+                        settings.mqttSubscribeSettingsTopic = original.settingsTopic
+                        settings.mqttSubscribeRequestTopic = original.requestTopic
+                        settings.mqttPublishEventTopic = original.eventTopic
+                        settings.mqttPublishEventQos = original.eventQos
+                    }
+                    .exceptionOrNull()
+                    ?.let(cleanupFailures::add)
+                val originalError = probeFailure
+                if (originalError != null) {
+                    cleanupFailures.forEach(originalError::addSuppressed)
+                } else {
+                    cleanupFailures.firstOrNull()?.let { first ->
+                        cleanupFailures.drop(1).forEach(first::addSuppressed)
+                        throw first
+                    }
                 }
             }
         }

@@ -115,7 +115,11 @@ WebSocket broker endpoints. Both MQTT probes require three successful SUBACKs,
 an outbound `url_changed` PUBLISH reaching the broker, and an inbound
 `get_status` PUBLISH reaching the app's request flow. The per-probe JSON result
 includes `subscriptionsAcknowledged`, `inboundDelivery`, and `outboundDelivery`.
-MQTT preferences are changed briefly and restored; use a **disposable emulator**,
+Disconnect callback errors and timeouts fail the MQTT probe. If disconnect or
+settings restoration also fails after another probe error, that original error
+remains in `details.error` and cleanup diagnostics appear separately in
+`details.cleanupError` in the JSON report. MQTT preferences are changed briefly
+and restored; use a **disposable emulator**,
 never a production kiosk. The
 probes only support the locally built smokeRelease APK, not an unrelated
 production release with a different obfuscation mapping. TLS/WSS, NFC, and the
