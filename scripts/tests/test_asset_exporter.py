@@ -19,7 +19,7 @@ from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location("asset_exporter", ROOT / "scripts/export-android-test-assets.py")
+SPEC = importlib.util.spec_from_file_location("asset_exporter", ROOT / "scripts/android/export-android-test-assets.py")
 ASSETS = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ASSETS)
 
@@ -485,7 +485,7 @@ else:
 class DispatchTest(unittest.TestCase):
     def test_python_cli_help_without_tools(self):
         result = subprocess.run(
-            [sys.executable, str(ROOT / "scripts/export-android-test-assets.py"), "--help"],
+            [sys.executable, str(ROOT / "scripts/android/export-android-test-assets.py"), "--help"],
             text=True, capture_output=True,
         )
         self.assertEqual(0, result.returncode, result.stderr)
@@ -588,9 +588,15 @@ class DispatchTest(unittest.TestCase):
             self.assertNotIn("--download-node", command)
             self.assertNotIn("--download-pnpm", command)
             self.assertIn("'docs'", ASSETS.DOCKER_BOOTSTRAP)
+            self.assertIn("scripts/android/export-android-test-assets.py", ASSETS.DOCKER_BOOTSTRAP)
+            build = next(call.args[0] for call in run.call_args_list
+                         if call.args[0][1] == "build")
+            self.assertEqual(ROOT / "scripts/android/Dockerfile.android-test-assets",
+                             build[build.index("--file") + 1])
+            self.assertEqual(ROOT / "scripts/android", build[-1])
 
     def test_init_script_prefetches_lint_gradle_and_current_build_assets(self):
-        script = (ROOT / "scripts/resolve-android-test-assets.init.gradle").read_text()
+        script = (ROOT / "scripts/android/resolve-android-test-assets.init.gradle").read_text()
         self.assertIn("'androidLintTool'", script)
         self.assertIn("'lintChecks'", script)
         self.assertIn("'debugLintChecksClasspath'", script)
@@ -621,7 +627,7 @@ class DispatchTest(unittest.TestCase):
                 self.assertEqual(1, run.call_count)
 
     def test_dockerfiles_supply_python_and_use_jbr_cdn(self):
-        android = (ROOT / "scripts/Dockerfile.android-test-assets").read_text()
+        android = (ROOT / "scripts/android/Dockerfile.android-test-assets").read_text()
         self.assertLess(
             android.index("ARG GRADLE_IMAGE=gradle:jdk21-jammy\n"),
             android.index("FROM ${GRADLE_IMAGE}"),

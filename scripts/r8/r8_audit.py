@@ -27,7 +27,7 @@ else:
     import release_startup_smoke as smoke
     import r8_runtime as runtime
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 # These entry points are called by JavaScript, not statically by the JVM. R8
 # must preserve their original names and signatures. Keep in sync with the
 # @JavascriptInterface declarations in app/src/main/java.

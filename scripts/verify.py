@@ -19,13 +19,18 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 SMOKE_APK = ROOT / "app/build/outputs/apk/smokeRelease/app-smokeRelease.apk"
 VERIFY_REPORT = ROOT / "build/reports/verify/summary.json"
 R8_REPORTS = ROOT / "build/reports/r8"
 AVD_ROOT = ROOT / "build/verify/avd"
 AVD_NAME = "r8-verify-api36-16k"
 IMAGE_TAG = "google_apis_ps16k"
+
+# Direct execution adds scripts/ to sys.path, not its parent. Package imports
+# must also work via `python3 -m scripts.verify` and the regression suite.
+if __name__ == "__main__" and not __package__:
+    sys.path.insert(0, str(ROOT))
 
 
 class VerificationError(Exception):
@@ -138,7 +143,7 @@ def boot_emulator(adb, serial, name, process, timeout):
                 if avd_names and avd_names[0] == name:
                     ready = run_command([adb, "-s", serial, "shell", "getprop", "sys.boot_completed"], timeout=15)
                     if ready.returncode == 0 and ready.stdout.strip() == "1":
-                        from scripts import release_startup_smoke as smoke
+                        from scripts.r8 import release_startup_smoke as smoke
                         try:
                             smoke.validate_emulator(adb, serial)
                         except smoke.SmokeTestError as error:
@@ -239,7 +244,7 @@ def preflight(args):
             raise VerificationError("docs/node_modules missing; install locked docs dependencies first")
     if not args.skip_avd:
         if args.serial:
-            from scripts import release_startup_smoke as smoke
+            from scripts.r8 import release_startup_smoke as smoke
             try:
                 smoke.select_emulator(sdk_tool(sdk, "adb"), args.serial)
             except smoke.SmokeTestError as error:
@@ -277,7 +282,7 @@ def verify(args, report):
     execute("Android format, lint, JVM and minified APK", ["sh", "gradlew", "checkFormatting", "lint",
             ":adblock:test", ":app:testDebugUnitTest", ":app:assembleSmokeRelease",
             "--warning-mode=all", "--build-cache", "--stacktrace"], report)
-    execute("R8 static audit", [python, "scripts/r8_audit.py", SMOKE_APK,
+    execute("R8 static audit", [python, "scripts/r8/r8_audit.py", SMOKE_APK,
             "--require-mapping", "--fail-on-warnings", "--json", R8_REPORTS / "smokeRelease.json"], report)
     if args.skip_docs:
         report["steps"].append({"name": "Documentation suites", "status": "skipped", "reason": "--skip-docs"})
@@ -295,12 +300,12 @@ def verify(args, report):
         # The explicit --serial is already checked by preflight. It may be a
         # user-managed AVD: only use it with the user's deliberate opt-in.
         serial = args.serial
-        execute("Minified APK emulator + runtime tests", [python, "scripts/r8_audit.py", SMOKE_APK,
+        execute("Minified APK emulator + runtime tests", [python, "scripts/r8/r8_audit.py", SMOKE_APK,
                 "--require-mapping", "--fail-on-warnings", "--device", "--runtime", "--serial", serial,
                 "--json", R8_REPORTS / "smokeRelease-runtime.json"], report)
     else:
         with test_emulator(args.avd, args.boot_timeout) as serial:
-            execute("Minified APK emulator + runtime tests", [python, "scripts/r8_audit.py", SMOKE_APK,
+            execute("Minified APK emulator + runtime tests", [python, "scripts/r8/r8_audit.py", SMOKE_APK,
                     "--require-mapping", "--fail-on-warnings", "--device", "--runtime", "--serial", serial,
                     "--json", R8_REPORTS / "smokeRelease-runtime.json"], report)
 

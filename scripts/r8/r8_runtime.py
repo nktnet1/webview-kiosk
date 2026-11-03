@@ -15,7 +15,7 @@ if __package__:
 else:
     import release_startup_smoke as smoke
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TEST_APK_DIR = ROOT / "app/build/outputs/apk/androidTest/smokeRelease"
 RUNNER = "uk.nktnet.webviewkiosk.r8.R8RuntimeInstrumentation"
 PROBES = (

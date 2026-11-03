@@ -18,7 +18,7 @@ import zipfile
 from collections import deque
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SMOKE_APK = ROOT / "app/build/outputs/apk/smokeRelease/app-smokeRelease.apk"
 TARGET = "Ljava9/util/concurrent/ThreadLocalRandom;"
 CLASS_HEADER = re.compile(r"^Class #\d+\s+-")

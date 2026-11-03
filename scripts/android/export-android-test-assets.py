@@ -23,7 +23,7 @@ import zipfile
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MAX_ARCHIVE_BYTES = 180_000_000  # Decimal MB, including each numbered part.
 SDK_PLATFORM = "android-37.0"
 SDK_BUILD_TOOLS = "36.0.0"
@@ -547,7 +547,7 @@ def export_gradle(args, output, *, env=None):
                        accept_licenses=args.accept_sdk_licenses)
             say("Resolving Android test, lint, and formatting dependencies (no checks executed)")
             run([gradle, "--no-daemon", "--no-configuration-cache", "--console=plain",
-                 "--init-script", PROJECT_ROOT / "scripts/resolve-android-test-assets.init.gradle",
+                 "--init-script", PROJECT_ROOT / "scripts/android/resolve-android-test-assets.init.gradle",
                  ":app:resolveAndroidTestAssets"], env=env,
                 message="Gradle could not resolve the required Android test and lint dependencies")
             modules = home / "caches/modules-2"
@@ -611,7 +611,7 @@ pathlib.Path('/var/cache/android-test-assets/gradle').mkdir(parents=True, exist_
 options = ['--sdk-root', '/opt/android-sdk', '--gradle-bin', '/opt/gradle/bin/gradle',
            '--gradle-user-home', '/var/cache/android-test-assets/gradle',
            '--download-cache', '/var/cache/android-test-assets/downloads']
-subprocess.run([sys.executable, str(root / 'scripts/export-android-test-assets.py'),
+subprocess.run([sys.executable, str(root / 'scripts/android/export-android-test-assets.py'),
                 '--output', '/export', *options, *sys.argv[1:]], check=True)
 """
 
@@ -630,7 +630,7 @@ def export_docker(args):
     say("Preparing the Linux x86_64 Gradle exporter image (cached after first use)")
     run(["docker", "build", "--platform", "linux/amd64", "--tag", image,
          "--build-arg", f"GRADLE_IMAGE=gradle:{version}-jdk21-jammy",
-         "--file", PROJECT_ROOT / "scripts" / dockerfile, PROJECT_ROOT / "scripts"])
+         "--file", PROJECT_ROOT / "scripts/android" / dockerfile, PROJECT_ROOT / "scripts/android"])
     args.output.mkdir(parents=True, exist_ok=True)
     command = ["docker", "run", "--rm", "--platform", "linux/amd64"]
     if hasattr(os, "getuid"):

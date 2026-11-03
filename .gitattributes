@@ -1,1 +1,5 @@
 scripts/* linguist-vendored
+scripts/android/* linguist-vendored
+scripts/benchmarks/* linguist-vendored
+scripts/maintenance/* linguist-vendored
+scripts/r8/* linguist-vendored

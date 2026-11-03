@@ -61,7 +61,7 @@ jobs:
       # tags, release.yaml checks the actual APK instead of rebuilding here.
       - name: Audit optimised release DEX and R8 diagnostics (test signing)
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        run: python3 scripts/r8_audit.py --require-mapping --fail-on-warnings --json build/reports/r8/smokeRelease.json
+        run: python3 scripts/r8/r8_audit.py --require-mapping --fail-on-warnings --json build/reports/r8/smokeRelease.json
 
       - name: Upload JVM test reports
         if: always()

@@ -2,7 +2,7 @@
 
 ## One-command verification
 
-On macOS or Linux, run **`./verify`** from the repository root before a
+On macOS or Linux, run **`python3 scripts/verify.py`** from the repository root before a
 release. It runs the Python and Node script tests, Kotlin formatting checks,
 Android lint with warnings enabled, JVM/Robolectric tests, the R8-optimised
 `smokeRelease` build and strict APK audit, documentation lint/typecheck/Vitest,
@@ -21,10 +21,10 @@ check. Gradle may resolve build dependencies from configured repositories.
 Use `sdkmanager 'system-images;android-36;google_apis_ps16k;arm64-v8a'`
 on Apple Silicon or ARM64; use `x86_64` instead on Intel/AMD hosts.
 
-`./verify` creates and boots a **disposable AVD** in `build/verify/avd`,
+`python3 scripts/verify.py` creates and boots a **disposable AVD** in `build/verify/avd`,
 wipes only its own test data at launch, and stops only that emulator after
 testing. It never wipes existing Android Studio AVDs or installs to a
-connected phone. `./verify --serial emulator-5554`
+connected phone. `python3 scripts/verify.py --serial emulator-5554`
 intentionally uses an already-running, compatible **test-only** emulator.
 `--skip-avd`, `--skip-docs`, and `--skip-browser` are explicit partial-run
 options, not defaults. The summary is `partial` if any is used. Diagnostic
@@ -33,6 +33,17 @@ reports are retained at `build/reports/verify/summary.json`,
 Runtime coverage is still limited to the existing JSON, WebView, and MQTT
 loopback probes; hardware NFC, external MQTT TLS/WSS, and file downloads
 need separate acceptance testing.
+
+## Script organisation
+
+`python3 scripts/verify.py` is the single full verification entry point.
+Supporting tools are grouped by purpose: `scripts/r8/` contains APK/DEX
+checks and emulator probes, `scripts/android/` handles offline SDK and Gradle
+asset exports, `scripts/ci/` holds the local suite launcher,
+`scripts/benchmarks/` holds JavaScript benchmarks, and
+`scripts/maintenance/` contains asset regeneration helpers. Python and Node
+regression tests remain under `scripts/tests/`. Run all checks from the
+repository root so tools resolve repository-relative paths consistently.
 
 ## Android
 
@@ -88,7 +99,7 @@ CI checks are defined in the [Android](./workflows/tests.yaml) and
 Export Linux x86_64 Android SDK, Gradle dependencies, and Robolectric runtimes:
 
 ```bash
-python3 scripts/export-android-test-assets.py --output build/android-test-assets
+python3 scripts/android/export-android-test-assets.py --output build/android-test-assets
 ```
 
 The exporter requires Python 3.10+. On Linux x86_64, it uses local Gradle, JBR 21,
@@ -104,7 +115,7 @@ Concatenate numbered archive parts in order before extraction. The export's
 
 Every Android pull request builds the non-debuggable, R8-optimised `smokeRelease`
 APK with test signing. Release CI audits the **actual signed release APK**. Both
-jobs run `scripts/r8_audit.py`, which checks the retrostreams constructor guard,
+jobs run `scripts/r8/r8_audit.py`, which checks the retrostreams constructor guard,
 all `@JavascriptInterface` method names, signatures and runtime annotations,
 R8 mapping availability, missing-rule suggestions, broad `-dontwarn` rules,
 and redundant Public Suffix List resources. It also verifies that bundled
@@ -120,7 +131,7 @@ while investigating a warning; the JSON report still records it.
 Generate a machine-readable report locally (no emulator needed):
 
 ```bash
-python3 scripts/r8_audit.py --require-mapping --fail-on-warnings \
+python3 scripts/r8/r8_audit.py --require-mapping --fail-on-warnings \
   --json build/reports/r8/smokeRelease.json
 ```
 
@@ -128,7 +139,7 @@ Or analyse the exact release artifact without rebuilding. Supply its **matching*
 `mapping.txt` if the APK was downloaded or copied outside Gradle's output tree:
 
 ```bash
-python3 scripts/r8_audit.py path/to/app-release.apk \
+python3 scripts/r8/r8_audit.py path/to/app-release.apk \
   --mapping path/to/mapping.txt --require-mapping --fail-on-warnings \
   --json build/reports/r8/release.json
 ```
@@ -137,7 +148,7 @@ With a running Android 16 / API 36, 16 KiB-page emulator, optionally include a
 cold-launch check of the optimised APK:
 
 ```bash
-python3 scripts/r8_audit.py --device --serial emulator-5554 \
+python3 scripts/r8/r8_audit.py --device --serial emulator-5554 \
   --require-mapping --json build/reports/r8/device.json
 ```
 
@@ -145,7 +156,7 @@ python3 scripts/r8_audit.py --device --serial emulator-5554 \
 For actual runtime checks on the same R8-minified smokeRelease target:
 
 ```bash
-python3 scripts/r8_audit.py --require-mapping --device --runtime \
+python3 scripts/r8/r8_audit.py --require-mapping --device --runtime \
   --json build/reports/r8/smokeRelease-runtime.json
 ```
 

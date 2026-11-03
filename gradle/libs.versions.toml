@@ -61,7 +61,7 @@ hivemq-mqtt-client-websocket = { module = "com.hivemq:hivemq-mqtt-client-websock
 hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
 junit = { module = "junit:junit", version.ref = "junit" }
 re2j = { module = "com.google.re2j:re2j", version.ref = "re2j" }
-# Used indirectly by scripts/resolve-android-test-assets.init.gradle.
+# Used indirectly by scripts/android/resolve-android-test-assets.init.gradle.
 #noinspection UnusedVersionCatalogEntry
 ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }

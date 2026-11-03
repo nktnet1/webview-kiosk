@@ -6,7 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from scripts import r8_runtime as runtime
+from scripts.r8 import r8_runtime as runtime
 
 
 def output_for(statuses, result_code=0, include_mqtt_evidence=True):

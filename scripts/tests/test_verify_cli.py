@@ -2,19 +2,39 @@
 
 import contextlib
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+from scripts import verify as VERIFY_MODULE
+from scripts.r8 import check_release_dex, r8_audit, r8_runtime, release_startup_smoke
+
 ROOT = Path(__file__).resolve().parents[2]
-VERIFY_MODULE = ModuleType("verify_cli")
-VERIFY_MODULE.__file__ = str(ROOT / "verify")
-exec(compile((ROOT / "verify").read_bytes(), str(ROOT / "verify"), "exec"), VERIFY_MODULE.__dict__)
 
 
 class VerifyCliTest(unittest.TestCase):
+    def test_entrypoint_is_in_scripts_and_supports_direct_and_module_execution(self):
+        self.assertFalse((ROOT / "verify").exists())
+        self.assertEqual(ROOT, VERIFY_MODULE.ROOT)
+        for command in ([sys.executable, "scripts/verify.py", "--help"],
+                        [sys.executable, "-m", "scripts.verify", "--help"]):
+            with self.subTest(command=command):
+                result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True,
+                                        timeout=20, check=False)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertIn("--skip-avd", result.stdout)
+
+    def test_moved_r8_scripts_resolve_project_root(self):
+        for module in (check_release_dex, r8_audit, r8_runtime, release_startup_smoke):
+            with self.subTest(module=module.__name__):
+                self.assertEqual(ROOT, module.ROOT)
+                self.assertTrue(Path(module.__file__).is_relative_to(ROOT / "scripts/r8"))
+        self.assertEqual(ROOT / "app/build/outputs/apk/smokeRelease/app-smokeRelease.apk", VERIFY_MODULE.SMOKE_APK)
+
     def setUp(self):
         self.folder = tempfile.TemporaryDirectory()
         self.addCleanup(self.folder.cleanup)

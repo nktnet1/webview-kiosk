@@ -11,7 +11,7 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import r8_audit as audit
+from scripts.r8 import r8_audit as audit
 
 
 class ApkAlignmentTest(unittest.TestCase):
