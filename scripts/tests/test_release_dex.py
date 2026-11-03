@@ -276,7 +276,7 @@ class ReleaseDexTest(unittest.TestCase):
         tests = (root / ".github/workflows/tests.yaml").read_text()
         gradle_setup = tests.index("gradle/actions/setup-gradle@")
         jvm = tests.index("sh gradlew :adblock:test :app:testDebugUnitTest")
-        smoke = tests.index("run: python3 scripts/check_release_dex.py")
+        smoke = tests.index("run: python3 scripts/r8_audit.py --require-mapping --json build/reports/r8/smokeRelease.json")
         self.assertLess(gradle_setup, jvm)
         self.assertLess(jvm, smoke)
         self.assertIn("if: ${{ !startsWith(github.ref, 'refs/tags/') }}", tests)
@@ -289,12 +289,14 @@ class ReleaseDexTest(unittest.TestCase):
     def test_release_ci_checks_the_actual_apk_before_upload(self):
         release = (Path(__file__).resolve().parents[2] / ".github/workflows/release.yaml").read_text()
         build = release.index("run: sh gradlew :app:assembleRelease :app:assembleDebug")
-        check = release.index("python3 scripts/check_release_dex.py app/build/outputs/apk/release/app-release.apk")
+        check = release.index("python3 scripts/r8_audit.py app/build/outputs/apk/release/app-release.apk")
         publish = release.index("name: Store release APK for publication")
         self.assertLess(build, check)
         self.assertLess(check, publish)
         self.assertNotIn("assembleSmokeRelease", release)
         self.assertNotIn("emulator-runner", release)
+        self.assertIn("name: Upload R8 diagnostics for analysis", release)
+        self.assertIn("path: build/reports/r8/release.json", release)
 
 
 if __name__ == "__main__":
