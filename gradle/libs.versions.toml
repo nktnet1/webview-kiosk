@@ -19,7 +19,7 @@ re2j = "1.8"
 robolectric = "4.17"
 swiperefreshlayout = "1.2.0"
 spotless = "8.10.4"
-slf4j = "2.0.18"
+slf4j = "2.0.20"
 
 #noinspection GradleDependency
 activityCompose = "1.11.0"
