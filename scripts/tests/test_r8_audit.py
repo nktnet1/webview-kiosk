@@ -24,11 +24,47 @@ class R8AuditTest(unittest.TestCase):
         with zipfile.ZipFile(self.apk, "w") as archive:
             archive.writestr("classes.dex", "dex1")
             archive.writestr("classes2.dex", "dex2")
+            archive.writestr("assets/PublicSuffixDatabase.list", "okhttp suffixes")
+            archive.writestr("adblock/publicsuffix-serialized.json", "serialized suffixes")
         self.mapping_path = self.root / "app/build/outputs/mapping/smokeRelease/mapping.txt"
         self.mapping_path.parent.mkdir(parents=True)
         self.mapping_path.write_text("\n".join(
             f"{name} -> {name}:" for name in audit.BRIDGES
         ) + "\n", encoding="utf-8")
+
+    def test_public_suffix_check_accepts_one_raw_list_and_scriptlet_json(self):
+        status, details = audit.public_suffix_resources(self.apk)
+        self.assertEqual("pass", status)
+        self.assertEqual(0, details["duplicateCompressedBytes"])
+
+    def test_public_suffix_check_rejects_duplicate_raw_data(self):
+        with zipfile.ZipFile(self.apk, "a") as archive:
+            archive.writestr("adblock/publicsuffix.list", "okhttp suffixes")
+        status, details = audit.public_suffix_resources(self.apk)
+        self.assertEqual("fail", status)
+        self.assertGreater(details["duplicateCompressedBytes"], 0)
+
+    def test_public_suffix_check_rejects_missing_runtime_data(self):
+        missing = self.root / "incomplete.apk"
+        with zipfile.ZipFile(missing, "w") as archive:
+            archive.writestr("assets/PublicSuffixDatabase.list", "okhttp suffixes")
+        status, details = audit.public_suffix_resources(missing)
+        self.assertEqual("fail", status)
+        self.assertEqual(["adblock/publicsuffix-serialized.json"], details["missing"])
+
+    def test_public_suffix_check_rejects_missing_okhttp_data(self):
+        missing = self.root / "missing-okhttp.apk"
+        with zipfile.ZipFile(missing, "w") as archive:
+            archive.writestr("adblock/publicsuffix-serialized.json", "serialized suffixes")
+        status, details = audit.public_suffix_resources(missing)
+        self.assertEqual("fail", status)
+        self.assertEqual(["assets/PublicSuffixDatabase.list"], details["missing"])
+
+    def test_public_suffix_check_rejects_broken_apk(self):
+        broken = self.root / "broken.apk"
+        broken.write_bytes(b"not a zip")
+        with self.assertRaisesRegex(audit.AuditError, "Could not inspect"):
+            audit.public_suffix_resources(broken)
 
     def test_finds_mapping_for_matching_variant_only(self):
         self.assertEqual(self.mapping_path, audit.mapping_file(self.apk, None))
@@ -225,6 +261,8 @@ class R8AuditTest(unittest.TestCase):
         self.assertEqual("abc123", result["gitCommit"])
         self.assertRegex(result["apk"]["sha256"], r"^[0-9a-f]{64}$")
         self.assertEqual("pkg", result["apk"]["package"])
+        suffix_check = next(c for c in result["checks"] if c["id"] == "public_suffix_resources")
+        self.assertEqual("pass", suffix_check["status"])
         self.assertIn("not_run", [test["status"] for test in result["checks"]])
 
     def test_missing_apk_still_writes_valid_failure_json(self):
@@ -262,6 +300,8 @@ class R8RuntimeAuditTest(unittest.TestCase):
         self.apk = Path(self.folder.name) / "app.apk"
         with zipfile.ZipFile(self.apk, "w") as archive:
             archive.writestr("classes.dex", "dex1")
+            archive.writestr("assets/PublicSuffixDatabase.list", "okhttp suffixes")
+            archive.writestr("adblock/publicsuffix-serialized.json", "serialized suffixes")
 
     def common(self):
         return (

@@ -242,6 +242,34 @@ def inspect_bridges(apk, dexdump, mapping):
     return "pass", {"verified": verified}
 
 
+def public_suffix_resources(apk):
+    """Detect duplicate PSL data and verify the compact app resource survives."""
+    raw_okhttp = "assets/PublicSuffixDatabase.list"
+    raw_duplicate = "adblock/publicsuffix.list"
+    normalized = "adblock/publicsuffix-serialized.json"
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            entries = set(archive.namelist())
+            missing = [name for name in (raw_okhttp, normalized) if name not in entries]
+            duplicate_bytes = (
+                archive.getinfo(raw_duplicate).compress_size
+                if raw_duplicate in entries else 0
+            )
+    except (OSError, zipfile.BadZipFile) as error:
+        raise AuditError(f"Could not inspect public suffix resources: {error}") from error
+    details = {
+        "okhttpResource": raw_okhttp,
+        "scriptletResource": normalized,
+        "duplicateResource": raw_duplicate,
+        "duplicateCompressedBytes": duplicate_bytes,
+    }
+    if missing:
+        details["missing"] = missing
+    if missing or duplicate_bytes or raw_duplicate in entries:
+        return "fail", details
+    return "pass", details
+
+
 def r8_diagnostics(mapping_path):
     if mapping_path is None or not mapping_path.is_file():
         return "warn", {"reason": "R8 mapping not supplied or found for this APK"}
@@ -303,6 +331,11 @@ def run_audit(apk=None, *, dexdump=None, mapping=None, device=False, serial=None
         return finalise(report)
 
     put_check(report, "artifact", "pass", {"sha256": report["apk"]["sha256"]})
+    try:
+        status, details = public_suffix_resources(apk)
+        put_check(report, "public_suffix_resources", status, details)
+    except AuditError as error:
+        put_check(report, "public_suffix_resources", "fail", {"error": str(error)})
     try:
         aapt = smoke.find_sdk_tool("aapt", build_tool=True)
         package, activity, version = smoke.apk_details(aapt, apk)

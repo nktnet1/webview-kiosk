@@ -72,7 +72,9 @@ Every Android pull request builds the non-debuggable, R8-optimised `smokeRelease
 APK with test signing. Release CI audits the **actual signed release APK**. Both
 jobs run `scripts/r8_audit.py`, which checks the retrostreams constructor guard,
 all `@JavascriptInterface` method names, signatures and runtime annotations,
-R8 mapping availability, missing-rule suggestions, and broad `-dontwarn` rules.
+R8 mapping availability, missing-rule suggestions, broad `-dontwarn` rules,
+and redundant Public Suffix List resources. The APK must retain OkHttp's raw
+list and the scriptlet JSON resource, but not a second raw list under `adblock/`.
 It fails CI for confirmed errors, not for informational warnings.
 
 Generate a machine-readable report locally (no emulator needed):
