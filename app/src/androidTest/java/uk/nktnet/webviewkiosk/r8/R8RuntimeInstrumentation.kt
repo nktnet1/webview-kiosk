@@ -4,7 +4,11 @@ import android.app.Instrumentation
 import android.os.Bundle
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import java.io.PrintWriter
+import java.io.StringWriter
+import java.util.ArrayList
 import java.util.Collections
+import java.util.HashSet
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -43,21 +47,30 @@ class R8RuntimeInstrumentation : Instrumentation() {
 
     override fun onStart() {
         super.onStart()
+        // The test APK runs in the target process, whose Kotlin stdlib is
+        // R8-shrunk independently. Avoid listOf()/Pair and other test-only
+        // Kotlin library calls during runner startup.
         val probes =
-            listOf(
-                "json_serialization" to ::jsonSerialization,
-                "webview_javascript" to ::webViewJavascript,
-                "mqtt_tcp" to { mqttLoopback(webSocket = false) },
-                "mqtt_websocket" to { mqttLoopback(webSocket = true) },
+            arrayOf(
+                "json_serialization",
+                "webview_javascript",
+                "mqtt_tcp",
+                "mqtt_websocket",
             )
         var failures = 0
-        for ((name, probe) in probes) {
+        for (name in probes) {
             val result = Bundle()
             result.putString("r8_check", name)
             try {
-                probe()
+                when (name) {
+                    "json_serialization" -> jsonSerialization()
+                    "webview_javascript" -> webViewJavascript()
+                    "mqtt_tcp" -> mqttLoopback(webSocket = false)
+                    "mqtt_websocket" -> mqttLoopback(webSocket = true)
+                    else -> throw IllegalArgumentException("Unknown R8 probe: $name")
+                }
                 result.putString("r8_status", "pass")
-                if (name.startsWith("mqtt_")) {
+                if (name == "mqtt_tcp" || name == "mqtt_websocket") {
                     result.putInt(
                         "r8_subscriptions",
                         Mqtt5LoopbackBroker.EXPECTED_TOPICS.size,
@@ -69,21 +82,21 @@ class R8RuntimeInstrumentation : Instrumentation() {
                 failures++
                 result.putString("r8_status", "fail")
                 result.putString("r8_error", describeError(error))
-                result.putString("r8_stack_trace", error.stackTraceToString())
-                if (error.suppressed.isNotEmpty()) {
-                    result.putString(
-                        "r8_cleanup_error",
-                        error.suppressed.joinToString(
-                            "; ",
-                            transform = ::describeError,
-                        ),
-                    )
-                    result.putString(
-                        "r8_cleanup_stack_trace",
-                        error.suppressed.joinToString("\n\n") {
-                            it.stackTraceToString()
-                        },
-                    )
+                result.putString("r8_stack_trace", trace(error))
+                val cleanup = error.suppressed
+                if (cleanup.isNotEmpty()) {
+                    val descriptions = StringBuilder()
+                    val traces = StringBuilder()
+                    for (item in cleanup) {
+                        if (descriptions.isNotEmpty()) {
+                            descriptions.append("; ")
+                            traces.append("\n\n")
+                        }
+                        descriptions.append(describeError(item))
+                        traces.append(trace(item))
+                    }
+                    result.putString("r8_cleanup_error", descriptions.toString())
+                    result.putString("r8_cleanup_stack_trace", traces.toString())
                 }
             }
             sendStatus(0, result)
@@ -100,6 +113,14 @@ class R8RuntimeInstrumentation : Instrumentation() {
 
     private fun describeError(error: Throwable): String =
         "${error.javaClass.simpleName}: ${error.message}"
+
+    private fun trace(error: Throwable): String {
+        val output = StringWriter()
+        val writer = PrintWriter(output)
+        error.printStackTrace(writer)
+        writer.flush()
+        return output.toString()
+    }
 
     private fun jsonSerialization() {
         val request =
@@ -217,7 +238,7 @@ class R8RuntimeInstrumentation : Instrumentation() {
             val failure = AtomicReference<String?>()
             val inboundReceived = CountDownLatch(1)
             val subscribed = CountDownLatch(Mqtt5LoopbackBroker.EXPECTED_TOPICS.size)
-            val confirmedTopics = Collections.synchronizedSet(mutableSetOf<String>())
+            val confirmedTopics = Collections.synchronizedSet(HashSet<String>())
             val scope = CoroutineScope(Dispatchers.Default)
             // UNDISPATCHED attaches both SharedFlow observers before connect() can
             // receive broker messages. The request is observed, never executed.
@@ -307,7 +328,7 @@ class R8RuntimeInstrumentation : Instrumentation() {
             } finally {
                 // Never replace a probe failure with a disconnect or preference
                 // restoration failure. Both failures are available in JSON.
-                val cleanupFailures = mutableListOf<Throwable>()
+                val cleanupFailures = ArrayList<Throwable>()
                 runCatching {
                         inboundJob.cancel()
                         ackJob.cancel()

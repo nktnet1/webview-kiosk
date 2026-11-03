@@ -8,6 +8,9 @@ import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.security.MessageDigest
+import java.util.ArrayList
+import java.util.Collections
+import java.util.HashSet
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 import org.json.JSONObject
@@ -24,7 +27,14 @@ internal class Mqtt5LoopbackBroker(private val webSocket: Boolean) : Closeable {
         const val EVENT_TOPIC = "r8/probe/event"
         const val INBOUND_ID = "r8-mqtt-inbound"
         const val EXPECTED_URL = "https://example.invalid/r8/probe"
-        val EXPECTED_TOPICS = setOf(COMMAND_TOPIC, SETTINGS_TOPIC, REQUEST_TOPIC)
+        val EXPECTED_TOPICS: Set<String> =
+            Collections.unmodifiableSet(
+                HashSet<String>().apply {
+                    add(COMMAND_TOPIC)
+                    add(SETTINGS_TOPIC)
+                    add(REQUEST_TOPIC)
+                }
+            )
     }
 
     private val listener = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
@@ -75,7 +85,7 @@ internal class Mqtt5LoopbackBroker(private val webSocket: Boolean) : Closeable {
                 }
                 send(socket, mqttPacket(0x20, byteArrayOf(0x00, 0x00, 0x00)))
 
-                val topics = mutableSetOf<String>()
+                val topics = HashSet<String>()
                 while (!stopping) {
                     val (header, body) = receive(input)
                     when (header and 0xf0) {
@@ -84,9 +94,9 @@ internal class Mqtt5LoopbackBroker(private val webSocket: Boolean) : Closeable {
                             val packet = PacketReader(body)
                             val packetId = packet.u16()
                             packet.skip(packet.variableLength()) // MQTT 5 properties
-                            val filters = mutableListOf<String>()
+                            val filters = ArrayList<String>()
                             while (packet.remaining > 0) {
-                                filters += packet.utf8()
+                                filters.add(packet.utf8())
                                 packet.byte() // subscription options
                             }
                             check(filters.isNotEmpty()) { "Empty MQTT SUBSCRIBE" }
