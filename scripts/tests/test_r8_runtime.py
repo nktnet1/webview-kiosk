@@ -8,15 +8,21 @@ from unittest.mock import patch
 from scripts import r8_runtime as runtime
 
 
-def output_for(statuses, result_code=0):
+def output_for(statuses, result_code=0, include_mqtt_evidence=True):
     lines = []
     for name, status in statuses.items():
         lines.extend([
             f"INSTRUMENTATION_STATUS: r8_check={name}",
             f"INSTRUMENTATION_STATUS: r8_status={status}",
             "INSTRUMENTATION_STATUS: r8_error=Test failure",
-            "INSTRUMENTATION_STATUS_CODE: 0",
         ])
+        if name.startswith("mqtt_") and status == "pass" and include_mqtt_evidence:
+            lines.extend([
+                "INSTRUMENTATION_STATUS: r8_subscriptions=3",
+                "INSTRUMENTATION_STATUS: r8_inbound=get_status",
+                "INSTRUMENTATION_STATUS: r8_outbound=url_changed",
+            ])
+        lines.append("INSTRUMENTATION_STATUS_CODE: 0")
     lines.append(f"INSTRUMENTATION_CODE: {result_code}")
     return "\n".join(lines)
 
@@ -27,7 +33,22 @@ class R8RuntimeTest(unittest.TestCase):
         statuses["mqtt_websocket"] = "fail"
         results = runtime.parse_instrumentation_output(output_for(statuses))
         self.assertEqual("pass", results["mqtt_tcp"][0])
+        self.assertEqual(3, results["mqtt_tcp"][1]["subscriptionsAcknowledged"])
+        self.assertEqual("get_status", results["mqtt_tcp"][1]["inboundDelivery"])
+        self.assertEqual("url_changed", results["mqtt_tcp"][1]["outboundDelivery"])
         self.assertEqual("Test failure", results["mqtt_websocket"][1]["error"])
+
+    def test_mqtt_pass_without_suback_or_delivery_evidence_is_rejected(self):
+        with self.assertRaisesRegex(runtime.RuntimeProbeError, "omitted subscription evidence"):
+            runtime.parse_instrumentation_output(
+                output_for(dict.fromkeys(runtime.PROBES, "pass"), include_mqtt_evidence=False)
+            )
+
+    def test_mqtt_partial_delivery_evidence_is_rejected(self):
+        stdout = output_for(dict.fromkeys(runtime.PROBES, "pass"))
+        stdout = stdout.replace("r8_outbound=url_changed", "r8_outbound=missing")
+        with self.assertRaisesRegex(runtime.RuntimeProbeError, "incomplete delivery evidence"):
+            runtime.parse_instrumentation_output(stdout)
 
     def test_incomplete_run_is_not_silently_passed(self):
         with self.assertRaisesRegex(runtime.RuntimeProbeError, "did not complete"):

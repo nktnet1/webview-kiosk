@@ -308,15 +308,16 @@ def put_check(report, ident, status, details):
 def run_audit(apk=None, *, dexdump=None, mapping=None, device=False, serial=None,
               require_mapping=False, runtime_probes=False):
     report = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "gitCommit": git_commit(),
+        "requested": {"device": device, "runtime": runtime_probes},
         "apk": None,
         "checks": [],
         "limitations": [
             "DEX entry-point checks cannot prove reflection or runtime behaviour",
             "Without --runtime, no MQTT, JavaScript or serialization calls are executed",
-            "--runtime checks MQTT TCP and WS, one WebView JavaScript bridge, and sealed JSON round trips",
+            "--runtime checks MQTT 5 SUBACK, inbound and outbound delivery over TCP/WS, one WebView JavaScript bridge, and sealed JSON round trips",
             "MQTT TLS/WSS and the other JavaScript bridges require additional device scenarios",
         ],
     }
@@ -417,15 +418,48 @@ def run_audit(apk=None, *, dexdump=None, mapping=None, device=False, serial=None
     return finalise(report)
 
 
-def finalise(report):
-    statuses = [check["status"] for check in report["checks"]]
-    report["summary"] = {
-        "status": "fail" if "fail" in statuses else "warn" if "warn" in statuses else "pass",
+def summarise_checks(checks):
+    """Summarise a check group without equating skipped work with success."""
+    statuses = [check["status"] for check in checks]
+    if "fail" in statuses:
+        status = "fail"
+    elif "warn" in statuses:
+        status = "warn"
+    elif not statuses or all(item == "not_run" for item in statuses):
+        status = "not_run"
+    elif "not_run" in statuses:
+        status = "partial"
+    else:
+        status = "pass"
+    return {
+        "status": status,
         "passed": statuses.count("pass"),
         "failed": statuses.count("fail"),
         "warnings": statuses.count("warn"),
         "notRun": statuses.count("not_run"),
+        "total": len(statuses),
     }
+
+
+def finalise(report):
+    """Separate static validity from optional device/runtime test coverage.
+
+    `partial` means no recorded errors or warnings, but at least one optional
+    check was not run. CI still exits nonzero only on a recorded failure.
+    """
+    checks = report["checks"]
+    static_checks = [check for check in checks if not check["id"].startswith("runtime_")
+                     and check["id"] != "emulator_cold_launch"]
+    device_checks = [check for check in checks if check["id"] == "emulator_cold_launch"]
+    runtime_checks = [check for check in checks if check["id"].startswith("runtime_")]
+    summary = summarise_checks(checks)
+    summary["static"] = summarise_checks(static_checks)
+    summary["device"] = {**summarise_checks(device_checks),
+                         "requested": report["requested"]["device"]}
+    summary["runtime"] = {**summarise_checks(runtime_checks),
+                          "requested": report["requested"]["runtime"],
+                          "expectedProbes": len(runtime.PROBES)}
+    report["summary"] = summary
     return report
 
 
@@ -482,7 +516,11 @@ def main(argv=None):
                 message = "Broad warning suppression: " + ", ".join(details["broadSuppressions"])
             if message:
                 print(f"  {message}")
-    return 1 if report["summary"]["failed"] else 0
+    summary = report["summary"]
+    print("SUMMARY: " + summary["status"] + " (static=" + summary["static"]["status"]
+          + ", device=" + summary["device"]["status"]
+          + ", runtime=" + summary["runtime"]["status"] + ")")
+    return 1 if summary["failed"] else 0
 
 
 if __name__ == "__main__":

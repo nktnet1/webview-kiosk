@@ -70,6 +70,20 @@ def parse_instrumentation_output(output):
                 details = {"probe": name}
                 if status == "fail":
                     details["error"] = frame.get("r8_error", "No error reported")[:2000]
+                elif name.startswith("mqtt_"):
+                    # A successful MQTT probe must prove more than a TCP connect.
+                    try:
+                        subscriptions = int(frame.get("r8_subscriptions", ""))
+                    except ValueError as error:
+                        raise RuntimeProbeError(
+                            f"MQTT probe {name} omitted subscription evidence"
+                        ) from error
+                    if (subscriptions != 3 or frame.get("r8_inbound") != "get_status"
+                            or frame.get("r8_outbound") != "url_changed"):
+                        raise RuntimeProbeError(f"MQTT probe {name} provided incomplete delivery evidence")
+                    details.update({"subscriptionsAcknowledged": subscriptions,
+                                    "inboundDelivery": "get_status",
+                                    "outboundDelivery": "url_changed"})
                 results[name] = (status, details)
             frame = {}
     if set(results) != set(PROBES):

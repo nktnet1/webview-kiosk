@@ -110,20 +110,31 @@ python3 scripts/r8_audit.py --require-mapping --device --runtime \
 
 `--runtime` builds a separate test-only APK with an instrumentation runner.
 It verifies the app's Kotlin sealed JSON serializers, a real WebView call into
-`BatteryInterface`, and HiveMQ/Netty MQTT 5 connections to disposable local TCP
-and WebSocket broker endpoints. Each scenario has its own `runtime_*` result in
-JSON, and a failure makes the audit fail. MQTT preferences are changed briefly
-and restored; use a **disposable emulator**, never a production kiosk. The
+`BatteryInterface`, and HiveMQ/Netty MQTT 5 over disposable local TCP and
+WebSocket broker endpoints. Both MQTT probes require three successful SUBACKs,
+an outbound `url_changed` PUBLISH reaching the broker, and an inbound
+`get_status` PUBLISH reaching the app's request flow. The per-probe JSON result
+includes `subscriptionsAcknowledged`, `inboundDelivery`, and `outboundDelivery`.
+MQTT preferences are changed briefly and restored; use a **disposable emulator**,
+never a production kiosk. The
 probes only support the locally built smokeRelease APK, not an unrelated
 production release with a different obfuscation mapping. TLS/WSS, NFC, and the
 other JavaScript interfaces are still out of scope.
 
 Runtime probes are **not** enabled in CI; the old instrumentation/AVD matrix
 remains retired.
-The report contains `schemaVersion`, `generatedAt`, `gitCommit`, APK hash,
-version and package, per-check `pass`/`fail`/`warn`/`not_run` statuses, R8 file
-hashes, and a summary. On failure, the JSON is still written. CI uploads it as
-part of `android-unit-results` or the `release-r8-audit` artifact for analysis.
+The JSON report uses schema version **2**. It contains `generatedAt`,
+`gitCommit`, APK hash/version/package, per-check results, R8 file hashes, and a
+summary with separate `static`, `device`, and `runtime` status/counts. A static
+CI run can pass its checks while `summary.status` is **`partial`** and
+`summary.runtime.status` is **`not_run`**. `partial` is informational: the CLI
+still exits nonzero only on real failures, so emulator-free CI is unchanged.
+Use `summary.static.status` for static results, and inspect
+`summary.runtime.status` and `summary.runtime.requested` for actual device
+coverage. `summary.status` becomes `pass` only after all checks pass, including
+optional runtime probes. On failure, JSON is still written. CI uploads it as
+part of `android-unit-results` or `release-r8-audit`. Consumers of the old
+`summary.status` should be updated for the new `partial` value.
 
 The default static checks cannot prove runtime behaviour. The optional
 `--device --runtime` checks cover the critical loopback and serialization paths

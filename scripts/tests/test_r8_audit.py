@@ -272,7 +272,7 @@ class R8AuditTest(unittest.TestCase):
                 exit_code = audit.main([str(self.root / "missing.apk"), "--json", str(report_path)])
         self.assertEqual(1, exit_code)
         report = json.loads(report_path.read_text(encoding="utf-8"))
-        self.assertEqual(1, report["schemaVersion"])
+        self.assertEqual(2, report["schemaVersion"])
         self.assertEqual("fail", report["summary"]["status"])
         self.assertEqual("artifact", report["checks"][0]["id"])
 
@@ -305,6 +305,8 @@ class R8RuntimeAuditTest(unittest.TestCase):
 
     def common(self):
         return (
+            patch.object(audit, "mapping_file", return_value=self.apk),
+            patch.object(audit, "parse_mapping", return_value={"pkg.Test": "a"}),
             patch.object(audit.smoke, "find_sdk_tool", return_value="aapt"),
             patch.object(audit.smoke, "apk_details", return_value=("pkg", "Main", "1.0")),
             patch.object(audit.dex, "check_apk", return_value="classes.dex"),
@@ -322,6 +324,77 @@ class R8RuntimeAuditTest(unittest.TestCase):
         runtime_checks = [c for c in report["checks"] if c["id"].startswith("runtime_")]
         self.assertEqual(len(audit.runtime.PROBES), len(runtime_checks))
         self.assertTrue(all(c["status"] == "not_run" for c in runtime_checks))
+        self.assertEqual("partial", report["summary"]["status"])
+        self.assertEqual("pass", report["summary"]["static"]["status"])
+        self.assertEqual("not_run", report["summary"]["device"]["status"])
+        self.assertEqual("not_run", report["summary"]["runtime"]["status"])
+        self.assertFalse(report["summary"]["runtime"]["requested"])
+        self.assertEqual(len(audit.runtime.PROBES), report["summary"]["runtime"]["expectedProbes"])
+
+    def test_requested_runtime_success_means_all_coverage_was_executed(self):
+        from contextlib import ExitStack
+        with ExitStack() as stack:
+            for mock in self.common():
+                stack.enter_context(mock)
+            stack.enter_context(patch.object(audit.smoke, "smoke_test"))
+            outcomes = {n: ("pass", {"probe": n}) for n in audit.runtime.PROBES}
+            stack.enter_context(patch.object(audit.runtime, "run_runtime_probes",
+                                           return_value=(outcomes, self.apk, "emulator-5554")))
+            report = audit.run_audit(self.apk, dexdump="dexdump", device=True, runtime_probes=True)
+        self.assertEqual("pass", report["summary"]["status"])
+        self.assertEqual("pass", report["summary"]["static"]["status"])
+        self.assertEqual("pass", report["summary"]["device"]["status"])
+        self.assertEqual("pass", report["summary"]["runtime"]["status"])
+        self.assertTrue(report["summary"]["runtime"]["requested"])
+        self.assertEqual(0, report["summary"]["notRun"])
+
+    def test_summary_never_claims_full_pass_when_only_static_checks_run(self):
+        report = audit.finalise({
+            "requested": {"device": False, "runtime": False},
+            "checks": [
+                {"id": "artifact", "status": "pass", "details": {}},
+                {"id": "emulator_cold_launch", "status": "not_run", "details": {}},
+                *({"id": "runtime_" + n, "status": "not_run", "details": {}}
+                  for n in audit.runtime.PROBES),
+            ],
+        })
+        self.assertEqual("partial", report["summary"]["status"])
+        self.assertEqual("pass", report["summary"]["static"]["status"])
+        self.assertEqual("not_run", report["summary"]["runtime"]["status"])
+
+    def test_partial_static_audit_writes_json_and_exits_successfully(self):
+        report_path = Path(self.folder.name) / "static-report.json"
+        report = audit.finalise({
+            "requested": {"device": False, "runtime": False},
+            "checks": [
+                {"id": "artifact", "status": "pass", "details": {}},
+                {"id": "emulator_cold_launch", "status": "not_run", "details": {}},
+                *({"id": "runtime_" + n, "status": "not_run", "details": {}}
+                  for n in audit.runtime.PROBES),
+            ],
+        })
+        with patch.object(audit, "run_audit", return_value=report):
+            with contextlib.redirect_stdout(io.StringIO()) as output:
+                exit_code = audit.main(["--json", str(report_path)])
+        self.assertEqual(0, exit_code)
+        self.assertIn("SUMMARY: partial (static=pass, device=not_run, runtime=not_run)",
+                      output.getvalue())
+        result = json.loads(report_path.read_text(encoding="utf-8"))
+        self.assertEqual("not_run", result["summary"]["runtime"]["status"])
+
+    def test_partial_runtime_does_not_count_as_success(self):
+        report = audit.finalise({
+            "requested": {"device": True, "runtime": True},
+            "checks": [
+                {"id": "artifact", "status": "pass", "details": {}},
+                {"id": "emulator_cold_launch", "status": "pass", "details": {}},
+                {"id": "runtime_mqtt_tcp", "status": "pass", "details": {}},
+                {"id": "runtime_mqtt_websocket", "status": "not_run", "details": {}},
+            ],
+        })
+        self.assertEqual("partial", report["summary"]["status"])
+        self.assertEqual("partial", report["summary"]["runtime"]["status"])
+        self.assertTrue(report["summary"]["runtime"]["requested"])
 
     def test_runtime_probe_results_are_included_in_json(self):
         from contextlib import ExitStack
