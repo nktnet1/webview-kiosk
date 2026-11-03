@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.screens
 
 import android.os.Bundle
 import android.os.Looper
+import androidx.activity.BackEventCompat
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.DisposableEffect
@@ -10,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.ComposeView
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelStore
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.ComposeNavigator
@@ -184,6 +186,47 @@ class WebViewRootComposeRegressionTest {
             5,
             root.savedStateHandle.get<Int>(WEBVIEW_RECREATION_REQUEST_KEY),
         )
+    }
+
+    @Test
+    fun systemBackFromSettingsDoesNotStartPredictiveTransition() {
+        navController.navigate(Screen.Settings.route)
+        frames()
+        val settingsEntry = navController.currentBackStackEntry!!
+        assertEquals(Screen.Settings.route, settingsEntry.destination.route)
+        assertEquals(Lifecycle.State.RESUMED, settingsEntry.lifecycle.currentState)
+
+        // Navigation Compose's predictive handler would lower this entry's
+        // lifecycle to STARTED as soon as the gesture begins.
+        activity.onBackPressedDispatcher.dispatchOnBackStarted(
+            BackEventCompat(0f, 0f, 0f, BackEventCompat.EDGE_LEFT)
+        )
+        frames()
+        assertEquals(Lifecycle.State.RESUMED, settingsEntry.lifecycle.currentState)
+        activity.onBackPressedDispatcher.onBackPressed()
+        frames()
+        assertEquals(Screen.WebView.route, navController.currentDestination?.route)
+    }
+
+    @Test
+    fun externalNavigationDuringAdminBackDoesNotTransitionRemovedEntry() {
+        navController.navigate(Screen.AdminRestrictionsChanged.route)
+        frames()
+        val noticeEntry = navController.currentBackStackEntry!!
+        assertEquals(Lifecycle.State.RESUMED, noticeEntry.lifecycle.currentState)
+
+        activity.onBackPressedDispatcher.dispatchOnBackStarted(
+            BackEventCompat(0f, 0f, 0f, BackEventCompat.EDGE_LEFT)
+        )
+        frames()
+        assertEquals(Lifecycle.State.RESUMED, noticeEntry.lifecycle.currentState)
+
+        // An external navigation (or countdown expiry) can pop this screen
+        // between gesture start and completion.
+        navigateToWebViewScreen(navController)
+        activity.onBackPressedDispatcher.onBackPressed()
+        frames()
+        assertEquals(Screen.WebView.route, navController.currentDestination?.route)
     }
 
     @Test

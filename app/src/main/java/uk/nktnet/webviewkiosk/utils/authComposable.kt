@@ -6,12 +6,13 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import uk.nktnet.webviewkiosk.ui.components.auth.RequireAuthWrapper
 
-inline fun NavGraphBuilder.authComposable(
+internal inline fun NavGraphBuilder.authComposable(
     route: String,
     navController: NavController,
     crossinline content: @Composable () -> Unit,
 ) {
-    composable(route) {
+    composable(route) { entry ->
+        NonPredictiveNavigationBackHandler(navController, entry)
         RequireAuthWrapper(navController) {
             content()
         }
