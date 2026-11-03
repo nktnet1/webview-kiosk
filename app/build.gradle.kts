@@ -86,6 +86,10 @@ android {
                 listOf(
                     "META-INF/INDEX.LIST",
                     "META-INF/io.netty.versions.properties",
+                    // The APK runs generated Protobuf code, not the source schemas.
+                    "google/protobuf/*.proto",
+                    // GraalVM native-image metadata is not used by Android ART.
+                    "META-INF/native-image/**",
                 )
         }
     }
