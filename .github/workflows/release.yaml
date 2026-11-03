@@ -54,7 +54,7 @@ jobs:
       - name: Audit the exact signed release APK and R8 diagnostics
         run: |
           python3 scripts/r8_audit.py app/build/outputs/apk/release/app-release.apk \
-            --require-mapping --json build/reports/r8/release.json
+            --require-mapping --fail-on-warnings --json build/reports/r8/release.json
 
       - name: Upload R8 diagnostics for analysis
         if: always()

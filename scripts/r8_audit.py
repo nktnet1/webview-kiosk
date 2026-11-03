@@ -478,6 +478,10 @@ def main(argv=None):
     parser.add_argument("--json", type=Path, help="Write a JSON report, including failures")
     parser.add_argument("--mapping", type=Path, help="R8 mapping.txt for the exact APK")
     parser.add_argument("--require-mapping", action="store_true", help="Fail if R8 mapping is absent (CI)")
+    parser.add_argument(
+        "--fail-on-warnings", action="store_true",
+        help="Exit nonzero for R8 review warnings (recommended for CI)",
+    )
     parser.add_argument("--dexdump", help="Path to the Android SDK dexdump executable")
     parser.add_argument("--device", action="store_true", help="Also test cold launch on a compatible running emulator")
     parser.add_argument("--serial", help="ADB serial for --device (required if multiple emulators)")
@@ -520,7 +524,15 @@ def main(argv=None):
     print("SUMMARY: " + summary["status"] + " (static=" + summary["static"]["status"]
           + ", device=" + summary["device"]["status"]
           + ", runtime=" + summary["runtime"]["status"] + ")")
-    return 1 if summary["failed"] else 0
+    if summary["failed"]:
+        return 1
+    if args.fail_on_warnings and summary["warnings"]:
+        print(
+            f"FAIL: {summary['warnings']} R8 warning(s) require review (--fail-on-warnings)",
+            file=sys.stderr,
+        )
+        return 1
+    return 0
 
 
 if __name__ == "__main__":

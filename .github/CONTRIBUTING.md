@@ -75,12 +75,16 @@ all `@JavascriptInterface` method names, signatures and runtime annotations,
 R8 mapping availability, missing-rule suggestions, broad `-dontwarn` rules,
 and redundant Public Suffix List resources. The APK must retain OkHttp's raw
 list and the scriptlet JSON resource, but not a second raw list under `adblock/`.
-It fails CI for confirmed errors, not for informational warnings.
+CI also fails on review warnings (for example, new broad suppressions or R8
+missing-rule suggestions), rather than silently publishing an APK with
+unreviewed shrinker diagnostics. Local runs can omit `--fail-on-warnings`
+while investigating a warning; the JSON report still records it.
 
 Generate a machine-readable report locally (no emulator needed):
 
 ```bash
-python3 scripts/r8_audit.py --require-mapping --json build/reports/r8/smokeRelease.json
+python3 scripts/r8_audit.py --require-mapping --fail-on-warnings \
+  --json build/reports/r8/smokeRelease.json
 ```
 
 Or analyse the exact release artifact without rebuilding. Supply its **matching**
@@ -88,7 +92,7 @@ Or analyse the exact release artifact without rebuilding. Supply its **matching*
 
 ```bash
 python3 scripts/r8_audit.py path/to/app-release.apk \
-  --mapping path/to/mapping.txt --require-mapping \
+  --mapping path/to/mapping.txt --require-mapping --fail-on-warnings \
   --json build/reports/r8/release.json
 ```
 
@@ -133,8 +137,8 @@ The JSON report uses schema version **2**. It contains `generatedAt`,
 `gitCommit`, APK hash/version/package, per-check results, R8 file hashes, and a
 summary with separate `static`, `device`, and `runtime` status/counts. A static
 CI run can pass its checks while `summary.status` is **`partial`** and
-`summary.runtime.status` is **`not_run`**. `partial` is informational: the CLI
-still exits nonzero only on real failures, so emulator-free CI is unchanged.
+`summary.runtime.status` is **`not_run`**. `partial` is informational and does
+not trigger `--fail-on-warnings`; CI exits nonzero for failures or warnings.
 Use `summary.static.status` for static results, and inspect
 `summary.runtime.status` and `summary.runtime.requested` for actual device
 coverage. `summary.status` becomes `pass` only after all checks pass, including

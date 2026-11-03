@@ -382,6 +382,53 @@ class R8RuntimeAuditTest(unittest.TestCase):
         result = json.loads(report_path.read_text(encoding="utf-8"))
         self.assertEqual("not_run", result["summary"]["runtime"]["status"])
 
+    def test_ci_strict_mode_rejects_warnings_and_still_writes_report(self):
+        report_path = Path(self.folder.name) / "strict-report.json"
+        report = audit.finalise({
+            "requested": {"device": False, "runtime": False},
+            "checks": [
+                {"id": "artifact", "status": "pass", "details": {}},
+                {"id": "r8_diagnostics", "status": "warn", "details": {
+                    "missingRules": ["-dontwarn example.optional.**"]}},
+                {"id": "suppression_review", "status": "warn", "details": {
+                    "broadSuppressions": ["io.netty.**"]}},
+            ],
+        })
+        with patch.object(audit, "run_audit", return_value=report):
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as errors:
+                exit_code = audit.main(["--fail-on-warnings", "--json", str(report_path)])
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                local_exit_code = audit.main([])
+        self.assertEqual(1, exit_code)
+        self.assertIn("2 R8 warning(s) require review", errors.getvalue())
+        self.assertEqual(0, local_exit_code)
+        stored = json.loads(report_path.read_text(encoding="utf-8"))
+        self.assertEqual("warn", stored["summary"]["status"])
+        self.assertEqual(2, stored["summary"]["warnings"])
+
+    def test_ci_strict_mode_does_not_fail_for_unrequested_device_probes(self):
+        report = audit.finalise({
+            "requested": {"device": False, "runtime": False},
+            "checks": [
+                {"id": "artifact", "status": "pass", "details": {}},
+                {"id": "emulator_cold_launch", "status": "not_run", "details": {}},
+                *({"id": "runtime_" + name, "status": "not_run", "details": {}}
+                  for name in audit.runtime.PROBES),
+            ],
+        })
+        with patch.object(audit, "run_audit", return_value=report):
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(0, audit.main(["--fail-on-warnings"]))
+
+    def test_ci_strict_mode_also_rejects_confirmed_failures(self):
+        report = audit.finalise({
+            "requested": {"device": False, "runtime": False},
+            "checks": [{"id": "mapping", "status": "fail", "details": {"error": "not found"}}],
+        })
+        with patch.object(audit, "run_audit", return_value=report):
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(1, audit.main(["--fail-on-warnings"]))
+
     def test_partial_runtime_does_not_count_as_success(self):
         report = audit.finalise({
             "requested": {"device": True, "runtime": True},
