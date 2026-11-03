@@ -404,7 +404,7 @@ def run_audit(apk=None, *, dexdump=None, mapping=None, device=False, serial=None
         "limitations": [
             "DEX entry-point checks cannot prove reflection or runtime behaviour",
             "Without --runtime, no MQTT, JavaScript or serialization calls are executed",
-            "--runtime checks MQTT 5 SUBACK, inbound and outbound delivery over TCP/WS, one WebView JavaScript bridge, and sealed JSON round trips",
+            "--runtime checks MQTT 5 SUBACK and sealed request/event JSON delivery over TCP/WS, one WebView JavaScript bridge, and settings JSON import/export round trips",
             "MQTT TLS/WSS and the other JavaScript bridges require additional device scenarios",
         ],
     }

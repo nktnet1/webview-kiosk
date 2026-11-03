@@ -301,6 +301,24 @@ def select_jdk21():
     )
 
 
+def select_running_emulator(adb):
+    """Reuse one compatible running emulator; never pick an arbitrary device.
+
+    The SDK system image is only required when we need to create a disposable
+    AVD. Android Studio may be running an AVD whose image isn't installed in
+    the SDK that Gradle uses.
+    """
+    from scripts.r8 import release_startup_smoke as smoke
+
+    try:
+        return smoke.select_emulator(adb, None)
+    except smoke.SmokeTestError as error:
+        if str(error).startswith("No running Android 16 (API 36) emulator"):
+            return None
+        # Multiple compatible emulators or ADB failures require an explicit ID.
+        raise VerificationError(str(error)) from error
+
+
 def preflight(args):
     if sys.version_info < (3, 10):
         raise VerificationError("Python 3.10+ required")
@@ -329,17 +347,24 @@ def preflight(args):
         if not (ROOT / "docs/node_modules").is_dir():
             raise VerificationError("docs/node_modules missing; install locked docs dependencies first")
     if not args.skip_avd:
+        from scripts.r8 import release_startup_smoke as smoke
+
+        adb = sdk_tool(sdk, "adb")
         if args.serial:
-            from scripts.r8 import release_startup_smoke as smoke
             try:
-                smoke.select_emulator(sdk_tool(sdk, "adb"), args.serial)
+                smoke.select_emulator(adb, args.serial)
             except smoke.SmokeTestError as error:
                 raise VerificationError(str(error)) from error
         else:
-            sdk_tool(sdk, "adb")
-            sdk_tool(sdk, "emulator")
-            sdk_tool(sdk, "avdmanager")
-            image_package(sdk)
+            # A compatible running emulator is sufficient even when its system
+            # image is absent from the current SDK installation.
+            args.running_serial = select_running_emulator(adb)
+            if args.running_serial:
+                print(f"[verify] Reusing running emulator {args.running_serial} (will not stop it)", flush=True)
+            else:
+                sdk_tool(sdk, "emulator")
+                sdk_tool(sdk, "avdmanager")
+                image_package(sdk)
 
 
 def execute(label, argv, report):
@@ -383,10 +408,10 @@ def verify(args, report):
         report["steps"].append({"name": "Minified APK emulator + runtime tests", "status": "skipped",
                                 "reason": "--skip-avd"})
         return
-    if args.serial:
-        # The explicit --serial is already checked by preflight. It may be a
-        # user-managed AVD: only use it with the user's deliberate opt-in.
-        serial = args.serial
+    if args.serial or getattr(args, "running_serial", None):
+        # Reuse an already-running compatible emulator, never stopping it or
+        # installing a new image. Preflight validates its API and page size.
+        serial = args.serial or args.running_serial
         execute("Minified APK emulator + runtime tests", [python, "scripts/r8/r8_audit.py", SMOKE_APK,
                 "--require-mapping", "--fail-on-warnings", "--device", "--runtime", "--serial", serial,
                 "--json", R8_REPORTS / "smokeRelease-runtime.json"], report)
@@ -402,7 +427,7 @@ def main(argv=None):
     parser.add_argument("--skip-avd", action="store_true", help="Explicitly omit the AVD/runtime checks (partial verification)")
     parser.add_argument("--skip-docs", action="store_true", help="Explicitly omit documentation suites (partial verification)")
     parser.add_argument("--skip-browser", action="store_true", help="Explicitly omit Playwright (partial verification)")
-    parser.add_argument("--serial", help="Use an existing compatible test emulator; it will not be stopped")
+    parser.add_argument("--serial", metavar="SERIAL", help="Select a specific running emulator (e.g. emulator-5554); by default a single compatible emulator is detected automatically")
     parser.add_argument("--avd", default=AVD_NAME, help="Name of the isolated disposable AVD to auto-create")
     parser.add_argument("--boot-timeout", type=int, default=420, help="AVD boot timeout in seconds (default: 420)")
     args = parser.parse_args(argv)

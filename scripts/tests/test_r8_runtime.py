@@ -42,6 +42,25 @@ class R8RuntimeTest(unittest.TestCase):
         self.assertIn("broker.close()", runner)
         self.assertIn("socket.close()", broker)
 
+    def test_runtime_probes_use_retained_app_api_instead_of_removed_factories(self):
+        runner = (ROOT / "app/src/androidTest/java/uk/nktnet/webviewkiosk/r8/R8RuntimeInstrumentation.kt").read_text()
+        for missing_factory in (
+            "Json {", "Json(base)", "Dispatchers.Default", "scope.cancel()",
+            "kotlinx.serialization.decodeFromString", "kotlinx.serialization.encodeToString",
+        ):
+            with self.subTest(factory=missing_factory):
+                # Comments may mention deleted APIs, but executable references must not.
+                source_lines = [line.split("//", 1)[0] for line in runner.splitlines()]
+                self.assertNotIn(missing_factory, "\n".join(source_lines))
+        self.assertIn("UserSettings(sandbox)", runner)
+        self.assertIn("settings.importJson", runner)
+        self.assertIn("settings.exportJson", runner)
+        self.assertIn("EmptyCoroutineContext", runner)
+        self.assertIn("FlowCollector<MqttLogEntry>", runner)
+        self.assertIn("FlowCollector<", runner)
+        self.assertIn("RemoteMessageManager.RemoteMessage<", runner)
+        self.assertIn("InboundRequestMessage", runner)
+
     def test_parses_all_named_probes_and_errors(self):
         statuses = dict.fromkeys(runtime.PROBES, "pass")
         statuses["mqtt_websocket"] = "fail"

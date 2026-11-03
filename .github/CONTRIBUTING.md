@@ -21,11 +21,13 @@ check. Gradle may resolve build dependencies from configured repositories.
 Use `sdkmanager 'system-images;android-36;google_apis_ps16k;arm64-v8a'`
 on Apple Silicon or ARM64; use `x86_64` instead on Intel/AMD hosts.
 
-`python3 scripts/verify.py` creates and boots a **disposable AVD** in `build/verify/avd`,
-wipes only its own test data at launch, and stops only that emulator after
-testing. It never wipes existing Android Studio AVDs or installs to a
-connected phone. `python3 scripts/verify.py --serial emulator-5554`
-intentionally uses an already-running, compatible **test-only** emulator.
+`python3 scripts/verify.py` reuses a single already-running compatible
+**test-only** emulator, if one is available, without stopping it. Otherwise,
+it creates and boots a **disposable AVD** in `build/verify/avd`, wipes only
+that AVD's test data, and stops only that emulator after testing. It never
+wipes existing Android Studio AVDs or installs to a connected phone. Use
+`python3 scripts/verify.py --serial emulator-5554` to select a specific
+compatible emulator when more than one is running.
 `--skip-avd`, `--skip-docs`, and `--skip-browser` are explicit partial-run
 options, not defaults. The summary is `partial` if any is used. Diagnostic
 reports are retained at `build/reports/verify/summary.json`,
@@ -166,8 +168,9 @@ python3 scripts/r8/r8_audit.py --require-mapping --device --runtime \
 ```
 
 `--runtime` builds a separate test-only APK with an instrumentation runner.
-It verifies the app's Kotlin sealed JSON serializers, a real WebView call into
-`BatteryInterface`, and HiveMQ/Netty MQTT 5 over disposable local TCP and
+It verifies production settings JSON import/export using isolated preferences,
+a real WebView call into `BatteryInterface`, and HiveMQ/Netty MQTT 5 over
+disposable local TCP and
 WebSocket broker endpoints. Both MQTT probes require three successful SUBACKs,
 an outbound `url_changed` PUBLISH reaching the broker, and an inbound
 `get_status` PUBLISH reaching the app's request flow. The per-probe JSON result

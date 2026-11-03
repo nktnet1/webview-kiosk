@@ -81,6 +81,68 @@ class VerifyCliTest(unittest.TestCase):
         self.assertIn("emulator-5580", calls[-1][1])
         self.assertNotIn("--runtime", calls[2][1])
 
+    def test_preflight_reuses_running_emulator_without_local_system_image(self):
+        args = SimpleNamespace(skip_docs=True, skip_avd=False, serial=None)
+        tools = []
+        def tool(sdk, name, **kwargs):
+            tools.append(name)
+            return name
+        with (
+            patch.dict(os.environ, {"PATH": os.environ["PATH"]}),
+            patch.object(VERIFY_MODULE, "select_jdk21", return_value=Path(self.folder.name)),
+            patch.object(VERIFY_MODULE, "run_command", return_value=SimpleNamespace(returncode=0, stdout="24.0.0")),
+            patch.object(VERIFY_MODULE, "sdk_root", return_value=Path(self.folder.name)),
+            patch.object(VERIFY_MODULE, "sdk_tool", side_effect=tool),
+            patch.object(VERIFY_MODULE, "select_running_emulator", return_value="emulator-5554"),
+            patch.object(VERIFY_MODULE, "image_package") as image,
+        ):
+            VERIFY_MODULE.preflight(args)
+        image.assert_not_called()
+        self.assertEqual("emulator-5554", args.running_serial)
+        self.assertNotIn("avdmanager", tools)
+        self.assertNotIn("emulator", tools)
+
+    def test_preflight_no_running_emulator_requires_isolated_image(self):
+        args = SimpleNamespace(skip_docs=True, skip_avd=False, serial=None)
+        with (
+            patch.dict(os.environ, {"PATH": os.environ["PATH"]}),
+            patch.object(VERIFY_MODULE, "select_jdk21", return_value=Path(self.folder.name)),
+            patch.object(VERIFY_MODULE, "run_command", return_value=SimpleNamespace(returncode=0, stdout="24.0.0")),
+            patch.object(VERIFY_MODULE, "sdk_root", return_value=Path(self.folder.name)),
+            patch.object(VERIFY_MODULE, "sdk_tool", return_value="tool"),
+            patch.object(VERIFY_MODULE, "select_running_emulator", return_value=None),
+            patch.object(VERIFY_MODULE, "image_package", side_effect=VERIFY_MODULE.VerificationError("image missing")),
+        ):
+            with self.assertRaisesRegex(VERIFY_MODULE.VerificationError, "image missing"):
+                VERIFY_MODULE.preflight(args)
+
+    def test_running_emulator_selection_does_not_hide_ambiguity_or_adb_errors(self):
+        for message in (
+            "More than one compatible emulator is running: emulator-5554, emulator-5556",
+            "adb devices failed",
+        ):
+            with self.subTest(message=message):
+                with patch.object(release_startup_smoke, "select_emulator",
+                                  side_effect=release_startup_smoke.SmokeTestError(message)):
+                    with self.assertRaisesRegex(VERIFY_MODULE.VerificationError, message.split(":")[0]):
+                        VERIFY_MODULE.select_running_emulator("adb")
+        with patch.object(release_startup_smoke, "select_emulator", side_effect=
+                          release_startup_smoke.SmokeTestError("No running Android 16 (API 36) emulator with 16 KiB pages")):
+            self.assertIsNone(VERIFY_MODULE.select_running_emulator("adb"))
+
+    def test_default_reuses_running_serial_without_starting_another_avd(self):
+        calls = []
+        def preflight(args):
+            args.running_serial = "emulator-5554"
+        with (
+            patch.object(VERIFY_MODULE, "preflight", side_effect=preflight),
+            patch.object(VERIFY_MODULE, "execute", side_effect=self.fake_execute(calls)),
+            patch.object(VERIFY_MODULE, "test_emulator") as boot,
+        ):
+            self.assertEqual(0, VERIFY_MODULE.main(["--skip-docs"]))
+        boot.assert_not_called()
+        self.assertEqual("emulator-5554", calls[-1][1][calls[-1][1].index("--serial") + 1])
+
     def test_skipped_avd_and_docs_are_explicitly_partial(self):
         calls = []
         with (

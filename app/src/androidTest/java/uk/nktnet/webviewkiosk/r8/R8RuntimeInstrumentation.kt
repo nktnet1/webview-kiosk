@@ -1,6 +1,9 @@
 package uk.nktnet.webviewkiosk.r8
 
 import android.app.Instrumentation
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -12,23 +15,20 @@ import java.util.HashSet
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.json.JSONObject
 import org.json.JSONTokener
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRequestMessage
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundStatusRequest
-import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundEventMessage
-import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundUrlChangedEvent
+import uk.nktnet.webviewkiosk.managers.MqttLogEntry
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
@@ -122,41 +122,43 @@ class R8RuntimeInstrumentation : Instrumentation() {
     }
 
     private fun jsonSerialization() {
-        // Top-level parser property getters are inlined or removed by R8 if
-        // only production code uses the values internally. The separate test
-        // APK must not link against those eliminated accessors. Exercise the
-        // production sealed serializers with equivalent JSON configuration.
-        val base = Json {
-            ignoreUnknownKeys = true
-            coerceInputValues = true
-            isLenient = true
-            allowTrailingComma = true
-            allowComments = true
-        }
-        val inbound = Json(base) { classDiscriminator = "requestType" }
-        val outbound = Json(base) { classDiscriminator = "eventType" }
-        val request =
-            inbound.decodeFromString<InboundRequestMessage>(
-                """{"requestType":"get_status","messageId":"r8-test","unknownField":true}"""
-            )
-        check(request is InboundStatusRequest && request.messageId == "r8-test") {
-            "Inbound sealed type or lenient JSON decoding failed"
-        }
-        val event: OutboundEventMessage =
-            OutboundUrlChangedEvent(
-                messageId = "r8-test",
-                username = "test",
-                appInstanceId = "local",
-                data =
-                    OutboundUrlChangedEvent.UrlData("https://example.invalid/a?x=1"),
-            )
-        val json = outbound.encodeToString(event)
-        val decoded = outbound.decodeFromString<OutboundEventMessage>(json)
-        check(
-            decoded == event &&
-                JSONObject(json).getString("eventType") == "url_changed"
-        ) {
-            "Outbound sealed type JSON round-trip failed"
+        // The instrumentation APK shares the independently R8-shrunk app
+        // classpath. Test-only kotlinx.serialization Json(...) factory calls can
+        // disappear even though production parsing works. Exercise the app's
+        // real, retained settings JSON import/export instead. The MQTT probes
+        // exercise production sealed request decoding and event encoding.
+        val preferenceName = "r8-verify-json-probe"
+        val sandbox =
+            object : ContextWrapper(targetContext) {
+                override fun getSharedPreferences(
+                    name: String?,
+                    mode: Int,
+                ): SharedPreferences =
+                    targetContext.getSharedPreferences(preferenceName, mode)
+            }
+        try {
+            val settings = UserSettings(sandbox)
+            val key = UserSettingsKeys.WebContent.HOME_URL
+            val expectedUrl = "https://example.invalid/r8/json-roundtrip"
+            val exported = JSONObject(settings.exportJson().toString())
+            exported.put(key, expectedUrl)
+            check(settings.importJson(exported.toString())) {
+                "Settings JSON import failed"
+            }
+            val restored = UserSettings(sandbox)
+            check(
+                restored.homeUrl == expectedUrl &&
+                    restored.exportJson().getString(key) == expectedUrl
+            ) {
+                "Settings JSON import/export round-trip failed"
+            }
+        } finally {
+            // Keep test cleanup compatible with the app's minimum SDK.
+            targetContext
+                .getSharedPreferences(preferenceName, Context.MODE_PRIVATE)
+                .edit()
+                .clear()
+                .apply()
         }
     }
 
@@ -223,6 +225,7 @@ class R8RuntimeInstrumentation : Instrumentation() {
         }
     }
 
+    @OptIn(kotlinx.coroutines.InternalCoroutinesApi::class)
     private fun mqttLoopback(webSocket: Boolean) {
         // Exercise the application's minified HiveMQ/Netty client, not a second
         // client embedded in the test APK. Keep the mock broker on loopback.
@@ -252,36 +255,65 @@ class R8RuntimeInstrumentation : Instrumentation() {
             val inboundReceived = CountDownLatch(1)
             val subscribed = CountDownLatch(Mqtt5LoopbackBroker.EXPECTED_TOPICS.size)
             val confirmedTopics = Collections.synchronizedSet(HashSet<String>())
-            val scope = CoroutineScope(Dispatchers.Default)
-            // UNDISPATCHED attaches both SharedFlow observers before connect() can
-            // receive broker messages. The request is observed, never executed.
+            // Avoid Dispatchers.getDefault(): R8 can inline/remove the getter
+            // when production code uses the dispatcher internally. An empty
+            // context uses the coroutine builder's default dispatch internally.
+            val scope =
+                object : CoroutineScope {
+                    override val coroutineContext: CoroutineContext =
+                        EmptyCoroutineContext
+                }
+            // UNDISPATCHED attaches observers before connect(). Use the Flow
+            // member collect(FlowCollector), not its Kotlin lambda extension:
+            // R8 may remove test-only extension overloads from the app.
             val inboundJob =
                 scope.launch(start = CoroutineStart.UNDISPATCHED) {
-                    RemoteMessageManager.requestsFlow.collect { message ->
-                        if (
-                            message.source ==
-                                RemoteMessageManager.RemoteMessage.Source.MQTT &&
-                                message.message is InboundStatusRequest &&
-                                message.message.messageId ==
-                                    Mqtt5LoopbackBroker.INBOUND_ID
-                        ) {
-                            inboundReceived.countDown()
+                    RemoteMessageManager.requestsFlow.collect(
+                        object :
+                            FlowCollector<
+                                RemoteMessageManager.RemoteMessage<
+                                    InboundRequestMessage
+                                >
+                            > {
+                            override suspend fun emit(
+                                message:
+                                    RemoteMessageManager.RemoteMessage<
+                                        InboundRequestMessage
+                                    >
+                            ) {
+                                if (
+                                    message.source ==
+                                        RemoteMessageManager.RemoteMessage.Source
+                                            .MQTT &&
+                                        message.message is InboundStatusRequest &&
+                                        message.message.messageId ==
+                                            Mqtt5LoopbackBroker.INBOUND_ID
+                                ) {
+                                    inboundReceived.countDown()
+                                }
+                            }
                         }
-                    }
+                    )
                 }
             val ackJob =
                 scope.launch(start = CoroutineStart.UNDISPATCHED) {
-                    MqttManager.debugLog.collect { entry ->
-                        if (entry.tag == "subscribe success") {
-                            val topic = entry.message?.removePrefix("topic: ")
-                            if (
-                                topic in Mqtt5LoopbackBroker.EXPECTED_TOPICS &&
-                                    confirmedTopics.add(topic)
-                            ) {
-                                subscribed.countDown()
+                    MqttManager.debugLog.collect(
+                        object : FlowCollector<MqttLogEntry> {
+                            override suspend fun emit(entry: MqttLogEntry) {
+                                if (entry.tag == "subscribe success") {
+                                    val topic =
+                                        entry.message?.removePrefix("topic: ")
+                                    if (
+                                        topic in
+                                            Mqtt5LoopbackBroker.EXPECTED_TOPICS &&
+                                            confirmedTopics.add(topic)
+                                    ) {
+                                        subscribed.countDown()
+                                    }
+                                }
                             }
                         }
-                    }
+                    )
                 }
             var probeFailure: Throwable? = null
             try {
@@ -345,7 +377,6 @@ class R8RuntimeInstrumentation : Instrumentation() {
                 runCatching {
                         inboundJob.cancel()
                         ackJob.cancel()
-                        scope.cancel()
                     }
                     .exceptionOrNull()
                     ?.let(cleanupFailures::add)
