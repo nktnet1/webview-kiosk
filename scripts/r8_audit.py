@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Audit an actual R8-optimised Android APK and optionally smoke-test it on an AVD.
+"""Audit an actual R8-optimised APK with optional emulator runtime probes.
 
-With no APK, build the smokeRelease variant using test signing. Always write a
-JSON report when --json is given, even when an inspection fails. This is not a
-substitute for full release-device tests (e.g. broker connections or WebView JS).
+Without an APK argument, build smokeRelease using test signing. Write a JSON
+report even on failures. Runtime probes cover only selected critical paths.
 """
 
 import argparse
@@ -21,9 +20,11 @@ from pathlib import Path
 if __package__:
     from . import check_release_dex as dex
     from . import release_startup_smoke as smoke
+    from . import r8_runtime as runtime
 else:
     import check_release_dex as dex
     import release_startup_smoke as smoke
+    import r8_runtime as runtime
 
 ROOT = Path(__file__).resolve().parents[1]
 # These entry points are called by JavaScript, not statically by the JVM. R8
@@ -277,7 +278,7 @@ def put_check(report, ident, status, details):
 
 
 def run_audit(apk=None, *, dexdump=None, mapping=None, device=False, serial=None,
-              require_mapping=False):
+              require_mapping=False, runtime_probes=False):
     report = {
         "schemaVersion": 1,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
@@ -286,8 +287,9 @@ def run_audit(apk=None, *, dexdump=None, mapping=None, device=False, serial=None
         "checks": [],
         "limitations": [
             "DEX entry-point checks cannot prove reflection or runtime behaviour",
-            "MQTT TCP/TLS/WS/WSS and JSON round trips require separate device-level tests",
-            "The optional device check only exercises cold launch, not WebView JavaScript calls",
+            "Without --runtime, no MQTT, JavaScript or serialization calls are executed",
+            "--runtime checks MQTT TCP and WS, one WebView JavaScript bridge, and sealed JSON round trips",
+            "MQTT TLS/WSS and the other JavaScript bridges require additional device scenarios",
         ],
     }
     try:
@@ -348,16 +350,37 @@ def run_audit(apk=None, *, dexdump=None, mapping=None, device=False, serial=None
     except OSError as error:
         put_check(report, "suppression_review", "fail", {"error": str(error)})
 
+    launched = False
     if device:
         try:
             # Only use an explicitly selected compatible emulator. Never test
             # against an arbitrary phone, or silently fall back to a debug APK.
             smoke.smoke_test(apk, serial=serial)
+            launched = True
             put_check(report, "emulator_cold_launch", "pass", {"serial": serial or "auto"})
         except smoke.SmokeTestError as error:
             put_check(report, "emulator_cold_launch", "fail", {"error": str(error)})
     else:
         put_check(report, "emulator_cold_launch", "not_run", {"reason": "Run with --device on an Android 16 / 16 KiB emulator"})
+
+    if runtime_probes and launched:
+        try:
+            outcomes, test_apk, selected = runtime.run_runtime_probes(apk, serial=serial)
+            report["runtime"] = {"testApkSha256": sha256(test_apk), "serial": selected,
+                                 "instrumentationRunner": runtime.RUNNER}
+            for name in runtime.PROBES:
+                status, details = outcomes[name]
+                put_check(report, "runtime_" + name, status, details)
+        except (runtime.RuntimeProbeError, smoke.SmokeTestError, OSError) as error:
+            put_check(report, "runtime_instrumentation", "fail", {"error": str(error)})
+            for name in runtime.PROBES:
+                put_check(report, "runtime_" + name, "not_run", {"reason": "Instrumentation unavailable"})
+    else:
+        reason = "Run with --device --runtime on an Android 16 / 16 KiB emulator"
+        if runtime_probes:
+            reason = "A successful emulator cold launch is required"
+        for name in runtime.PROBES:
+            put_check(report, "runtime_" + name, "not_run", {"reason": reason})
     return finalise(report)
 
 
@@ -391,9 +414,12 @@ def main(argv=None):
     parser.add_argument("--dexdump", help="Path to the Android SDK dexdump executable")
     parser.add_argument("--device", action="store_true", help="Also test cold launch on a compatible running emulator")
     parser.add_argument("--serial", help="ADB serial for --device (required if multiple emulators)")
+    parser.add_argument("--runtime", action="store_true", help="Run MQTT, JS bridge and JSON instrumentation on smokeRelease (requires --device)")
     args = parser.parse_args(argv)
     if args.serial and not args.device:
         parser.error("--serial requires --device")
+    if args.runtime and not args.device:
+        parser.error("--runtime requires --device")
     report = run_audit(
         args.apk.expanduser().resolve() if args.apk else None,
         dexdump=args.dexdump,
@@ -401,6 +427,7 @@ def main(argv=None):
         device=args.device,
         serial=args.serial,
         require_mapping=args.require_mapping,
+        runtime_probes=args.runtime,
     )
     if args.json:
         try:

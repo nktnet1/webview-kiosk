@@ -179,10 +179,19 @@ class R8AuditTest(unittest.TestCase):
         missing.write_text("# no missing classes\n", encoding="utf-8")
         self.assertEqual("pass", audit.r8_diagnostics(self.mapping_path)[0])
 
-    def test_current_broad_dontwarn_is_a_warning_not_a_suppressed_failure(self):
+    def test_broad_dontwarn_rules_are_not_accepted(self):
         status, details = audit.suppression_report()
-        self.assertEqual("warn", status)
-        self.assertIn("io.netty.**", details["broadSuppressions"])
+        self.assertEqual("pass", status)
+        self.assertNotIn("io.netty.**", details["suppressedWarnings"])
+        self.assertNotIn("org.slf4j.**", details["suppressedWarnings"])
+
+    def test_hivemq_slf4j_api_is_a_dependency_not_suppressed(self):
+        gradle = (audit.ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
+        catalog = (audit.ROOT / "gradle/libs.versions.toml").read_text(encoding="utf-8")
+        rules = (audit.ROOT / "app/proguard-rules.pro").read_text(encoding="utf-8")
+        self.assertIn("implementation(libs.slf4j.api)", gradle)
+        self.assertIn("slf4j-api = {", catalog)
+        self.assertNotRegex(rules, r"(?m)^-dontwarn\s+org\.slf4j\.")
 
     def test_contract_covers_all_existing_javascript_annotations(self):
         source = audit.ROOT / "app/src/main/java"
@@ -241,8 +250,69 @@ class R8AuditTest(unittest.TestCase):
         ):
             result = audit.run_audit(self.apk, dexdump="dexdump", device=True)
         self.assertEqual("fail", result["summary"]["status"])
-        self.assertEqual("fail", result["checks"][-1]["status"])
-        self.assertIn("crashed", result["checks"][-1]["details"]["error"])
+        cold_launch = next(c for c in result["checks"] if c["id"] == "emulator_cold_launch")
+        self.assertEqual("fail", cold_launch["status"])
+        self.assertIn("crashed", cold_launch["details"]["error"])
+
+
+class R8RuntimeAuditTest(unittest.TestCase):
+    def setUp(self):
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.apk = Path(self.folder.name) / "app.apk"
+        with zipfile.ZipFile(self.apk, "w") as archive:
+            archive.writestr("classes.dex", "dex1")
+
+    def common(self):
+        return (
+            patch.object(audit.smoke, "find_sdk_tool", return_value="aapt"),
+            patch.object(audit.smoke, "apk_details", return_value=("pkg", "Main", "1.0")),
+            patch.object(audit.dex, "check_apk", return_value="classes.dex"),
+            patch.object(audit, "inspect_bridges", return_value=("pass", {})),
+            patch.object(audit, "r8_diagnostics", return_value=("pass", {})),
+            patch.object(audit, "suppression_report", return_value=("pass", {})),
+        )
+
+    def test_device_probes_not_run_by_default(self):
+        from contextlib import ExitStack
+        with ExitStack() as stack:
+            for mock in self.common():
+                stack.enter_context(mock)
+            report = audit.run_audit(self.apk, dexdump="dexdump")
+        runtime_checks = [c for c in report["checks"] if c["id"].startswith("runtime_")]
+        self.assertEqual(len(audit.runtime.PROBES), len(runtime_checks))
+        self.assertTrue(all(c["status"] == "not_run" for c in runtime_checks))
+
+    def test_runtime_probe_results_are_included_in_json(self):
+        from contextlib import ExitStack
+        with ExitStack() as stack:
+            for mock in self.common():
+                stack.enter_context(mock)
+            stack.enter_context(patch.object(audit.smoke, "smoke_test"))
+            outcomes = {n: ("pass", {"probe": n}) for n in audit.runtime.PROBES}
+            outcomes["mqtt_tcp"] = ("fail", {"error": "MQTT failed"})
+            stack.enter_context(patch.object(audit.runtime, "run_runtime_probes",
+                                           return_value=(outcomes, self.apk, "emulator-5554")))
+            report = audit.run_audit(self.apk, dexdump="dexdump", device=True, runtime_probes=True)
+        self.assertEqual("fail", report["summary"]["status"])
+        self.assertEqual("emulator-5554", report["runtime"]["serial"])
+        check = next(c for c in report["checks"] if c["id"] == "runtime_mqtt_tcp")
+        self.assertEqual("fail", check["status"])
+
+    def test_emulator_failure_skips_runtime_probe_without_masking_error(self):
+        from contextlib import ExitStack
+        with ExitStack() as stack:
+            for mock in self.common():
+                stack.enter_context(mock)
+            stack.enter_context(patch.object(audit.smoke, "smoke_test",
+                                           side_effect=audit.smoke.SmokeTestError("no AVD")))
+            with patch.object(audit.runtime, "run_runtime_probes") as run:
+                report = audit.run_audit(self.apk, dexdump="dexdump", device=True,
+                                         runtime_probes=True)
+                run.assert_not_called()
+        self.assertEqual("fail", report["summary"]["status"])
+        self.assertTrue(all(c["status"] == "not_run" for c in report["checks"]
+                            if c["id"].startswith("runtime_")))
 
 
 if __name__ == "__main__":

@@ -93,14 +93,33 @@ python3 scripts/r8_audit.py --device --serial emulator-5554 \
   --require-mapping --json build/reports/r8/device.json
 ```
 
-`--device` installs and launches the APK, so use a dedicated test emulator. It
-is **not** enabled in CI; the old instrumentation/AVD matrix remains retired.
+`--device` installs and launches the APK, so use a dedicated test emulator.
+For actual runtime checks on the same R8-minified smokeRelease target:
+
+```bash
+python3 scripts/r8_audit.py --require-mapping --device --runtime \
+  --json build/reports/r8/smokeRelease-runtime.json
+```
+
+`--runtime` builds a separate test-only APK with an instrumentation runner.
+It verifies the app's Kotlin sealed JSON serializers, a real WebView call into
+`BatteryInterface`, and HiveMQ/Netty MQTT 5 connections to disposable local TCP
+and WebSocket broker endpoints. Each scenario has its own `runtime_*` result in
+JSON, and a failure makes the audit fail. MQTT preferences are changed briefly
+and restored; use a **disposable emulator**, never a production kiosk. The
+probes only support the locally built smokeRelease APK, not an unrelated
+production release with a different obfuscation mapping. TLS/WSS, NFC, and the
+other JavaScript interfaces are still out of scope.
+
+Runtime probes are **not** enabled in CI; the old instrumentation/AVD matrix
+remains retired.
 The report contains `schemaVersion`, `generatedAt`, `gitCommit`, APK hash,
 version and package, per-check `pass`/`fail`/`warn`/`not_run` statuses, R8 file
 hashes, and a summary. On failure, the JSON is still written. CI uploads it as
 part of `android-unit-results` or the `release-r8-audit` artifact for analysis.
 
-These structural checks cannot prove correct MQTT/Netty connections, JSON
-serialization, or execution of JavaScript in a live WebView. Exercise those
-features against a release-optimised APK as part of device acceptance testing;
-add a targeted test and keep rule if an actual R8 regression is discovered.
+The default static checks cannot prove runtime behaviour. The optional
+`--device --runtime` checks cover the critical loopback and serialization paths
+listed above, but are not a replacement for manual TLS/WSS, NFC and download
+acceptance tests. If a runtime regression occurs, add a targeted test and the
+minimum necessary keep rule.

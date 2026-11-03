@@ -19,6 +19,7 @@ re2j = "1.8"
 robolectric = "4.17"
 swiperefreshlayout = "1.2.0"
 spotless = "8.10.4"
+slf4j = "2.0.18"
 
 #noinspection GradleDependency
 activityCompose = "1.11.0"
@@ -67,6 +68,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

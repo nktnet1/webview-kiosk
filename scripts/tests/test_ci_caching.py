@@ -3,6 +3,7 @@
 Uses only the standard library so these checks run before Gradle or pnpm.
 """
 
+import re
 import unittest
 from pathlib import Path
 
@@ -35,15 +36,19 @@ class CiCachingTest(unittest.TestCase):
         self.assertIn("needs: [verify, build]", RELEASE)
         self.assertIn("  android:\n", TESTS)
 
-    def test_instrumentation_source_and_runner_dependencies_are_retired(self):
-        self.assertFalse((ROOT / "app/src/androidTest").exists())
+    def test_old_instrumentation_suite_stays_retired_and_r8_probes_are_opt_in(self):
+        self.assertTrue((ROOT / "app/src/androidTest/java/uk/nktnet/webviewkiosk/r8/R8RuntimeInstrumentation.kt").is_file())
         self.assertFalse((ROOT / "scripts/smoke-release-apk.sh").exists())
         self.assertFalse((ROOT / "scripts/ci/run-android-instrumentation.sh").exists())
         self.assertFalse((ROOT / "scripts/ci/report_android_instrumentation.py").exists())
         gradle_build = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
         versions = (ROOT / "gradle/libs.versions.toml").read_text(encoding="utf-8")
-        for obsolete in ("testInstrumentationRunner", "androidTestImplementation"):
-            self.assertNotIn(obsolete, gradle_build)
+        self.assertRegex(gradle_build, r'testInstrumentationRunner\s*=\s*"uk\.nktnet\.webviewkiosk\.r8\.R8RuntimeInstrumentation"')
+        self.assertIn('testBuildType = "smokeRelease"', gradle_build)
+        self.assertNotIn("androidTestImplementation", gradle_build)
+        self.assertNotIn("--runtime", TESTS)
+        self.assertNotIn("--runtime", RELEASE)
+        self.assertNotIn("connectedSmokeReleaseAndroidTest", TESTS)
         self.assertNotIn("androidx-test-runner", versions)
         self.assertNotIn("androidx-test-ext-junit", versions)
         self.assertNotIn("androidx-test-core", versions)

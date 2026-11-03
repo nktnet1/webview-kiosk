@@ -18,6 +18,8 @@ android {
     namespace = "uk.nktnet.webviewkiosk"
 
     defaultConfig {
+        testInstrumentationRunner =
+            "uk.nktnet.webviewkiosk.r8.R8RuntimeInstrumentation"
         applicationId = "uk.nktnet.webviewkiosk"
         minSdk = 21
         targetSdk = 37
@@ -30,6 +32,9 @@ android {
         buildConfig = true
         compose = true
     }
+
+    // Optional runtime probes exercise the R8-optimised APK, not debug.
+    testBuildType = "smokeRelease"
 
     testOptions {
         unitTests {
@@ -152,6 +157,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
     implementation(libs.hivemq.mqtt.client)
+    // HiveMQ references the SLF4J API directly; do not mask missing classes in R8.
+    implementation(libs.slf4j.api)
     implementation(platform(libs.hivemq.mqtt.client.websocket))
     implementation(libs.connector)
     retrofix(libs.android.retrostreams)
