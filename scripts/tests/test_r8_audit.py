@@ -14,6 +14,33 @@ from unittest.mock import patch
 from scripts import r8_audit as audit
 
 
+class ApkAlignmentTest(unittest.TestCase):
+    def test_checks_16k_alignment_of_exact_apk(self):
+        apk = Path("/tmp/app-smokeRelease.apk")
+        with (
+            patch.object(audit.smoke, "find_sdk_tool", return_value="/sdk/zipalign") as sdk_tool,
+            patch.object(audit.smoke, "command", return_value=subprocess.CompletedProcess(
+                [], 0, "Verification successful", "")) as command,
+        ):
+            status, details = audit.verify_zip_alignment(apk)
+        self.assertEqual("pass", status)
+        self.assertEqual(16384, details["pageSizeBytes"])
+        sdk_tool.assert_called_once_with("zipalign", build_tool=True)
+        command.assert_called_once_with(
+            ["/sdk/zipalign", "-c", "-P", "16", "-v", "4", str(apk)], timeout=120, check=False
+        )
+
+    def test_misaligned_apk_fails(self):
+        with (
+            patch.object(audit.smoke, "find_sdk_tool", return_value="zipalign"),
+            patch.object(audit.smoke, "command", return_value=subprocess.CompletedProcess(
+                [], 1, "failed alignment", "")),
+        ):
+            status, details = audit.verify_zip_alignment(Path("app.apk"))
+        self.assertEqual("fail", status)
+        self.assertIn("failed alignment", details["error"])
+
+
 class PackagedRuntimeResourcesTest(unittest.TestCase):
     def setUp(self):
         self.folder = tempfile.TemporaryDirectory()
@@ -164,6 +191,7 @@ class R8AuditTest(unittest.TestCase):
         self.mapping_path.unlink()
         with (
             patch.object(audit.smoke, "find_sdk_tool", return_value="aapt"),
+            patch.object(audit, "verify_zip_alignment", return_value=("pass", {"pageSizeBytes": 16384})),
             patch.object(audit.smoke, "apk_details", return_value=("pkg", "Main", "1.0")),
             patch.object(audit.dex, "check_apk", return_value="classes.dex"),
             patch.object(audit, "inspect_bridges", return_value=("warn", {})),
@@ -328,6 +356,7 @@ class R8AuditTest(unittest.TestCase):
             patch.object(audit, "git_commit", return_value="abc123"),
             patch.object(audit, "packaged_runtime_resources", return_value=("pass", {"verified": 7})),
             patch.object(audit.smoke, "find_sdk_tool", return_value="aapt"),
+            patch.object(audit, "verify_zip_alignment", return_value=("pass", {"pageSizeBytes": 16384})),
             patch.object(audit.smoke, "apk_details", return_value=("pkg", "Main", "1.0 (1)")),
             patch.object(audit.dex, "check_apk", return_value="classes2.dex"),
             patch.object(audit, "inspect_bridges", return_value=("pass", {"verified": []})),
@@ -342,7 +371,7 @@ class R8AuditTest(unittest.TestCase):
         packaged = next(c for c in result["checks"] if c["id"] == "packaged_resources")
         self.assertEqual("pass", packaged["status"])
         self.assertEqual(7, packaged["details"]["verified"])
-        self.assertEqual(9, result["summary"]["static"]["total"])
+        self.assertEqual(10, result["summary"]["static"]["total"])
         suffix_check = next(c for c in result["checks"] if c["id"] == "public_suffix_resources")
         self.assertEqual("pass", suffix_check["status"])
         self.assertIn("not_run", [test["status"] for test in result["checks"]])
@@ -361,6 +390,7 @@ class R8AuditTest(unittest.TestCase):
     def test_device_failure_marks_report_failed_not_silent_pass(self):
         with (
             patch.object(audit.smoke, "find_sdk_tool", return_value="aapt"),
+            patch.object(audit, "verify_zip_alignment", return_value=("pass", {"pageSizeBytes": 16384})),
             patch.object(audit.smoke, "apk_details", return_value=("pkg", "Main", "1.0")),
             patch.object(audit.dex, "check_apk", return_value="classes.dex"),
             patch.object(audit, "inspect_bridges", return_value=("pass", {"verified": []})),
@@ -391,6 +421,7 @@ class R8RuntimeAuditTest(unittest.TestCase):
             patch.object(audit, "mapping_file", return_value=self.apk),
             patch.object(audit, "parse_mapping", return_value={"pkg.Test": "a"}),
             patch.object(audit.smoke, "find_sdk_tool", return_value="aapt"),
+            patch.object(audit, "verify_zip_alignment", return_value=("pass", {"pageSizeBytes": 16384})),
             patch.object(audit.smoke, "apk_details", return_value=("pkg", "Main", "1.0")),
             patch.object(audit.dex, "check_apk", return_value="classes.dex"),
             patch.object(audit, "inspect_bridges", return_value=("pass", {})),
@@ -557,6 +588,37 @@ class R8RuntimeAuditTest(unittest.TestCase):
         self.assertEqual("MQTT disconnect timed out", saved["details"]["cleanupError"])
         self.assertIn("MQTT.kt:99", saved["details"]["cleanupStackTrace"])
         self.assertIn("MQTT.kt:42", saved["details"]["stackTrace"])
+
+    def test_crashed_instrumentation_logcat_is_saved_in_json(self):
+        from contextlib import ExitStack
+        crash = "java.lang.NoClassDefFoundError: MissingClass\nCaused by: java.lang.ClassNotFoundException"
+        with ExitStack() as stack:
+            for mock in self.common():
+                stack.enter_context(mock)
+            stack.enter_context(patch.object(audit.smoke, "smoke_test"))
+            stack.enter_context(patch.object(
+                audit.runtime, "run_runtime_probes",
+                side_effect=audit.runtime.RuntimeProbeError(
+                    "Instrumentation did not complete all probes",
+                    details={
+                        "instrumentationExitCode": 0,
+                        "instrumentationOutput": "INSTRUMENTATION_RESULT: shortMsg=Process crashed.",
+                        "deviceLogcat": crash,
+                        "deviceSerial": "emulator-5554",
+                    },
+                ),
+            ))
+            report = audit.run_audit(self.apk, dexdump="dexdump", device=True, runtime_probes=True)
+        check = next(c for c in report["checks"] if c["id"] == "runtime_instrumentation")
+        self.assertEqual("fail", check["status"])
+        self.assertEqual(crash, check["details"]["deviceLogcat"])
+        self.assertEqual(0, check["details"]["instrumentationExitCode"])
+        self.assertEqual("fail", report["summary"]["status"])
+        path = Path(self.folder.name) / "crash.json"
+        audit.write_report(path, report)
+        saved = json.loads(path.read_text(encoding="utf-8"))
+        saved_check = next(c for c in saved["checks"] if c["id"] == "runtime_instrumentation")
+        self.assertEqual(crash, saved_check["details"]["deviceLogcat"])
 
     def test_emulator_failure_skips_runtime_probe_without_masking_error(self):
         from contextlib import ExitStack

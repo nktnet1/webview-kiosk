@@ -13,7 +13,7 @@ Usage: sh scripts/ci/test-local.sh <suite>
 Suites:
   checks          Offline CI, asset-exporter, cosmetic and scriptlet tests (Python/Node)
   jvm             Filter-engine JVM and Android JVM/Robolectric unit tests
-  docs            Documentation format/lint and Vitest tests
+  docs            Documentation format/lint, typecheck and Vitest tests
   docs-browser    Build docs and run Playwright Chromium tests
   all             Run all four suites in the order above
 
@@ -85,6 +85,7 @@ docs() {
     prepare_docs
     printf 'Local tests: checking documentation and running Vitest\n'
     pnpm -C docs check
+    pnpm -C docs typecheck
     pnpm -C docs test
 }
 

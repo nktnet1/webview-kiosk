@@ -32,7 +32,58 @@ MULTILINE_ERROR_KEYS = frozenset({
 
 
 class RuntimeProbeError(Exception):
-    """A build, device, or probe protocol failure."""
+    """A build, device, or probe failure with optional structured diagnostics."""
+
+    def __init__(self, message, *, details=None):
+        super().__init__(message)
+        self.details = details or {}
+
+
+def crash_logcat_excerpt(logcat, target_package):
+    """Return the target's Java crash, or recent relevant device diagnostics.
+
+    Instrumentation's `shortMsg=Process crashed.` does not contain the
+    exception. The AndroidRuntime stack lives in logcat, so include it in the
+    JSON report rather than attempting to guess which R8 class is at fault.
+    """
+    lines = logcat.splitlines()
+    starts = [index for index, line in enumerate(lines) if "FATAL EXCEPTION:" in line]
+    process = re.compile(r"\bProcess:\s*" + re.escape(target_package) + r"(?=\s|,|:|$)")
+    for start in reversed(starts):
+        end = next((index for index in starts if index > start), len(lines))
+        if any(process.search(line) for line in lines[start:min(end, start + 15)]):
+            return "\n".join(lines[start:min(end, start + 160)])[:24000]
+    # Native crashes and runner-load failures sometimes have no Java
+    # FATAL EXCEPTION block. Keep only diagnostic lines, not whole logcat.
+    markers = (
+        target_package, "AndroidRuntime", "ActivityThread", "ActivityManager",
+        "DEBUG", "libc", "R8RuntimeInstrumentation",
+    )
+    relevant = [line for line in lines if any(marker in line for marker in markers)]
+    return "\n".join(relevant[-120:])[-24000:]
+
+
+def instrumentation_failure_details(adb, serial, package, run):
+    """Preserve the runner output and a bounded emulator crash excerpt."""
+    details = {
+        "instrumentationExitCode": run.returncode,
+        "instrumentationOutput": (run.stdout + run.stderr)[-24000:],
+        "deviceSerial": serial,
+    }
+    try:
+        logcat = smoke.adb_command(
+            adb, serial, "logcat", "-d", "-v", "threadtime",
+            "-b", "main", "-b", "system", "-b", "crash", timeout=45,
+        ).stdout
+        excerpt = crash_logcat_excerpt(logcat, package)
+        if excerpt:
+            details["deviceLogcat"] = excerpt
+        else:
+            details["deviceLogcatNote"] = "No matching crash found in emulator logcat"
+    except smoke.SmokeTestError as error:
+        # Never mask the original instrumentation failure with an adb issue.
+        details["deviceLogcatError"] = str(error)
+    return details
 
 
 def build_test_apk():
@@ -119,6 +170,60 @@ def parse_instrumentation_output(output):
     return results
 
 
+def validate_instrumentation_component(badging, manifest_tree, target_package):
+    """Validate the test APK's actual compiled instrumentation manifest.
+
+    `aapt dump badging` reports the package but omits instrumentation entries,
+    even for a valid androidTest APK. Inspect `aapt dump xmltree` instead.
+    """
+
+    def attributes(line):
+        return dict(re.findall(r"(?<!\S)(\w+)='([^']*)'", line))
+
+    package_line = next(
+        (line for line in badging.splitlines() if line.startswith("package: ")), ""
+    )
+    test_package = attributes(package_line).get("name")
+    expected_package = target_package + ".test"
+    if test_package != expected_package:
+        raise RuntimeProbeError(
+            "Test APK package is not the expected isolated test package: "
+            f"expected {expected_package!r}; found {test_package!r}"
+        )
+
+    # Each E: node ends the previous element. Attributes are scoped to the
+    # current instrumentation node, not a sibling application or activity.
+    attribute_pattern = re.compile(
+        r'^\s*A:\s+android:(name|targetPackage)(?:\([^)]*\))?="([^"]*)"'
+    )
+    declarations = []
+    instrumentation = None
+    for line in manifest_tree.splitlines():
+        element = re.match(r"^\s*E:\s+([^\s(]+)", line)
+        if element:
+            if instrumentation is not None:
+                declarations.append(
+                    (instrumentation.get("name"), instrumentation.get("targetPackage"))
+                )
+            instrumentation = {} if element.group(1) == "instrumentation" else None
+            continue
+        if instrumentation is not None:
+            match = attribute_pattern.match(line)
+            if match:
+                instrumentation[match.group(1)] = match.group(2)
+    if instrumentation is not None:
+        declarations.append(
+            (instrumentation.get("name"), instrumentation.get("targetPackage"))
+        )
+
+    if (RUNNER, target_package) not in declarations:
+        raise RuntimeProbeError(
+            "Test APK instrumentation runner/target mismatch in AndroidManifest.xml: "
+            f"expected {(RUNNER, target_package)!r}; found {declarations or 'none'}"
+        )
+    return f"{test_package}/{RUNNER}"
+
+
 def run_runtime_probes(apk, *, serial=None):
     """Run test-only instrumentation against the exact smokeRelease APK."""
     if apk.resolve() != smoke.SMOKE_APK.resolve():
@@ -135,28 +240,29 @@ def run_runtime_probes(apk, *, serial=None):
     aapt = smoke.find_sdk_tool("aapt", build_tool=True)
     package, _, _ = smoke.apk_details(aapt, apk)
     details = smoke.command([aapt, "dump", "badging", test_apk]).stdout
-    matcher = re.search(
-        r"^instrumentation: name='([^']+)' targetPackage='([^']+)'",
-        details, re.MULTILINE,
-    )
-    if not matcher or matcher.groups() != (RUNNER, package):
-        raise RuntimeProbeError("Test APK instrumentation runner/target mismatch")
-    test_package = re.search(r"^package: name='([^']+)'", details, re.MULTILINE)
-    if not test_package or test_package.group(1) != package + ".test":
-        raise RuntimeProbeError("Test APK package is not the expected isolated test package")
+    manifest = smoke.command([aapt, "dump", "xmltree", test_apk, "AndroidManifest.xml"]).stdout
+    component = validate_instrumentation_component(details, manifest, package)
     smoke.adb_command(adb, selected, "install", "-r", str(test_apk), timeout=120)
+    # These probes only run on a disposable emulator. Clearing stale logs
+    # ensures the next crash excerpt belongs to this run, not an older test.
+    smoke.adb_command(adb, selected, "logcat", "-c")
     run = smoke.adb_command(
         adb, selected, "shell", "am", "instrument", "-w", "-r",
-        f"{package}.test/{RUNNER}", timeout=180, check=False,
+        component, timeout=180, check=False,
     )
     try:
         results = parse_instrumentation_output(run.stdout)
-    except RuntimeProbeError as error:
-        # Include the instrumentation process failure/stack trace in the JSON
-        # rather than incorrectly reporting a failed launch as skipped tests.
-        tail = (run.stdout + run.stderr)[-3000:]
-        raise RuntimeProbeError(f"{error}\nInstrumentation output tail:\n{tail}") from error
-    if run.returncode or not re.search(r"^INSTRUMENTATION_CODE: 0\s*$", run.stdout, re.MULTILINE):
-        if all(status == "pass" for status, _ in results.values()):
+        if (run.returncode or not re.search(
+            r"^INSTRUMENTATION_CODE: 0\s*$", run.stdout, re.MULTILINE
+        )) and all(status == "pass" for status, _ in results.values()):
             raise RuntimeProbeError("Instrumentation ended without a successful completion code")
+    except RuntimeProbeError as error:
+        diagnostics = instrumentation_failure_details(adb, selected, package, run)
+        diagnostic_lines = [f"{error}", "Instrumentation output tail:",
+                            diagnostics["instrumentationOutput"][-3000:]]
+        if diagnostics.get("deviceLogcat"):
+            diagnostic_lines.extend(("Device crash logcat:", diagnostics["deviceLogcat"][:6000]))
+        if diagnostics.get("deviceLogcatError"):
+            diagnostic_lines.append("Could not read logcat: " + diagnostics["deviceLogcatError"])
+        raise RuntimeProbeError("\n".join(diagnostic_lines), details=diagnostics) from error
     return results, test_apk, selected

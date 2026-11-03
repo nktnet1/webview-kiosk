@@ -1,5 +1,39 @@
 # Contributing
 
+## One-command verification
+
+On macOS or Linux, run **`./verify`** from the repository root before a
+release. It runs the Python and Node script tests, Kotlin formatting checks,
+Android lint with warnings enabled, JVM/Robolectric tests, the R8-optimised
+`smokeRelease` build and strict APK audit, documentation lint/typecheck/Vitest,
+the documentation Playwright browser suite, and the real minified APK cold
+launch and instrumented probes on Android 16 with 16 KiB memory pages.
+The audit includes Android's `zipalign -c -P 16 -v 4` verification for the
+actual APK; signed releases receive the same static check in CI.
+
+Required tools (installed once): Python 3.10+, Node.js 24+, the pnpm version
+specified by `docs/package.json` (with `docs/node_modules` installed),
+Playwright Chromium, JBR/JDK 21, Android SDK/build tools, Emulator and Android
+Command-Line Tools, and the Android 16 **Google APIs Experimental 16 KB Page
+Size** system image for the host architecture. The script requires all tools
+up front, does not install SDK/Node tools, and never silently skips a
+check. Gradle may resolve build dependencies from configured repositories.
+Use `sdkmanager 'system-images;android-36;google_apis_ps16k;arm64-v8a'`
+on Apple Silicon or ARM64; use `x86_64` instead on Intel/AMD hosts.
+
+`./verify` creates and boots a **disposable AVD** in `build/verify/avd`,
+wipes only its own test data at launch, and stops only that emulator after
+testing. It never wipes existing Android Studio AVDs or installs to a
+connected phone. `./verify --serial emulator-5554`
+intentionally uses an already-running, compatible **test-only** emulator.
+`--skip-avd`, `--skip-docs`, and `--skip-browser` are explicit partial-run
+options, not defaults. The summary is `partial` if any is used. Diagnostic
+reports are retained at `build/reports/verify/summary.json`,
+`build/reports/verify/emulator.log`, and `build/reports/r8/`.
+Runtime coverage is still limited to the existing JSON, WebView, and MQTT
+loopback probes; hardware NFC, external MQTT TLS/WSS, and file downloads
+need separate acceptance testing.
+
 ## Android
 
 Use JetBrains Java 21 and the Android SDK specified in `app/build.gradle.kts`.

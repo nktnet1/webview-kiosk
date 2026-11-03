@@ -364,6 +364,21 @@ def r8_diagnostics(mapping_path):
     return "pass", diagnostics
 
 
+def verify_zip_alignment(apk):
+    """Check the actual APK for 16 KiB native-library ZIP alignment.
+
+    This uses Android's official zipalign check, rather than inferring support
+    from the Gradle plugin version or from the manifest.
+    """
+    tool = smoke.find_sdk_tool("zipalign", build_tool=True)
+    result = smoke.command([tool, "-c", "-P", "16", "-v", "4", str(apk)],
+                           timeout=120, check=False)
+    if result.returncode:
+        return "fail", {"error": "APK fails zipalign 16 KiB check: " +
+                        (result.stdout + result.stderr).strip()[-1200:]}
+    return "pass", {"pageSizeBytes": 16384, "tool": str(tool)}
+
+
 def suppression_report():
     rules = ROOT / "app/proguard-rules.pro"
     text = rules.read_text(encoding="utf-8")
@@ -421,6 +436,12 @@ def run_audit(apk=None, *, dexdump=None, mapping=None, device=False, serial=None
         put_check(report, "apk_metadata", "pass", {"package": package, "version": version, "debuggable": False})
     except (smoke.SmokeTestError, OSError) as error:
         put_check(report, "apk_metadata", "fail", {"error": str(error)})
+
+    try:
+        status, details = verify_zip_alignment(apk)
+        put_check(report, "apk_16k_alignment", status, details)
+    except (smoke.SmokeTestError, OSError) as error:
+        put_check(report, "apk_16k_alignment", "fail", {"error": str(error)})
 
     mapping_path = mapping_file(apk, mapping)
     try:
@@ -483,7 +504,10 @@ def run_audit(apk=None, *, dexdump=None, mapping=None, device=False, serial=None
                 status, details = outcomes[name]
                 put_check(report, "runtime_" + name, status, details)
         except (runtime.RuntimeProbeError, smoke.SmokeTestError, OSError) as error:
-            put_check(report, "runtime_instrumentation", "fail", {"error": str(error)})
+            details = {"error": str(error)}
+            if isinstance(error, runtime.RuntimeProbeError):
+                details.update(error.details)
+            put_check(report, "runtime_instrumentation", "fail", details)
             for name in runtime.PROBES:
                 put_check(report, "runtime_" + name, "not_run", {"reason": "Instrumentation unavailable"})
     else:

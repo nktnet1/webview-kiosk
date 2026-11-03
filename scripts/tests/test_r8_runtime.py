@@ -3,6 +3,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from scripts import r8_runtime as runtime
@@ -180,22 +181,263 @@ class R8RuntimeTest(unittest.TestCase):
         with self.assertRaisesRegex(runtime.RuntimeProbeError, "smokeRelease"):
             runtime.run_runtime_probes(Path("/tmp/app-release.apk"))
 
-    def test_checks_test_apk_runner_and_target_package_before_running(self):
-        class Result:
-            returncode = 0
-            stdout = "package: name='app.other.test'\ninstrumentation: name='wrong' targetPackage='app'"
+    def test_accepts_instrumentation_declared_in_compiled_manifest(self):
+        # Real AAPT 36 prints NO `instrumentation:` line in `dump badging`.
+        badging = "package: name='app.test' versionCode='' versionName=''\napplication: label='' icon=''"
+        xmltree = "\n".join([
+            "N: android=http://schemas.android.com/apk/res/android",
+            "  E: manifest (line=2)",
+            "    A: package=\"app.test\" (Raw: \"app.test\")",
+            "    E: uses-sdk (line=5)",
+            "      A: android:minSdkVersion(0x0101020c)=(type 0x10)0x15",
+            "    E: instrumentation (line=9)",
+            '      A: android:label(0x01010001)="Tests for app" (Raw: "Tests for app")',
+            f'      A: android:name(0x01010003)="{runtime.RUNNER}" (Raw: "{runtime.RUNNER}")',
+            '      A: android:targetPackage(0x01010021)="app" (Raw: "app")',
+            "    E: application (line=16)",
+        ])
+        self.assertEqual(
+            f"app.test/{runtime.RUNNER}",
+            runtime.validate_instrumentation_component(badging, xmltree, "app"),
+        )
+
+    def test_accepts_reordered_xmltree_attributes(self):
+        badging = "package: versionCode='1' name='app.test'"
+        xmltree = "\n".join([
+            "  E: manifest (line=1)",
+            "    E: instrumentation (line=9)",
+            '      A: android:targetPackage(0x01010021)="app"',
+            '      A: android:label(0x01010001)="Tests for app"',
+            f'      A: android:name(0x01010003)="{runtime.RUNNER}"',
+        ])
+        self.assertEqual(
+            f"app.test/{runtime.RUNNER}",
+            runtime.validate_instrumentation_component(badging, xmltree, "app"),
+        )
+
+    def test_reports_actual_runner_and_target_when_mismatched(self):
+        badging = "package: name='app.test'"
+        xmltree = "\n".join([
+            "  E: manifest (line=1)",
+            "    E: instrumentation (line=9)",
+            '      A: android:name(0x01010003)="other.Runner"',
+            '      A: android:targetPackage(0x01010021)="wrong.app"',
+        ])
+        with self.assertRaisesRegex(runtime.RuntimeProbeError, "other.Runner") as raised:
+            runtime.validate_instrumentation_component(badging, xmltree, "app")
+        self.assertIn("wrong.app", str(raised.exception))
+
+    def test_rejects_missing_instrumentation_even_if_application_has_a_name(self):
+        badging = "package: name='app.test'"
+        xmltree = "\n".join([
+            "  E: manifest (line=1)",
+            "    E: application (line=9)",
+            f'      A: android:name(0x01010003)="{runtime.RUNNER}"',
+            '      A: android:targetPackage(0x01010021)="app"',
+        ])
+        with self.assertRaisesRegex(runtime.RuntimeProbeError, "found none"):
+            runtime.validate_instrumentation_component(badging, xmltree, "app")
+
+    def test_rejects_wrong_test_package_with_correct_runner(self):
+        badging = "package: name='other.test'"
+        xmltree = "\n".join([
+            "  E: manifest (line=1)",
+            "    E: instrumentation (line=9)",
+            f'      A: android:name(0x01010003)="{runtime.RUNNER}"',
+            '      A: android:targetPackage(0x01010021)="app"',
+        ])
+        with self.assertRaisesRegex(runtime.RuntimeProbeError, "other.test"):
+            runtime.validate_instrumentation_component(badging, xmltree, "app")
+
+    def test_ignores_nonmatching_instrumentation_sibling(self):
+        badging = "package: name='app.test'"
+        xmltree = "\n".join([
+            "  E: manifest (line=1)",
+            "    E: instrumentation (line=9)",
+            '      A: android:name(0x01010003)="wrong.Runner"',
+            '      A: android:targetPackage(0x01010021)="wrong.app"',
+            "    E: instrumentation (line=13)",
+            f'      A: android:name(0x01010003)="{runtime.RUNNER}"',
+            '      A: android:targetPackage(0x01010021)="app"',
+            "    E: application (line=16)",
+        ])
+        self.assertEqual(
+            f"app.test/{runtime.RUNNER}",
+            runtime.validate_instrumentation_component(badging, xmltree, "app"),
+        )
+
+    def test_runs_instrumentation_when_badging_omits_declaration(self):
+        badging = "package: name='app.test' versionCode=''"
+        xmltree = "\n".join([
+            "  E: manifest (line=1)",
+            "    E: instrumentation (line=9)",
+            f'      A: android:name(0x01010003)="{runtime.RUNNER}"',
+            '      A: android:targetPackage(0x01010021)="app"',
+        ])
+        calls = []
+        commands = []
+
+        def fake_adb(_adb, _serial, *args, **_kwargs):
+            calls.append(args)
+            if args[0] == "install":
+                return SimpleNamespace(returncode=0, stdout="", stderr="")
+            return SimpleNamespace(
+                returncode=0,
+                stdout=output_for(dict.fromkeys(runtime.PROBES, "pass")),
+                stderr="",
+            )
+
+        def fake_command(args, **_kwargs):
+            commands.append(args)
+            return SimpleNamespace(stdout=xmltree if "xmltree" in args else badging)
+
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder) / "app.apk"
+            test_apk = Path(folder) / "test.apk"
+            target.write_bytes(b"apk bytes")
+            test_apk.write_bytes(b"test apk bytes")
+            with (
+                patch.object(runtime.smoke, "SMOKE_APK", target),
+                patch.object(runtime.smoke, "find_sdk_tool", return_value="aapt"),
+                patch.object(runtime.smoke, "select_emulator", return_value="emulator-5554"),
+                patch.object(runtime, "build_test_apk", return_value=test_apk),
+                patch.object(runtime.smoke, "apk_details", return_value=("app", "Activity", "1.0")),
+                patch.object(runtime.smoke, "command", side_effect=fake_command),
+                patch.object(runtime.smoke, "adb_command", side_effect=fake_adb),
+            ):
+                results, apk, serial = runtime.run_runtime_probes(target)
+        self.assertEqual(test_apk, apk)
+        self.assertEqual("emulator-5554", serial)
+        self.assertEqual(set(runtime.PROBES), set(results))
+        self.assertTrue(all(status == "pass" for status, _ in results.values()))
+        self.assertEqual(
+            ["aapt", "dump", "xmltree", test_apk, "AndroidManifest.xml"], commands[1]
+        )
+        self.assertEqual(("install", "-r", str(test_apk)), calls[0])
+        self.assertEqual(("logcat", "-c"), calls[1])
+        self.assertEqual(
+            ("shell", "am", "instrument", "-w", "-r", f"app.test/{runtime.RUNNER}"),
+            calls[2],
+        )
+
+    def test_checks_manifest_before_installing_invalid_runner(self):
+        badging = "package: name='app.test'"
+        xmltree = "\n".join([
+            "  E: manifest (line=1)",
+            "    E: instrumentation (line=9)",
+            '      A: android:name(0x01010003)="wrong.Runner"',
+            '      A: android:targetPackage(0x01010021)="app"',
+        ])
         with tempfile.TemporaryDirectory() as folder:
             target = Path(folder) / "app.apk"
             target.write_bytes(b"apk bytes")
             with (
-            patch.object(runtime.smoke, "SMOKE_APK", target),
-            patch.object(runtime.smoke, "find_sdk_tool", return_value="adb"),
-            patch.object(runtime.smoke, "select_emulator", return_value="emulator-5554"),
-            patch.object(runtime, "build_test_apk", return_value=Path("test.apk")),
-            patch.object(runtime.smoke, "apk_details", return_value=("app", "Activity", "1.0")),
-            patch.object(runtime.smoke, "command", return_value=Result()),
-            patch.object(runtime.smoke, "adb_command") as adb,
+                patch.object(runtime.smoke, "SMOKE_APK", target),
+                patch.object(runtime.smoke, "find_sdk_tool", return_value="aapt"),
+                patch.object(runtime.smoke, "select_emulator", return_value="emulator-5554"),
+                patch.object(runtime, "build_test_apk", return_value=Path("test.apk")),
+                patch.object(runtime.smoke, "apk_details", return_value=("app", "Activity", "1.0")),
+                patch.object(runtime.smoke, "command", side_effect=[
+                    SimpleNamespace(stdout=badging), SimpleNamespace(stdout=xmltree),
+                ]),
+                patch.object(runtime.smoke, "adb_command") as adb,
             ):
                 with self.assertRaisesRegex(runtime.RuntimeProbeError, "runner/target mismatch"):
                     runtime.run_runtime_probes(target)
                 adb.assert_not_called()
+
+
+class InstrumentationCrashDiagnosticsTest(unittest.TestCase):
+    def test_selects_app_crash_and_keeps_root_cause(self):
+        unrelated = (
+            "11-04 08:00:00.000  100 100 E AndroidRuntime: FATAL EXCEPTION: main\n"
+            "11-04 08:00:00.001  100 100 E AndroidRuntime: Process: wrong.app, PID: 100\n"
+            "11-04 08:00:00.002  100 100 E AndroidRuntime: java.lang.Error: wrong one\n"
+        )
+        target = (
+            "11-04 08:00:01.000  200 200 E AndroidRuntime: FATAL EXCEPTION: Instr: TestRunner\n"
+            "11-04 08:00:01.001  200 200 E AndroidRuntime: Process: app, PID: 200\n"
+            "11-04 08:00:01.002  200 200 E AndroidRuntime: java.lang.RuntimeException: can't instantiate runner\n"
+            "11-04 08:00:01.003  200 200 E AndroidRuntime: Caused by: java.lang.NoClassDefFoundError: kotlin/Unit\n"
+        )
+        excerpt = runtime.crash_logcat_excerpt(unrelated + target, "app")
+        self.assertIn("NoClassDefFoundError: kotlin/Unit", excerpt)
+        self.assertNotIn("wrong one", excerpt)
+
+    def test_native_crash_fallback_keeps_process_lines(self):
+        logcat = (
+            "11-04 08:00:01.000  200 200 F libc : Fatal signal 11 (SIGSEGV)\n"
+            "11-04 08:00:01.001  200 200 F DEBUG: pid: 200, tid: 200, name: app  >>> app <<<\n"
+        )
+        excerpt = runtime.crash_logcat_excerpt(logcat, "app")
+        self.assertIn("Fatal signal 11", excerpt)
+        self.assertIn(">>> app <<<", excerpt)
+
+    def test_preserves_instrumentation_crash_in_error_details(self):
+        badging = "package: name='app.test'"
+        xmltree = "\n".join([
+            "E: manifest (line=1)",
+            "  E: instrumentation (line=9)",
+            f'    A: android:name(0x01010003)="{runtime.RUNNER}"',
+            '    A: android:targetPackage(0x01010021)="app"',
+        ])
+        logcat = (
+            "11-04 08:00:01.000 200 200 E AndroidRuntime: FATAL EXCEPTION: Instr: runner\n"
+            "11-04 08:00:01.001 200 200 E AndroidRuntime: Process: app, PID: 200\n"
+            "11-04 08:00:01.002 200 200 E AndroidRuntime: java.lang.NoClassDefFoundError: MissingClass\n"
+            "11-04 08:00:01.003 200 200 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: MissingClass\n"
+        )
+        calls = []
+
+        def fake_adb(_adb, _serial, *args, **_kwargs):
+            calls.append(args)
+            if args[:2] == ("shell", "am"):
+                return SimpleNamespace(
+                    returncode=0,
+                    stdout="INSTRUMENTATION_RESULT: shortMsg=Process crashed.\nINSTRUMENTATION_CODE: 0\n",
+                    stderr="",
+                )
+            if args[:2] == ("logcat", "-d"):
+                return SimpleNamespace(returncode=0, stdout=logcat, stderr="")
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder) / "app.apk"
+            test_apk = Path(folder) / "test.apk"
+            target.write_bytes(b"apk bytes")
+            test_apk.write_bytes(b"test apk bytes")
+            with (
+                patch.object(runtime.smoke, "SMOKE_APK", target),
+                patch.object(runtime.smoke, "find_sdk_tool", return_value="aapt"),
+                patch.object(runtime.smoke, "select_emulator", return_value="emulator-5554"),
+                patch.object(runtime, "build_test_apk", return_value=test_apk),
+                patch.object(runtime.smoke, "apk_details", return_value=("app", "Activity", "1.0")),
+                patch.object(runtime.smoke, "command", side_effect=[
+                    SimpleNamespace(stdout=badging), SimpleNamespace(stdout=xmltree),
+                ]),
+                patch.object(runtime.smoke, "adb_command", side_effect=fake_adb),
+            ):
+                with self.assertRaises(runtime.RuntimeProbeError) as caught:
+                    runtime.run_runtime_probes(target)
+        self.assertIn("Process crashed", str(caught.exception))
+        self.assertIn("NoClassDefFoundError: MissingClass", str(caught.exception))
+        self.assertIn("ClassNotFoundException", caught.exception.details["deviceLogcat"])
+        self.assertEqual("emulator-5554", caught.exception.details["deviceSerial"])
+        self.assertEqual(0, caught.exception.details["instrumentationExitCode"])
+        self.assertEqual("install", calls[0][0])
+        self.assertEqual(("logcat", "-c"), calls[1])
+        self.assertEqual(("shell", "am"), calls[2][:2])
+        self.assertEqual(("logcat", "-d"), calls[3][:2])
+
+    def test_logcat_failure_does_not_mask_instrumentation_error(self):
+        run = SimpleNamespace(
+            returncode=0,
+            stdout="INSTRUMENTATION_RESULT: shortMsg=Process crashed.\nINSTRUMENTATION_CODE: 0",
+            stderr="",
+        )
+        with patch.object(
+            runtime.smoke, "adb_command", side_effect=runtime.smoke.SmokeTestError("offline")
+        ):
+            details = runtime.instrumentation_failure_details("adb", "emulator-5554", "app", run)
+        self.assertIn("Process crashed", details["instrumentationOutput"])
+        self.assertEqual("offline", details["deviceLogcatError"])

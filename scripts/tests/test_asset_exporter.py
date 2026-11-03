@@ -589,14 +589,18 @@ class DispatchTest(unittest.TestCase):
             self.assertNotIn("--download-pnpm", command)
             self.assertIn("'docs'", ASSETS.DOCKER_BOOTSTRAP)
 
-    def test_init_script_prefetches_lint_gradle_and_aapt2(self):
+    def test_init_script_prefetches_lint_gradle_and_current_build_assets(self):
         script = (ROOT / "scripts/resolve-android-test-assets.init.gradle").read_text()
         self.assertIn("'androidLintTool'", script)
         self.assertIn("'lintChecks'", script)
         self.assertIn("'debugLintChecksClasspath'", script)
         self.assertIn("'releaseLintChecksClasspath'", script)
         self.assertIn("lint-gradle-", script)
-        self.assertIn("com.android.tools.build:aapt2:9.4.1-15978811:linux", script)
+        self.assertIn("com.android.tools.build:aapt2:9.5.0-16666295:linux", script)
+        self.assertIn("org.jetbrains.kotlin:compose-group-mapping:2.4.21", script)
+        self.assertIn("libraries.findVersion('agp')", script)
+        self.assertIn("libraries.findVersion('kotlin')", script)
+        self.assertNotIn("aapt2:9.4.1-15978811", script)
         # Android lint dependencies are resolved as files, not graph metadata.
         self.assertIn("incoming.artifacts.artifactFiles.files", script)
 
