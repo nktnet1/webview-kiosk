@@ -14,6 +14,83 @@ from unittest.mock import patch
 from scripts import r8_audit as audit
 
 
+class PackagedRuntimeResourcesTest(unittest.TestCase):
+    def setUp(self):
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.root = Path(self.folder.name)
+        self.source_files = {}
+        for name in (*audit.CORE_RUNTIME_RESOURCES, "adblock/ubo/redirect.js"):
+            self.add_resource(name, f"contents of {name}".encode())
+        self.apk = self.root / "app.apk"
+
+    def add_resource(self, name, content):
+        if name.startswith("assets/"):
+            source = self.root / "app/src/main/assets" / name.removeprefix("assets/")
+        else:
+            source = self.root / "adblock/src/main/resources" / name
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_bytes(content)
+        self.source_files[name] = source
+
+    def make_apk(self, *, missing=(), altered=None):
+        with zipfile.ZipFile(self.apk, "w") as archive:
+            for name, path in self.source_files.items():
+                if name not in missing:
+                    archive.writestr(name, (altered or {}).get(name, path.read_bytes()))
+
+    def audit(self):
+        with patch.object(audit, "ROOT", self.root):
+            return audit.packaged_runtime_resources(self.apk)
+
+    def test_accepts_all_bundled_assets_unchanged(self):
+        self.make_apk()
+        status, details = self.audit()
+        self.assertEqual("pass", status)
+        self.assertEqual(len(self.source_files), details["verified"])
+        self.assertEqual([], details["missing"])
+        self.assertEqual([], details["modified"])
+
+    def test_missing_redirect_payload_is_a_release_failure(self):
+        self.make_apk(missing={"adblock/ubo/redirect.js"})
+        status, details = self.audit()
+        self.assertEqual("fail", status)
+        self.assertEqual(["adblock/ubo/redirect.js"], details["missing"])
+
+    def test_modified_script_is_a_release_failure(self):
+        self.make_apk(altered={"assets/content-blocking/cosmetic.js": b"different"})
+        status, details = self.audit()
+        self.assertEqual("fail", status)
+        self.assertEqual(["assets/content-blocking/cosmetic.js"], details["modified"])
+
+    def test_duplicate_asset_entry_is_a_release_failure(self):
+        self.make_apk()
+        with zipfile.ZipFile(self.apk, "a") as archive:
+            with patch("warnings.warn"):
+                archive.writestr("adblock/scriptlets.js", self.source_files["adblock/scriptlets.js"].read_bytes())
+        status, details = self.audit()
+        self.assertEqual("fail", status)
+        self.assertEqual(["adblock/scriptlets.js"], details["duplicate"])
+
+    def test_empty_payload_is_a_release_failure(self):
+        self.make_apk(altered={"adblock/ubo/redirect.js": b""})
+        status, details = self.audit()
+        self.assertEqual("fail", status)
+        self.assertEqual(["adblock/ubo/redirect.js"], details["empty"])
+
+    def test_core_script_deleted_from_source_is_a_release_failure(self):
+        self.source_files.pop("adblock/scriptlets.js").unlink()
+        self.make_apk()
+        status, details = self.audit()
+        self.assertEqual("fail", status)
+        self.assertEqual(["adblock/scriptlets.js"], details["missingFromSource"])
+
+    def test_corrupted_apk_is_a_reportable_failure(self):
+        self.apk.write_bytes(b"not a zip")
+        with self.assertRaisesRegex(audit.AuditError, "Could not verify APK"):
+            self.audit()
+
+
 class R8AuditTest(unittest.TestCase):
     def setUp(self):
         self.folder = tempfile.TemporaryDirectory()
@@ -249,6 +326,7 @@ class R8AuditTest(unittest.TestCase):
     def test_report_records_all_results_and_explicit_not_run_device(self):
         with (
             patch.object(audit, "git_commit", return_value="abc123"),
+            patch.object(audit, "packaged_runtime_resources", return_value=("pass", {"verified": 7})),
             patch.object(audit.smoke, "find_sdk_tool", return_value="aapt"),
             patch.object(audit.smoke, "apk_details", return_value=("pkg", "Main", "1.0 (1)")),
             patch.object(audit.dex, "check_apk", return_value="classes2.dex"),
@@ -261,6 +339,10 @@ class R8AuditTest(unittest.TestCase):
         self.assertEqual("abc123", result["gitCommit"])
         self.assertRegex(result["apk"]["sha256"], r"^[0-9a-f]{64}$")
         self.assertEqual("pkg", result["apk"]["package"])
+        packaged = next(c for c in result["checks"] if c["id"] == "packaged_resources")
+        self.assertEqual("pass", packaged["status"])
+        self.assertEqual(7, packaged["details"]["verified"])
+        self.assertEqual(9, result["summary"]["static"]["total"])
         suffix_check = next(c for c in result["checks"] if c["id"] == "public_suffix_resources")
         self.assertEqual("pass", suffix_check["status"])
         self.assertIn("not_run", [test["status"] for test in result["checks"]])
@@ -305,6 +387,7 @@ class R8RuntimeAuditTest(unittest.TestCase):
 
     def common(self):
         return (
+            patch.object(audit, "packaged_runtime_resources", return_value=("pass", {})),
             patch.object(audit, "mapping_file", return_value=self.apk),
             patch.object(audit, "parse_mapping", return_value={"pkg.Test": "a"}),
             patch.object(audit.smoke, "find_sdk_tool", return_value="aapt"),

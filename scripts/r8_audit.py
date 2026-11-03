@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -63,6 +64,18 @@ WARN_DIRECTIVE = re.compile(r"^\s*-dontwarn\s+(\S+)", re.MULTILINE)
 CLASS_ANNOTATIONS = re.compile(r"^Class #(\d+) annotations:$")
 METHOD_ANNOTATIONS = re.compile(r"^Annotations on method #\d+ '([^']+)'$")
 JS_ANNOTATION = "VISIBILITY_RUNTIME Landroid/webkit/JavascriptInterface;"
+# These files are loaded at runtime through AssetManager or
+# Class.getResourceAsStream, so a Kotlin/DEX check cannot establish that
+# resource shrinking and APK packaging retained them. Other redirect payloads
+# are discovered from the source resource inventory below.
+CORE_RUNTIME_RESOURCES = frozenset({
+    "assets/content-blocking/cosmetic.js",
+    "assets/content-blocking/requests.js",
+    "adblock/scriptlets.js",
+    "adblock/scriptlets-extra.js",
+    "adblock/scriptlets-network.js",
+    "adblock/scriptlets-advanced.js",
+})
 
 
 class AuditError(Exception):
@@ -270,6 +283,65 @@ def public_suffix_resources(apk):
     return "pass", details
 
 
+def packaged_runtime_resources(apk):
+    """Verify source assets survive the optimised APK byte-for-byte.
+
+    Content-blocking scripts and redirect payloads are referenced by string
+    paths, not Android resource IDs. Include newly added assets automatically,
+    while also pinning the core scripts to catch accidental source deletion.
+    """
+    expected = {}
+    for source_root, apk_prefix in (
+        (ROOT / "app/src/main/assets", "assets/"),
+        (ROOT / "adblock/src/main/resources/adblock", "adblock/"),
+    ):
+        for source in source_root.rglob("*"):
+            if source.is_file():
+                expected[apk_prefix + source.relative_to(source_root).as_posix()] = source
+
+    missing_from_source = sorted(CORE_RUNTIME_RESOURCES - expected.keys())
+    missing = []
+    empty = []
+    modified = []
+    duplicate = []
+    verified = 0
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            counts = Counter(archive.namelist())
+            entries = counts.keys()
+            missing = sorted(expected.keys() - entries)
+            duplicate = sorted(name for name in expected if counts[name] > 1)
+            for name, source in sorted(expected.items()):
+                if name in missing:
+                    continue
+                with archive.open(name) as content:
+                    digest = hashlib.sha256()
+                    size = 0
+                    for block in iter(lambda: content.read(1024 * 1024), b""):
+                        size += len(block)
+                        digest.update(block)
+                if size == 0:
+                    empty.append(name)
+                elif digest.hexdigest() != sha256(source):
+                    modified.append(name)
+                else:
+                    verified += 1
+    except (OSError, zipfile.BadZipFile, RuntimeError) as error:
+        raise AuditError(f"Could not verify APK runtime resources: {error}") from error
+
+    details = {
+        "expected": len(expected),
+        "verified": verified,
+        "missingFromSource": missing_from_source,
+        "missing": missing,
+        "empty": empty,
+        "modified": modified,
+        "duplicate": duplicate,
+    }
+    failed = missing_from_source or missing or empty or modified or duplicate
+    return ("fail" if failed else "pass"), details
+
+
 def r8_diagnostics(mapping_path):
     if mapping_path is None or not mapping_path.is_file():
         return "warn", {"reason": "R8 mapping not supplied or found for this APK"}
@@ -332,6 +404,11 @@ def run_audit(apk=None, *, dexdump=None, mapping=None, device=False, serial=None
         return finalise(report)
 
     put_check(report, "artifact", "pass", {"sha256": report["apk"]["sha256"]})
+    try:
+        status, details = packaged_runtime_resources(apk)
+        put_check(report, "packaged_resources", status, details)
+    except AuditError as error:
+        put_check(report, "packaged_resources", "fail", {"error": str(error)})
     try:
         status, details = public_suffix_resources(apk)
         put_check(report, "public_suffix_resources", status, details)
@@ -514,6 +591,14 @@ def main(argv=None):
             message = details.get("error") or details.get("reason")
             if message is None and details.get("missing"):
                 message = "; ".join(details["missing"][:5])
+            if message is None and details.get("missingFromSource"):
+                message = "Missing core runtime sources: " + "; ".join(details["missingFromSource"][:5])
+            if message is None and details.get("empty"):
+                message = "Empty runtime assets: " + "; ".join(details["empty"][:5])
+            if message is None and details.get("modified"):
+                message = "Modified runtime assets: " + "; ".join(details["modified"][:5])
+            if message is None and details.get("duplicate"):
+                message = "Duplicate runtime assets: " + "; ".join(details["duplicate"][:5])
             if message is None and details.get("missingRules"):
                 message = "R8 suggested missing class rules; inspect the JSON report"
             if message is None and details.get("broadSuppressions"):

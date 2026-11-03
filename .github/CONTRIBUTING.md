@@ -73,8 +73,11 @@ APK with test signing. Release CI audits the **actual signed release APK**. Both
 jobs run `scripts/r8_audit.py`, which checks the retrostreams constructor guard,
 all `@JavascriptInterface` method names, signatures and runtime annotations,
 R8 mapping availability, missing-rule suggestions, broad `-dontwarn` rules,
-and redundant Public Suffix List resources. The APK must retain OkHttp's raw
-list and the scriptlet JSON resource, but not a second raw list under `adblock/`.
+and redundant Public Suffix List resources. It also verifies that bundled
+content-blocking scripts and redirect payloads survive packaging byte-for-byte.
+This includes assets loaded by string path and is compared against the checkout
+used for the build. The APK must retain OkHttp's raw list and the scriptlet JSON
+resource, but not a second raw list under `adblock/`.
 CI also fails on review warnings (for example, new broad suppressions or R8
 missing-rule suggestions), rather than silently publishing an APK with
 unreviewed shrinker diagnostics. Local runs can omit `--fail-on-warnings`
