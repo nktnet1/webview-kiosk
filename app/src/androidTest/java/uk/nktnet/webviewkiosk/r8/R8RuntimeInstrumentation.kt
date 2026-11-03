@@ -69,6 +69,7 @@ class R8RuntimeInstrumentation : Instrumentation() {
                 failures++
                 result.putString("r8_status", "fail")
                 result.putString("r8_error", describeError(error))
+                result.putString("r8_stack_trace", error.stackTraceToString())
                 if (error.suppressed.isNotEmpty()) {
                     result.putString(
                         "r8_cleanup_error",
@@ -76,6 +77,12 @@ class R8RuntimeInstrumentation : Instrumentation() {
                             "; ",
                             transform = ::describeError,
                         ),
+                    )
+                    result.putString(
+                        "r8_cleanup_stack_trace",
+                        error.suppressed.joinToString("\n\n") {
+                            it.stackTraceToString()
+                        },
                     )
                 }
             }
@@ -125,6 +132,7 @@ class R8RuntimeInstrumentation : Instrumentation() {
         val completed = CountDownLatch(1)
         val result = AtomicReference<String?>()
         var webView: WebView? = null
+        var probeFailure: Throwable? = null
         try {
             runOnMainSync {
                 val view = WebView(targetContext)
@@ -164,8 +172,22 @@ class R8RuntimeInstrumentation : Instrumentation() {
             check(decoded != null && JSONObject(decoded).has("percentage")) {
                 "WebView bridge returned an invalid battery status"
             }
+        } catch (error: Throwable) {
+            probeFailure = error
+            throw error
         } finally {
-            runOnMainSync { webView?.destroy() }
+            // A WebView teardown failure must not replace the original JS
+            // bridge failure; report it as a suppressed cleanup exception.
+            try {
+                runOnMainSync { webView?.destroy() }
+            } catch (cleanupError: Throwable) {
+                val originalError = probeFailure
+                if (originalError != null) {
+                    originalError.addSuppressed(cleanupError)
+                } else {
+                    throw cleanupError
+                }
+            }
         }
     }
 

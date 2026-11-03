@@ -78,6 +78,77 @@ class R8RuntimeTest(unittest.TestCase):
         )
         self.assertNotIn("cleanupError", results["mqtt_tcp"][1])
 
+    def test_multiline_webview_errors_and_cleanup_stacks_survive(self):
+        output = output_for(dict.fromkeys(runtime.PROBES, "pass"))
+        old = (
+            "INSTRUMENTATION_STATUS: r8_check=webview_javascript\n"
+            "INSTRUMENTATION_STATUS: r8_status=pass\n"
+            "INSTRUMENTATION_STATUS: r8_error=Test failure\n"
+            "INSTRUMENTATION_STATUS_CODE: 0"
+        )
+        primary = "IllegalStateException: WebView bridge failed\nsecond message line"
+        stack = (
+            "java.lang.IllegalStateException: WebView bridge failed\n"
+            "\tat uk.nktnet.webviewkiosk.r8.R8RuntimeInstrumentation.webViewJavascript(R8RuntimeInstrumentation.kt:155)\n"
+            "\nCaused by: java.lang.IllegalArgumentException: invalid JSON\n"
+            "\tat org.json.JSONTokener.nextValue(JSONTokener.java:100)"
+        )
+        cleanup = "IllegalStateException: WebView destroy failed\nteardown detail"
+        cleanup_stack = (
+            "java.lang.IllegalStateException: WebView destroy failed\n"
+            "\tat android.webkit.WebView.destroy(WebView.java:200)"
+        )
+        new = "\n".join([
+            "INSTRUMENTATION_STATUS: r8_check=webview_javascript",
+            "INSTRUMENTATION_STATUS: r8_status=fail",
+            f"INSTRUMENTATION_STATUS: r8_error={primary}",
+            f"INSTRUMENTATION_STATUS: r8_stack_trace={stack}",
+            f"INSTRUMENTATION_STATUS: r8_cleanup_error={cleanup}",
+            f"INSTRUMENTATION_STATUS: r8_cleanup_stack_trace={cleanup_stack}",
+            "INSTRUMENTATION_STATUS_CODE: 0",
+        ])
+        self.assertIn(old, output)
+        parsed = runtime.parse_instrumentation_output(output.replace(old, new))
+        self.assertEqual("fail", parsed["webview_javascript"][0])
+        self.assertEqual(primary, parsed["webview_javascript"][1]["error"])
+        self.assertEqual(stack, parsed["webview_javascript"][1]["stackTrace"])
+        self.assertEqual(cleanup, parsed["webview_javascript"][1]["cleanupError"])
+        self.assertEqual(cleanup_stack, parsed["webview_javascript"][1]["cleanupStackTrace"])
+        self.assertEqual("pass", parsed["mqtt_tcp"][0])
+        self.assertNotIn("stackTrace", parsed["mqtt_tcp"][1])
+
+    def test_long_multiline_error_is_not_truncated(self):
+        output = output_for(dict.fromkeys(runtime.PROBES, "pass"))
+        long_error = "IllegalStateException: " + "X" * 3500 + "\n\tat example.Probe.run(Probe.kt:42)"
+        target = (
+            "INSTRUMENTATION_STATUS: r8_check=json_serialization\n"
+            "INSTRUMENTATION_STATUS: r8_status=pass\n"
+            "INSTRUMENTATION_STATUS: r8_error=Test failure"
+        )
+        replacement = target.replace("r8_status=pass", "r8_status=fail").replace(
+            "r8_error=Test failure", f"r8_error={long_error}"
+        )
+        parsed = runtime.parse_instrumentation_output(output.replace(target, replacement, 1))
+        self.assertEqual(long_error, parsed["json_serialization"][1]["error"])
+        self.assertEqual("pass", parsed["webview_javascript"][0])
+
+    def test_instrumentation_footer_is_not_appended_to_stack(self):
+        output = output_for(dict.fromkeys(runtime.PROBES, "pass"))
+        target = (
+            "INSTRUMENTATION_STATUS: r8_check=json_serialization\n"
+            "INSTRUMENTATION_STATUS: r8_status=pass\n"
+            "INSTRUMENTATION_STATUS: r8_error=Test failure"
+        )
+        changed = (
+            "INSTRUMENTATION_STATUS: r8_check=json_serialization\n"
+            "INSTRUMENTATION_STATUS: r8_status=fail\n"
+            "INSTRUMENTATION_STATUS: r8_error=primary error\n"
+            "additional detail"
+        )
+        parsed = runtime.parse_instrumentation_output(output.replace(target, changed, 1))
+        self.assertEqual("primary error\nadditional detail", parsed["json_serialization"][1]["error"])
+        self.assertNotIn("INSTRUMENTATION_CODE", parsed["json_serialization"][1]["error"])
+
     def test_mqtt_pass_without_suback_or_delivery_evidence_is_rejected(self):
         with self.assertRaisesRegex(runtime.RuntimeProbeError, "omitted subscription evidence"):
             runtime.parse_instrumentation_output(

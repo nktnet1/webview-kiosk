@@ -405,8 +405,10 @@ class R8RuntimeAuditTest(unittest.TestCase):
             outcomes = {n: ("pass", {"probe": n}) for n in audit.runtime.PROBES}
             outcomes["mqtt_tcp"] = (
                 "fail", {
-                    "error": "SUBACK missing",
+                    "error": "SUBACK missing\nconnection details",
+                    "stackTrace": "IllegalStateException: SUBACK missing\n\tat MQTT.kt:42",
                     "cleanupError": "MQTT disconnect timed out",
+                    "cleanupStackTrace": "IllegalStateException: disconnect timed out\n\tat MQTT.kt:99",
                 },
             )
             stack.enter_context(patch.object(audit.runtime, "run_runtime_probes",
@@ -416,12 +418,15 @@ class R8RuntimeAuditTest(unittest.TestCase):
         self.assertEqual("emulator-5554", report["runtime"]["serial"])
         check = next(c for c in report["checks"] if c["id"] == "runtime_mqtt_tcp")
         self.assertEqual("fail", check["status"])
-        self.assertEqual("SUBACK missing", check["details"]["error"])
+        self.assertEqual("SUBACK missing\nconnection details", check["details"]["error"])
+        self.assertIn("MQTT.kt:42", check["details"]["stackTrace"])
         report_path = Path(self.folder.name) / "r8-cleanup-diagnostics.json"
         audit.write_report(report_path, report)
         stored = json.loads(report_path.read_text(encoding="utf-8"))
         saved = next(c for c in stored["checks"] if c["id"] == "runtime_mqtt_tcp")
         self.assertEqual("MQTT disconnect timed out", saved["details"]["cleanupError"])
+        self.assertIn("MQTT.kt:99", saved["details"]["cleanupStackTrace"])
+        self.assertIn("MQTT.kt:42", saved["details"]["stackTrace"])
 
     def test_emulator_failure_skips_runtime_probe_without_masking_error(self):
         from contextlib import ExitStack

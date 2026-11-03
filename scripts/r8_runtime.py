@@ -24,6 +24,11 @@ PROBES = (
     "mqtt_tcp",
     "mqtt_websocket",
 )
+# Android's raw instrumentation printer emits embedded newlines as
+# unprefixed continuation lines. Keep both the concise errors and full traces.
+MULTILINE_ERROR_KEYS = frozenset({
+    "r8_error", "r8_cleanup_error", "r8_stack_trace", "r8_cleanup_stack_trace",
+})
 
 
 class RuntimeProbeError(Exception):
@@ -54,12 +59,17 @@ def parse_instrumentation_output(output):
     """Parse framed am-instrument STATUS bundles, rejecting missing/duplicate probes."""
     results = {}
     frame = {}
+    continuation_key = None
     for line in output.splitlines():
         if line.startswith("INSTRUMENTATION_STATUS: "):
             key, sep, value = line[len("INSTRUMENTATION_STATUS: "):].partition("=")
+            continuation_key = None
             if sep:
                 frame[key] = value
+                if key in MULTILINE_ERROR_KEYS:
+                    continuation_key = key
         elif line.startswith("INSTRUMENTATION_STATUS_CODE: "):
+            continuation_key = None
             name = frame.get("r8_check")
             if name:
                 if name not in PROBES or name in results:
@@ -69,9 +79,14 @@ def parse_instrumentation_output(output):
                     raise RuntimeProbeError(f"Invalid status for runtime probe {name}: {status}")
                 details = {"probe": name}
                 if status == "fail":
-                    details["error"] = frame.get("r8_error", "No error reported")[:2000]
-                    if "r8_cleanup_error" in frame:
-                        details["cleanupError"] = frame["r8_cleanup_error"][:2000]
+                    details["error"] = frame.get("r8_error", "No error reported")
+                    for source, field in (
+                        ("r8_stack_trace", "stackTrace"),
+                        ("r8_cleanup_error", "cleanupError"),
+                        ("r8_cleanup_stack_trace", "cleanupStackTrace"),
+                    ):
+                        if source in frame:
+                            details[field] = frame[source]
                 elif name.startswith("mqtt_"):
                     # A successful MQTT probe must prove more than a TCP connect.
                     try:
@@ -88,6 +103,14 @@ def parse_instrumentation_output(output):
                                     "outboundDelivery": "url_changed"})
                 results[name] = (status, details)
             frame = {}
+        elif continuation_key is not None:
+            # Do not consume the instrumentation process summary as a trace
+            # if it arrives without an expected STATUS_CODE delimiter.
+            if line.startswith(("INSTRUMENTATION_CODE:", "INSTRUMENTATION_RESULT:",
+                                "INSTRUMENTATION_FAILED:")):
+                continuation_key = None
+            else:
+                frame[continuation_key] += "\n" + line
     if set(results) != set(PROBES):
         raise RuntimeProbeError(
             "Instrumentation did not complete all probes: "

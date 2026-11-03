@@ -118,9 +118,11 @@ includes `subscriptionsAcknowledged`, `inboundDelivery`, and `outboundDelivery`.
 Disconnect callback errors and timeouts fail the MQTT probe. If disconnect or
 settings restoration also fails after another probe error, that original error
 remains in `details.error` and cleanup diagnostics appear separately in
-`details.cleanupError` in the JSON report. MQTT preferences are changed briefly
-and restored; use a **disposable emulator**,
-never a production kiosk. The
+`details.cleanupError` in the JSON report. WebView teardown errors are
+handled the same way. Failed probes also include full `details.stackTrace` and
+(if cleanup fails) `details.cleanupStackTrace` fields; multiline exceptions are
+preserved without truncation. MQTT preferences are changed briefly and restored;
+use a **disposable emulator**, never a production kiosk. The
 probes only support the locally built smokeRelease APK, not an unrelated
 production release with a different obfuscation mapping. TLS/WSS, NFC, and the
 other JavaScript interfaces are still out of scope.
