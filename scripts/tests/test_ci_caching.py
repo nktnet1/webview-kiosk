@@ -45,6 +45,15 @@ class CiCachingTest(unittest.TestCase):
         versions = (ROOT / "gradle/libs.versions.toml").read_text(encoding="utf-8")
         self.assertRegex(gradle_build, r'testInstrumentationRunner\s*=\s*"uk\.nktnet\.webviewkiosk\.r8\.R8RuntimeInstrumentation"')
         self.assertIn('testBuildType = "smokeRelease"', gradle_build)
+        # AGP 9 defaults unit tests to just testBuildType. Keep debug JVM
+        # tests in CI and Compose Preview resources for other build types.
+        self.assertRegex(
+            gradle_build,
+            r'androidComponents\s*\{[^}]*beforeVariants\(selector\(\)'
+            r'\.all\(\)\)\s*\{\s*'
+            r'it\.hostTests\[HostTestBuilder\.UNIT_TEST_TYPE\]\?\.enable\s*=\s*true',
+        )
+        self.assertNotIn("android.onlyEnableUnitTestForTheTestedBuildType=false", gradle_build)
         self.assertNotIn("androidTestImplementation", gradle_build)
         self.assertNotIn("--runtime", TESTS)
         self.assertNotIn("--runtime", RELEASE)

@@ -1,3 +1,4 @@
+import com.android.build.api.variant.HostTestBuilder
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -121,6 +122,15 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
         }
+    }
+}
+
+androidComponents {
+    // AGP 9 only creates host unit tests for testBuildType (smokeRelease) by
+    // default. Restore the other variants so CI can run debug Robolectric
+    // tests and Compose Preview can package resources for every variant.
+    beforeVariants(selector().all()) {
+        it.hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = true
     }
 }
 

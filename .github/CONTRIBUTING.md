@@ -15,6 +15,11 @@ Set `JAVA_HOME` and `ANDROID_HOME`, then run from the repository root:
 Lefthook runs formatting and lint checks for Android source and configuration
 changes before commits.
 
+AGP 9 normally registers JVM unit tests only for `testBuildType` (`smokeRelease`
+here). The app explicitly enables host unit-test components for all variants to
+retain `:app:testDebugUnitTest` for CI and Compose Preview resource packaging.
+This does not run additional unit tests unless their tasks are requested.
+
 Script tests require Python 3.10+ and Node.js 24:
 
 ```bash
