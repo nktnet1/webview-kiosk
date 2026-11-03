@@ -268,7 +268,7 @@ else:
         self.assertFalse(list(self.output.glob("gradle-cache*")))
         self.verify_checksums()
         call = self.calls("gradle")[0]
-        self.assertEqual(str(self.sdk), call["sdk"])
+        self.assertEqual(self.sdk.resolve(), Path(call["sdk"]).resolve())
         self.assertIn(":app:resolveAndroidTestAssets", call["args"])
         self.assertIn("--init-script", call["args"])
         self.assertNotIn(":app:testDebugUnitTest", call["args"])
@@ -338,7 +338,7 @@ else:
     def test_relative_sdk_properties_resolve_from_checkout(self):
         shutil.copytree(self.sdk, self.project / "sdk")
         write(self.project / "local.properties", "sdk.dir=sdk\n")
-        self.assertEqual(self.project / "sdk", ASSETS.sdk_root(ASSETS.parse_args([])))
+        self.assertEqual((self.project / "sdk").resolve(), ASSETS.sdk_root(ASSETS.parse_args([])))
 
     def test_gradle_export_and_stale_parts_in_both_directions(self):
         write(self.output / "gradle-deps.tar.gz", "old whole archive")
@@ -404,7 +404,7 @@ else:
         self.assertIn("platform-tools", calls[1])
         self.assertEqual("y\n" * 100, (self.root / "sdkmanager-input.txt").read_text())
         gradle = self.calls("gradle")[0]
-        self.assertEqual(str(sdk), gradle["sdk"])
+        self.assertEqual(sdk.resolve(), Path(gradle["sdk"]).resolve())
         self.assertIn(".prepared.", gradle["java"])
         self.assertFalse(Path(gradle["java"]).exists())
         self.verify_checksums()
@@ -539,7 +539,7 @@ class DispatchTest(unittest.TestCase):
                 self.assertIn(image, containers[0])
                 for command in builds + containers:
                     self.assertIn("linux/amd64", command)
-                self.assertIn(f"{output}:/export", containers[0])
+                self.assertIn(f"{output.resolve()}:/export", containers[0])
                 self.assertIn("python3", containers[0])
                 self.assertIn(ASSETS.DOCKER_BOOTSTRAP, containers[0])
                 compile(ASSETS.DOCKER_BOOTSTRAP, "docker-bootstrap", "exec")

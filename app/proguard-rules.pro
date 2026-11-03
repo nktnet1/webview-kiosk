@@ -25,6 +25,16 @@
 # Without this keep rule, R8 can remove the guard and crash app startup.
 -keep class java9.util.concurrent.ThreadLocalRandom { *; }
 
+# Instrumentation probes call these coroutine APIs across the test APK/app APK
+# boundary. R8 only sees app usages and may otherwise rename/remove the
+# public facades or interface methods used solely by the test APK.
+# Keep only the binary API needed by the MQTT runtime probes, not all coroutines.
+-keep class kotlinx.coroutines.BuildersKt { *; }
+-keep class kotlinx.coroutines.CoroutineScope { *; }
+-keep class kotlinx.coroutines.CoroutineStart { *; }
+-keep class kotlinx.coroutines.Job { *; }
+-keep class kotlinx.coroutines.flow.FlowCollector { *; }
+
 # https://hivemq.github.io/hivemq-mqtt-client/docs/installation/android/
 -keepclassmembernames class io.netty.** { *; }
 -keepclassmembers class org.jctools.** { *; }
