@@ -1,6 +1,7 @@
 """Contract tests for the single-command release verifier, without an SDK/AVD."""
 
 import contextlib
+import os
 import json
 import subprocess
 import sys
@@ -130,6 +131,101 @@ class VerifyCliTest(unittest.TestCase):
         with patch.object(VERIFY_MODULE, "preflight"), patch.object(VERIFY_MODULE, "execute", side_effect=fail):
             self.assertEqual(1, VERIFY_MODULE.main(["--skip-avd", "--skip-docs"]))
         self.assertEqual("fail", json.loads(self.report_file.read_text())["status"])
+
+    def test_selects_installed_jdk21_even_if_java_home_is_another_version(self):
+        wrong = Path(self.folder.name) / "jdk25"
+        correct = Path(self.folder.name) / "jbr21"
+        for home in (wrong, correct):
+            (home / "bin").mkdir(parents=True)
+            (home / "bin/java").touch()
+            (home / "bin/javac").touch()
+
+        def java_version(argv, **kwargs):
+            version = "21.0.11" if str(correct) in str(argv[0]) else "25.0.1"
+            return SimpleNamespace(returncode=0, stdout="", stderr=f'openjdk version "{version}"\n')
+
+        with (
+            patch.object(VERIFY_MODULE, "jdk21_candidates", return_value=iter([wrong, correct])),
+            patch.object(VERIFY_MODULE, "run_command", side_effect=java_version),
+        ):
+            self.assertEqual(correct, VERIFY_MODULE.select_jdk21())
+
+    def test_prefers_jetbrains_jbr21_for_gradle_daemon(self):
+        home = Path(self.folder.name)
+        regular = home / "temurin21"
+        jetbrains = home / "jbr21"
+        for candidate in (regular, jetbrains):
+            (candidate / "bin").mkdir(parents=True)
+            (candidate / "bin/java").touch()
+            (candidate / "bin/javac").touch()
+        with (
+            patch.object(VERIFY_MODULE, "jdk21_candidates", return_value=iter([regular, jetbrains])),
+            patch.object(VERIFY_MODULE, "run_command", return_value=SimpleNamespace(
+                returncode=0, stdout="", stderr='openjdk version "21.0.11"\n'
+            )),
+        ):
+            self.assertEqual(jetbrains, VERIFY_MODULE.select_jdk21())
+
+    def test_invalid_java_candidate_does_not_block_discovery(self):
+        folder = Path(self.folder.name)
+        bad = folder / "bad"
+        good = folder / "good21"
+        for home in (bad, good):
+            (home / "bin").mkdir(parents=True)
+            (home / "bin/java").touch()
+            (home / "bin/javac").touch()
+        def probe(argv, **kwargs):
+            if str(argv[0]).startswith(str(bad)):
+                raise VERIFY_MODULE.VerificationError("Cannot execute")
+            return SimpleNamespace(returncode=0, stdout="", stderr='openjdk version "21.0.11"\n')
+        with (
+            patch.object(VERIFY_MODULE, "jdk21_candidates", return_value=iter([bad, good])),
+            patch.object(VERIFY_MODULE, "run_command", side_effect=probe),
+        ):
+            self.assertEqual(good, VERIFY_MODULE.select_jdk21())
+
+    def test_select_jdk21_requires_a_full_jdk_not_just_a_java_runtime(self):
+        runtime_only = Path(self.folder.name) / "jre21"
+        (runtime_only / "bin").mkdir(parents=True)
+        (runtime_only / "bin/java").touch()
+        with (
+            patch.object(VERIFY_MODULE, "jdk21_candidates", return_value=iter([runtime_only])),
+            patch.object(VERIFY_MODULE, "run_command") as run,
+        ):
+            with self.assertRaisesRegex(VERIFY_MODULE.VerificationError, "JDK 21 not found"):
+                VERIFY_MODULE.select_jdk21()
+        run.assert_not_called()
+
+    def test_detected_jdk_is_used_by_gradle_child_processes(self):
+        jdk = Path(self.folder.name) / "jbr21"
+        args = SimpleNamespace(skip_docs=True, skip_avd=True, serial=None)
+        with (
+            patch.dict(os.environ, {"JAVA_HOME": "/not-the-correct-jdk", "PATH": os.environ["PATH"]}),
+            patch.object(VERIFY_MODULE, "select_jdk21", return_value=jdk),
+            patch.object(VERIFY_MODULE, "run_command", return_value=SimpleNamespace(returncode=0, stdout="24.1.0")),
+            patch.object(VERIFY_MODULE, "sdk_root", return_value=Path(self.folder.name)),
+            patch.object(VERIFY_MODULE, "sdk_tool", return_value="tool"),
+        ):
+            VERIFY_MODULE.preflight(args)
+            self.assertEqual(str(jdk), os.environ["JAVA_HOME"])
+            self.assertEqual(str(jdk / "bin"), os.environ["PATH"].split(os.pathsep)[0])
+        self.assertNotEqual(str(jdk), os.environ.get("JAVA_HOME"))
+
+    def test_jdk21_discovery_respects_android_studio_and_mac_java_home(self):
+        with (
+            patch.dict(os.environ, {"JAVA_HOME": "/bad/jdk"}),
+            patch.object(VERIFY_MODULE.platform, "system", return_value="Darwin"),
+            patch.object(VERIFY_MODULE, "run_command", return_value=SimpleNamespace(
+                returncode=0, stdout="/Library/Java/JavaVirtualMachines/jetbrains-21/Contents/Home\n"
+            )),
+            patch.object(VERIFY_MODULE.Path, "home", return_value=Path(self.folder.name)),
+            patch.object(VERIFY_MODULE.shutil, "which", return_value=None),
+        ):
+            homes = list(VERIFY_MODULE.jdk21_candidates())
+        self.assertIn(Path("/bad/jdk"), homes)
+        self.assertIn(Path("/Applications/Android Studio.app/Contents/jbr/Contents/Home"), homes)
+        # /usr/libexec/java_home exists on macOS, so the stub is conditional on
+        # the host instead of trying to invoke the Linux system's tool here.
 
     def test_avd_image_is_required_not_silently_downgraded(self):
         with patch.object(VERIFY_MODULE.platform, "machine", return_value="arm64"):

@@ -20,14 +20,13 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.json.JSONObject
 import org.json.JSONTokener
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRequestJsonParser
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRequestMessage
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundStatusRequest
-import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundEventJsonParser
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundEventMessage
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundUrlChangedEvent
 import uk.nktnet.webviewkiosk.managers.MqttManager
@@ -123,8 +122,21 @@ class R8RuntimeInstrumentation : Instrumentation() {
     }
 
     private fun jsonSerialization() {
+        // Top-level parser property getters are inlined or removed by R8 if
+        // only production code uses the values internally. The separate test
+        // APK must not link against those eliminated accessors. Exercise the
+        // production sealed serializers with equivalent JSON configuration.
+        val base = Json {
+            ignoreUnknownKeys = true
+            coerceInputValues = true
+            isLenient = true
+            allowTrailingComma = true
+            allowComments = true
+        }
+        val inbound = Json(base) { classDiscriminator = "requestType" }
+        val outbound = Json(base) { classDiscriminator = "eventType" }
         val request =
-            InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(
+            inbound.decodeFromString<InboundRequestMessage>(
                 """{"requestType":"get_status","messageId":"r8-test","unknownField":true}"""
             )
         check(request is InboundStatusRequest && request.messageId == "r8-test") {
@@ -138,9 +150,8 @@ class R8RuntimeInstrumentation : Instrumentation() {
                 data =
                     OutboundUrlChangedEvent.UrlData("https://example.invalid/a?x=1"),
             )
-        val json = OutboundEventJsonParser.encodeToString(event)
-        val decoded =
-            OutboundEventJsonParser.decodeFromString<OutboundEventMessage>(json)
+        val json = outbound.encodeToString(event)
+        val decoded = outbound.decodeFromString<OutboundEventMessage>(json)
         check(
             decoded == event &&
                 JSONObject(json).getString("eventType") == "url_changed"
@@ -215,7 +226,9 @@ class R8RuntimeInstrumentation : Instrumentation() {
     private fun mqttLoopback(webSocket: Boolean) {
         // Exercise the application's minified HiveMQ/Netty client, not a second
         // client embedded in the test APK. Keep the mock broker on loopback.
-        Mqtt5LoopbackBroker(webSocket).use { broker ->
+        val broker = Mqtt5LoopbackBroker(webSocket)
+        var brokerFailure: Throwable? = null
+        try {
             val settings = UserSettings(targetContext)
             val original =
                 MqttProbeSettings(
@@ -391,6 +404,20 @@ class R8RuntimeInstrumentation : Instrumentation() {
                         cleanupFailures.drop(1).forEach(first::addSuppressed)
                         throw first
                     }
+                }
+            }
+        } catch (error: Throwable) {
+            brokerFailure = error
+            throw error
+        } finally {
+            try {
+                broker.close()
+            } catch (cleanupError: Throwable) {
+                val originalError = brokerFailure
+                if (originalError != null) {
+                    originalError.addSuppressed(cleanupError)
+                } else {
+                    throw cleanupError
                 }
             }
         }

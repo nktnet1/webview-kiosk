@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 from scripts.r8 import r8_runtime as runtime
 
+ROOT = Path(__file__).resolve().parents[2]
+
 
 def output_for(statuses, result_code=0, include_mqtt_evidence=True):
     lines = []
@@ -29,6 +31,17 @@ def output_for(statuses, result_code=0, include_mqtt_evidence=True):
 
 
 class R8RuntimeTest(unittest.TestCase):
+    def test_minified_runtime_probes_do_not_link_to_removed_test_only_kotlin_helpers(self):
+        sources = ROOT / "app/src/androidTest/java/uk/nktnet/webviewkiosk/r8"
+        runner = (sources / "R8RuntimeInstrumentation.kt").read_text()
+        broker = (sources / "Mqtt5LoopbackBroker.kt").read_text()
+        for source in (runner, broker):
+            self.assertNotIn(".use {", source)
+        self.assertNotIn("InboundRequestJsonParser", runner)
+        self.assertNotIn("OutboundEventJsonParser", runner)
+        self.assertIn("broker.close()", runner)
+        self.assertIn("socket.close()", broker)
+
     def test_parses_all_named_probes_and_errors(self):
         statuses = dict.fromkeys(runtime.PROBES, "pass")
         statuses["mqtt_websocket"] = "fail"

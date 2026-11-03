@@ -57,7 +57,8 @@ internal class Mqtt5LoopbackBroker(private val webSocket: Boolean) : Closeable {
 
     private fun serve() {
         try {
-            listener.accept().use { socket ->
+            val socket = listener.accept()
+            try {
                 connectedSocket = socket
                 socket.soTimeout = 30_000
                 if (webSocket) {
@@ -181,6 +182,8 @@ internal class Mqtt5LoopbackBroker(private val webSocket: Boolean) : Closeable {
                             error("Unexpected MQTT packet: 0x${header.toString(16)}")
                     }
                 }
+            } finally {
+                socket.close()
             }
         } catch (error: Exception) {
             if (!stopping) {

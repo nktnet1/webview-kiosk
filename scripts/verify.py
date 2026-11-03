@@ -17,6 +17,7 @@ import sys
 import time
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from glob import glob
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -214,6 +215,92 @@ def test_emulator(name, timeout):
             print(f"[AVD] Stopped disposable {name}", flush=True)
 
 
+def jdk21_candidates():
+    """Find locally installed JDKs without downloading or modifying user settings."""
+    homes = []
+    for key in ("JAVA_HOME", "STUDIO_JDK", "JDK_HOME"):
+        if os.environ.get(key):
+            homes.append(Path(os.environ[key]).expanduser())
+
+    if platform.system() == "Darwin":
+        java_home = Path("/usr/libexec/java_home")
+        if java_home.is_file():
+            try:
+                found = run_command([java_home, "-v", "21"], timeout=10)
+                if found.returncode == 0 and found.stdout.strip():
+                    homes.append(Path(found.stdout.strip()))
+            except VerificationError:
+                # The Java helper is optional; continue with the JDK folders.
+                pass
+        homes.extend(
+            [
+                Path("/Applications/Android Studio.app/Contents/jbr/Contents/Home"),
+                Path.home() / "Applications/Android Studio.app/Contents/jbr/Contents/Home",
+                Path("/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"),
+                Path("/usr/local/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"),
+            ]
+        )
+        patterns = (
+            "/Library/Java/JavaVirtualMachines/*/Contents/Home",
+            str(Path.home() / "Library/Java/JavaVirtualMachines/*/Contents/Home"),
+            "/Applications/Android Studio*.app/Contents/jbr/Contents/Home",
+        )
+    else:
+        patterns = ("/usr/lib/jvm/*", "/opt/jbr*", "/opt/jdk*")
+
+    patterns += (
+        str(Path.home() / ".jdks/*"),
+        str(Path.home() / ".jdks/*/Contents/Home"),
+        str(Path.home() / ".sdkman/candidates/java/*"),
+        str(Path.home() / ".gradle/jdks/*"),
+    )
+    for pattern in patterns:
+        homes.extend(Path(path) for path in sorted(glob(pattern)))
+
+    path_java = shutil.which("java")
+    if path_java:
+        homes.append(Path(path_java).resolve().parent.parent)
+
+    seen = set()
+    for home in homes:
+        home = home.resolve()
+        if home not in seen:
+            seen.add(home)
+            yield home
+
+
+def select_jdk21():
+    """Select a full Java 21 JDK for Gradle, even if the shell defaults to another Java."""
+    fallback = None
+    for home in jdk21_candidates():
+        java = home / "bin/java"
+        javac = home / "bin/javac"
+        if not java.is_file() or not javac.is_file():
+            continue
+        try:
+            version = run_command([java, "-version"], timeout=10)
+        except VerificationError:
+            continue
+        output = version.stdout + version.stderr
+        if version.returncode == 0 and re.search(
+            r'\b(?:openjdk|java)\s+(?:version\s+)?"?21(?:[\s.+_"-]|$)',
+            output,
+        ):
+            # Gradle's daemon JVM criteria select JetBrains. Prefer a matching
+            # JBR even when JAVA_HOME points at another Java 21 installation.
+            if "jetbrains" in output.lower() or "jbr" in home.name.lower():
+                return home
+            if fallback is None:
+                fallback = home
+    if fallback is not None:
+        return fallback
+    raise VerificationError(
+        "JDK 21 not found. Install a JDK 21 or point JAVA_HOME to its home "
+        "(e.g. /Applications/Android Studio.app/Contents/jbr/Contents/Home). "
+        "The system's default java version may differ from Android Studio's."
+    )
+
+
 def preflight(args):
     if sys.version_info < (3, 10):
         raise VerificationError("Python 3.10+ required")
@@ -225,14 +312,13 @@ def preflight(args):
     node_version = checked(["node", "-p", "process.versions.node"], timeout=10)
     if int(node_version.split(".", 1)[0]) < 24:
         raise VerificationError(f"Node.js 24+ required for the script suite; found {node_version}")
-    # java -version writes to stderr; require JDK 21 to match CI and Kotlin.
-    java_bin = Path(os.environ["JAVA_HOME"]) / "bin/java" if os.environ.get("JAVA_HOME") else "java"
-    if not (java_bin.is_file() if isinstance(java_bin, Path) else shutil.which(java_bin)):
-        raise VerificationError("JDK 21 executable not found; check JAVA_HOME and PATH")
-    java_probe = run_command([java_bin, "-version"], timeout=10)
-    java_info = java_probe.stdout + java_probe.stderr
-    if java_probe.returncode or not re.search(r'\bversion "21(?:\.|"|\+)', java_info):
-        raise VerificationError("JDK 21 required; set JAVA_HOME to the JetBrains 21 JDK used by CI")
+    # Android Studio frequently bundles JDK 21 while the terminal's default
+    # java (or JAVA_HOME) points elsewhere. Use the detected JDK for all child
+    # processes, including Gradle, without changing the user's shell profile.
+    java_home = select_jdk21()
+    os.environ["JAVA_HOME"] = str(java_home)
+    os.environ["PATH"] = str(java_home / "bin") + os.pathsep + os.environ.get("PATH", "")
+    print(f"[verify] Using JDK 21: {java_home}", flush=True)
     sdk = sdk_root()
     sdk_tool(sdk, "aapt", build_tool=True)
     sdk_tool(sdk, "dexdump", build_tool=True)
@@ -277,6 +363,7 @@ def execute(label, argv, report):
 
 def verify(args, report):
     preflight(args)
+    report["javaHome"] = os.environ.get("JAVA_HOME")
     python = sys.executable
     execute("Script tests (Python + Node)", ["sh", "scripts/ci/test-local.sh", "checks"], report)
     execute("Android format, lint, JVM and minified APK", ["sh", "gradlew", "checkFormatting", "lint",

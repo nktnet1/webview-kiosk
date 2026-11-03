@@ -47,8 +47,13 @@ repository root so tools resolve repository-relative paths consistently.
 
 ## Android
 
-Use JetBrains Java 21 and the Android SDK specified in `app/build.gradle.kts`.
-Set `JAVA_HOME` and `ANDROID_HOME`, then run from the repository root:
+Use Java 21 and the Android SDK specified in `app/build.gradle.kts`.
+`python3 scripts/verify.py` automatically discovers an installed JDK 21
+(including Android Studio's bundled JetBrains Runtime on macOS) and uses it for
+its Gradle subprocesses, even if the terminal has a different default Java.
+If none is installed, install a JDK 21 or set `JAVA_HOME` to its home. Set
+`ANDROID_HOME` if the SDK is not discovered automatically. Then run from the
+repository root:
 
 ```bash
 ./gradlew spotlessApply
