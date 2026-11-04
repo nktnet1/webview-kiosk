@@ -1,5 +1,7 @@
-import urlJoin from "url-join";
+import { joinURL, withoutTrailingSlash } from "ufo";
 
-export const getBasePath = () => {
-  return urlJoin("/", import.meta.env.PUBLIC_DOCS_BASE_PATH ?? "/");
-};
+export const getBasePath = () =>
+  joinURL(
+    "/",
+    withoutTrailingSlash(import.meta.env.PUBLIC_DOCS_BASE_PATH ?? "/"),
+  );

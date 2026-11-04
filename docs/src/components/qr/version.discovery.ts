@@ -1,4 +1,4 @@
-import urlJoin from "url-join";
+import { joinURL } from "ufo";
 import {
   type DiscoveredQrInstallationVersion,
   QR_INSTALLATION_SOURCES,
@@ -16,17 +16,17 @@ type RetryWait = (milliseconds: number) => Promise<void>;
 const waitForRetry: RetryWait = (milliseconds) =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-const GITHUB_LATEST_RELEASE_URL = urlJoin(
+const GITHUB_LATEST_RELEASE_URL = joinURL(
   "https://api.github.com/repos/",
   GITHUB_REPOSITORY,
   "/releases/latest",
 );
-const F_DROID_PACKAGE_URL = urlJoin(
+const F_DROID_PACKAGE_URL = joinURL(
   "https://f-droid.org/api/v1/packages",
   APPLICATION_ID,
 );
 const IZZY_ON_DROID_REPO_URL = "https://apt.izzysoft.de/fdroid/repo/";
-const IZZY_ON_DROID_INDEX_URL = urlJoin(
+const IZZY_ON_DROID_INDEX_URL = joinURL(
   IZZY_ON_DROID_REPO_URL,
   "index-v1.json",
 );

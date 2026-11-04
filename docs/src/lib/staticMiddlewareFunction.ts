@@ -45,7 +45,7 @@ import {
   getDefaultSerovalPlugins,
 } from "@tanstack/react-start";
 import { fromJSON, toJSONAsync } from "seroval";
-import urlJoin from "url-join";
+import { joinURL } from "ufo";
 
 type StaticCachedResult = {
   result: any;
@@ -161,7 +161,7 @@ const fetchItem = async ({
 
   const basePath = process.env.TSS_ROUTER_BASEPATH ?? "/";
 
-  result = await fetch(urlJoin("/", basePath, url), {
+  result = await fetch(joinURL("/", basePath, url), {
     method: "GET",
   })
     .then((r) => r.json())

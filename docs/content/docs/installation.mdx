@@ -4,7 +4,7 @@ description: Supported platforms to download the app.
 ---
 
 import Link from 'fumadocs-core/link';
-import urlJoin from 'url-join';
+import { joinURL } from 'ufo';
 import { PLAYSTORE_URL, GITHUB_URL } from '#/config/links'
 
 import GooglePlayBadge from "#/assets/badges/google-play.svg";
@@ -72,7 +72,7 @@ preferred, this method still provides better privacy than using the Google Play 
 </Callout>
 
 <a
-  href={urlJoin(GITHUB_URL, 'releases')}
+  href={joinURL(GITHUB_URL, 'releases')}
   target="_blank"
 >
   <img
@@ -83,7 +83,7 @@ preferred, this method still provides better privacy than using the Google Play 
 </a>
 
 Signed APKs are available for download on the
-<a href={urlJoin(GITHUB_URL, 'releases')} target="_blank">GitHub Releases</a> page.
+<a href={joinURL(GITHUB_URL, 'releases')} target="_blank">GitHub Releases</a> page.
 
 To build the application from source, clone the <a href={GITHUB_URL} target="_blank">GitHub repository</a>, open
 the project in Android Studio and follow the [official documentation](https://developer.android.com/studio/run).
