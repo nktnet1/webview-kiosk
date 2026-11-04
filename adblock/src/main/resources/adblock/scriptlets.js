@@ -287,16 +287,24 @@
         .some(type => groups.has(type));
     const token = 'wk-scriptlet-' + Math.random().toString(36).slice(2);
     const abortErrors = aborting ? new WeakSet() : null;
+    const abortMarker = aborting ? Symbol('wk-scriptlet-abort') : null;
     if (aborting) {
         apply(nativeAdd, self, ['error', event => {
-            // Error objects may cross JavaScript realms. Suppress only exceptions
-            // thrown by our own property hooks, never unrelated page errors.
-            if (abortErrors.has(event.error)) { event.preventDefault(); }
+            // Host error events may wrap errors from another realm, changing
+            // their identity. A private symbol survives a transparent wrapper;
+            // the WeakSet handles ordinary same-object events without branding.
+            try {
+                const error = event.error;
+                if (abortErrors.has(error) || error?.[abortMarker] === token) {
+                    event.preventDefault();
+                }
+            } catch { /* Never let a hostile error proxy break page handling. */ }
         }]);
     }
     function abort() {
         const error = new NativeError(token);
         abortErrors?.add(error);
+        try { define(error, abortMarker, { value: token }); } catch {}
         throw error;
     }
     const slots = new WeakMap();

@@ -31,9 +31,9 @@ def output_for(statuses, result_code=0, include_mqtt_evidence=True):
 
 
 class R8RuntimeTest(unittest.TestCase):
-    def test_minified_runtime_probes_do_not_link_to_removed_test_only_kotlin_helpers(self):
-        sources = ROOT / "app/src/androidTest/java/uk/nktnet/webviewkiosk/r8"
-        runner = (sources / "R8RuntimeInstrumentation.kt").read_text()
+    def test_minified_runtime_probes_are_in_smoke_app_not_in_test_apk(self):
+        sources = ROOT / "app/src/smokeRelease/java/uk/nktnet/webviewkiosk/r8"
+        runner = (sources / "SmokeReleaseInstrumentation.kt").read_text()
         broker = (sources / "Mqtt5LoopbackBroker.kt").read_text()
         for source in (runner, broker):
             self.assertNotIn(".use {", source)
@@ -42,8 +42,23 @@ class R8RuntimeTest(unittest.TestCase):
         self.assertIn("broker.close()", runner)
         self.assertIn("socket.close()", broker)
 
+    def test_java_runner_only_links_to_smoke_variant_entry_point(self):
+        test_sources = ROOT / "app/src/androidTest/java/uk/nktnet/webviewkiosk/r8"
+        runner = (test_sources / "R8RuntimeInstrumentation.java").read_text()
+        self.assertIn("extends SmokeReleaseInstrumentation", runner)
+        self.assertEqual([], list(test_sources.glob("*.kt")))
+        keep = (ROOT / "app/proguard-smoke-test.pro").read_text()
+        self.assertIn(
+            "-keep class uk.nktnet.webviewkiosk.r8.SmokeReleaseInstrumentation "
+            "{ public *; }", keep,
+        )
+        self.assertNotIn("-keep class kotlin.", keep)
+        self.assertNotIn("-keep class kotlinx.", keep)
+        build = (ROOT / "app/build.gradle.kts").read_text()
+        self.assertIn('proguardFiles("proguard-smoke-test.pro")', build)
+
     def test_runtime_probes_use_retained_app_api_instead_of_removed_factories(self):
-        runner = (ROOT / "app/src/androidTest/java/uk/nktnet/webviewkiosk/r8/R8RuntimeInstrumentation.kt").read_text()
+        runner = (ROOT / "app/src/smokeRelease/java/uk/nktnet/webviewkiosk/r8/SmokeReleaseInstrumentation.kt").read_text()
         for missing_factory in (
             "Json {", "Json(base)", "Dispatchers.Default", "scope.cancel()",
             "kotlinx.serialization.decodeFromString", "kotlinx.serialization.encodeToString",

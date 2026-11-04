@@ -34,11 +34,11 @@ import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
 
 /**
- * Tests application code inside the R8-minified smokeRelease APK. The tests are kept
- * in a separate instrumentation APK, never in the published APK. Only run this on a
- * disposable emulator: MQTT preferences are changed briefly.
+ * Runs inside the R8-minified smokeRelease APK, so R8 sees every Kotlin and
+ * coroutine call made by the probes. This class is absent from published APKs. Only
+ * run on a disposable emulator: MQTT preferences are changed briefly.
  */
-class R8RuntimeInstrumentation : Instrumentation() {
+open class SmokeReleaseInstrumentation : Instrumentation() {
     override fun onCreate(arguments: Bundle?) {
         super.onCreate(arguments)
         start()
@@ -46,9 +46,8 @@ class R8RuntimeInstrumentation : Instrumentation() {
 
     override fun onStart() {
         super.onStart()
-        // The test APK runs in the target process, whose Kotlin stdlib is
-        // R8-shrunk independently. Avoid listOf()/Pair and other test-only
-        // Kotlin library calls during runner startup.
+        // Probe code is compiled into smokeRelease and shrunk with the app,
+        // not independently with the test APK.
         val probes =
             arrayOf(
                 "json_serialization",
@@ -122,11 +121,8 @@ class R8RuntimeInstrumentation : Instrumentation() {
     }
 
     private fun jsonSerialization() {
-        // The instrumentation APK shares the independently R8-shrunk app
-        // classpath. Test-only kotlinx.serialization Json(...) factory calls can
-        // disappear even though production parsing works. Exercise the app's
-        // real, retained settings JSON import/export instead. The MQTT probes
-        // exercise production sealed request decoding and event encoding.
+        // Exercise the actual settings JSON import/export. The MQTT probes
+        // also exercise production request decoding and event encoding.
         val preferenceName = "r8-verify-json-probe"
         val sandbox =
             object : ContextWrapper(targetContext) {
@@ -255,17 +251,14 @@ class R8RuntimeInstrumentation : Instrumentation() {
             val inboundReceived = CountDownLatch(1)
             val subscribed = CountDownLatch(Mqtt5LoopbackBroker.EXPECTED_TOPICS.size)
             val confirmedTopics = Collections.synchronizedSet(HashSet<String>())
-            // Avoid Dispatchers.getDefault(): R8 can inline/remove the getter
-            // when production code uses the dispatcher internally. An empty
-            // context uses the coroutine builder's default dispatch internally.
+            // Empty context lets the coroutine builder select its default
+            // dispatcher while we attach the collectors before connecting.
             val scope =
                 object : CoroutineScope {
                     override val coroutineContext: CoroutineContext =
                         EmptyCoroutineContext
                 }
-            // UNDISPATCHED attaches observers before connect(). Use the Flow
-            // member collect(FlowCollector), not its Kotlin lambda extension:
-            // R8 may remove test-only extension overloads from the app.
+            // UNDISPATCHED attaches observers before connect().
             val inboundJob =
                 scope.launch(start = CoroutineStart.UNDISPATCHED) {
                     RemoteMessageManager.requestsFlow.collect(

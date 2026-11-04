@@ -69,7 +69,10 @@ test('abort exceptions only suppress their own error events', () => {
     // when it has the same type and message as a scriptlet exception.
     const unrelated = p.run(`new ReferenceError(${JSON.stringify(error.message)})`);
     listener({ error: unrelated, preventDefault: () => count++ });
-    assert.equal(count, 1);
+    // Some WebView/VM boundaries expose a wrapper rather than the original
+    // exception object; its private marker still identifies our own throw.
+    listener({ error: new Proxy(error, {}), preventDefault: () => count++ });
+    assert.equal(count, 2);
 });
 
 test('property hooks share ancestors and tolerate primitives and conflicts', () => {

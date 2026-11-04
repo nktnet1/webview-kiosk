@@ -124,8 +124,8 @@ android {
             initWith(getByName("release"))
             isDebuggable = false
             signingConfig = signingConfigs.getByName("debug")
-            // Preserve test-only cross-APK entry points without bloating the
-            // production release or weakening its ordinary R8 shrinking.
+            // Keep only the Java instrumentation entry point ABI. The probe
+            // implementation is compiled and shrunk inside smokeRelease.
             proguardFiles("proguard-smoke-test.pro")
             matchingFallbacks += listOf("release")
         }

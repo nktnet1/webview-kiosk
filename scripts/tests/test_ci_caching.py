@@ -37,7 +37,7 @@ class CiCachingTest(unittest.TestCase):
         self.assertIn("  android:\n", TESTS)
 
     def test_old_instrumentation_suite_stays_retired_and_r8_probes_are_opt_in(self):
-        self.assertTrue((ROOT / "app/src/androidTest/java/uk/nktnet/webviewkiosk/r8/R8RuntimeInstrumentation.kt").is_file())
+        self.assertTrue((ROOT / "app/src/androidTest/java/uk/nktnet/webviewkiosk/r8/R8RuntimeInstrumentation.java").is_file())
         self.assertFalse((ROOT / "scripts/smoke-release-apk.sh").exists())
         self.assertFalse((ROOT / "scripts/ci/run-android-instrumentation.sh").exists())
         self.assertFalse((ROOT / "scripts/ci/report_android_instrumentation.py").exists())
