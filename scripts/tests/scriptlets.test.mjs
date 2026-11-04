@@ -57,6 +57,18 @@ test('read-only and non-configurable properties do not interrupt other rules', (
     assert.equal(p.run('fixedObject.ads'), false);
 });
 
+test('page VM propagates exceptions thrown by global property getters', () => {
+    const p = page([], { before: `
+        Object.defineProperty(self, 'throwingGetter', {
+            configurable: true,
+            get() { throw new ReferenceError('getter failure'); },
+        });
+    ` });
+    assert.throws(() => p.run('throwingGetter'), {
+        name: 'ReferenceError', message: 'getter failure',
+    });
+});
+
 test('abort exceptions only suppress their own error events', () => {
     // Keep the event target and listener inside the same VM realm as the thrown
     // error. The shared fixture's EventTarget is a host-realm class, and Node's

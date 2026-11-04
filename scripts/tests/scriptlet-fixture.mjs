@@ -1,6 +1,6 @@
 import { routingPayload } from './scriptlet-routing.mjs';
 import { readFileSync } from 'node:fs';
-import { createContext, runInContext } from 'node:vm';
+import { constants, createContext, runInContext } from 'node:vm';
 
 export const runtime = readFileSync(new URL(
     '../../adblock/src/main/resources/adblock/scriptlets.js', import.meta.url), 'utf8');
@@ -32,7 +32,11 @@ export function page(rules, { host = 'site.example', protocol = 'https:', before
     const frameHost = globals.location?.hostname || host;
     const frameLocation = { hostname: frameHost, protocol: frameProtocol,
         href: `${frameProtocol}//${frameHost}/path`, ...globals.location };
-    const context = createContext({
+    // A browser's Window is an ordinary global object. Contextifying a host
+    // object adds a Node-specific property interceptor that can swallow getter
+    // exceptions on some Node versions, hiding scriptlet aborts from tests.
+    const context = createContext(constants.DONT_CONTEXTIFY);
+    Object.assign(context, {
         origin: new URL(frameLocation.href).origin,
         document, EventTarget: Target, HTMLScriptElement: Script,
         Response: class extends Response {}, Request, DOMException, atob, URL, Headers,
