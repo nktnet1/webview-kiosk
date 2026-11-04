@@ -94,15 +94,6 @@ From [v0.15.7](https://github.com/nktnet1/webview-kiosk/releases/tag/v0.15.7),
 the package name for all installation sources except the Google Play Store has
 changed from `com.nktnet.webview_kiosk` to `uk.nktnet.webviewkiosk`.
 
-## Verification
-
-Contributors can run `python3 scripts/verify.py` from the repository root to execute all local
-checks, including an R8-minified Android 16 / 16 KB AVD runtime test. Supporting
-scripts are grouped under `scripts/r8/`, `scripts/android/`, `scripts/ci/`,
-`scripts/benchmarks/`, and `scripts/maintenance/`. See
-[one-command verification](.github/CONTRIBUTING.md#one-command-verification)
-for prerequisites and reports.
-
 ## Contact
 
 - support@webviewkiosk.nktnet.uk
