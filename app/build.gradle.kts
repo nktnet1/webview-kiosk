@@ -124,6 +124,9 @@ android {
             initWith(getByName("release"))
             isDebuggable = false
             signingConfig = signingConfigs.getByName("debug")
+            // Preserve test-only cross-APK entry points without bloating the
+            // production release or weakening its ordinary R8 shrinking.
+            proguardFiles("proguard-smoke-test.pro")
             matchingFallbacks += listOf("release")
         }
     }

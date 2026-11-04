@@ -286,14 +286,19 @@
     const aborting = ['ABORT_READ', 'ABORT_WRITE', 'ABORT_CURRENT_SCRIPT', 'ABORT_STACK_TRACE']
         .some(type => groups.has(type));
     const token = 'wk-scriptlet-' + Math.random().toString(36).slice(2);
+    const abortErrors = aborting ? new WeakSet() : null;
     if (aborting) {
         apply(nativeAdd, self, ['error', event => {
-            if (event.error instanceof NativeError && event.error.message === token) {
-                event.preventDefault();
-            }
+            // Error objects may cross JavaScript realms. Suppress only exceptions
+            // thrown by our own property hooks, never unrelated page errors.
+            if (abortErrors.has(event.error)) { event.preventDefault(); }
         }]);
     }
-    function abort() { throw new NativeError(token); }
+    function abort() {
+        const error = new NativeError(token);
+        abortErrors?.add(error);
+        throw error;
+    }
     const slots = new WeakMap();
     let slotCount = 0;
     function slot(owner, name, acceptsConstant) {

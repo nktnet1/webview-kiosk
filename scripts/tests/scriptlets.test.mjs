@@ -65,6 +65,10 @@ test('abort exceptions only suppress their own error events', () => {
     let count = 0;
     listener({ error, preventDefault: () => count++ });
     listener({ error: new Error('real site error'), preventDefault: () => count++ });
+    // An unrelated error from the page's realm must not be suppressed even
+    // when it has the same type and message as a scriptlet exception.
+    const unrelated = p.run(`new ReferenceError(${JSON.stringify(error.message)})`);
+    listener({ error: unrelated, preventDefault: () => count++ });
     assert.equal(count, 1);
 });
 
