@@ -47,6 +47,10 @@ asset exports, `scripts/ci/` holds the local suite launcher,
 regression tests remain under `scripts/tests/`. Run all checks from the
 repository root so tools resolve repository-relative paths consistently.
 
+Regenerate F-Droid and social preview graphics with
+`python3 scripts/maintenance/update_graphics.py` (requires ImageMagick).
+Run the standalone R8 audit helper with `python3 scripts/r8/r8_verify.py`.
+
 ## Android
 
 Use Java 21 and the Android SDK specified in `app/build.gradle.kts`.
@@ -75,7 +79,7 @@ This does not run additional unit tests unless their tasks are requested.
 Script tests require Python 3.10+ and Node.js 24:
 
 ```bash
-sh scripts/ci/test-local.sh checks
+python3 scripts/ci/test_local.py checks
 ```
 
 ## Documentation site

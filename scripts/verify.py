@@ -390,7 +390,7 @@ def verify(args, report):
     preflight(args)
     report["javaHome"] = os.environ.get("JAVA_HOME")
     python = sys.executable
-    execute("Script tests (Python + Node)", ["sh", "scripts/ci/test-local.sh", "checks"], report)
+    execute("Script tests (Python + Node)", [python, "scripts/ci/test_local.py", "checks"], report)
     execute("Android format, lint, JVM and minified APK", ["sh", "gradlew", "checkFormatting", "lint",
             ":adblock:test", ":app:testDebugUnitTest", ":app:assembleSmokeRelease",
             "--warning-mode=all", "--build-cache", "--stacktrace"], report)
@@ -399,11 +399,11 @@ def verify(args, report):
     if args.skip_docs:
         report["steps"].append({"name": "Documentation suites", "status": "skipped", "reason": "--skip-docs"})
     else:
-        execute("Documentation lint, types and unit tests", ["sh", "scripts/ci/test-local.sh", "docs"], report)
+        execute("Documentation lint, types and unit tests", [python, "scripts/ci/test_local.py", "docs"], report)
         if args.skip_browser:
             report["steps"].append({"name": "Documentation browser tests", "status": "skipped", "reason": "--skip-browser"})
         else:
-            execute("Documentation browser tests", ["sh", "scripts/ci/test-local.sh", "docs-browser"], report)
+            execute("Documentation browser tests", [python, "scripts/ci/test_local.py", "docs-browser"], report)
     if args.skip_avd:
         report["steps"].append({"name": "Minified APK emulator + runtime tests", "status": "skipped",
                                 "reason": "--skip-avd"})

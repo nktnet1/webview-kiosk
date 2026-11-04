@@ -12,7 +12,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from scripts import verify as VERIFY_MODULE
-from scripts.r8 import check_release_dex, r8_audit, r8_runtime, release_startup_smoke
+from scripts.r8 import check_release_dex, r8_audit, r8_runtime, r8_verify, release_startup_smoke
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -34,6 +34,8 @@ class VerifyCliTest(unittest.TestCase):
             with self.subTest(module=module.__name__):
                 self.assertEqual(ROOT, module.ROOT)
                 self.assertTrue(Path(module.__file__).is_relative_to(ROOT / "scripts/r8"))
+        self.assertEqual(ROOT, r8_verify.PROJECT_ROOT)
+        self.assertTrue(Path(r8_verify.__file__).is_relative_to(ROOT / "scripts/r8"))
         self.assertEqual(ROOT / "app/build/outputs/apk/smokeRelease/app-smokeRelease.apk", VERIFY_MODULE.SMOKE_APK)
 
     def setUp(self):
@@ -77,6 +79,8 @@ class VerifyCliTest(unittest.TestCase):
                       ":app:testDebugUnitTest", ":app:assembleSmokeRelease", "--warning-mode=all"):
             self.assertIn(check, android)
         self.assertIn("--fail-on-warnings", calls[2][1])
+        for index in (0, 3, 4):
+            self.assertEqual([sys.executable, "scripts/ci/test_local.py"], calls[index][1][:2])
         self.assertIn("--runtime", calls[-1][1])
         self.assertIn("emulator-5580", calls[-1][1])
         self.assertNotIn("--runtime", calls[2][1])

@@ -40,6 +40,8 @@ class CiCachingTest(unittest.TestCase):
         self.assertTrue((ROOT / "app/src/androidTest/java/uk/nktnet/webviewkiosk/r8/R8RuntimeInstrumentation.java").is_file())
         self.assertFalse((ROOT / "scripts/smoke-release-apk.sh").exists())
         self.assertFalse((ROOT / "scripts/ci/run-android-instrumentation.sh").exists())
+        self.assertFalse((ROOT / "scripts/ci/test-local.sh").exists())
+        self.assertFalse((ROOT / "scripts/maintenance/update-graphics.sh").exists())
         self.assertFalse((ROOT / "scripts/ci/report_android_instrumentation.py").exists())
         gradle_build = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
         versions = (ROOT / "gradle/libs.versions.toml").read_text(encoding="utf-8")

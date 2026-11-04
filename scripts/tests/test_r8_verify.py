@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-SCRIPT = Path(__file__).resolve().parents[1] / "r8_verify.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "r8/r8_verify.py"
 SPEC = importlib.util.spec_from_file_location("r8_verify", SCRIPT)
 assert SPEC and SPEC.loader
 verify = importlib.util.module_from_spec(SPEC)
@@ -15,6 +15,9 @@ SPEC.loader.exec_module(verify)
 
 
 class FindAuditTests(unittest.TestCase):
+    def test_moved_wrapper_still_finds_repository_root(self):
+        self.assertEqual(Path(__file__).resolve().parents[2], verify.PROJECT_ROOT)
+
     def test_finds_audit_in_moved_subfolder(self):
         with tempfile.TemporaryDirectory() as directory:
             scripts = Path(directory)

@@ -1,14 +1,15 @@
-"""Check local CI parity dispatch without an Android SDK or network access."""
+"""Check Python local CI parity dispatch without an Android SDK or network access."""
 
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-LAUNCHER = ROOT / "scripts/ci/test-local.sh"
+LAUNCHER = ROOT / "scripts/ci/test_local.py"
 
 
 class LocalTestRunnerTest(unittest.TestCase):
@@ -17,8 +18,11 @@ class LocalTestRunnerTest(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
         (self.root / "scripts/ci").mkdir(parents=True)
+        (self.root / "scripts/tests").mkdir()
         (self.root / "docs").mkdir()
-        shutil.copyfile(LAUNCHER, self.root / "scripts/ci/test-local.sh")
+        shutil.copyfile(LAUNCHER, self.root / "scripts/ci/test_local.py")
+        for name in ("alpha.test.mjs", "beta.test.mjs"):
+            (self.root / "scripts/tests" / name).touch()
 
         (self.root / "gradlew").write_text(
             "#!/bin/sh\n"
@@ -28,26 +32,27 @@ class LocalTestRunnerTest(unittest.TestCase):
         )
         bin_dir = self.root / "bin"
         bin_dir.mkdir()
-        for name in ("node", "java"):
+        for name in ("python3", "node", "java"):
             command = bin_dir / name
             command.write_text(
-                '#!/bin/sh\nprintf "%s\\n" "$*" >> ' + name + '-args.txt\nexit 0\n',
+                '#!/bin/sh\nprintf "%s\\n" "$@" >> ' + name + '-args.txt\n'
+                + 'exit "${STUB_' + name.upper() + '_EXIT:-0}"\n',
                 encoding="utf-8",
             )
             command.chmod(0o755)
         pnpm = bin_dir / "pnpm"
         pnpm.write_text(
-            '#!/bin/sh\nprintf "%s\\n" "$*" >> pnpm-args.txt\n',
+            '#!/bin/sh\nprintf "%s\\n" "$@" >> pnpm-args.txt\nexit "${STUB_PNPM_EXIT:-0}"\n',
             encoding="utf-8",
         )
         pnpm.chmod(0o755)
         self.env = os.environ.copy()
         self.env["PATH"] = f"{bin_dir}:{self.env.get('PATH', '')}"
 
-    def run_suite(self, *args, env=None):
+    def run_suite(self, *args, env=None, cwd=None):
         return subprocess.run(
-            ["sh", str(self.root / "scripts/ci/test-local.sh"), *args],
-            cwd=self.root,
+            [sys.executable, str(self.root / "scripts/ci/test_local.py"), *args],
+            cwd=cwd or self.root,
             env=env or self.env,
             capture_output=True,
             text=True,
@@ -64,6 +69,7 @@ class LocalTestRunnerTest(unittest.TestCase):
         self.assertIn("JVM/Robolectric", result.stdout)
         self.assertNotIn("android         ", result.stdout)
         self.assertIsNone(self.read_gradle_args())
+        self.assertEqual(2, self.run_suite().returncode)
 
     def test_jvm_runs_exact_ci_gradle_task(self):
         result = self.run_suite("jvm")
@@ -79,16 +85,35 @@ class LocalTestRunnerTest(unittest.TestCase):
         self.assertIn("Unknown suite 'android'", result.stderr)
         self.assertIsNone(self.read_gradle_args())
 
-    def test_checks_runs_cosmetic_script_without_npm_dependencies(self):
-        stub = self.root / "bin/python3"
-        stub.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-        stub.chmod(0o755)
+    def test_checks_runs_python_and_expands_node_glob_without_shell(self):
         result = self.run_suite("checks")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
-            "--test scripts/tests/*.test.mjs\n",
+            "-m\nunittest\ndiscover\n-s\nscripts/tests\n-p\ntest_*.py\n",
+            (self.root / "python3-args.txt").read_text(encoding="utf-8"),
+        )
+        self.assertEqual(
+            "--test\nscripts/tests/alpha.test.mjs\nscripts/tests/beta.test.mjs\n",
             (self.root / "node-args.txt").read_text(encoding="utf-8"),
         )
+
+    def test_checks_stops_before_node_when_python_fails(self):
+        result = self.run_suite("checks", env={**self.env, "STUB_PYTHON3_EXIT": "42"})
+        self.assertEqual(42, result.returncode)
+        self.assertFalse((self.root / "node-args.txt").exists())
+
+    def test_node_failure_propagates_to_ci(self):
+        result = self.run_suite("checks", env={**self.env, "STUB_NODE_EXIT": "31"})
+        self.assertEqual(31, result.returncode)
+        self.assertTrue((self.root / "python3-args.txt").exists())
+
+    def test_checks_fails_clearly_if_node_tests_are_missing(self):
+        for test in (self.root / "scripts/tests").glob("*.test.mjs"):
+            test.unlink()
+        result = self.run_suite("checks")
+        self.assertEqual(2, result.returncode)
+        self.assertIn("No Node script tests found", result.stderr)
+        self.assertFalse((self.root / "node-args.txt").exists())
 
     def test_docs_browser_requires_preinstalled_dependencies(self):
         missing = self.run_suite("docs-browser")
@@ -98,14 +123,15 @@ class LocalTestRunnerTest(unittest.TestCase):
         result = self.run_suite("docs-browser")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
-            "-C docs build\n-C docs test:e2e\n", (self.root / "pnpm-args.txt").read_text()
+            "-C\ndocs\nbuild\n-C\ndocs\ntest:e2e\n", (self.root / "pnpm-args.txt").read_text()
         )
 
     def test_docs_runs_checks_and_vitest(self):
         (self.root / "docs/node_modules").mkdir()
         result = self.run_suite("docs")
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual("-C docs check\n-C docs typecheck\n-C docs test\n", (self.root / "pnpm-args.txt").read_text())
+        self.assertEqual("-C\ndocs\ncheck\n-C\ndocs\ntypecheck\n-C\ndocs\ntest\n",
+                         (self.root / "pnpm-args.txt").read_text(encoding="utf-8"))
 
     def test_other_suites_reject_removed_android_options(self):
         result = self.run_suite("jvm", "--api", "35")
@@ -113,13 +139,29 @@ class LocalTestRunnerTest(unittest.TestCase):
         self.assertIn("Unexpected option '--api'", result.stderr)
         self.assertIsNone(self.read_gradle_args())
 
-    def test_all_dispatches_only_non_avd_suites(self):
-        # Avoid installing packages: record a real script dispatch with stubs.
+    def test_failure_propagates_and_stops_before_next_suite(self):
+        env = {**self.env, "STUB_GRADLE_EXIT": "17"}
+        result = self.run_suite("all", env=env)
+        self.assertEqual(17, result.returncode)
+        self.assertFalse((self.root / "pnpm-args.txt").exists())
+        self.assertEqual(
+            "--test\nscripts/tests/alpha.test.mjs\nscripts/tests/beta.test.mjs\n",
+            (self.root / "node-args.txt").read_text(encoding="utf-8"),
+        )
+
+    def test_docs_failure_stops_before_typecheck_or_vitest(self):
         (self.root / "docs/node_modules").mkdir()
-        # Stub python3 so the offline Python suite does not require copied tests.
-        stub = self.root / "bin/python3"
-        stub.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-        stub.chmod(0o755)
+        result = self.run_suite("docs", env={**self.env, "STUB_PNPM_EXIT": "23"})
+        self.assertEqual(23, result.returncode)
+        self.assertEqual("-C\ndocs\ncheck\n", (self.root / "pnpm-args.txt").read_text())
+
+    def test_path_resolution_does_not_depend_on_cwd(self):
+        result = self.run_suite("checks", cwd=self.root.parent)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue((self.root / "node-args.txt").exists())
+
+    def test_all_dispatches_only_non_avd_suites(self):
+        (self.root / "docs/node_modules").mkdir()
         result = self.run_suite("all")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
@@ -127,7 +169,7 @@ class LocalTestRunnerTest(unittest.TestCase):
             self.read_gradle_args(),
         )
         self.assertEqual(
-            "-C docs check\n-C docs typecheck\n-C docs test\n-C docs build\n-C docs test:e2e\n",
+            "-C\ndocs\ncheck\n-C\ndocs\ntypecheck\n-C\ndocs\ntest\n-C\ndocs\nbuild\n-C\ndocs\ntest:e2e\n",
             (self.root / "pnpm-args.txt").read_text(encoding="utf-8"),
         )
 
