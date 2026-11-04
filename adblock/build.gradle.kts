@@ -31,7 +31,6 @@ dependencies {
 // Use the same PSL as HttpUrl, without runtime access to OkHttp's internal APIs.
 abstract class GenerateScriptletSuffixes : DefaultTask() {
     @get:Classpath abstract val suffixClasspath: ConfigurableFileCollection
-    @get:OutputFile abstract val destination: RegularFileProperty
     @get:OutputFile abstract val serializedDestination: RegularFileProperty
 
     @TaskAction
@@ -52,10 +51,7 @@ abstract class GenerateScriptletSuffixes : DefaultTask() {
                 }
             }
         require(lists.size == 1) { "Expected one OkHttp public suffix resource" }
-        val output = destination.get().asFile
-        output.parentFile.mkdirs()
         val source = lists.single()
-        output.writeBytes(source)
         // Prepare the public suffix data at build time instead of normalising
         // thousands of hostnames on every Android process start.
         val serialized =
@@ -108,13 +104,14 @@ abstract class GenerateScriptletSuffixes : DefaultTask() {
     }
 }
 
-val suffixResources = layout.buildDirectory.dir("generated/scriptlet-suffixes")
+// Use a fresh main-only output directory so stale publicsuffix.list files from
+// earlier builds cannot leak back into the production JAR/APK.
+val suffixResources = layout.buildDirectory.dir("generated/scriptlet-suffix-json")
 val generateScriptletSuffixes =
     tasks.register<GenerateScriptletSuffixes>("generateScriptletSuffixes") {
         group = "build"
         description = "Extract OkHttp's public suffix list for scriptlet routing."
         suffixClasspath.from(configurations.runtimeClasspath)
-        destination.set(suffixResources.map { it.file("adblock/publicsuffix.list") })
         serializedDestination.set(
             suffixResources.map { it.file("adblock/publicsuffix-serialized.json") }
         )

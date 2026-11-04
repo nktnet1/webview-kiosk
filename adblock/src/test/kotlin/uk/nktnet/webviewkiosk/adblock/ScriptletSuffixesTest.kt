@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.adblock
 
 import java.io.DataInputStream
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import uk.nktnet.webviewkiosk.adblock.engine.ScriptletIndex
 import uk.nktnet.webviewkiosk.adblock.engine.ScriptletSuffixes
@@ -10,8 +11,14 @@ import uk.nktnet.webviewkiosk.adblock.engine.normalizedHost
 class ScriptletSuffixesTest {
     @Test
     fun bundledSuffixesMatchFullHostnameNormalization() {
+        // Compare against the resolved OkHttp input, not an extra production copy.
+        assertNull(javaClass.getResourceAsStream("/adblock/publicsuffix.list"))
         val stream =
-            checkNotNull(javaClass.getResourceAsStream("/adblock/publicsuffix.list"))
+            checkNotNull(
+                javaClass.getResourceAsStream(
+                    "/okhttp3/internal/publicsuffix/PublicSuffixDatabase.list"
+                )
+            )
         DataInputStream(stream).use { input ->
             fun readList(): String {
                 val length = input.readInt()

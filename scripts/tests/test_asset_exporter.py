@@ -19,7 +19,7 @@ from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location("asset_exporter", ROOT / "scripts/export-android-test-assets.py")
+SPEC = importlib.util.spec_from_file_location("asset_exporter", ROOT / "scripts/android/export-android-test-assets.py")
 ASSETS = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ASSETS)
 
@@ -268,7 +268,7 @@ else:
         self.assertFalse(list(self.output.glob("gradle-cache*")))
         self.verify_checksums()
         call = self.calls("gradle")[0]
-        self.assertEqual(str(self.sdk), call["sdk"])
+        self.assertEqual(self.sdk.resolve(), Path(call["sdk"]).resolve())
         self.assertIn(":app:resolveAndroidTestAssets", call["args"])
         self.assertIn("--init-script", call["args"])
         self.assertNotIn(":app:testDebugUnitTest", call["args"])
@@ -338,7 +338,7 @@ else:
     def test_relative_sdk_properties_resolve_from_checkout(self):
         shutil.copytree(self.sdk, self.project / "sdk")
         write(self.project / "local.properties", "sdk.dir=sdk\n")
-        self.assertEqual(self.project / "sdk", ASSETS.sdk_root(ASSETS.parse_args([])))
+        self.assertEqual((self.project / "sdk").resolve(), ASSETS.sdk_root(ASSETS.parse_args([])))
 
     def test_gradle_export_and_stale_parts_in_both_directions(self):
         write(self.output / "gradle-deps.tar.gz", "old whole archive")
@@ -404,7 +404,7 @@ else:
         self.assertIn("platform-tools", calls[1])
         self.assertEqual("y\n" * 100, (self.root / "sdkmanager-input.txt").read_text())
         gradle = self.calls("gradle")[0]
-        self.assertEqual(str(sdk), gradle["sdk"])
+        self.assertEqual(sdk.resolve(), Path(gradle["sdk"]).resolve())
         self.assertIn(".prepared.", gradle["java"])
         self.assertFalse(Path(gradle["java"]).exists())
         self.verify_checksums()
@@ -485,7 +485,7 @@ else:
 class DispatchTest(unittest.TestCase):
     def test_python_cli_help_without_tools(self):
         result = subprocess.run(
-            [sys.executable, str(ROOT / "scripts/export-android-test-assets.py"), "--help"],
+            [sys.executable, str(ROOT / "scripts/android/export-android-test-assets.py"), "--help"],
             text=True, capture_output=True,
         )
         self.assertEqual(0, result.returncode, result.stderr)
@@ -539,7 +539,7 @@ class DispatchTest(unittest.TestCase):
                 self.assertIn(image, containers[0])
                 for command in builds + containers:
                     self.assertIn("linux/amd64", command)
-                self.assertIn(f"{output}:/export", containers[0])
+                self.assertIn(f"{output.resolve()}:/export", containers[0])
                 self.assertIn("python3", containers[0])
                 self.assertIn(ASSETS.DOCKER_BOOTSTRAP, containers[0])
                 compile(ASSETS.DOCKER_BOOTSTRAP, "docker-bootstrap", "exec")
@@ -588,15 +588,25 @@ class DispatchTest(unittest.TestCase):
             self.assertNotIn("--download-node", command)
             self.assertNotIn("--download-pnpm", command)
             self.assertIn("'docs'", ASSETS.DOCKER_BOOTSTRAP)
+            self.assertIn("scripts/android/export-android-test-assets.py", ASSETS.DOCKER_BOOTSTRAP)
+            build = next(call.args[0] for call in run.call_args_list
+                         if call.args[0][1] == "build")
+            self.assertEqual(ROOT / "scripts/android/Dockerfile.android-test-assets",
+                             build[build.index("--file") + 1])
+            self.assertEqual(ROOT / "scripts/android", build[-1])
 
-    def test_init_script_prefetches_lint_gradle_and_aapt2(self):
-        script = (ROOT / "scripts/resolve-android-test-assets.init.gradle").read_text()
+    def test_init_script_prefetches_lint_gradle_and_current_build_assets(self):
+        script = (ROOT / "scripts/android/resolve-android-test-assets.init.gradle").read_text()
         self.assertIn("'androidLintTool'", script)
         self.assertIn("'lintChecks'", script)
         self.assertIn("'debugLintChecksClasspath'", script)
         self.assertIn("'releaseLintChecksClasspath'", script)
         self.assertIn("lint-gradle-", script)
-        self.assertIn("com.android.tools.build:aapt2:9.4.1-15978811:linux", script)
+        self.assertIn("com.android.tools.build:aapt2:9.5.0-16666295:linux", script)
+        self.assertIn("org.jetbrains.kotlin:compose-group-mapping:2.4.21", script)
+        self.assertIn("libraries.findVersion('agp')", script)
+        self.assertIn("libraries.findVersion('kotlin')", script)
+        self.assertNotIn("aapt2:9.4.1-15978811", script)
         # Android lint dependencies are resolved as files, not graph metadata.
         self.assertIn("incoming.artifacts.artifactFiles.files", script)
 
@@ -617,7 +627,7 @@ class DispatchTest(unittest.TestCase):
                 self.assertEqual(1, run.call_count)
 
     def test_dockerfiles_supply_python_and_use_jbr_cdn(self):
-        android = (ROOT / "scripts/Dockerfile.android-test-assets").read_text()
+        android = (ROOT / "scripts/android/Dockerfile.android-test-assets").read_text()
         self.assertLess(
             android.index("ARG GRADLE_IMAGE=gradle:jdk21-jammy\n"),
             android.index("FROM ${GRADLE_IMAGE}"),

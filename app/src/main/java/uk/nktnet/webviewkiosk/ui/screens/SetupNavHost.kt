@@ -20,6 +20,7 @@ import androidx.navigation.createGraph
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.webview.ContentBlockingGate
+import uk.nktnet.webviewkiosk.utils.NonPredictiveNavigationBackHandler
 import uk.nktnet.webviewkiosk.utils.WEBVIEW_RECREATION_REQUEST_KEY
 import uk.nktnet.webviewkiosk.utils.authComposable
 
@@ -168,7 +169,8 @@ internal fun SetupNavHost(
                     composable(Screen.WebView.route) { entry ->
                         WebViewRootDestination(entry, webViewContent)
                     }
-                    composable(Screen.AdminRestrictionsChanged.route) {
+                    composable(Screen.AdminRestrictionsChanged.route) { entry ->
+                        NonPredictiveNavigationBackHandler(navController, entry)
                         AdminRestrictionsChangedScreen(navController)
                     }
                     navigation(

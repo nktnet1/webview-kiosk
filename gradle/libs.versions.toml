@@ -19,6 +19,7 @@ re2j = "1.8"
 robolectric = "4.17"
 swiperefreshlayout = "1.2.0"
 spotless = "8.10.4"
+slf4j = "2.0.20"
 
 #noinspection GradleDependency
 activityCompose = "1.11.0"
@@ -60,13 +61,14 @@ hivemq-mqtt-client-websocket = { module = "com.hivemq:hivemq-mqtt-client-websock
 hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
 junit = { module = "junit:junit", version.ref = "junit" }
 re2j = { module = "com.google.re2j:re2j", version.ref = "re2j" }
-# Used indirectly by scripts/resolve-android-test-assets.init.gradle.
+# Used indirectly by scripts/android/resolve-android-test-assets.init.gradle.
 #noinspection UnusedVersionCatalogEntry
 ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

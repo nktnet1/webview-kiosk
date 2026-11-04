@@ -1,6 +1,7 @@
 Public Suffix List data
 
-The build copies PublicSuffixDatabase.list from the resolved OkHttp dependency.
+The build derives the scriptlet JSON resource from PublicSuffixDatabase.list in
+the resolved OkHttp dependency without bundling a second raw copy.
 The Public Suffix List is licensed under the Mozilla Public License 2.0.
 License: https://mozilla.org/MPL/2.0/
 Source: https://publicsuffix.org/list/public_suffix_list.dat

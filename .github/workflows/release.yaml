@@ -51,8 +51,18 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       # Inspect the APK we actually publish; no second build or AVD needed.
-      - name: Check R8-minified DEX for startup regression
-        run: python3 scripts/check_release_dex.py app/build/outputs/apk/release/app-release.apk
+      - name: Audit the exact signed release APK and R8 diagnostics
+        run: |
+          python3 scripts/r8/r8_audit.py app/build/outputs/apk/release/app-release.apk \
+            --require-mapping --fail-on-warnings --json build/reports/r8/release.json
+
+      - name: Upload R8 diagnostics for analysis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-r8-audit
+          path: build/reports/r8/release.json
+          if-no-files-found: warn
 
       - name: Store release APK for publication
         uses: actions/upload-artifact@v4

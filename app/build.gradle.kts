@@ -1,3 +1,4 @@
+import com.android.build.api.variant.HostTestBuilder
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -18,6 +19,8 @@ android {
     namespace = "uk.nktnet.webviewkiosk"
 
     defaultConfig {
+        testInstrumentationRunner =
+            "uk.nktnet.webviewkiosk.r8.R8RuntimeInstrumentation"
         applicationId = "uk.nktnet.webviewkiosk"
         minSdk = 21
         targetSdk = 37
@@ -30,6 +33,9 @@ android {
         buildConfig = true
         compose = true
     }
+
+    // Optional runtime probes exercise the R8-optimised APK, not debug.
+    testBuildType = "smokeRelease"
 
     testOptions {
         unitTests {
@@ -80,6 +86,10 @@ android {
                 listOf(
                     "META-INF/INDEX.LIST",
                     "META-INF/io.netty.versions.properties",
+                    // The APK runs generated Protobuf code, not the source schemas.
+                    "google/protobuf/*.proto",
+                    // GraalVM native-image metadata is not used by Android ART.
+                    "META-INF/native-image/**",
                 )
         }
     }
@@ -114,8 +124,20 @@ android {
             initWith(getByName("release"))
             isDebuggable = false
             signingConfig = signingConfigs.getByName("debug")
+            // Keep only the Java instrumentation entry point ABI. The probe
+            // implementation is compiled and shrunk inside smokeRelease.
+            proguardFiles("proguard-smoke-test.pro")
             matchingFallbacks += listOf("release")
         }
+    }
+}
+
+androidComponents {
+    // AGP 9 only creates host unit tests for testBuildType (smokeRelease) by
+    // default. Restore the other variants so CI can run debug Robolectric
+    // tests and Compose Preview can package resources for every variant.
+    beforeVariants(selector().all()) {
+        it.hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = true
     }
 }
 
@@ -152,6 +174,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
     implementation(libs.hivemq.mqtt.client)
+    // HiveMQ references the SLF4J API directly; do not mask missing classes in R8.
+    implementation(libs.slf4j.api)
     implementation(platform(libs.hivemq.mqtt.client.websocket))
     implementation(libs.connector)
     retrofix(libs.android.retrostreams)

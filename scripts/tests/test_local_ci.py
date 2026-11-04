@@ -105,7 +105,7 @@ class LocalTestRunnerTest(unittest.TestCase):
         (self.root / "docs/node_modules").mkdir()
         result = self.run_suite("docs")
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual("-C docs check\n-C docs test\n", (self.root / "pnpm-args.txt").read_text())
+        self.assertEqual("-C docs check\n-C docs typecheck\n-C docs test\n", (self.root / "pnpm-args.txt").read_text())
 
     def test_other_suites_reject_removed_android_options(self):
         result = self.run_suite("jvm", "--api", "35")
@@ -127,7 +127,7 @@ class LocalTestRunnerTest(unittest.TestCase):
             self.read_gradle_args(),
         )
         self.assertEqual(
-            "-C docs check\n-C docs test\n-C docs build\n-C docs test:e2e\n",
+            "-C docs check\n-C docs typecheck\n-C docs test\n-C docs build\n-C docs test:e2e\n",
             (self.root / "pnpm-args.txt").read_text(encoding="utf-8"),
         )
 

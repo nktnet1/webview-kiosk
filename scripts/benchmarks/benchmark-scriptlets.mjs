@@ -1,4 +1,4 @@
-import { routingPayload } from './tests/scriptlet-routing.mjs';
+import { routingPayload } from '../tests/scriptlet-routing.mjs';
 // Host V8 measurements only: not Android renderer, network, or page-load timings.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -9,7 +9,7 @@ const path = process.argv[2];
 if (!path) { throw new Error('Pass the exported ublock-injection.js path'); }
 const source = readFileSync(path, 'utf8');
 const runtime = readFileSync(process.argv[3] || new URL(
-    '../adblock/src/main/resources/adblock/scriptlets.js', import.meta.url), 'utf8');
+    '../../adblock/src/main/resources/adblock/scriptlets.js', import.meta.url), 'utf8');
 const median = values => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
 function timed(run) {
     const start = performance.now();

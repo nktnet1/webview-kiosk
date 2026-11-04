@@ -57,15 +57,50 @@ test('read-only and non-configurable properties do not interrupt other rules', (
     assert.equal(p.run('fixedObject.ads'), false);
 });
 
+test('page VM propagates exceptions thrown by global property getters', () => {
+    const p = page([], { before: `
+        Object.defineProperty(self, 'throwingGetter', {
+            configurable: true,
+            get() { throw new ReferenceError('getter failure'); },
+        });
+    ` });
+    assert.throws(() => p.run('throwingGetter'), {
+        name: 'ReferenceError', message: 'getter failure',
+    });
+});
+
 test('abort exceptions only suppress their own error events', () => {
-    const p = installed('ABORT_READ', ['adMarker']);
-    let error;
-    try { p.run('adMarker'); } catch (e) { error = e; }
-    const listener = p.calls.listeners.find(call => call[1] === 'error')[2];
-    let count = 0;
-    listener({ error, preventDefault: () => count++ });
-    listener({ error: new Error('real site error'), preventDefault: () => count++ });
-    assert.equal(count, 1);
+    // Keep the event target and listener inside the same VM realm as the thrown
+    // error. The shared fixture's EventTarget is a host-realm class, and Node's
+    // VM membrane can change error identity while invoking its host methods.
+    const p = installed('ABORT_READ', ['adMarker'], {
+        before: `
+            self.EventTarget = class {
+                addEventListener(type, callback) {
+                    if (type === 'error') { self.scriptletErrorListener = callback; }
+                }
+            };
+            self.addEventListener = EventTarget.prototype.addEventListener;
+        `,
+    });
+    const results = p.run(`(() => {
+        let error;
+        try { adMarker; } catch (caught) { error = caught; }
+        const outcomes = [];
+        const dispatch = value => {
+            let suppressed = false;
+            scriptletErrorListener({ error: value, preventDefault() { suppressed = true; } });
+            outcomes.push(suppressed);
+        };
+        dispatch(error);
+        dispatch(new Error('real site error'));
+        // Matching the error's type and secret message is not sufficient.
+        dispatch(new ReferenceError(error.message));
+        // An in-realm transparent wrapper still retains the private marker.
+        dispatch(new Proxy(error, {}));
+        return outcomes.join(',');
+    })()`);
+    assert.equal(results, 'true,false,false,true');
 });
 
 test('property hooks share ancestors and tolerate primitives and conflicts', () => {

@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import release_startup_smoke as smoke
+from scripts.r8 import release_startup_smoke as smoke
 
 
 class FakeTools:
