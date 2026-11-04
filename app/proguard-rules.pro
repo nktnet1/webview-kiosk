@@ -25,10 +25,22 @@
 # Without this keep rule, R8 can remove the guard and crash app startup.
 -keep class java9.util.concurrent.ThreadLocalRandom { *; }
 
+# HiveMQ/Netty uses reflective member access, so preserve member names for
+# reachable Netty classes without forcing unused classes to survive R8.
 # https://hivemq.github.io/hivemq-mqtt-client/docs/installation/android/
 -keepclassmembernames class io.netty.** { *; }
--keepclassmembers class org.jctools.** { *; }
--keep class io.netty.handler.codec.** { *; }  # Without this, MQTTS via websocket will hang
+
+# JCTools queue implementations compute Unsafe offsets using declared field
+# names. Only queue fields need to survive: Netty calls queue methods directly,
+# and does not use JCTools maps or counters.
+-keepclassmembers class org.jctools.queues.** { <fields>; }
+
+# R8 must not rewrite the HTTP/WebSocket codecs in the HiveMQ upgrade pipeline.
+# Preserve the base codecs and HTTP transport (including WebSocket frames),
+# but leave unrelated codecs (SPDY, RTSP, compression, Protobuf, etc.) shrinkable.
+-keep class io.netty.handler.codec.* { *; }
+-keep class io.netty.handler.codec.http.* { *; }
+-keep class io.netty.handler.codec.http.websocketx.** { *; }
 
 -dontwarn reactor.blockhound.integration.BlockHoundIntegration
 
