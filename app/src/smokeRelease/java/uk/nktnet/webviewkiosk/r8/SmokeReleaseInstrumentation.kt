@@ -269,17 +269,17 @@ open class SmokeReleaseInstrumentation : Instrumentation() {
                                 >
                             > {
                             override suspend fun emit(
-                                message:
+                                value:
                                     RemoteMessageManager.RemoteMessage<
                                         InboundRequestMessage
                                     >
                             ) {
                                 if (
-                                    message.source ==
+                                    value.source ==
                                         RemoteMessageManager.RemoteMessage.Source
                                             .MQTT &&
-                                        message.message is InboundStatusRequest &&
-                                        message.message.messageId ==
+                                        value.message is InboundStatusRequest &&
+                                        value.message.messageId ==
                                             Mqtt5LoopbackBroker.INBOUND_ID
                                 ) {
                                     inboundReceived.countDown()
@@ -292,10 +292,10 @@ open class SmokeReleaseInstrumentation : Instrumentation() {
                 scope.launch(start = CoroutineStart.UNDISPATCHED) {
                     MqttManager.debugLog.collect(
                         object : FlowCollector<MqttLogEntry> {
-                            override suspend fun emit(entry: MqttLogEntry) {
-                                if (entry.tag == "subscribe success") {
+                            override suspend fun emit(value: MqttLogEntry) {
+                                if (value.tag == "subscribe success") {
                                     val topic =
-                                        entry.message?.removePrefix("topic: ")
+                                        value.message?.removePrefix("topic: ")
                                     if (
                                         topic in
                                             Mqtt5LoopbackBroker.EXPECTED_TOPICS &&

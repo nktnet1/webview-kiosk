@@ -48,7 +48,13 @@ class R8RuntimeTest(unittest.TestCase):
         self.assertIn("extends SmokeReleaseInstrumentation", runner)
         self.assertEqual([], list(test_sources.glob("*.kt")))
         keep = (ROOT / "app/proguard-smoke-test.pro").read_text()
+        # The class exists only in the smoke variant, not in src/main, so an
+        # IDE can flag this valid variant-specific shrinker rule as unresolved.
+        self.assertTrue(
+            (ROOT / "app/src/smokeRelease/java/uk/nktnet/webviewkiosk/r8/SmokeReleaseInstrumentation.kt").is_file()
+        )
         self.assertIn(
+            "# noinspection ShrinkerUnresolvedReference\n"
             "-keep class uk.nktnet.webviewkiosk.r8.SmokeReleaseInstrumentation "
             "{ public *; }", keep,
         )
@@ -246,6 +252,20 @@ class R8RuntimeTest(unittest.TestCase):
         self.assertEqual(
             f"app.test/{runtime.RUNNER}",
             runtime.validate_instrumentation_component(badging, xmltree, "app"),
+        )
+
+    def test_accepts_isolated_smoke_instrumentation_package(self):
+        target = "uk.nktnet.webviewkiosk.smoke"
+        badging = f"package: name='{target}.test' versionCode='139' versionName='0.26.25'"
+        xmltree = "\n".join([
+            "  E: manifest (line=1)",
+            "    E: instrumentation (line=9)",
+            f'      A: android:name(0x01010003)="{runtime.RUNNER}"',
+            f'      A: android:targetPackage(0x01010021)="{target}"',
+        ])
+        self.assertEqual(
+            f"{target}.test/{runtime.RUNNER}",
+            runtime.validate_instrumentation_component(badging, xmltree, target),
         )
 
     def test_accepts_reordered_xmltree_attributes(self):

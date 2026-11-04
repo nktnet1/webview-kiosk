@@ -122,6 +122,8 @@ android {
         // This builds a separate APK: the ordinary release variant is unchanged.
         create("smokeRelease") {
             initWith(getByName("release"))
+            // Install alongside production with separate settings and data.
+            applicationIdSuffix = ".smoke"
             isDebuggable = false
             signingConfig = signingConfigs.getByName("debug")
             // Keep only the Java instrumentation entry point ABI. The probe

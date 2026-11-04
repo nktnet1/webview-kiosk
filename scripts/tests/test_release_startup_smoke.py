@@ -66,7 +66,7 @@ class FakeTools:
             output = self.start_output
         elif rest[:3] == ["logcat", "-d", "-b"]:
             output = self.logs
-        elif rest[:3] == ["shell", "pidof", "com.nktnet.webview_kiosk"]:
+        elif rest[:2] == ["shell", "pidof"]:
             output = self.pid
             code = 0 if output else 1
         elif rest[:3] == ["shell", "am", "force-stop"] or rest == ["logcat", "-c"]:
@@ -116,6 +116,23 @@ class ReleaseStartupSmokeTest(unittest.TestCase):
             calls.index(["adb", "-s", "emulator-5554", "logcat", "-c"]),
         )
         self.assertLess(calls.index(["adb", "-s", "emulator-5554", "logcat", "-c"]), calls.index(starts[0]))
+
+    def test_smoke_package_id_is_used_for_launch_and_process_checks(self):
+        self.tools.badging = (
+            "package: name='uk.nktnet.webviewkiosk.smoke' versionCode='139' "
+            "versionName='0.26.25'\n"
+            "launchable-activity: name='uk.nktnet.webviewkiosk.MainActivity' label='WK Smoke'\n"
+        )
+        self.assertIn("PASS: uk.nktnet.webviewkiosk.smoke", self.run_smoke())
+        self.assertIn(
+            ["adb", "-s", "emulator-5554", "shell", "am", "start", "-W", "-n",
+             "uk.nktnet.webviewkiosk.smoke/uk.nktnet.webviewkiosk.MainActivity"],
+            self.tools.calls,
+        )
+        self.assertIn(
+            ["adb", "-s", "emulator-5554", "shell", "pidof", "uk.nktnet.webviewkiosk.smoke"],
+            self.tools.calls,
+        )
 
     def test_serial_is_forwarded_to_every_adb_command(self):
         self.run_smoke(serial="emulator-5554")
