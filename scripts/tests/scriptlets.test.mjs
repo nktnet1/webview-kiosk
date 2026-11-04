@@ -58,20 +58,32 @@ test('read-only and non-configurable properties do not interrupt other rules', (
 });
 
 test('abort exceptions only suppress their own error events', () => {
-    const p = installed('ABORT_READ', ['adMarker']);
-    let error;
-    try { p.run('adMarker'); } catch (e) { error = e; }
-    const listener = p.calls.listeners.find(call => call[1] === 'error')[2];
-    let count = 0;
-    listener({ error, preventDefault: () => count++ });
-    listener({ error: new Error('real site error'), preventDefault: () => count++ });
-    // An unrelated error from the page's realm must not be suppressed even
-    // when it has the same type and message as a scriptlet exception.
-    const unrelated = p.run(`new ReferenceError(${JSON.stringify(error.message)})`);
-    listener({ error: unrelated, preventDefault: () => count++ });
-    // Some WebView/VM boundaries expose a wrapper rather than the original
-    // exception object; its private marker still identifies our own throw.
-    listener({ error: new Proxy(error, {}), preventDefault: () => count++ });
+    // Capture the registered listener inside the page realm. Passing it through
+    // the Node host test harness can rewrap the exception and lose its identity.
+    const p = installed('ABORT_READ', ['adMarker'], {
+        before: `
+            const nativeAddEventListener = EventTarget.prototype.addEventListener;
+            EventTarget.prototype.addEventListener = function(type, callback, ...options) {
+                if (type === 'error') { self.scriptletErrorListener = callback; }
+                return nativeAddEventListener.call(this, type, callback, ...options);
+            };
+        `,
+    });
+    const count = p.run(`(() => {
+        let error;
+        try { adMarker; } catch (caught) { error = caught; }
+        let suppressed = 0;
+        const dispatch = value => scriptletErrorListener({
+            error: value, preventDefault() { suppressed++; },
+        });
+        dispatch(error);
+        dispatch(new Error('real site error'));
+        // Matching the error's type and secret message is not sufficient.
+        dispatch(new ReferenceError(error.message));
+        // An in-realm transparent wrapper still retains the private marker.
+        dispatch(new Proxy(error, {}));
+        return suppressed;
+    })()`);
     assert.equal(count, 2);
 });
 
