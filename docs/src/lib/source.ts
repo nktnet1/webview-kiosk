@@ -2,7 +2,7 @@ import { docs, legal as legalPages } from "collections/server";
 import { loader } from "fumadocs-core/source";
 import { lucideIconsPlugin } from "fumadocs-core/source/lucide-icons";
 import { toFumadocsSource } from "fumadocs-mdx/runtime/server";
-import urlJoin from "url-join";
+import { joinURL } from "ufo";
 import { docsRoute } from "./shared";
 
 export const source = loader({
@@ -38,7 +38,7 @@ export function slugsToMarkdownPath(slugs: string[], baseRoute: string) {
 
   return {
     segments,
-    url: urlJoin(baseRoute, segments.join("/")),
+    url: joinURL(baseRoute, segments.join("/")),
   };
 }
 
