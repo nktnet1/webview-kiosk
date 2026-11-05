@@ -15,10 +15,9 @@ class NfcInterface(private val context: android.content.Context) {
             """
             (function() {
                 if (window.__webviewKioskWebNfcInstalled) return;
-                window.__webviewKioskWebNfcInstalled = true;
-
                 const nativeBridge = window.WebviewKioskNfcInterface;
                 if (!nativeBridge) return;
+                window.__webviewKioskWebNfcInstalled = true;
 
                 const activeReaders = new Set();
                 const pendingWrites = new Map();
@@ -231,15 +230,36 @@ class NfcInterface(private val context: android.content.Context) {
                     });
                 }
 
+                // A suspended WebView can retain its JavaScript readers even when
+                // Android loses the native scanning session. Re-arm the existing
+                // readers; never create another NDEFReader or reload the page.
+                function rearmActiveReaders() {
+                    if (activeReaders.size === 0 ||
+                        !nativeBridge || typeof nativeBridge.scan !== 'function') {
+                        return;
+                    }
+                    try {
+                        // A failed attempt keeps the readers for the next wake or
+                        // adapter-enabled event. It does not change NFC settings.
+                        nativeBridge.scan('{}');
+                    } catch (_) {}
+                }
+
                 class WebviewKioskNDEFReader extends EventTarget {
                     constructor() {
                         super();
                         this.onreading = null;
                         this.onreadingerror = null;
                         this._scanActive = false;
+                        this._scanSignal = null;
+                        this._scanAbortListener = null;
                     }
 
                     async scan(options = {}) {
+                        const signal = options && options.signal;
+                        if (signal && signal.aborted) {
+                            throw createDomException('NFC scan aborted.', 'AbortError');
+                        }
                         if (!nativeBridge || typeof nativeBridge.scan !== 'function') {
                             throw createDomException(
                                 'Web NFC bridge unavailable.',
@@ -263,6 +283,22 @@ class NfcInterface(private val context: android.content.Context) {
 
                         this._scanActive = true;
                         activeReaders.add(this);
+
+                        if (this._scanSignal && this._scanAbortListener) {
+                            this._scanSignal.removeEventListener(
+                                'abort', this._scanAbortListener
+                            );
+                        }
+                        this._scanSignal = null;
+                        this._scanAbortListener = null;
+                        if (signal && typeof signal.addEventListener === 'function') {
+                            this._scanSignal = signal;
+                            this._scanAbortListener = () => this.stopScan();
+                            signal.addEventListener('abort', this._scanAbortListener, {
+                                once: true
+                            });
+                            if (signal.aborted) this.stopScan();
+                        }
                     }
 
                     async write() {
@@ -308,15 +344,24 @@ class NfcInterface(private val context: android.content.Context) {
                     }
 
                     stopScan() {
-                        if (
-                            this._scanActive
-                            && nativeBridge
-                            && typeof nativeBridge.stopScan === 'function'
-                        ) {
-                            nativeBridge.stopScan();
-                        }
+                        const wasActive = this._scanActive;
                         this._scanActive = false;
+                        if (this._scanSignal && this._scanAbortListener) {
+                            this._scanSignal.removeEventListener(
+                                'abort', this._scanAbortListener
+                            );
+                        }
+                        this._scanSignal = null;
+                        this._scanAbortListener = null;
                         activeReaders.delete(this);
+                        // The native bridge is shared by every reader in this
+                        // document. Only the last one may stop the shared scan.
+                        if (wasActive && activeReaders.size === 0 && nativeBridge &&
+                            typeof nativeBridge.stopScan === 'function') {
+                            try {
+                                nativeBridge.stopScan();
+                            } catch (_) {}
+                        }
                     }
                 }
 
@@ -335,15 +380,17 @@ class NfcInterface(private val context: android.content.Context) {
                     },
                     onWriteResult: function(resultPayload) {
                         resolveWriteResult(resultPayload);
-                    }
+                    },
+                    rearmScan: rearmActiveReaders
                 };
 
-                window.addEventListener('beforeunload', function() {
-                    activeReaders.clear();
-                    pendingWrites.clear();
-                    if (nativeBridge && typeof nativeBridge.reset === 'function') {
-                        nativeBridge.reset();
-                    }
+                // Native onPageStarted owns session teardown. Calling reset from
+                // beforeunload races with the next page's scan() on the shared
+                // @JavascriptInterface, and can also run for cancelled unloads.
+                window.addEventListener('pageshow', rearmActiveReaders);
+                window.addEventListener('focus', rearmActiveReaders);
+                document.addEventListener('visibilitychange', function() {
+                    if (!document.hidden) rearmActiveReaders();
                 });
             })();
         """

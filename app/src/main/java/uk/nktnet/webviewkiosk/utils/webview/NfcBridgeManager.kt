@@ -5,6 +5,7 @@ import android.nfc.NdefRecord
 import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.util.Base64
+import android.util.Log
 import android.webkit.WebView
 import java.lang.ref.WeakReference
 import java.nio.charset.StandardCharsets
@@ -47,6 +48,27 @@ object NfcBridgeManager {
         isScanActive = active
     }
 
+    /** Re-arm only readers belonging to the current, still-scanning page. */
+    fun rearmActiveReaders() {
+        if (!isScanActive) {
+            return
+        }
+        val webView = webViewRef?.get() ?: return
+        val activeSessionId = sessionId
+        webView.post {
+            if (isScanActive && isCurrentSession(webView, activeSessionId)) {
+                runCatching {
+                    webView.evaluateJavascript(
+                        "window.__WebviewKioskNfcBridge && window.__WebviewKioskNfcBridge.rearmScan && window.__WebviewKioskNfcBridge.rearmScan();",
+                        null,
+                    )
+                }
+                    .onSuccess { Log.d(TAG, "Requested Web NFC reader re-arm") }
+                    .onFailure { Log.w(TAG, "Unable to re-arm Web NFC readers", it) }
+            }
+        }
+    }
+
     @Synchronized
     fun queueWrite(messageJson: String): String? {
         if (pendingWrite != null) {
@@ -72,8 +94,13 @@ object NfcBridgeManager {
     }
 
     fun onTagScanned(tag: Tag) {
-        val webView = webViewRef?.get() ?: return
+        val webView = webViewRef?.get()
+        if (webView == null) {
+            Log.d(TAG, "NFC tag received without an attached WebView")
+            return
+        }
         val activeSessionId = sessionId
+        Log.d(TAG, "NFC tag received (scan active: $isScanActive)")
 
         val writeResult = consumePendingWriteAndWrite(tag, activeSessionId)
         if (writeResult != null && isCurrentSession(webView, activeSessionId)) {
@@ -140,6 +167,8 @@ object NfcBridgeManager {
     ): Boolean {
         return sessionId == expectedSessionId && webViewRef?.get() === webView
     }
+
+    private const val TAG = "NfcBridgeManager"
 
     private fun mapWriteErrorName(error: Throwable): String {
         return when (error) {

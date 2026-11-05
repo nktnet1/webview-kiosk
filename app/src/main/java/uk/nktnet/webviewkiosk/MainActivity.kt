@@ -155,11 +155,19 @@ open class MainActivity : AppCompatActivity() {
                     Intent.ACTION_POWER_DISCONNECTED -> {
                         MqttManager.publishPowerUnpluggedEvent()
                     }
-                    Intent.ACTION_SCREEN_ON -> nfcForegroundDispatch.onScreenOn()
+                    Intent.ACTION_SCREEN_ON -> {
+                        nfcForegroundDispatch.onScreenOn()
+                        if (userSettings.allowNfc) {
+                            NfcBridgeManager.rearmActiveReaders()
+                        }
+                    }
                     NfcAdapter.ACTION_ADAPTER_STATE_CHANGED -> {
-                        nfcForegroundDispatch.onAdapterStateChanged(
+                        val state =
                             intent.getIntExtra(NfcAdapter.EXTRA_ADAPTER_STATE, -1)
-                        )
+                        nfcForegroundDispatch.onAdapterStateChanged(state)
+                        if (state == NfcAdapter.STATE_ON && userSettings.allowNfc) {
+                            NfcBridgeManager.rearmActiveReaders()
+                        }
                     }
                     else -> Unit
                 }
@@ -672,6 +680,9 @@ open class MainActivity : AppCompatActivity() {
         }
         backButtonService.onBackPressedCallback.isEnabled = true
         nfcForegroundDispatch.onResume()
+        if (userSettings.allowNfc) {
+            NfcBridgeManager.rearmActiveReaders()
+        }
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
             if (pendingAndroid6HomeRedirect) {
@@ -694,6 +705,9 @@ open class MainActivity : AppCompatActivity() {
         immersiveModeRecovery?.onWindowFocusChanged(hasFocus)
         if (hasFocus && isApplicationEventHost()) {
             nfcForegroundDispatch.onWindowFocusGained()
+            if (userSettings.allowNfc) {
+                NfcBridgeManager.rearmActiveReaders()
+            }
         }
     }
 
