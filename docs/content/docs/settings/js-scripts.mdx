@@ -41,7 +41,43 @@ To disable, use the value `0`.
 
 **Default:** 0
 
-## 3. Enable Battery API
+## 3. Enable App Launcher API
+
+When enabled, web pages can open other installed applications:
+
+- `window.WebviewKioskAppInterface.launchPackage(packageName): boolean`
+- `window.WebviewKioskAppInterface.isInstalled(packageName): boolean`
+- `window.WebviewKioskAppInterface.getInstalled(packageNamesJson): string`
+
+`launchPackage` returns `false` when the package is not installed, and
+otherwise opens it through the same path as any other app launch. While
+locked, the usual lock task rules still apply: the target package must be
+lock task permitted, and the HOME lock task feature must be enabled under
+device owner. Any refusal is reported on the device.
+
+`getInstalled` takes a JSON array of package names and returns a JSON
+object mapping each one to whether it is installed, so a page can show only
+the apps that are actually present.
+
+Example web usage:
+
+```javascript
+const apps = window.WebviewKioskAppInterface;
+const present = JSON.parse(
+    apps.getInstalled('["com.netflix.ninja", "com.disney.disneyplus"]')
+);
+
+if (present["com.netflix.ninja"]) {
+    apps.launchPackage("com.netflix.ninja");
+}
+```
+
+Only enable this for pages you trust, as it allows the page to navigate the
+device away from the kiosk page and into another application.
+
+**Default:** false
+
+## 4. Enable Battery API
 
 When enabled, web pages can call `window.WebviewKioskBatteryInterface.getBatteryStatus()`
 to retrieve the battery data below:
@@ -74,7 +110,7 @@ try {
 
 **Default:** false
 
-## 4. Enable Brightness API
+## 5. Enable Brightness API
 
 When enabled, web pages can call
 - `window.WebviewKioskBrightnessInterface.getBrightness(): number`
@@ -103,7 +139,7 @@ try {
 
 **Default:** false
 
-## 5. Enable Vibration API
+## 6. Enable Vibration API
 
 When enabled, web pages can vibrate the device using
 [`navigator.vibrate(pattern)`](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/vibrate).
@@ -117,7 +153,7 @@ content.
 
 **Default:** false
 
-## 6. Enable Dark Reader
+## 7. Enable Dark Reader
 
 Automatically inject Dark Reader into web pages.
 
@@ -130,7 +166,7 @@ Note: Some websites may render incorrectly due to CSS overrides.
 
 **Default:** false
 
-## 7. Enable Eruda Console
+## 8. Enable Eruda Console
 
 Automatically inject the Eruda console into web pages.
 
@@ -149,7 +185,7 @@ desktop developer tools.
 
 **Default:** false
 
-## 8. Custom Scripts
+## 9. Custom Scripts
 
 Your code content will be wrapped as follows to prevent polluting the global
 scope and avoid conflicts with other scripts:

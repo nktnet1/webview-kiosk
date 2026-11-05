@@ -22,6 +22,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.ApplyApp
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.ApplyDesktopViewportWidthSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnPageFinishSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnPageStartSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.EnableAppLauncherApiSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.EnableBatteryApiSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.EnableBrightnessApiSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.EnableDarkReaderSetting
@@ -48,6 +49,7 @@ fun SettingsJsScriptsScreen(navController: NavController) {
         ) {
             ApplyAppThemeSetting()
             ApplyDesktopViewportWidthSetting()
+            EnableAppLauncherApiSetting()
             EnableBatteryApiSetting()
             EnableBrightnessApiSetting()
             EnableVibrationApiSetting()
