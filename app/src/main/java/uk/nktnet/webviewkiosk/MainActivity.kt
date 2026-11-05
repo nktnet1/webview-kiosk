@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk
 
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -99,8 +98,8 @@ import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
+import uk.nktnet.webviewkiosk.utils.webview.NfcForegroundDispatch
 import uk.nktnet.webviewkiosk.utils.webview.WebViewStartup
-import uk.nktnet.webviewkiosk.utils.webview.getNfcAdapterOrNull
 
 open class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavHostController
@@ -117,6 +116,9 @@ open class MainActivity : AppCompatActivity() {
     private var pendingDhizukuPermissionRequest = false
     private var deviceOwnerInitJob: Job? = null
     private var unregisterMqttCommandHost: (() -> Unit)? = null
+    private val nfcForegroundDispatch by lazy {
+        NfcForegroundDispatch(this, isAllowed = { userSettings.allowNfc })
+    }
 
     // HOME and normal LAUNCHER tasks can coexist on any Android version (API 23
     // may also keep the private kiosk task alive). Only one activity should own
@@ -152,6 +154,12 @@ open class MainActivity : AppCompatActivity() {
                     }
                     Intent.ACTION_POWER_DISCONNECTED -> {
                         MqttManager.publishPowerUnpluggedEvent()
+                    }
+                    Intent.ACTION_SCREEN_ON -> nfcForegroundDispatch.onScreenOn()
+                    NfcAdapter.ACTION_ADAPTER_STATE_CHANGED -> {
+                        nfcForegroundDispatch.onAdapterStateChanged(
+                            intent.getIntExtra(NfcAdapter.EXTRA_ADAPTER_STATE, -1)
+                        )
                     }
                     else -> Unit
                 }
@@ -228,6 +236,8 @@ open class MainActivity : AppCompatActivity() {
                 addAction(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
                 addAction(Intent.ACTION_POWER_CONNECTED)
                 addAction(Intent.ACTION_POWER_DISCONNECTED)
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(NfcAdapter.ACTION_ADAPTER_STATE_CHANGED)
             },
         )
 
@@ -661,7 +671,7 @@ open class MainActivity : AppCompatActivity() {
             AuthenticationManager.init(this)
         }
         backButtonService.onBackPressedCallback.isEnabled = true
-        enableNfcForegroundDispatch()
+        nfcForegroundDispatch.onResume()
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
             if (pendingAndroid6HomeRedirect) {
@@ -682,11 +692,14 @@ open class MainActivity : AppCompatActivity() {
         super.onWindowFocusChanged(hasFocus)
         // Focus can return without onResume (e.g. after the notification shade).
         immersiveModeRecovery?.onWindowFocusChanged(hasFocus)
+        if (hasFocus && isApplicationEventHost()) {
+            nfcForegroundDispatch.onWindowFocusGained()
+        }
     }
 
     override fun onPause() {
         immersiveModeRecovery?.pause()
-        disableNfcForegroundDispatch()
+        nfcForegroundDispatch.onPause()
         super.onPause()
     }
 
@@ -877,52 +890,6 @@ open class MainActivity : AppCompatActivity() {
     override fun onKeyLongPress(keyCode: Int, event: KeyEvent): Boolean {
         return (backButtonService.onKeyLongPress(keyCode) ||
             super.onKeyLongPress(keyCode, event))
-    }
-
-    private fun enableNfcForegroundDispatch() {
-        if (!this::userSettings.isInitialized || !userSettings.allowNfc) {
-            return
-        }
-
-        val adapter = getNfcAdapterOrNull(this) ?: return
-
-        val intent =
-            Intent(this, javaClass).apply {
-                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            }
-
-        val flags =
-            PendingIntent.FLAG_UPDATE_CURRENT or
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    PendingIntent.FLAG_MUTABLE
-                } else {
-                    0
-                }
-
-        val pendingIntent =
-            PendingIntent.getActivity(
-                this,
-                0,
-                intent,
-                flags,
-            )
-
-        runCatching {
-            adapter.enableForegroundDispatch(
-                this,
-                pendingIntent,
-                null,
-                null,
-            )
-        }
-    }
-
-    private fun disableNfcForegroundDispatch() {
-        val adapter = getNfcAdapterOrNull(this) ?: return
-
-        runCatching {
-            adapter.disableForegroundDispatch(this)
-        }
     }
 
     private fun handleNfcIntent(intent: Intent): Boolean {
