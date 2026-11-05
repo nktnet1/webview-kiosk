@@ -5,6 +5,8 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 
 /**
@@ -20,6 +22,12 @@ internal class NfcForegroundDispatch(
 ) {
     private var resumed = false
     private var dispatchRegistered = false
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val wakeRetry = Runnable {
+        if (resumed) {
+            register("delayed screen wake")
+        }
+    }
 
     fun onResume() {
         resumed = true
@@ -28,6 +36,7 @@ internal class NfcForegroundDispatch(
 
     fun onPause() {
         resumed = false
+        mainHandler.removeCallbacks(wakeRetry)
         dispatchRegistered = false
         val adapter = adapterProvider() ?: return
         runCatching { adapter.disableForegroundDispatch(activity) }
@@ -39,6 +48,11 @@ internal class NfcForegroundDispatch(
     fun onScreenOn() {
         if (resumed) {
             register("screen on")
+            // The NFC service may finish waking after SCREEN_ON. Make one more
+            // attempt without polling, resetting the radio, or keeping the activity
+            // alive.
+            mainHandler.removeCallbacks(wakeRetry)
+            mainHandler.postDelayed(wakeRetry, WAKE_RETRY_DELAY_MS)
         }
     }
 
@@ -128,5 +142,6 @@ internal class NfcForegroundDispatch(
 
     private companion object {
         const val TAG = "NfcForegroundDispatch"
+        const val WAKE_RETRY_DELAY_MS = 1_500L
     }
 }

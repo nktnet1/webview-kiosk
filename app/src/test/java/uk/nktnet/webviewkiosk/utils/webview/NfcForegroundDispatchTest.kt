@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.utils.webview
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.nfc.NfcAdapter
+import android.os.Looper
+import java.time.Duration
 import org.junit.After
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -68,6 +70,48 @@ class NfcForegroundDispatchTest {
         resetNfcService()
         dispatch.onWindowFocusGained()
         assertSame(activity, shadowOf(adapter()).enabledActivity)
+        dispatch.onPause()
+    }
+
+    @Test
+    fun delayedWakeRetryRestoresDispatchWhenNfcServiceRecoversLater() {
+        val dispatch = NfcForegroundDispatch(activity, { true })
+        dispatch.onResume()
+        dispatch.onScreenOn()
+
+        // The NFC service may lose the registration after SCREEN_ON, but before
+        // its hardware is ready to deliver tags again.
+        resetNfcService()
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(1_499))
+        assertNull(shadowOf(adapter()).enabledActivity)
+
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(1))
+        assertSame(activity, shadowOf(adapter()).enabledActivity)
+        dispatch.onPause()
+    }
+
+    @Test
+    fun cancelsDelayedWakeRetryWhenActivityPauses() {
+        val dispatch = NfcForegroundDispatch(activity, { true })
+        dispatch.onResume()
+        dispatch.onScreenOn()
+        dispatch.onPause()
+
+        resetNfcService()
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2))
+        assertNull(shadowOf(adapter()).enabledActivity)
+    }
+
+    @Test
+    fun delayedWakeRetryDoesNotEnableDispatchWhileRadioIsOff() {
+        val dispatch = NfcForegroundDispatch(activity, { true })
+        dispatch.onResume()
+        dispatch.onScreenOn()
+
+        resetNfcService()
+        shadowOf(adapter()).setEnabled(false)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2))
+        assertNull(shadowOf(adapter()).enabledActivity)
         dispatch.onPause()
     }
 
