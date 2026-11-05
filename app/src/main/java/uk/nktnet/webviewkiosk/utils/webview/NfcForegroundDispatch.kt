@@ -19,6 +19,7 @@ internal class NfcForegroundDispatch(
     },
 ) {
     private var resumed = false
+    private var dispatchRegistered = false
 
     fun onResume() {
         resumed = true
@@ -27,6 +28,7 @@ internal class NfcForegroundDispatch(
 
     fun onPause() {
         resumed = false
+        dispatchRegistered = false
         val adapter = adapterProvider() ?: return
         runCatching { adapter.disableForegroundDispatch(activity) }
             .onFailure {
@@ -80,6 +82,21 @@ internal class NfcForegroundDispatch(
             return
         }
 
+        // Android registers an onPause listener on every enable call. Replace the
+        // existing registration before recovering it, or repeated screen wakes
+        // will accumulate listeners that disable dispatch on the next pause.
+        if (dispatchRegistered) {
+            runCatching { adapter.disableForegroundDispatch(activity) }
+                .onFailure {
+                    Log.w(
+                        TAG,
+                        "Failed to replace NFC foreground dispatch ($reason)",
+                        it,
+                    )
+                }
+            dispatchRegistered = false
+        }
+
         val intent =
             Intent(activity, activity.javaClass).apply {
                 addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -96,7 +113,10 @@ internal class NfcForegroundDispatch(
         runCatching {
             adapter.enableForegroundDispatch(activity, pendingIntent, null, null)
         }
-            .onSuccess { Log.d(TAG, "NFC foreground dispatch registered ($reason)") }
+            .onSuccess {
+                dispatchRegistered = true
+                Log.d(TAG, "NFC foreground dispatch registered ($reason)")
+            }
             .onFailure {
                 Log.w(
                     TAG,

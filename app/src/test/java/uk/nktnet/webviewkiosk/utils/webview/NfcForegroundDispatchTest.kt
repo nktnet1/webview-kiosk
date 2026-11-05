@@ -72,6 +72,23 @@ class NfcForegroundDispatchTest {
     }
 
     @Test
+    fun replacesExistingRegistrationBeforeEachWakeRecovery() {
+        val dispatch = NfcForegroundDispatch(activity, { true })
+        dispatch.onResume()
+        assertNull(shadowOf(adapter()).disabledActivity)
+
+        dispatch.onScreenOn()
+        assertSame(activity, shadowOf(adapter()).disabledActivity)
+        assertSame(activity, shadowOf(adapter()).enabledActivity)
+
+        ReflectionHelpers.setField(shadowOf(adapter()), "disabledActivity", null)
+        dispatch.onWindowFocusGained()
+        assertSame(activity, shadowOf(adapter()).disabledActivity)
+        assertSame(activity, shadowOf(adapter()).enabledActivity)
+        dispatch.onPause()
+    }
+
+    @Test
     fun reRegistersWhenTheRadioIsReEnabled() {
         val dispatch = NfcForegroundDispatch(activity, { true })
         shadowOf(adapter()).setEnabled(false)
