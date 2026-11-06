@@ -16,7 +16,9 @@ class NfcInterface(private val context: android.content.Context) {
             (function() {
                 if (window.__webviewKioskWebNfcInstalled) return;
                 const nativeBridge = window.WebviewKioskNfcInterface;
-                if (!nativeBridge) return;
+                if (!nativeBridge || typeof nativeBridge.openClient !== 'function') return;
+                const clientId = nativeBridge.openClient();
+                if (!clientId) return;
                 window.__webviewKioskWebNfcInstalled = true;
 
                 const activeReaders = new Set();
@@ -235,13 +237,13 @@ class NfcInterface(private val context: android.content.Context) {
                 // readers; never create another NDEFReader or reload the page.
                 function rearmActiveReaders() {
                     if (activeReaders.size === 0 ||
-                        !nativeBridge || typeof nativeBridge.scan !== 'function') {
+                        !nativeBridge || typeof nativeBridge.scanForClient !== 'function') {
                         return;
                     }
                     try {
                         // A failed attempt keeps the readers for the next wake or
                         // adapter-enabled event. It does not change NFC settings.
-                        nativeBridge.scan('{}');
+                        nativeBridge.scanForClient(clientId, '{}');
                     } catch (_) {}
                 }
 
@@ -260,14 +262,16 @@ class NfcInterface(private val context: android.content.Context) {
                         if (signal && signal.aborted) {
                             throw createDomException('NFC scan aborted.', 'AbortError');
                         }
-                        if (!nativeBridge || typeof nativeBridge.scan !== 'function') {
+                        if (!nativeBridge || typeof nativeBridge.scanForClient !== 'function') {
                             throw createDomException(
                                 'Web NFC bridge unavailable.',
                                  'NotSupportedError'
                              );
                         }
 
-                        const ok = nativeBridge.scan(JSON.stringify(options));
+                        const ok = nativeBridge.scanForClient(
+                            clientId, JSON.stringify(options)
+                        );
                         if (!ok) {
                             const error = createDomException(
                                 'NFC is unavailable or disabled in device settings.',
@@ -302,7 +306,7 @@ class NfcInterface(private val context: android.content.Context) {
                     }
 
                     async write() {
-                        if (!nativeBridge || typeof nativeBridge.write !== 'function') {
+                        if (!nativeBridge || typeof nativeBridge.writeForClient !== 'function') {
                             throw createDomException(
                                 'Web NFC write bridge unavailable.',
                                  'NotSupportedError'
@@ -315,7 +319,8 @@ class NfcInterface(private val context: android.content.Context) {
 
                         let response;
                         try {
-                            response = JSON.parse(nativeBridge.write(
+                            response = JSON.parse(nativeBridge.writeForClient(
+                                clientId,
                                 JSON.stringify(normalizedMessage),
                                 JSON.stringify(options || {})
                             ));
@@ -355,11 +360,12 @@ class NfcInterface(private val context: android.content.Context) {
                         this._scanAbortListener = null;
                         activeReaders.delete(this);
                         // The native bridge is shared by every reader in this
-                        // document. Only the last one may stop the shared scan.
+                        // document. Only the last one may stop this document's
+                        // scan; other frames/pages own separate client IDs.
                         if (wasActive && activeReaders.size === 0 && nativeBridge &&
-                            typeof nativeBridge.stopScan === 'function') {
+                            typeof nativeBridge.stopScanForClient === 'function') {
                             try {
-                                nativeBridge.stopScan();
+                                nativeBridge.stopScanForClient(clientId);
                             } catch (_) {}
                         }
                     }
@@ -387,6 +393,18 @@ class NfcInterface(private val context: android.content.Context) {
                 // Native onPageStarted owns session teardown. Calling reset from
                 // beforeunload races with the next page's scan() on the shared
                 // @JavascriptInterface, and can also run for cancelled unloads.
+                // A frame may navigate without the top-level onPageStarted event.
+                // Release only this document's client on pagehide; retaining the
+                // client across bfcache allows pageshow to resume existing readers.
+                window.addEventListener('pagehide', function(event) {
+                    try {
+                        if (event.persisted) {
+                            nativeBridge.stopScanForClient(clientId);
+                        } else {
+                            nativeBridge.releaseClient(clientId);
+                        }
+                    } catch (_) {}
+                });
                 window.addEventListener('pageshow', rearmActiveReaders);
                 window.addEventListener('focus', rearmActiveReaders);
                 document.addEventListener('visibilitychange', function() {
@@ -394,6 +412,31 @@ class NfcInterface(private val context: android.content.Context) {
                 });
             })();
         """
+    }
+
+    @Suppress("unused")
+    @JavascriptInterface
+    fun openClient(): String = NfcBridgeManager.openClient()
+
+    @Suppress("unused")
+    @JavascriptInterface
+    fun scanForClient(clientId: String?, optionsJson: String?): Boolean {
+        if (!isNfcEnabled(context)) {
+            return false
+        }
+        return NfcBridgeManager.startClientScan(clientId)
+    }
+
+    @Suppress("unused")
+    @JavascriptInterface
+    fun stopScanForClient(clientId: String?) {
+        NfcBridgeManager.stopClientScan(clientId)
+    }
+
+    @Suppress("unused")
+    @JavascriptInterface
+    fun releaseClient(clientId: String?) {
+        NfcBridgeManager.releaseClient(clientId)
     }
 
     @Suppress("unused")
@@ -420,6 +463,32 @@ class NfcInterface(private val context: android.content.Context) {
 
     @JavascriptInterface
     fun write(messageJson: String?, optionsJson: String?): String {
+        return writeInternal(messageJson)
+    }
+
+    @Suppress("unused")
+    @JavascriptInterface
+    fun writeForClient(
+        clientId: String?,
+        messageJson: String?,
+        optionsJson: String?,
+    ): String {
+        if (!NfcBridgeManager.isCurrentClient(clientId)) {
+            return JSONObject()
+                .apply {
+                    put("ok", false)
+                    put("errorName", "InvalidStateError")
+                    put("errorMessage", "NFC page session has ended")
+                }
+                .toString()
+        }
+        return writeInternal(messageJson, clientId)
+    }
+
+    private fun writeInternal(
+        messageJson: String?,
+        clientId: String? = null,
+    ): String {
         if (!isNfcEnabled(context)) {
             return JSONObject()
                 .apply {
@@ -444,7 +513,7 @@ class NfcInterface(private val context: android.content.Context) {
                     .toString()
 
         val requestId =
-            NfcBridgeManager.queueWrite(message)
+            NfcBridgeManager.queueWrite(message, clientId)
                 ?: return JSONObject()
                     .apply {
                         put("ok", false)

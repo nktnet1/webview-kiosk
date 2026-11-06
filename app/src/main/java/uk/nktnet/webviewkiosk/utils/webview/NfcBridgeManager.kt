@@ -9,6 +9,7 @@ import android.util.Log
 import android.webkit.WebView
 import java.lang.ref.WeakReference
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 import org.json.JSONArray
 import org.json.JSONException
@@ -20,16 +21,28 @@ object NfcBridgeManager {
     @Volatile private var webViewRef: WeakReference<WebView>? = null
     private val writeCounter = AtomicLong(0)
     private val sessionCounter = AtomicLong(0)
+    // One JavaScript bridge instance exists per document/frame, but the native
+    // scan belongs to the entire WebView. Keep each document's membership
+    // separate so a stale page cannot stop its successor's scan.
+    private val clients = mutableSetOf<String>()
+    private val scanningClients = mutableSetOf<String>()
+    private var legacyScanActive = false
 
     @Volatile private var sessionId = 0L
 
     @Volatile private var pendingWrite: PendingWriteRequest? = null
 
-    private data class PendingWriteRequest(
-        val requestId: String,
-        val messageJson: String,
-        val sessionId: Long,
-    )
+    private class PendingWriteRequest(
+        requestId: String,
+        messageJson: String,
+        sessionId: Long,
+        clientId: String?,
+    ) {
+        val requestId = requestId
+        val messageJson = messageJson
+        val sessionId = sessionId
+        val clientId = clientId
+    }
 
     fun attachWebView(webView: WebView) {
         resetSession()
@@ -44,8 +57,52 @@ object NfcBridgeManager {
         }
     }
 
+    @Synchronized
     fun setScanActive(active: Boolean) {
-        isScanActive = active
+        // Retain the original direct JavaScript-interface API for compatibility.
+        legacyScanActive = active
+        isScanActive = legacyScanActive || scanningClients.isNotEmpty()
+    }
+
+    @Synchronized
+    fun openClient(): String {
+        val id = UUID.randomUUID().toString()
+        clients.add(id)
+        return id
+    }
+
+    @Synchronized
+    fun isCurrentClient(clientId: String?): Boolean =
+        clientId != null && clientId in clients
+
+    @Synchronized
+    fun startClientScan(clientId: String?): Boolean {
+        if (clientId == null || clientId !in clients) {
+            return false
+        }
+        scanningClients.add(clientId)
+        isScanActive = true
+        return true
+    }
+
+    @Synchronized
+    fun stopClientScan(clientId: String?) {
+        if (clientId != null && clientId in clients) {
+            scanningClients.remove(clientId)
+            isScanActive = legacyScanActive || scanningClients.isNotEmpty()
+        }
+    }
+
+    @Synchronized
+    fun releaseClient(clientId: String?) {
+        if (clientId != null && clients.remove(clientId)) {
+            scanningClients.remove(clientId)
+            // Do not let a write from a detached frame consume the next tag.
+            if (pendingWrite?.clientId == clientId) {
+                pendingWrite = null
+            }
+            isScanActive = legacyScanActive || scanningClients.isNotEmpty()
+        }
     }
 
     /** Re-arm only readers belonging to the current, still-scanning page. */
@@ -70,7 +127,10 @@ object NfcBridgeManager {
     }
 
     @Synchronized
-    fun queueWrite(messageJson: String): String? {
+    fun queueWrite(messageJson: String, clientId: String? = null): String? {
+        if (clientId != null && clientId !in clients) {
+            return null
+        }
         if (pendingWrite != null) {
             return null
         }
@@ -82,6 +142,7 @@ object NfcBridgeManager {
                 requestId = requestId,
                 messageJson = messageJson,
                 sessionId = sessionId,
+                clientId = clientId,
             )
         return requestId
     }
@@ -89,6 +150,9 @@ object NfcBridgeManager {
     @Synchronized
     fun resetSession() {
         isScanActive = false
+        legacyScanActive = false
+        clients.clear()
+        scanningClients.clear()
         pendingWrite = null
         sessionId = sessionCounter.incrementAndGet()
     }
@@ -136,7 +200,10 @@ object NfcBridgeManager {
         val request =
             synchronized(this) {
                 val current = pendingWrite ?: return null
-                if (current.sessionId != activeSessionId) {
+                if (
+                    current.sessionId != activeSessionId ||
+                        (current.clientId != null && current.clientId !in clients)
+                ) {
                     pendingWrite = null
                     return null
                 }

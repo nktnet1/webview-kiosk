@@ -4,6 +4,8 @@ import android.app.Activity
 import android.os.Looper
 import android.webkit.WebView
 import org.junit.After
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -82,5 +84,63 @@ class NfcBridgeManagerTest {
         NfcBridgeManager.rearmActiveReaders()
         shadowOf(Looper.getMainLooper()).idle()
         assertTrue(shadowOf(webView).lastEvaluatedJavascript.contains("rearmScan"))
+    }
+
+    @Test
+    fun staleClientCannotStopOrRestartNewPageScan() {
+        val oldClient = NfcBridgeManager.openClient()
+        assertTrue(NfcBridgeManager.startClientScan(oldClient))
+        NfcBridgeManager.resetSession() // old document navigates away
+
+        val newClient = NfcBridgeManager.openClient()
+        assertTrue(NfcBridgeManager.startClientScan(newClient))
+        assertFalse(NfcBridgeManager.startClientScan(oldClient))
+        NfcBridgeManager.stopClientScan(oldClient)
+        NfcBridgeManager.releaseClient(oldClient)
+
+        NfcBridgeManager.rearmActiveReaders()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertTrue(shadowOf(webView).lastEvaluatedJavascript.contains("rearmScan"))
+    }
+
+    @Test
+    fun stoppingOneDocumentPreservesOtherDocumentsScan() {
+        val first = NfcBridgeManager.openClient()
+        val second = NfcBridgeManager.openClient()
+        assertTrue(NfcBridgeManager.startClientScan(first))
+        assertTrue(NfcBridgeManager.startClientScan(second))
+        NfcBridgeManager.stopClientScan(first)
+        NfcBridgeManager.releaseClient(first)
+
+        NfcBridgeManager.rearmActiveReaders()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertTrue(shadowOf(webView).lastEvaluatedJavascript.contains("rearmScan"))
+
+        NfcBridgeManager.stopClientScan(second)
+        assertFalse(NfcBridgeManager.isCurrentClient(first))
+        assertTrue(NfcBridgeManager.isCurrentClient(second))
+    }
+
+    @Test
+    fun releasedFrameCannotLeavePendingWriteForNextTag() {
+        val outgoing = NfcBridgeManager.openClient()
+        val current = NfcBridgeManager.openClient()
+        assertNotNull(NfcBridgeManager.queueWrite("{}", outgoing))
+
+        // A navigation in one frame must cancel its queued write, while
+        // allowing the still-active frame to queue its own request.
+        NfcBridgeManager.releaseClient(outgoing)
+        assertNull(NfcBridgeManager.queueWrite("{}", outgoing))
+        assertNotNull(NfcBridgeManager.queueWrite("{}", current))
+    }
+
+    @Test
+    fun stalePageCannotQueueWriteForNewPage() {
+        val oldClient = NfcBridgeManager.openClient()
+        NfcBridgeManager.resetSession()
+        val newClient = NfcBridgeManager.openClient()
+
+        assertNull(NfcBridgeManager.queueWrite("{}", oldClient))
+        assertNotNull(NfcBridgeManager.queueWrite("{}", newClient))
     }
 }
