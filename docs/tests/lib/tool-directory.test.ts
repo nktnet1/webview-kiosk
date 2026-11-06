@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { toolDirectory } from "#/lib/tool-directory";
 
 describe("documentation tools directory", () => {
-  it("lists all four tools with unique routes", () => {
+  it("lists all five tools with unique routes", () => {
     expect(toolDirectory.map((tool) => tool.href)).toEqual([
       "/tools/mqtt",
       "/tools/unifiedpush",
+      "/tools/device-apis",
       "/tools/regex",
       "/tools/qr-installation",
     ]);

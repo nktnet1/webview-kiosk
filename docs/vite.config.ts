@@ -74,6 +74,12 @@ export default defineConfig(async ({ command }) => {
             path: "/tools/mqtt",
           },
           {
+            path: "/tools/device-apis",
+          },
+          {
+            path: "/tools/webview-interfaces",
+          },
+          {
             path: "/tools/regex",
           },
           {

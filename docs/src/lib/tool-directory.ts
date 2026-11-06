@@ -15,6 +15,12 @@ export const toolDirectory = [
     href: "/tools/unifiedpush",
   },
   {
+    id: "interfaces",
+    title: "Device APIs",
+    description: "Try battery, brightness, NFC, vibration, and downloads.",
+    href: "/tools/device-apis",
+  },
+  {
     id: "regex",
     title: "Regex Playground",
     description:
