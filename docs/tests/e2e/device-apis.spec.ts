@@ -102,6 +102,8 @@ test("device API readings poll and native actions work", async ({ page }) => {
   await expect(page.getByText("62%", { exact: true })).toBeVisible();
   await expect(page.getByText("27.3 °C", { exact: true })).toBeVisible();
   await expect(page.getByText("Current: 42%")).toBeVisible();
+  await expect(page.getByText(/^Refreshed at /)).toBeVisible();
+  await expect(page.locator("time[datetime]")).toBeVisible();
   await expect(page.getByRole("button", { name: "Refresh" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Restore" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Read battery" })).toHaveCount(
@@ -109,6 +111,16 @@ test("device API readings poll and native actions work", async ({ page }) => {
   );
 
   const field = page.getByLabel("Brightness (-1 to 100)");
+  await expect(field).toHaveValue("42");
+  // The input is prefilled once; later polls update only the current reading.
+  await page.evaluate(() => {
+    (
+      window as Window & {
+        __setBrightnessExternally?: (value: number) => void;
+      }
+    ).__setBrightnessExternally?.(80);
+  });
+  await expect(page.getByText("Current: 80%")).toBeVisible({ timeout: 5_000 });
   await expect(field).toHaveValue("42");
   await field.fill("101");
   await expect(page.getByRole("button", { name: "Set" })).toBeDisabled();
@@ -136,6 +148,7 @@ test("device API readings poll and native actions work", async ({ page }) => {
     timeout: 5_000,
   });
   await expect(page.getByText("Current: 83%")).toBeVisible();
+  await expect(field).toHaveValue("25");
   await expect(page.getByText("No", { exact: true })).toBeVisible();
   await expect(page.getByText("none", { exact: true })).toBeVisible();
 
@@ -152,18 +165,27 @@ test("device API readings poll and native actions work", async ({ page }) => {
   await expect(field).toHaveValue("33");
   await page.getByRole("button", { name: "Set" }).click();
   await expect(page.getByText("Current: 33%")).toBeVisible({ timeout: 5_000 });
+  await expect(field).toHaveValue("33");
 
+  const vibrationDuration = page.getByLabel("Duration (1–1000 ms)");
+  await expect(vibrationDuration).toHaveValue("150");
+  await vibrationDuration.fill("0");
+  await expect(page.getByRole("button", { name: "Vibrate" })).toBeDisabled();
+  await vibrationDuration.fill("1001");
+  await expect(page.getByRole("button", { name: "Vibrate" })).toBeDisabled();
+  await vibrationDuration.fill("500");
+  await expect(page.getByRole("button", { name: "Vibrate" })).toBeEnabled();
   await page.getByRole("button", { name: "Vibrate" }).click();
   await expect(
     page.locator("[data-sonner-toast]", {
-      hasText: "Vibration requested (150 ms).",
+      hasText: "Vibration requested (500 ms).",
     }),
   ).toBeVisible();
   expect(
     await page.evaluate(
       () => (window as Window & { __vibrateMs?: number }).__vibrateMs,
     ),
-  ).toBe(150);
+  ).toBe(500);
 
   await page.getByRole("button", { name: "Start scan" }).click();
   await expect(

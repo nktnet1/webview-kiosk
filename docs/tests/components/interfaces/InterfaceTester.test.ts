@@ -21,7 +21,8 @@ describe("device API tester", () => {
   });
 
   it("uses automatic polling instead of manual reads or refresh", () => {
-    expect(markup).toContain("Readings refresh every 2 seconds.");
+    expect(markup).toContain("Refreshed at");
+    expect(markup).not.toContain("Readings refresh every 2 seconds.");
     expect(markup).not.toContain(">Refresh<");
     expect(markup).not.toContain(">Read<");
     expect(markup).not.toContain(">Read battery<");
@@ -29,8 +30,17 @@ describe("device API tester", () => {
   });
 
   it("keeps brightness input and Set button on a single narrow-screen row", () => {
-    expect(markup).toContain("grid-cols-[minmax(0,1fr)_auto]");
+    expect(markup).toContain('id="brightness-value"');
     expect(markup).toContain("Current: ");
+  });
+
+  it("offers a bounded vibration duration next to its action", () => {
+    expect(markup).toContain("Duration (1–1000 ms)");
+    expect(markup).toContain('id="vibration-duration"');
+    expect(
+      markup.match(/grid grid-cols-\[minmax\(0,1fr\)_auto\] items-end gap-2/g),
+    ).toHaveLength(2);
+    expect(markup).toContain(">Vibrate</button>");
   });
 
   it("right-aligns actions and places the primary NFC action last", () => {
@@ -47,7 +57,7 @@ describe("device API tester", () => {
       /data-slot="card-content" class="px-6 flex justify-end"><button[^>]*>Download sample<\/button>/,
     );
     expect(markup).toMatch(
-      /data-slot="card-content" class="px-6 flex justify-end"><button[^>]*>Vibrate<\/button>/,
+      /data-slot="card-content" class="px-6"><div class="grid grid-cols-\[minmax\(0,1fr\)_auto\] items-end gap-2">.*?Vibrate<\/button>/s,
     );
   });
 });

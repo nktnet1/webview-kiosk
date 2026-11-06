@@ -5,6 +5,7 @@ import {
   detectInterfaces,
   type InterfaceHost,
   isValidBrightness,
+  isValidVibrationDuration,
   type NfcReader,
   readBattery,
   readBrightness,
@@ -174,14 +175,32 @@ describe("brightness bridge", () => {
 });
 
 describe("vibration API", () => {
-  it("requests one short pulse and checks the return value", () => {
+  it("requests the chosen duration within the safe bounds", () => {
     const vibrate = vi.fn(() => true);
-    requestVibration({ navigator: { vibrate } });
-    expect(vibrate).toHaveBeenCalledExactlyOnceWith(150);
-    expect(() => requestVibration({})).toThrow("not available");
+    const host: InterfaceHost = { navigator: { vibrate } };
+    for (const duration of [1, 150, 500, 1_000]) {
+      requestVibration(host, duration);
+    }
+    expect(vibrate.mock.calls).toEqual([[1], [150], [500], [1_000]]);
+    for (const duration of [0, -1, 1_001, 1.5, Number.NaN, Infinity]) {
+      expect(() => requestVibration(host, duration)).toThrow(
+        "Vibration duration must be 1–1000 ms.",
+      );
+    }
+    expect(vibrate).toHaveBeenCalledTimes(4);
+    expect(() => requestVibration({}, 150)).toThrow("not available");
     expect(() =>
-      requestVibration({ navigator: { vibrate: () => false } }),
+      requestVibration({ navigator: { vibrate: () => false } }, 150),
     ).toThrow("rejected");
+  });
+
+  it("accepts only whole-number millisecond inputs from 1 through 1000", () => {
+    for (const value of ["1", "150", "500", "1000"]) {
+      expect(isValidVibrationDuration(value)).toBe(true);
+    }
+    for (const value of ["", "0", "-1", "1001", "1.5", "1e3", "NaN", " 150 "]) {
+      expect(isValidVibrationDuration(value)).toBe(false);
+    }
   });
 });
 

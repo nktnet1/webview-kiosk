@@ -17,11 +17,15 @@ import {
   describeError,
   type InterfaceHost,
   isValidBrightness,
+  isValidVibrationDuration,
   type NfcReader,
   type NfcReadingEvent,
   requestVibration,
   type ScannedTag,
   setBrightness,
+  VIBRATION_DEFAULT_MS,
+  VIBRATION_MAX_MS,
+  VIBRATION_MIN_MS,
 } from "./bridge";
 import { type DeviceSnapshot, subscribeDeviceSnapshots } from "./polling";
 
@@ -143,9 +147,16 @@ function BrightnessPanel({
   available: boolean;
   brightness: number | null;
 }) {
-  // A draft protects text being edited from being overwritten by the poll.
-  const [draft, setDraft] = useState<string | null>(null);
-  const value = draft ?? String(brightness ?? -1);
+  const [value, setValue] = useState("");
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    // Prefill only once. Subsequent polls only update the current reading.
+    if (!initialized.current && brightness !== null) {
+      initialized.current = true;
+      setValue(String(brightness));
+    }
+  }, [brightness]);
 
   function handleSet() {
     if (!isValidBrightness(value)) {
@@ -154,7 +165,6 @@ function BrightnessPanel({
     }
     try {
       setBrightness(currentHost(), Number(value));
-      setDraft(null);
       toast.info("Brightness requested.");
     } catch (cause) {
       toast.error(describeError(cause));
@@ -189,7 +199,10 @@ function BrightnessPanel({
               max={100}
               step={1}
               value={value}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(event) => {
+                initialized.current = true;
+                setValue(event.target.value);
+              }}
             />
           </div>
           <Button
@@ -418,10 +431,12 @@ function BlobPanel({ available }: { available: boolean }) {
 }
 
 function VibrationPanel({ available }: { available: boolean }) {
+  const [duration, setDuration] = useState(String(VIBRATION_DEFAULT_MS));
+
   function handleTest() {
     try {
-      requestVibration(currentHost());
-      toast.info("Vibration requested (150 ms).");
+      requestVibration(currentHost(), Number(duration));
+      toast.info(`Vibration requested (${duration} ms).`);
     } catch (cause) {
       toast.error(describeError(cause));
     }
@@ -431,30 +446,66 @@ function VibrationPanel({ available }: { available: boolean }) {
     <Card>
       <PanelHeading
         title="Vibration"
-        description="Trigger a 150 ms pulse."
+        description="Test a pulse."
         setting="js_scripts.enable_vibration_api"
         available={available}
         icon={Vibrate}
       />
-      <CardContent className="flex justify-end">
-        <Button disabled={!available} onClick={handleTest}>
-          Vibrate
-        </Button>
+      <CardContent>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
+          <div className="min-w-0 space-y-2">
+            <Label htmlFor="vibration-duration">
+              Duration ({VIBRATION_MIN_MS}–{VIBRATION_MAX_MS} ms)
+            </Label>
+            <Input
+              id="vibration-duration"
+              type="number"
+              min={VIBRATION_MIN_MS}
+              max={VIBRATION_MAX_MS}
+              step={1}
+              value={duration}
+              onChange={(event) => setDuration(event.target.value)}
+            />
+          </div>
+          <Button
+            disabled={!available || !isValidVibrationDuration(duration)}
+            onClick={handleTest}
+          >
+            Vibrate
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
 export default function InterfaceTester() {
-  const [snapshot, setSnapshot] = useState<DeviceSnapshot | null>(null);
+  const [latest, setLatest] = useState<{
+    snapshot: DeviceSnapshot;
+    refreshedAt: Date;
+  } | null>(null);
 
-  useEffect(() => subscribeDeviceSnapshots(currentHost, setSnapshot), []);
+  useEffect(
+    () =>
+      subscribeDeviceSnapshots(currentHost, (snapshot) => {
+        setLatest({ snapshot, refreshedAt: new Date() });
+      }),
+    [],
+  );
+
+  const snapshot = latest?.snapshot;
 
   return (
     <div className="space-y-5">
-      <p className="rounded-xl border p-4 text-sm text-muted-foreground">
-        Enable the settings below, then reload the page. Readings refresh every
-        2 seconds.
+      <p className="text-right text-xs text-muted-foreground">
+        Refreshed at{" "}
+        {latest ? (
+          <time dateTime={latest.refreshedAt.toISOString()}>
+            {latest.refreshedAt.toLocaleTimeString()}
+          </time>
+        ) : (
+          "—"
+        )}
       </p>
       <div className="grid min-w-0 gap-5 lg:grid-cols-2">
         <BatteryPanel

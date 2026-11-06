@@ -137,12 +137,32 @@ export function setBrightness(host: InterfaceHost, value: number): void {
   bridge.setBrightness(value);
 }
 
-export function requestVibration(host: InterfaceHost): void {
+export const VIBRATION_DEFAULT_MS = 150;
+export const VIBRATION_MIN_MS = 1;
+export const VIBRATION_MAX_MS = 1_000;
+
+export function isValidVibrationDuration(value: string): boolean {
+  if (!/^\d{1,4}$/.test(value)) return false;
+  const durationMs = Number(value);
+  return durationMs >= VIBRATION_MIN_MS && durationMs <= VIBRATION_MAX_MS;
+}
+
+export function requestVibration(
+  host: InterfaceHost,
+  durationMs: number,
+): void {
+  if (
+    !Number.isInteger(durationMs)
+    || durationMs < VIBRATION_MIN_MS
+    || durationMs > VIBRATION_MAX_MS
+  ) {
+    throw new Error("Vibration duration must be 1–1000 ms.");
+  }
   const navigator = host.navigator;
   if (typeof navigator?.vibrate !== "function") {
     throw new Error("Vibration API is not available in this browser.");
   }
-  if (!navigator.vibrate(150)) {
+  if (!navigator.vibrate(durationMs)) {
     throw new Error("The browser rejected the vibration request.");
   }
 }
