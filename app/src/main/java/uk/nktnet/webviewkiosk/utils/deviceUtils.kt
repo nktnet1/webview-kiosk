@@ -6,6 +6,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.os.Build
 import android.os.Environment
 import android.os.PowerManager
@@ -17,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.webkit.WebViewCompat
 import java.util.TimeZone
+import kotlin.math.roundToInt
 import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -51,6 +53,61 @@ fun setWindowBrightness(context: Context, value: Int) {
             (value / 100f).coerceIn(0f, 1f)
         }
     window.attributes = layoutParams
+}
+
+/** Converts a 0-100 percentage to the nearest index of a volume stream. */
+fun volumeIndexFromPercentage(percentage: Int, min: Int, max: Int): Int {
+    if (max <= min) {
+        return min
+    }
+    val index = (percentage.coerceIn(0, 100) * max / 100f).roundToInt()
+    return index.coerceIn(min, max)
+}
+
+/** Converts a volume stream index to a 0-100 percentage of its maximum. */
+fun volumePercentageFromIndex(index: Int, max: Int): Int {
+    if (max <= 0) {
+        return 0
+    }
+    return (index.coerceIn(0, max) * 100f / max).roundToInt()
+}
+
+/** Returns the media (music) stream volume as a 0-100 percentage. */
+fun getMediaVolumePercentage(context: Context): Int {
+    val audioManager =
+        context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return 0
+    return volumePercentageFromIndex(
+        audioManager.getStreamVolume(AudioManager.STREAM_MUSIC),
+        audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
+    )
+}
+
+/**
+ * Sets the media (music) stream volume, which WebView uses for page audio.
+ *
+ * @return false when the device does not allow apps to change the volume.
+ */
+fun setMediaVolumePercentage(context: Context, percentage: Int): Boolean {
+    val audioManager =
+        context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            ?: return false
+    if (audioManager.isVolumeFixed) {
+        return false
+    }
+    val stream = AudioManager.STREAM_MUSIC
+    val min =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            audioManager.getStreamMinVolume(stream)
+        } else {
+            0
+        }
+    val max = audioManager.getStreamMaxVolume(stream)
+    audioManager.setStreamVolume(
+        stream,
+        volumeIndexFromPercentage(percentage, min, max),
+        0,
+    )
+    return true
 }
 
 fun setDeviceRotation(context: Context, rotation: DeviceRotationOption) {

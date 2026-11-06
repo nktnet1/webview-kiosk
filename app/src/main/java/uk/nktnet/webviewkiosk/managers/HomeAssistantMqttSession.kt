@@ -44,6 +44,7 @@ import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundSettingsResponse
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundStatusResponse
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundUnlockEvent
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundUrlChangedEvent
+import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundVolumeChangedEvent
 import uk.nktnet.webviewkiosk.utils.BaseJson
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 import uk.nktnet.webviewkiosk.utils.getStatus
@@ -277,6 +278,10 @@ internal class HomeAssistantMqttSession(
                         current.copy(isDeviceInteractive = true)
                     is OutboundScreenOffEvent ->
                         current.copy(isDeviceInteractive = false)
+                    is OutboundVolumeChangedEvent ->
+                        current.copy(
+                            mediaVolumePercentage = event.data.mediaVolumePercentage
+                        )
                     else -> return@launch
                 }
             status = next

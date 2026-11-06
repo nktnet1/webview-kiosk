@@ -174,6 +174,21 @@ export const COMMANDS: readonly CommandDefinition[] = [
     },
   },
   {
+    name: "set_volume",
+    label: "Set volume",
+    description: "Set the device's media volume as a percentage (0-100).",
+    fields: [
+      {
+        key: "volume",
+        label: "Volume (0-100)",
+        kind: "integer",
+        required: true,
+        placeholder: "40",
+      },
+    ],
+    defaults: { volume: 40 },
+  },
+  {
     name: "launch_package",
     label: "Launch app",
     description: "Launch an installed Android application.",

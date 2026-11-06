@@ -54,7 +54,7 @@ describe("shared remote message editor", () => {
       if (definition.name === "toast")
         expect(message.data).toEqual({ message: "Hello from Webview Kiosk!" });
     }
-    expect(COMMANDS).toHaveLength(17);
+    expect(COMMANDS).toHaveLength(18);
   });
 
   it("preserves custom metadata and changes only requested command fields", () => {

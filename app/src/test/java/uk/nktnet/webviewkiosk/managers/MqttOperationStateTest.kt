@@ -441,6 +441,7 @@ class MqttOperationStateTest {
                 appBrightnessPercentage = 100,
                 systemBrightness = 255,
                 isDeviceInteractive = true,
+                mediaVolumePercentage = 40,
             )
         return listOf(
             Operation(
@@ -461,6 +462,10 @@ class MqttOperationStateTest {
             Operation(
                 "power-unplugged event",
                 { manager.publishPowerUnpluggedEvent() },
+            ),
+            Operation(
+                "volume-changed event",
+                { manager.publishVolumeChangedEvent(status.mediaVolumePercentage) },
             ),
             Operation(
                 "restrictions event",

@@ -157,6 +157,19 @@ data class OutboundPowerUnpluggedEvent(
 }
 
 @Serializable
+@SerialName("volume_changed")
+data class OutboundVolumeChangedEvent(
+    override val messageId: String,
+    override val username: String,
+    override val appInstanceId: String,
+    val data: VolumeData,
+) : OutboundEventMessage {
+    @Serializable data class VolumeData(val mediaVolumePercentage: Int)
+
+    override fun getEventType(): String = "volume_changed"
+}
+
+@Serializable
 @SerialName("application_restrictions_changed")
 data class OutboundApplicationRestrictionsChangedEvent(
     override val messageId: String,
