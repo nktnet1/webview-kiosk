@@ -32,13 +32,16 @@ describe("device API tester", () => {
   it("keeps brightness input and Set button on a single narrow-screen row", () => {
     expect(markup).toContain('id="brightness-value"');
     expect(markup).toContain("Current: ");
-    expect(markup).toContain("Auto uses the system default (-1).");
-    expect(markup).toMatch(
-      /id="brightness-value"[^>]*><button[^>]*title="Set system brightness \(-1\)"[^>]*>Auto<\/button>/,
-    );
-    expect(markup.indexOf(">Auto</button>")).toBeLessThan(
-      markup.indexOf(">Set</button>"),
-    );
+    expect(markup).toContain("System default is -1.");
+    const systemButton = markup.match(
+      /<button[^>]*aria-label="Select system default \(-1\)"[^>]*>.*?<\/button>/s,
+    )?.[0];
+    expect(systemButton).toContain('title="Select system default (-1)"');
+    expect(systemButton).toContain("lucide-monitor-cog");
+    expect(systemButton).not.toContain(">Auto</button>");
+    expect(
+      markup.indexOf('aria-label="Select system default (-1)"'),
+    ).toBeLessThan(markup.indexOf(">Set</button>"));
   });
 
   it("offers a bounded vibration duration next to its action", () => {

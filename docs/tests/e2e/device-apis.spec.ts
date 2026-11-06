@@ -111,7 +111,9 @@ test("device API readings poll and native actions work", async ({ page }) => {
   );
 
   const field = page.getByLabel("Brightness (-1 to 100)");
-  const autoBrightness = page.getByRole("button", { name: "Auto" });
+  const autoBrightness = page.getByRole("button", {
+    name: "Select system default (-1)",
+  });
   await expect(field).toHaveValue("42");
   // The input is prefilled once; later polls update only the current reading.
   await page.evaluate(() => {
@@ -125,14 +127,24 @@ test("device API readings poll and native actions work", async ({ page }) => {
   await expect(field).toHaveValue("42");
   await field.fill("101");
   await expect(page.getByRole("button", { name: "Set" })).toBeDisabled();
-  // Auto immediately applies -1, regardless of an invalid draft, and never
-  // overwrites the value being edited.
+  // The system icon selects -1 without applying it; Set remains the
+  // explicit action, and polling must not overwrite the draft.
   await expect(autoBrightness).toBeEnabled();
+  await expect(autoBrightness.locator("svg.lucide-monitor-cog")).toBeVisible();
   await autoBrightness.click();
+  await expect(field).toHaveValue("-1");
+  await expect(page.getByText("Current: 80%")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Set" })).toBeEnabled();
+  await expect(
+    page.locator("[data-sonner-toast]", {
+      hasText: "System brightness requested.",
+    }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Set" }).click();
   await expect(page.getByText("Current: System default")).toBeVisible({
     timeout: 5_000,
   });
-  await expect(field).toHaveValue("101");
+  await expect(field).toHaveValue("-1");
   await expect(
     page.locator("[data-sonner-toast]", {
       hasText: "System brightness requested.",
@@ -254,7 +266,9 @@ test("unavailable bridges are detected automatically", async ({ page }) => {
   await page.goto("tools/device-apis/");
   await expect(page.getByText("Not detected", { exact: true })).toHaveCount(5);
   await expect(page.getByRole("button", { name: "Set" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Auto" })).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Select system default (-1)" }),
+  ).toBeDisabled();
   await expect(page.getByRole("button", { name: "Start scan" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Vibrate" })).toBeDisabled();
   await expect(
@@ -311,7 +325,9 @@ for (const width of [320, 375, 768]) {
 
     await page.goto("tools/device-apis/");
     const field = page.getByLabel("Brightness (-1 to 100)");
-    const auto = page.getByRole("button", { name: "Auto" });
+    const auto = page.getByRole("button", {
+      name: "Select system default (-1)",
+    });
     await expect(field).toHaveValue("42");
     await expect(auto).toBeVisible();
     await expect(page.getByRole("button", { name: "Set" })).toBeVisible();

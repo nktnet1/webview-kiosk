@@ -1,4 +1,4 @@
-import { Battery, Download, Nfc, Sun, Vibrate } from "lucide-react";
+import { Battery, Download, MonitorCog, Nfc, Sun, Vibrate } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
@@ -183,7 +183,7 @@ function BrightnessPanel({
     <Card>
       <PanelHeading
         title="Brightness"
-        description="Auto uses the system default (-1)."
+        description="System default is -1."
         setting="js_scripts.enable_brightness_api"
         available={available}
         icon={Sun}
@@ -207,7 +207,7 @@ function BrightnessPanel({
                 min={-1}
                 max={100}
                 step={1}
-                className="pr-15 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                className="pr-10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 value={value}
                 onChange={(event) => {
                   initialized.current = true;
@@ -218,12 +218,16 @@ function BrightnessPanel({
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="absolute top-1/2 right-1 h-7 -translate-y-1/2 rounded-sm px-2 text-xs"
-                title="Set system brightness (-1)"
+                className="absolute top-1/2 right-1 size-7 -translate-y-1/2 rounded-sm p-0"
+                title="Select system default (-1)"
+                aria-label="Select system default (-1)"
                 disabled={!available}
-                onClick={() => applyBrightness(-1)}
+                onClick={() => {
+                  initialized.current = true;
+                  setValue("-1");
+                }}
               >
-                Auto
+                <MonitorCog aria-hidden="true" className="size-4" />
               </Button>
             </div>
           </div>
