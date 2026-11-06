@@ -93,6 +93,36 @@ class NfcForegroundDispatchTest {
     }
 
     @Test
+    fun screenOnBeforeResumeStillGetsOneDelayedWakeRetry() {
+        val dispatch = NfcForegroundDispatch(activity, { true })
+        dispatch.onScreenOn() // Keyguard can receive SCREEN_ON before onResume.
+        dispatch.onResume()
+
+        resetNfcService()
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(1_499))
+        assertNull(shadowOf(adapter()).enabledActivity)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(1))
+        assertSame(activity, shadowOf(adapter()).enabledActivity)
+        dispatch.onPause()
+    }
+
+    @Test
+    fun wakeRetryCancelledByPauseIsRearmedOnNextResume() {
+        val dispatch = NfcForegroundDispatch(activity, { true })
+        dispatch.onResume()
+        dispatch.onScreenOn()
+        dispatch.onPause() // Interrupt the wake retry, not the wake itself.
+        dispatch.onResume()
+
+        resetNfcService()
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(1_499))
+        assertNull(shadowOf(adapter()).enabledActivity)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(1))
+        assertSame(activity, shadowOf(adapter()).enabledActivity)
+        dispatch.onPause()
+    }
+
+    @Test
     fun cancelsDelayedWakeRetryWhenActivityPauses() {
         val dispatch = NfcForegroundDispatch(activity, { true })
         dispatch.onResume()

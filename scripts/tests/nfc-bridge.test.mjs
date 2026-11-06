@@ -23,6 +23,7 @@ function createNativeBridge() {
     clientCounter: 0,
     clients: new Set(),
     scanningClients: new Set(),
+    pendingWriteClient: null,
     openClient() {
       const id = `nfc-client-${++this.clientCounter}`;
       this.clients.add(id);
@@ -43,16 +44,20 @@ function createNativeBridge() {
     releaseClient(id) {
       this.stopScanForClient(id);
       this.clients.delete(id);
+      if (this.pendingWriteClient === id) this.pendingWriteClient = null;
     },
     writeForClient(id) {
-      return JSON.stringify(this.clients.has(id)
-        ? { ok: true, requestId: 'test-write' }
-        : { ok: false, errorName: 'InvalidStateError' });
+      if (!this.clients.has(id) || this.pendingWriteClient !== null) {
+        return JSON.stringify({ ok: false, errorName: 'InvalidStateError' });
+      }
+      this.pendingWriteClient = id;
+      return JSON.stringify({ ok: true, requestId: 'test-write' });
     },
     reset() {
       this.resetCalls++;
       this.clients.clear();
       this.scanningClients.clear();
+      this.pendingWriteClient = null;
     },
   };
 }
@@ -314,10 +319,51 @@ test("pagehide releases a client but bfcache restores its readers", async () => 
   await reader.scan();
 
   p.fire("pagehide", { persisted: true });
-  assert.equal(bridge.clients.size, 1);
+  assert.equal(bridge.clients.size, 0);
   assert.equal(bridge.scanningClients.size, 0);
-  p.fire("pageshow");
+  p.fire("pageshow", { persisted: true });
+  assert.equal(bridge.clients.size, 1);
   assert.equal(bridge.scanningClients.size, 1);
   reader.stopScan();
   assert.equal(bridge.scanningClients.size, 0);
+});
+
+test("bfcache restore reopens a client after native navigation resets the session", async () => {
+  const bridge = createNativeBridge();
+  const p = page(bridge);
+  p.install();
+  const reader = p.eval("new NDEFReader()");
+  await reader.scan();
+  const oldClient = [...bridge.clients][0];
+
+  p.fire("pagehide", { persisted: true });
+  bridge.reset(); // WebViewClient.onPageStarted while another page is displayed
+  p.fire("pageshow", { persisted: true });
+
+  assert.equal(bridge.scanningClients.size, 1);
+  assert.equal(bridge.clients.size, 1);
+  assert.notEqual([...bridge.clients][0], oldClient);
+  reader.stopScan();
+  assert.equal(bridge.scanningClients.size, 0);
+});
+
+test("pagehide cancels queued writes even for bfcache documents", async () => {
+  const bridge = createNativeBridge();
+  const p = page(bridge);
+  p.install();
+  const writer = p.eval("new NDEFReader()");
+  const pending = writer.write("old write");
+  assert.ok(bridge.pendingWriteClient);
+
+  p.fire("pagehide", { persisted: true });
+  assert.equal(bridge.pendingWriteClient, null);
+  await assert.rejects(pending, { name: "AbortError" });
+
+  p.fire("pageshow", { persisted: true });
+  const nextWrite = writer.write("new write");
+  assert.ok(bridge.pendingWriteClient);
+  p.context.__WebviewKioskNfcBridge.onWriteResult({
+    requestId: "test-write", ok: true,
+  });
+  await nextWrite;
 });

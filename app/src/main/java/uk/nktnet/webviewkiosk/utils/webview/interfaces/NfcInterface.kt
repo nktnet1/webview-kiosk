@@ -17,7 +17,7 @@ class NfcInterface(private val context: android.content.Context) {
                 if (window.__webviewKioskWebNfcInstalled) return;
                 const nativeBridge = window.WebviewKioskNfcInterface;
                 if (!nativeBridge || typeof nativeBridge.openClient !== 'function') return;
-                const clientId = nativeBridge.openClient();
+                let clientId = nativeBridge.openClient();
                 if (!clientId) return;
                 window.__webviewKioskWebNfcInstalled = true;
 
@@ -390,22 +390,34 @@ class NfcInterface(private val context: android.content.Context) {
                     rearmScan: rearmActiveReaders
                 };
 
-                // Native onPageStarted owns session teardown. Calling reset from
-                // beforeunload races with the next page's scan() on the shared
-                // @JavascriptInterface, and can also run for cancelled unloads.
-                // A frame may navigate without the top-level onPageStarted event.
-                // Release only this document's client on pagehide; retaining the
-                // client across bfcache allows pageshow to resume existing readers.
-                window.addEventListener('pagehide', function(event) {
+                // Native onPageStarted owns main-frame session teardown. An
+                // iframe can navigate without that callback, and a bfcache
+                // document can outlive the native session it originally joined.
+                // Always release this document's scanning and pending writes on
+                // pagehide; acquire a fresh client when the document is restored.
+                window.addEventListener('pagehide', function() {
                     try {
-                        if (event.persisted) {
-                            nativeBridge.stopScanForClient(clientId);
-                        } else {
-                            nativeBridge.releaseClient(clientId);
-                        }
+                        if (clientId) nativeBridge.releaseClient(clientId);
                     } catch (_) {}
+                    clientId = null;
+                    pendingWrites.forEach(function(pending) {
+                        pending.reject(createDomException(
+                            'NFC write interrupted by page navigation.', 'AbortError'
+                        ));
+                    });
+                    pendingWrites.clear();
                 });
-                window.addEventListener('pageshow', rearmActiveReaders);
+                window.addEventListener('pageshow', function(event) {
+                    if (!clientId || (event && event.persisted)) {
+                        try {
+                            if (clientId) nativeBridge.releaseClient(clientId);
+                            clientId = nativeBridge.openClient() || null;
+                        } catch (_) {
+                            clientId = null;
+                        }
+                    }
+                    rearmActiveReaders();
+                });
                 window.addEventListener('focus', rearmActiveReaders);
                 document.addEventListener('visibilitychange', function() {
                     if (!document.hidden) rearmActiveReaders();

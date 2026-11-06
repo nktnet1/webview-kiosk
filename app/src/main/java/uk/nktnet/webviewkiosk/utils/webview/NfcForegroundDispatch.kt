@@ -22,9 +22,11 @@ internal class NfcForegroundDispatch(
 ) {
     private var resumed = false
     private var dispatchRegistered = false
+    private var pendingWakeRetry = false
     private val mainHandler = Handler(Looper.getMainLooper())
     private val wakeRetry = Runnable {
         if (resumed) {
+            pendingWakeRetry = false
             register("delayed screen wake")
         }
     }
@@ -32,6 +34,11 @@ internal class NfcForegroundDispatch(
     fun onResume() {
         resumed = true
         register("activity resumed")
+        // SCREEN_ON may have arrived while the activity was paused. Retain its
+        // bounded retry until the foreground activity can register dispatch.
+        if (pendingWakeRetry) {
+            scheduleWakeRetry()
+        }
     }
 
     fun onPause() {
@@ -46,14 +53,19 @@ internal class NfcForegroundDispatch(
     }
 
     fun onScreenOn() {
+        pendingWakeRetry = true
         if (resumed) {
             register("screen on")
             // The NFC service may finish waking after SCREEN_ON. Make one more
             // attempt without polling, resetting the radio, or keeping the activity
             // alive.
-            mainHandler.removeCallbacks(wakeRetry)
-            mainHandler.postDelayed(wakeRetry, WAKE_RETRY_DELAY_MS)
+            scheduleWakeRetry()
         }
+    }
+
+    private fun scheduleWakeRetry() {
+        mainHandler.removeCallbacks(wakeRetry)
+        mainHandler.postDelayed(wakeRetry, WAKE_RETRY_DELAY_MS)
     }
 
     fun onWindowFocusGained() {
