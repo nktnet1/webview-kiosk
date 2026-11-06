@@ -51,10 +51,15 @@ BRIDGES = {
         ("abortDownload", "(Ljava/lang/String;)V"),
     },
     "uk.nktnet.webviewkiosk.utils.webview.interfaces.NfcInterface": {
+        ("openClient", "()Ljava/lang/String;"),
+        ("releaseClient", "(Ljava/lang/String;)V"),
         ("scan", "(Ljava/lang/String;)Z"),
+        ("scanForClient", "(Ljava/lang/String;Ljava/lang/String;)Z"),
         ("stopScan", "()V"),
+        ("stopScanForClient", "(Ljava/lang/String;)V"),
         ("reset", "()V"),
         ("write", "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"),
+        ("writeForClient", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"),
     },
 }
 METHOD_NAME = re.compile(r"^\s+name\s+: '([^']+)'$", re.MULTILINE)

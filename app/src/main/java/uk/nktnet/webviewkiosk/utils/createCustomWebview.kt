@@ -804,6 +804,17 @@ fun createCustomWebview(
                                     ) ?: return
                                 finishLoadingProgress()
                                 config.finishSwipeRefresh()
+                                // Document-start injection handles normal page
+                                // loads.
+                                // Also install on the completed document as a
+                                // fallback
+                                // for WebViews without document-start support.
+                                if (userSettings.allowNfc) {
+                                    view?.evaluateJavascript(
+                                        NfcInterface.JS_WEB_NFC_HOOK,
+                                        null,
+                                    )
+                                }
                                 if (cosmetics == null) {
                                     cosmetics =
                                         WebViewCosmetics.attach(
