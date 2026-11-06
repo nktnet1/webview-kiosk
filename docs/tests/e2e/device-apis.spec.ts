@@ -254,6 +254,104 @@ test("device API readings poll and native actions work", async ({ page }) => {
   ).toBe(1);
 });
 
+test("keyboard Go applies brightness and vibration once", async ({ page }) => {
+  await page.addInitScript(() => {
+    const api = window as Window & {
+      WebviewKioskBrightnessInterface?: {
+        getBrightness(): number;
+        setBrightness(value: number): void;
+      };
+      __brightnessCalls?: number[];
+      __vibrationCalls?: number[];
+    };
+    let brightness = 42;
+    api.__brightnessCalls = [];
+    api.__vibrationCalls = [];
+    api.WebviewKioskBrightnessInterface = {
+      getBrightness: () => brightness,
+      setBrightness: (value) => {
+        api.__brightnessCalls?.push(value);
+        brightness = value;
+      },
+    };
+    Object.defineProperty(navigator, "vibrate", {
+      configurable: true,
+      value: (duration: number) => {
+        api.__vibrationCalls?.push(duration);
+        return true;
+      },
+    });
+  });
+
+  await page.goto("tools/device-apis/");
+  const brightness = page.getByLabel("Brightness (-1 to 100)");
+  await expect(brightness).toHaveValue("42");
+  await brightness.fill("64");
+  await brightness.press("Enter");
+  await expect(page.getByText("Current: 64%")).toBeVisible({ timeout: 5_000 });
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { __brightnessCalls?: number[] }).__brightnessCalls,
+    ),
+  ).toEqual([64]);
+
+  await brightness.fill("101");
+  await brightness.press("Enter");
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { __brightnessCalls?: number[] }).__brightnessCalls,
+    ),
+  ).toEqual([64]);
+
+  await brightness.fill("-1");
+  await brightness.press("Enter");
+  await expect(page.getByText("Current: System default")).toBeVisible({
+    timeout: 5_000,
+  });
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { __brightnessCalls?: number[] }).__brightnessCalls,
+    ),
+  ).toEqual([64, -1]);
+
+  const duration = page.getByLabel("Duration (1–1000 ms)");
+  await duration.fill("250");
+  await duration.press("Enter");
+  await expect(
+    page.locator("[data-sonner-toast]", {
+      hasText: "Vibration requested (250 ms).",
+    }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { __vibrationCalls?: number[] }).__vibrationCalls,
+    ),
+  ).toEqual([250]);
+
+  await duration.fill("0");
+  await duration.press("Enter");
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { __vibrationCalls?: number[] }).__vibrationCalls,
+    ),
+  ).toEqual([250]);
+
+  await duration.fill("350");
+  await duration.press("Enter");
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { __vibrationCalls?: number[] }).__vibrationCalls,
+    ),
+  ).toEqual([250, 350]);
+  await expect(page).toHaveURL(/\/tools\/device-apis\/?$/);
+});
+
 test("unavailable bridges are detected automatically", async ({ page }) => {
   // Chromium may implement the standard Vibration API without WebView Kiosk.
   // Make this unavailable-interfaces scenario independent of the browser.

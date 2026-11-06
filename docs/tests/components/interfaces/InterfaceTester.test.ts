@@ -44,6 +44,27 @@ describe("device API tester", () => {
     ).toBeLessThan(markup.indexOf(">Set</button>"));
   });
 
+  it("submits brightness and vibration using the keyboard Go key", () => {
+    const forms = [...markup.matchAll(/<form\b[^>]*>[\s\S]*?<\/form>/g)].map(
+      ([form]) => form,
+    );
+    expect(forms).toHaveLength(2);
+
+    for (const [form, field, action] of [
+      [forms[0], "brightness-value", "Set"],
+      [forms[1], "vibration-duration", "Vibrate"],
+    ]) {
+      expect(form).toContain(`id="${field}"`);
+      expect(form).toMatch(/enterKeyHint="go"/i);
+      expect(form).toMatch(
+        new RegExp(`<button[^>]*type="submit"[^>]*>${action}</button>`),
+      );
+    }
+    expect(forms[0]).toMatch(
+      /<button[^>]*type="button"[^>]*aria-label="Select system default \(-1\)"/,
+    );
+  });
+
   it("offers a bounded vibration duration next to its action", () => {
     expect(markup).toContain("Duration (1–1000 ms)");
     expect(markup).toContain('id="vibration-duration"');
@@ -67,7 +88,7 @@ describe("device API tester", () => {
       /data-slot="card-content" class="px-6 flex justify-end"><button[^>]*>Download sample<\/button>/,
     );
     expect(markup).toMatch(
-      /data-slot="card-content" class="px-6"><div class="grid grid-cols-\[minmax\(0,1fr\)_auto\] items-end gap-2">.*?Vibrate<\/button>/s,
+      /data-slot="card-content" class="px-6"><form class="grid grid-cols-\[minmax\(0,1fr\)_auto\] items-end gap-2">.*?Vibrate<\/button>/s,
     );
   });
 });

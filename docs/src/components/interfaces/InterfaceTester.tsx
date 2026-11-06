@@ -197,13 +197,20 @@ function BrightnessPanel({
               ? "System default"
               : `${brightness}%`}
         </p>
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
+        <form
+          className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (available) handleSet();
+          }}
+        >
           <div className="min-w-0 space-y-2">
             <Label htmlFor="brightness-value">Brightness (-1 to 100)</Label>
             <div className="relative">
               <Input
                 id="brightness-value"
                 type="number"
+                enterKeyHint="go"
                 min={-1}
                 max={100}
                 step={1}
@@ -232,12 +239,12 @@ function BrightnessPanel({
             </div>
           </div>
           <Button
+            type="submit"
             disabled={!available || !isValidBrightness(value)}
-            onClick={handleSet}
           >
             Set
           </Button>
-        </div>
+        </form>
       </CardContent>
     </Card>
   );
@@ -478,7 +485,13 @@ function VibrationPanel({ available }: { available: boolean }) {
         icon={Vibrate}
       />
       <CardContent>
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
+        <form
+          className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (available && isValidVibrationDuration(duration)) handleTest();
+          }}
+        >
           <div className="min-w-0 space-y-2">
             <Label htmlFor="vibration-duration">
               Duration ({VIBRATION_MIN_MS}–{VIBRATION_MAX_MS} ms)
@@ -486,6 +499,7 @@ function VibrationPanel({ available }: { available: boolean }) {
             <Input
               id="vibration-duration"
               type="number"
+              enterKeyHint="go"
               min={VIBRATION_MIN_MS}
               max={VIBRATION_MAX_MS}
               step={1}
@@ -494,12 +508,12 @@ function VibrationPanel({ available }: { available: boolean }) {
             />
           </div>
           <Button
+            type="submit"
             disabled={!available || !isValidVibrationDuration(duration)}
-            onClick={handleTest}
           >
             Vibrate
           </Button>
-        </div>
+        </form>
       </CardContent>
     </Card>
   );
