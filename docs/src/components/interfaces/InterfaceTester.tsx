@@ -1,5 +1,6 @@
 import { Battery, Download, Nfc, RotateCcw, Sun, Vibrate } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
 import {
   Card,
@@ -34,7 +35,7 @@ function currentHost(): InterfaceHost {
 function Availability({ available }: { available: boolean }) {
   return (
     <span
-      className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${
+      className={`ml-auto shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${
         available
           ? "border-success/40 text-success"
           : "border-border text-muted-foreground"
@@ -48,11 +49,13 @@ function Availability({ available }: { available: boolean }) {
 function PanelHeading({
   title,
   description,
+  setting,
   available,
   icon: Icon,
 }: {
   title: string;
   description: string;
+  setting: string;
   available: boolean;
   icon: typeof Battery;
 }) {
@@ -65,39 +68,33 @@ function PanelHeading({
         </CardTitle>
         <Availability available={available} />
       </div>
-      <CardDescription>{description}</CardDescription>
+      <CardDescription className="space-y-1">
+        <p>{description}</p>
+        <p className="text-xs leading-relaxed">
+          Enable{" "}
+          <code className="font-mono text-foreground">
+            {setting.split(/(?<=[._])/).map((part) => (
+              <span key={part}>
+                {part}
+                <wbr />
+              </span>
+            ))}
+          </code>
+        </p>
+      </CardDescription>
     </CardHeader>
-  );
-}
-
-function Result({
-  message,
-  error = false,
-}: {
-  message: string;
-  error?: boolean;
-}) {
-  return (
-    <p
-      role={error ? "alert" : "status"}
-      className={`text-sm ${error ? "text-destructive" : "text-muted-foreground"}`}
-    >
-      {message}
-    </p>
   );
 }
 
 function BatteryPanel({ available }: { available: boolean }) {
   const [reading, setReading] = useState<BatteryStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   function handleRead() {
     try {
       setReading(readBattery(currentHost()));
-      setError(null);
     } catch (cause) {
       setReading(null);
-      setError(describeError(cause));
+      toast.error(describeError(cause));
     }
   }
 
@@ -105,15 +102,15 @@ function BatteryPanel({ available }: { available: boolean }) {
     <Card>
       <PanelHeading
         title="Battery"
-        description="Read charge, health, voltage, and temperature from the Android battery bridge."
+        description="Read battery metrics."
+        setting="js_scripts.enable_battery_api"
         available={available}
         icon={Battery}
       />
       <CardContent className="space-y-4">
         <Button disabled={!available} onClick={handleRead}>
-          Read battery status
+          Read battery
         </Button>
-        {error && <Result message={error} error />}
         {reading && (
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border p-4 text-sm sm:grid-cols-3">
             {(
@@ -150,28 +147,25 @@ function BatteryPanel({ available }: { available: boolean }) {
 
 function BrightnessPanel({ available }: { available: boolean }) {
   const [value, setValue] = useState("-1");
-  const [current, setCurrent] = useState<number | null>(null);
   const [initial, setInitial] = useState<number | null>(null);
   const [changed, setChanged] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   function handleRead() {
     try {
       const brightness = readBrightness(currentHost());
-      setCurrent(brightness);
       setValue(String(brightness));
       setInitial((old) => old ?? brightness);
-      setMessage(null);
-      setError(null);
+      toast.info(
+        `Brightness: ${brightness === -1 ? "system default" : `${brightness}%`}`,
+      );
     } catch (cause) {
-      setError(describeError(cause));
+      toast.error(describeError(cause));
     }
   }
 
   function handleSet() {
     if (!isValidBrightness(value)) {
-      setError("Enter an integer from -1 to 100.");
+      toast.warning("Enter an integer from -1 to 100.");
       return;
     }
     try {
@@ -180,14 +174,10 @@ function BrightnessPanel({ available }: { available: boolean }) {
       setBrightness(host, Number(value));
       setInitial((old) => old ?? before);
       setChanged(true);
-      setCurrent(null); // The Android setter runs asynchronously on the UI thread.
-      setMessage(
-        "Brightness change requested. Read again to verify the value.",
-      );
-      setError(null);
+      // Android applies brightness asynchronously on the UI thread.
+      toast.info("Brightness requested. Read to verify.");
     } catch (cause) {
-      setError(describeError(cause));
-      setMessage(null);
+      toast.error(describeError(cause));
     }
   }
 
@@ -196,15 +186,10 @@ function BrightnessPanel({ available }: { available: boolean }) {
     try {
       setBrightness(currentHost(), initial);
       setValue(String(initial));
-      setCurrent(null);
       setChanged(false);
-      setMessage(
-        "Original brightness requested. Read again to verify the value.",
-      );
-      setError(null);
+      toast.info("Restore requested. Read to verify.");
     } catch (cause) {
-      setError(describeError(cause));
-      setMessage(null);
+      toast.error(describeError(cause));
     }
   }
 
@@ -212,47 +197,50 @@ function BrightnessPanel({ available }: { available: boolean }) {
     <Card>
       <PanelHeading
         title="Brightness"
-        description="Read or set the kiosk window brightness. -1 follows the system setting; 0 is very dim."
+        description="-1 uses the system default."
+        setting="js_scripts.enable_brightness_api"
         available={available}
         icon={Sun}
       />
-      <CardContent className="space-y-4">
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="w-32 space-y-2">
-            <Label htmlFor="brightness-value">Brightness (-1 to 100)</Label>
-            <Input
-              id="brightness-value"
-              type="number"
-              min={-1}
-              max={100}
-              step={1}
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-            />
-          </div>
-          <Button variant="outline" disabled={!available} onClick={handleRead}>
+      <CardContent className="space-y-2">
+        <Label htmlFor="brightness-value">Brightness (-1 to 100)</Label>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+          <Input
+            id="brightness-value"
+            type="number"
+            min={-1}
+            max={100}
+            step={1}
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            className="col-span-2 min-w-0 sm:w-28"
+          />
+          <Button
+            className="w-full sm:w-auto"
+            variant="outline"
+            disabled={!available}
+            onClick={handleRead}
+          >
             Read
           </Button>
           <Button
+            className="w-full sm:w-auto"
             disabled={!available || !isValidBrightness(value)}
             onClick={handleSet}
           >
-            Set brightness
+            Set
           </Button>
           {changed && initial !== null && (
-            <Button variant="outline" onClick={handleRestore}>
+            <Button
+              className="col-span-2 w-full sm:w-auto"
+              variant="outline"
+              onClick={handleRestore}
+            >
               <RotateCcw aria-hidden="true" />
               Restore {initial === -1 ? "system default" : `${initial}%`}
             </Button>
           )}
         </div>
-        {current !== null && (
-          <Result
-            message={`Current window brightness: ${current === -1 ? "system default" : `${current}%`}.`}
-          />
-        )}
-        {message && <Result message={message} />}
-        {error && <Result message={error} error />}
       </CardContent>
     </Card>
   );
@@ -282,8 +270,6 @@ function NfcPanel({ available }: { available: boolean }) {
   );
   const [tags, setTags] = useState<(ScannedTag & { id: number })[]>([]);
   const nextTagId = useRef(0);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Client scans persist in the native bridge across SPA route changes unless
@@ -291,6 +277,7 @@ function NfcPanel({ available }: { available: boolean }) {
     return () => {
       if (session.current) stopScanSession(session.current);
       session.current = null;
+      toast.dismiss("nfc-scan");
     };
   }, []);
 
@@ -298,16 +285,14 @@ function NfcPanel({ available }: { available: boolean }) {
     if (session.current) stopScanSession(session.current);
     session.current = null;
     setScanning("idle");
-    setMessage("Scan stopped.");
+    toast.info("Scan stopped.", { id: "nfc-scan" });
   }
 
   async function handleStart() {
     if (session.current) return;
     const Reader = currentHost().NDEFReader;
     if (!Reader || !available) {
-      setError(
-        "NFC WebView bridge not detected. Enable Allow NFC in Device settings.",
-      );
+      toast.error("NFC unavailable. Enable device.allow_nfc.");
       return;
     }
 
@@ -316,34 +301,37 @@ function NfcPanel({ available }: { available: boolean }) {
       const reader = new Reader();
       const abort = new AbortController();
       const onReading: EventListener = (event) => {
-        void decodeTag(event as NfcReadingEvent).then((tag) => {
-          if (session.current !== current) return;
-          const id = ++nextTagId.current;
-          setTags((previous) => [{ ...tag, id }, ...previous].slice(0, 5));
-          setError(null);
-        });
+        void decodeTag(event as NfcReadingEvent)
+          .then((tag) => {
+            if (session.current !== current) return;
+            const id = ++nextTagId.current;
+            setTags((previous) => [{ ...tag, id }, ...previous].slice(0, 5));
+          })
+          .catch((cause: unknown) => {
+            if (session.current === current) toast.error(describeError(cause));
+          });
       };
       reader.addEventListener("reading", onReading);
-      reader.onreadingerror = (cause) => setError(describeError(cause));
+      reader.onreadingerror = (cause) => toast.error(describeError(cause));
       current = { reader, abort, onReading };
       session.current = current;
       setScanning("starting");
-      setError(null);
-      setMessage("Starting NFC scan…");
+      toast.info("Starting scan…", { id: "nfc-scan" });
       await reader.scan({ signal: abort.signal });
       if (session.current === current) {
         setScanning("active");
-        setMessage("Scanning. Hold an NFC tag near your device.");
+        toast.success("Scanning. Hold a tag near your device.", {
+          id: "nfc-scan",
+        });
       }
     } catch (cause) {
       if (current && session.current === current) {
         stopScanSession(current);
         session.current = null;
         setScanning("idle");
-        setMessage(null);
-        setError(describeError(cause));
+        toast.error(describeError(cause), { id: "nfc-scan" });
       } else if (!current) {
-        setError(describeError(cause));
+        toast.error(describeError(cause), { id: "nfc-scan" });
       }
     }
   }
@@ -352,7 +340,8 @@ function NfcPanel({ available }: { available: boolean }) {
     <Card>
       <PanelHeading
         title="NFC"
-        description="Scan nearby NDEF tags through the Web NFC compatibility bridge. This test never writes to a tag."
+        description="Read NFC tags without writing to them."
+        setting="device.allow_nfc"
         available={available}
         icon={Nfc}
       />
@@ -360,7 +349,7 @@ function NfcPanel({ available }: { available: boolean }) {
         <div className="flex flex-wrap gap-2">
           {scanning === "idle" ? (
             <Button disabled={!available} onClick={() => void handleStart()}>
-              Start tag scan
+              Start scan
             </Button>
           ) : (
             <Button variant="outline" onClick={handleStop}>
@@ -372,14 +361,12 @@ function NfcPanel({ available }: { available: boolean }) {
             disabled={tags.length === 0}
             onClick={() => setTags([])}
           >
-            Clear readings
+            Clear tags
           </Button>
         </div>
-        {message && <Result message={message} />}
-        {error && <Result message={error} error />}
         {tags.length > 0 && (
           <div aria-live="polite" className="space-y-3">
-            <h3 className="text-sm font-medium">Recent tags (up to 5)</h3>
+            <h3 className="text-sm font-medium">Recent tags</h3>
             <ol className="space-y-3">
               {tags.map((tag) => (
                 <li
@@ -418,9 +405,6 @@ function NfcPanel({ available }: { available: boolean }) {
 }
 
 function BlobPanel({ available }: { available: boolean }) {
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
   function handleDownload() {
     try {
       const blob = new Blob(["WebView Kiosk Blob download test\n"], {
@@ -435,13 +419,9 @@ function BlobPanel({ available }: { available: boolean }) {
       link.remove();
       // Leave the URL available while Android handles the download request.
       window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
-      setMessage(
-        "Download requested. Verify the file in Downloads and confirm any prompts.",
-      );
-      setError(null);
+      toast.info("Download requested. Check Downloads.");
     } catch (cause) {
-      setError(describeError(cause));
-      setMessage(null);
+      toast.error(describeError(cause));
     }
   }
 
@@ -449,33 +429,27 @@ function BlobPanel({ available }: { available: boolean }) {
     <Card>
       <PanelHeading
         title="Blob downloads"
-        description="Request a small text-file download to test the app's Blob transfer bridge."
+        description="Download a sample text file."
+        setting="web_engine.allow_file_download"
         available={available}
         icon={Download}
       />
       <CardContent className="space-y-4">
         <Button disabled={!available} onClick={handleDownload}>
-          Download test file
+          Download sample
         </Button>
-        {message && <Result message={message} />}
-        {error && <Result message={error} error />}
       </CardContent>
     </Card>
   );
 }
 
 function VibrationPanel({ available }: { available: boolean }) {
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
   function handleTest() {
     try {
       requestVibration(currentHost());
-      setMessage("150 ms vibration requested. Confirm the device vibrated.");
-      setError(null);
+      toast.info("Vibration requested (150 ms).");
     } catch (cause) {
-      setError(describeError(cause));
-      setMessage(null);
+      toast.error(describeError(cause));
     }
   }
 
@@ -483,16 +457,15 @@ function VibrationPanel({ available }: { available: boolean }) {
     <Card>
       <PanelHeading
         title="Vibration"
-        description="Use the standard navigator.vibrate() API with a single short pulse."
+        description="Trigger a 150 ms pulse."
+        setting="js_scripts.enable_vibration_api"
         available={available}
         icon={Vibrate}
       />
       <CardContent className="space-y-4">
         <Button disabled={!available} onClick={handleTest}>
-          Test vibration (150 ms)
+          Vibrate
         </Button>
-        {message && <Result message={message} />}
-        {error && <Result message={error} error />}
       </CardContent>
     </Card>
   );
@@ -515,13 +488,10 @@ export default function InterfaceTester() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4">
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Detection checks whether the APIs are exposed in this browser; the
-          device can still reject a request. Enable Battery API, Brightness API,
-          and Vibration API under JS Scripts, Allow NFC under Device, and Allow
-          File Download under Web Engine. Reload after changing settings.
+          Enable the settings below, then reload the page.
         </p>
         <Button variant="outline" onClick={refresh}>
-          Refresh detection
+          Refresh
         </Button>
       </div>
       <div className="grid min-w-0 gap-5 lg:grid-cols-2">

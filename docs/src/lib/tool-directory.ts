@@ -16,10 +16,9 @@ export const toolDirectory = [
   },
   {
     id: "interfaces",
-    title: "WebView Interfaces",
-    description:
-      "Test battery, brightness, NFC, vibration, and Blob downloads in the kiosk WebView.",
-    href: "/tools/webview-interfaces",
+    title: "Device APIs",
+    description: "Try battery, brightness, NFC, vibration, and downloads.",
+    href: "/tools/device-apis",
   },
   {
     id: "regex",

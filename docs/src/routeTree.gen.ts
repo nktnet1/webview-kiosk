@@ -22,6 +22,7 @@ import { Route as HomelayoutProvisionDeviceIndexRouteImport } from './routes/_ho
 import { Route as HomelayoutToolsIndexRouteImport } from './routes/_homelayout/tools/index'
 import { Route as HomelayoutDebuggerMqttIndexRouteImport } from './routes/_homelayout/debugger/mqtt/index'
 import { Route as HomelayoutDebuggerUnifiedpushIndexRouteImport } from './routes/_homelayout/debugger/unifiedpush/index'
+import { Route as HomelayoutToolsDeviceApisIndexRouteImport } from './routes/_homelayout/tools/device-apis/index'
 import { Route as HomelayoutToolsMqttIndexRouteImport } from './routes/_homelayout/tools/mqtt/index'
 import { Route as HomelayoutToolsQrInstallationIndexRouteImport } from './routes/_homelayout/tools/qr-installation/index'
 import { Route as HomelayoutToolsRegexIndexRouteImport } from './routes/_homelayout/tools/regex/index'
@@ -95,6 +96,12 @@ const HomelayoutDebuggerUnifiedpushIndexRoute =
     path: '/debugger/unifiedpush/',
     getParentRoute: () => HomelayoutRouteRoute,
   } as any)
+const HomelayoutToolsDeviceApisIndexRoute =
+  HomelayoutToolsDeviceApisIndexRouteImport.update({
+    id: '/tools/device-apis/',
+    path: '/tools/device-apis/',
+    getParentRoute: () => HomelayoutRouteRoute,
+  } as any)
 const HomelayoutToolsMqttIndexRoute =
   HomelayoutToolsMqttIndexRouteImport.update({
     id: '/tools/mqtt/',
@@ -139,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/tools/': typeof HomelayoutToolsIndexRoute
   '/debugger/mqtt/': typeof HomelayoutDebuggerMqttIndexRoute
   '/debugger/unifiedpush/': typeof HomelayoutDebuggerUnifiedpushIndexRoute
+  '/tools/device-apis/': typeof HomelayoutToolsDeviceApisIndexRoute
   '/tools/mqtt/': typeof HomelayoutToolsMqttIndexRoute
   '/tools/qr-installation/': typeof HomelayoutToolsQrInstallationIndexRoute
   '/tools/regex/': typeof HomelayoutToolsRegexIndexRoute
@@ -158,6 +166,7 @@ export interface FileRoutesByTo {
   '/tools': typeof HomelayoutToolsIndexRoute
   '/debugger/mqtt': typeof HomelayoutDebuggerMqttIndexRoute
   '/debugger/unifiedpush': typeof HomelayoutDebuggerUnifiedpushIndexRoute
+  '/tools/device-apis': typeof HomelayoutToolsDeviceApisIndexRoute
   '/tools/mqtt': typeof HomelayoutToolsMqttIndexRoute
   '/tools/qr-installation': typeof HomelayoutToolsQrInstallationIndexRoute
   '/tools/regex': typeof HomelayoutToolsRegexIndexRoute
@@ -179,6 +188,7 @@ export interface FileRoutesById {
   '/_homelayout/tools/': typeof HomelayoutToolsIndexRoute
   '/_homelayout/debugger/mqtt/': typeof HomelayoutDebuggerMqttIndexRoute
   '/_homelayout/debugger/unifiedpush/': typeof HomelayoutDebuggerUnifiedpushIndexRoute
+  '/_homelayout/tools/device-apis/': typeof HomelayoutToolsDeviceApisIndexRoute
   '/_homelayout/tools/mqtt/': typeof HomelayoutToolsMqttIndexRoute
   '/_homelayout/tools/qr-installation/': typeof HomelayoutToolsQrInstallationIndexRoute
   '/_homelayout/tools/regex/': typeof HomelayoutToolsRegexIndexRoute
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/tools/'
     | '/debugger/mqtt/'
     | '/debugger/unifiedpush/'
+    | '/tools/device-apis/'
     | '/tools/mqtt/'
     | '/tools/qr-installation/'
     | '/tools/regex/'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/debugger/mqtt'
     | '/debugger/unifiedpush'
+    | '/tools/device-apis'
     | '/tools/mqtt'
     | '/tools/qr-installation'
     | '/tools/regex'
@@ -239,6 +251,7 @@ export interface FileRouteTypes {
     | '/_homelayout/tools/'
     | '/_homelayout/debugger/mqtt/'
     | '/_homelayout/debugger/unifiedpush/'
+    | '/_homelayout/tools/device-apis/'
     | '/_homelayout/tools/mqtt/'
     | '/_homelayout/tools/qr-installation/'
     | '/_homelayout/tools/regex/'
@@ -349,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomelayoutDebuggerUnifiedpushIndexRouteImport
       parentRoute: typeof HomelayoutRouteRoute
     }
+    '/_homelayout/tools/device-apis/': {
+      id: '/_homelayout/tools/device-apis/'
+      path: '/tools/device-apis'
+      fullPath: '/tools/device-apis/'
+      preLoaderRoute: typeof HomelayoutToolsDeviceApisIndexRouteImport
+      parentRoute: typeof HomelayoutRouteRoute
+    }
     '/_homelayout/tools/mqtt/': {
       id: '/_homelayout/tools/mqtt/'
       path: '/tools/mqtt'
@@ -394,6 +414,7 @@ interface HomelayoutRouteRouteChildren {
   HomelayoutToolsIndexRoute: typeof HomelayoutToolsIndexRoute
   HomelayoutDebuggerMqttIndexRoute: typeof HomelayoutDebuggerMqttIndexRoute
   HomelayoutDebuggerUnifiedpushIndexRoute: typeof HomelayoutDebuggerUnifiedpushIndexRoute
+  HomelayoutToolsDeviceApisIndexRoute: typeof HomelayoutToolsDeviceApisIndexRoute
   HomelayoutToolsMqttIndexRoute: typeof HomelayoutToolsMqttIndexRoute
   HomelayoutToolsQrInstallationIndexRoute: typeof HomelayoutToolsQrInstallationIndexRoute
   HomelayoutToolsRegexIndexRoute: typeof HomelayoutToolsRegexIndexRoute
@@ -409,6 +430,7 @@ const HomelayoutRouteRouteChildren: HomelayoutRouteRouteChildren = {
   HomelayoutDebuggerMqttIndexRoute: HomelayoutDebuggerMqttIndexRoute,
   HomelayoutDebuggerUnifiedpushIndexRoute:
     HomelayoutDebuggerUnifiedpushIndexRoute,
+  HomelayoutToolsDeviceApisIndexRoute: HomelayoutToolsDeviceApisIndexRoute,
   HomelayoutToolsMqttIndexRoute: HomelayoutToolsMqttIndexRoute,
   HomelayoutToolsQrInstallationIndexRoute:
     HomelayoutToolsQrInstallationIndexRoute,

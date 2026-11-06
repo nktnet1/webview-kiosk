@@ -6,7 +6,7 @@ describe("documentation tools directory", () => {
     expect(toolDirectory.map((tool) => tool.href)).toEqual([
       "/tools/mqtt",
       "/tools/unifiedpush",
-      "/tools/webview-interfaces",
+      "/tools/device-apis",
       "/tools/regex",
       "/tools/qr-installation",
     ]);
