@@ -433,10 +433,7 @@ class NfcInterface(private val context: android.content.Context) {
     @Suppress("unused")
     @JavascriptInterface
     fun scanForClient(clientId: String?, optionsJson: String?): Boolean {
-        if (!isNfcEnabled(context)) {
-            return false
-        }
-        return NfcBridgeManager.startClientScan(clientId)
+        return isNfcEnabled(context) && NfcBridgeManager.startClientScan(clientId)
     }
 
     @Suppress("unused")
