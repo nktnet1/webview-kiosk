@@ -152,6 +152,9 @@ class MainActivityWebViewRefreshTest {
         awaitCondition {
             WebViewStartup.ready.value && mountedWebViews().size == 1
         }
+        // Robolectric never delivers completion for the fixture's about:blank
+        // home URL. End that placeholder load before each navigation assertion.
+        webView().stopLoading()
         frames()
     }
 
@@ -487,6 +490,156 @@ class MainActivityWebViewRefreshTest {
             shadowOf(webView).lastLoadedUrl,
         )
         assertTrue(hasLoadingIcon())
+    }
+
+    @Test
+    fun programmaticNavigationsShowSpinnerBeforePageStartCallback() {
+        val webView = webView()
+        val client = webView.webViewClient
+        val url = "https://example.invalid/programmatic"
+
+        // All of these navigation entry points should display feedback immediately,
+        // not only searches submitted from the address bar.
+        webView.loadUrl(url)
+        frames()
+        assertTrue(hasLoadingIcon())
+        assertEquals(listOf(0.1f), loadingProgress())
+        client.onPageStarted(webView, url, null)
+        client.onPageFinished(webView, url)
+        frames()
+        assertFalse(hasLoadingIcon())
+
+        webView.loadUrl(url, mapOf("X-Test" to "true"))
+        frames()
+        assertTrue(hasLoadingIcon())
+        client.onPageStarted(webView, url, null)
+        client.onPageFinished(webView, url)
+        frames()
+        assertFalse(hasLoadingIcon())
+
+        webView.postUrl(url, "data=test".toByteArray())
+        frames()
+        assertTrue(hasLoadingIcon())
+        client.onPageStarted(webView, url, null)
+        client.onPageFinished(webView, url)
+        frames()
+        assertFalse(hasLoadingIcon())
+
+        webView.reload()
+        frames()
+        assertTrue(hasLoadingIcon())
+        client.onPageStarted(webView, url, null)
+        client.onPageFinished(webView, url)
+        frames()
+        assertFalse(hasLoadingIcon())
+
+        val local = "https://example.invalid/local-html"
+        webView.loadDataWithBaseURL(local, "<p>Hi</p>", "text/html", "UTF-8", null)
+        frames()
+        assertTrue(hasLoadingIcon())
+        // Robolectric does not update WebView.url for loadDataWithBaseURL,
+        // so it cannot satisfy the production main-frame completion guard.
+        webView.stopLoading()
+        frames()
+        assertFalse(hasLoadingIcon())
+    }
+
+    @Test
+    fun javascriptExecutionDoesNotShowPageLoading() {
+        val webView = webView()
+        webView.loadUrl("javascript:void(0)")
+        frames()
+        assertFalse(hasLoadingIcon())
+        assertTrue(loadingProgress().isEmpty())
+    }
+
+    @Test
+    fun nativeMainFrameLinksAndRedirectsShowSpinnerBeforePageStart() {
+        val webView = webView()
+        val client = webView.webViewClient
+        val current = "https://example.invalid/landing"
+        webView.loadUrl(current)
+        client.onPageStarted(webView, current, null)
+        client.onPageFinished(webView, current)
+        frames()
+        assertFalse(hasLoadingIcon())
+
+        val link = "https://example.invalid/destination"
+        assertFalse(client.shouldOverrideUrlLoading(webView, documentRequest(link)))
+        frames()
+        assertTrue(hasLoadingIcon())
+        assertEquals(listOf(0.1f), loadingProgress())
+
+        // WebView subsequently processes the accepted request.
+        webView.loadUrl(link)
+        client.onPageStarted(webView, link, null)
+        val redirect = "https://example.invalid/redirected"
+        assertFalse(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest(redirect, redirect = true),
+            )
+        )
+        frames()
+        assertTrue(hasLoadingIcon())
+        webView.loadUrl(redirect)
+        client.onPageStarted(webView, redirect, null)
+        client.onPageFinished(webView, redirect)
+        frames()
+        assertFalse(hasLoadingIcon())
+    }
+
+    @Test
+    fun subframesFragmentsAndPreventedLinksDoNotStartSpinner() {
+        val webView = webView()
+        val client = webView.webViewClient
+        val current = "https://example.invalid/page"
+        webView.loadUrl(current)
+        client.onPageStarted(webView, current, null)
+        client.onPageFinished(webView, current)
+        frames()
+        assertFalse(hasLoadingIcon())
+
+        assertFalse(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest("https://example.invalid/iframe", mainFrame = false),
+            )
+        )
+        frames()
+        assertFalse(hasLoadingIcon())
+
+        // The legacy callback has no reliable main-frame bit: it may be an iframe.
+        @Suppress("DEPRECATION")
+        val handled =
+            client.shouldOverrideUrlLoading(
+                webView,
+                "https://example.invalid/legacy-iframe",
+            )
+        assertFalse(handled)
+        frames()
+        assertFalse(hasLoadingIcon())
+
+        assertFalse(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest("$current#section"),
+            )
+        )
+        frames()
+        assertFalse(hasLoadingIcon())
+
+        documentRules($$"||blocked.example^$document")
+        UserSettings(activity).overrideUrlLoadingBlockAction =
+            OverrideUrlLoadingBlockActionOption.PREVENT_NAVIGATION
+        assertTrue(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest("https://blocked.example/no-navigation"),
+            )
+        )
+        frames()
+        assertFalse(hasLoadingIcon())
     }
 
     @Test

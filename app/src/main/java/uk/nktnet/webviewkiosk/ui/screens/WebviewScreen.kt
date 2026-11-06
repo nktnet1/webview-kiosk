@@ -591,9 +591,6 @@ fun WebviewScreen(navController: NavController) {
             searchUrl.isNotBlank() &&
                 (searchUrl != systemSettings.currentUrl || userSettings.allowRefresh)
         ) {
-            // A slow connection may not produce WebView callbacks immediately.
-            isPageLoading = true
-            progress = 0
             customLoadUrl(searchUrl)
         }
     }
