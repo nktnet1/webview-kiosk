@@ -3,6 +3,7 @@
 
     <!-- Section Titles -->
     <string name="settings_more_action_section_quick_access">Quick Access</string>
+    <string name="settings_more_action_section_tools">Tools</string>
     <string name="settings_more_action_section_manage">Manage</string>
     <string name="settings_more_action_section_clear">Clear</string>
 
@@ -15,12 +16,12 @@
     <string name="settings_more_action_data_usage">Data Usage</string>
 
     <!-- Tools Actions -->
-    <string name="settings_more_action_section_tools">Tools</string>
     <string name="settings_more_action_create_shortcut">Create Shortcut</string>
     <string name="settings_more_action_app_launcher">App Launcher</string>
 
     <!-- Manage Actions -->
     <string name="settings_more_action_local_files">Local Files</string>
+    <string name="settings_more_action_content_blocking">Content Blocking</string>
     <string name="settings_more_action_site_permissions">Site Permissions</string>
     <string name="settings_more_action_device_owner">Device Owner</string>
 

@@ -229,12 +229,10 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                     navController.navigate(Screen.SettingsWebContentFiles.route)
                 }
                 ActionButton(
-                    stringResource(R.string.settings_more_action_site_permissions),
+                    stringResource(R.string.settings_more_action_content_blocking),
                     modifier = Modifier.weight(1f),
                 ) {
-                    navController.navigate(
-                        Screen.SettingsWebBrowsingSitePermissions.route
-                    )
+                    navController.navigate(Screen.SettingsContentBlocking.route)
                 }
             }
             Row(
@@ -242,12 +240,19 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
+                    stringResource(R.string.settings_more_action_site_permissions),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    navController.navigate(
+                        Screen.SettingsWebBrowsingSitePermissions.route
+                    )
+                }
+                ActionButton(
                     stringResource(R.string.settings_more_action_device_owner),
                     modifier = Modifier.weight(1f),
                 ) {
                     navController.navigate(Screen.SettingsDeviceOwner.route)
                 }
-                Spacer(modifier = Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
