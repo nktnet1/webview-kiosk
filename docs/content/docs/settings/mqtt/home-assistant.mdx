@@ -3,36 +3,36 @@ title: Home Assistant
 description: Discover, monitor, and control your kiosk over MQTT
 ---
 
-## 1. Settings
+## 1. Settings [#settings]
 
 Reconnect MQTT after changing these settings.
 
-### 1.1. Enable Discovery
+### 1.1. Enable Discovery [#enable-discovery]
 
 Make the kiosk available in Home Assistant, including its online/offline status.
 
 **Default:** false
 
-### 1.2. Device Name
+### 1.2. Device Name [#device-name]
 
 Optional display name for the kiosk. Leave blank to use {APP_NAME} and the
 app's instance ID.
 
 **Default:** (blank)
 
-### 1.3. Discovery Prefix
+### 1.3. Discovery Prefix [#discovery-prefix]
 
 Match the MQTT discovery prefix configured in Home Assistant.
 
 **Default:** homeassistant
 
-### 1.4. Status Topic
+### 1.4. Status Topic [#status-topic]
 
 Match Home Assistant's MQTT birth/status topic.
 
 **Default:** homeassistant/status
 
-## 2. Setup
+## 2. Setup [#setup]
 
 <Steps>
 
@@ -64,9 +64,9 @@ Find the kiosk under Home Assistant's **Settings → Devices & services → MQTT
 </Steps>
 
 For background monitoring, enable
-[Settings -> MQTT -> Use Foreground Service](/docs/settings/mqtt#52-use-foreground-service).
+[Settings -> MQTT -> Use Foreground Service](/docs/settings/mqtt#use-foreground-service).
 
-## 3. Controls
+## 3. Controls [#controls]
 
 Navigate and scroll the page, clear history or cache, lock the kiosk or device,
 and launch apps from the kiosk's Home Assistant device. Use its text controls
@@ -78,7 +78,7 @@ Navigation needs an active WebView. **Lock device** requires device owner
 permission. Notifications require both the app's notification setting and
 Android notification permission.
 
-## 4. App settings
+## 4. App settings [#app-settings]
 
 App settings appear as switches, number fields, dropdowns, or text inputs.
 Administrator-managed settings cannot be edited. Password fields stay blank
@@ -92,7 +92,7 @@ its entire value.
 
 </Callout>
 
-## 5. Status
+## 5. Status [#status]
 
 Status sensors report battery level, current URL, screen state, kiosk lock,
 brightness, and last interaction.
@@ -103,7 +103,7 @@ or launchable packages.
 Each refresh result remains unknown until its button is pressed. Open the result
 sensor's attributes to view its details.
 
-## 6. Troubleshooting
+## 6. Troubleshooting [#troubleshooting]
 
 - **Device missing:** check that both systems use the same broker, MQTT discovery
   is enabled in Home Assistant, and the discovery prefixes match. Restart the

@@ -3,7 +3,7 @@ title: Web Lifecycle
 description: Lock and reset behaviour, network and server-error recovery, refresh on screen wake
 ---
 
-## 1. Lock on Launch
+## 1. Lock on Launch [#lock-on-launch]
 
 When enabled, the app will immediately enter locked/pinned mode
 on startup, preventing exit until unpinned.
@@ -12,7 +12,7 @@ On some devices, you may still be prompted with a confirmation screen.
 
 **Default:** false
 
-## 2. Reset on Launch
+## 2. Reset on Launch [#reset-on-launch]
 
 When enabled, the app will always start fresh at the Home URL when
 closed and re-opened, as opposed to the last visited URL.
@@ -21,7 +21,7 @@ The navigation history will also be cleared.
 
 **Default:** false
 
-## 3. Reset On Inactivity (seconds)
+## 3. Reset On Inactivity (seconds) [#reset-on-inactivity-seconds]
 
 Number of seconds of inactivity before the app resets to the home URL.
 
@@ -37,7 +37,7 @@ To disable, use the value `0`.
 
 **Default:** 0
 
-## 4. Reset Actions
+## 4. Reset Actions [#reset-actions]
 
 Choose which browsing data to clear when the inactivity timer resets the app
 to the Home URL. Use `Add` to select more actions, remove any unwanted actions,
@@ -74,7 +74,7 @@ are not removed.
 ["HISTORY"]
 ```
 
-## 5. Dim Screen On Inactivity (seconds)
+## 5. Dim Screen On Inactivity (seconds) [#dim-screen-on-inactivity-seconds]
 
 Number of seconds of inactivity before the screen is dimmed (brightness = 0).
 
@@ -85,7 +85,7 @@ your `device -> brightness` setting upon new user interactions.
 
 **Default:** 0
 
-## 6. Refresh on Network Available
+## 6. Refresh on Network Available [#refresh-on-network-available]
 
 Select when the page should automatically refresh when network connectivity
 is restored.
@@ -96,7 +96,7 @@ is restored.
 
 **Default:** On Page Error
 
-## 7. Refresh on Loading Error Interval (seconds)
+## 7. Refresh on Loading Error Interval (seconds) [#refresh-on-loading-error-interval-seconds]
 
 Interval in seconds between automatic refresh attempts when a page fails
 to load. This usually indicates a connection failure, such as when the
@@ -124,7 +124,7 @@ To disable, use the value `0`.
 
 **Default:** 0
 
-## 8. Refresh on Screen Wake
+## 8. Refresh on Screen Wake [#refresh-on-screen-wake]
 
 Refresh the current page once when the device wakes from sleep.
 The kiosk page must be in the foreground before and after sleep.

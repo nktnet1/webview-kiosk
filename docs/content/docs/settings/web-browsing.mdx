@@ -6,7 +6,7 @@ description: Refresh, navigation, history, bookmark, search provider
 import { EllipsisVertical, Wrench, Pin, PinOff } from 'lucide-react';
 import { APP_NAME } from '#/config/app'
 
-## 1. Allow Refresh
+## 1. Allow Refresh [#allow-refresh]
 
 Set to true to allow the user to refresh the page, e.g. using the
 - address bar actions
@@ -15,7 +15,7 @@ Set to true to allow the user to refresh the page, e.g. using the
 
 **Default:** true
 
-## 2. Allow Pull to Refresh
+## 2. Allow Pull to Refresh [#allow-pull-to-refresh]
 
 Set to true to allow the user to refresh the page by pulling down
 from the top 1/4 of the screen.
@@ -27,7 +27,7 @@ Note that this requires:
 
 **Default:** true
 
-## 3. Allow Backwards Navigation
+## 3. Allow Backwards Navigation [#allow-backwards-navigation]
 
 Set to true to allow the user to go back one page in history.
 
@@ -35,7 +35,7 @@ This also enables forward navigation.
 
 **Default:** true
 
-## 4. Allow Go Home
+## 4. Allow Go Home [#allow-go-home]
 
 Set to true to allow the user to go home using one of:
 
@@ -48,14 +48,14 @@ Set to true to allow the user to go home using one of:
 
 **Default:** true
 
-## 5. Clear History on Home
+## 5. Clear History on Home [#clear-history-on-home]
 
 Set to true if you want to clear the backwards/forward navigation history
 whenever a `Go Home` action is triggered.
 
 **Default:** false
 
-## 6. Replace History URL on Redirect
+## 6. Replace History URL on Redirect [#replace-history-url-on-redirect]
 
 Set to true to replace the current history entry with the final URL if
 any page redirections occurs, rather than adding multiple entries to the
@@ -63,7 +63,7 @@ history navigation stack.
 
 **Default:** true
 
-## 7. Allow History Access
+## 7. Allow History Access [#allow-history-access]
 
 Set to true to allow viewing and navigating back in history, by
 clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon
@@ -71,7 +71,7 @@ on the right of the address bar (top-right corner of screen) and selecting `Hist
 
 **Default:** true
 
-## 8. Allow Bookmark Access
+## 8. Allow Bookmark Access [#allow-bookmark-access]
 
 Set to true to allow viewing and navigating to bookmarks configured in settings, by
 clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon
@@ -79,7 +79,7 @@ on the right of the address bar (top-right corner of screen) and selecting `Book
 
 **Default:** true
 
-## 9. Allow Other URL Schemes
+## 9. Allow Other URL Schemes [#allow-other-url-schemes]
 
 Allow the handling of non-http/https URL schemes (i.e. intents) such as
 `intent:`, `mailto:`, `sms:`, `tel:`, `spotify:`, `whatsapp:`, `unifiedpush:`,
@@ -91,7 +91,7 @@ to function.
 
 **Default:** false
 
-## 10. Allow Default Long Press
+## 10. Allow Default Long Press [#allow-default-long-press]
 
 When enabled, long-pressing areas in the WebView will trigger the native
 WebView behaviour, e.g. text selection.
@@ -101,7 +101,7 @@ by the `Allow Link Long Press Context Menu` setting.
 
 **Default:** true
 
-## 11. Allow Link Long Press Context Menu
+## 11. Allow Link Long Press Context Menu [#allow-link-long-press-context-menu]
 
 When enabled, long-pressing links or images will trigger a custom context menu.
 
@@ -121,7 +121,7 @@ For images, there is an additional option:
 
 **Default:** true
 
-## 12. Override URL Loading Block Action
+## 12. Override URL Loading Block Action [#override-url-loading-block-action]
 
 Action to take when a URL navigation (via [shouldOverrideUrlLoading](https://developer.android.com/reference/android/webkit/WebViewClient#shouldOverrideUrlLoading(android.webkit.WebView,%20android.webkit.WebResourceRequest)]))
 matches the blacklist regex.
@@ -143,7 +143,7 @@ In those other cases, the block page will simply be shown.
 
 **Default:** Show Block Page
 
-## 13. Address Bar Actions
+## 13. Address Bar Actions [#address-bar-actions]
 
 This setting is only controlling the UI aspect of the Address Bar.
 
@@ -158,7 +158,7 @@ available actions.
 ["BACK","FORWARD","REFRESH","HOME","HISTORY","BOOKMARK","FILES","FIND","SCROLL_TOP"]
 ```
 
-## 14. Kiosk Control Panel Region
+## 14. Kiosk Control Panel Region [#kiosk-control-panel-region]
 
 Controls which part of the screen can be multi-tapped 10 times in quick
 succession to show the Kiosk Control Panel dialog.
@@ -232,7 +232,7 @@ You can also disable this setting and instead configure
 
 **Default:** Top left
 
-## 15. Kiosk Control Panel Actions
+## 15. Kiosk Control Panel Actions [#kiosk-control-panel-actions]
 
 This setting is only controlling the UI aspect of the Kiosk Control Panel.
 Access will still need to be enabled using the dependent settings.
@@ -430,7 +430,7 @@ The following actions are available to be configured (remove or rearrange):
 ["NAVIGATION","HOME","REFRESH","HISTORY","BOOKMARK","FILES","LOCK","UNLOCK"]
 ```
 
-## 16. Search Provider URL
+## 16. Search Provider URL [#search-provider-url]
 
 The URL used for search queries in the address bar. This URL must include the
 search string query parameter.
@@ -450,7 +450,7 @@ For example,
 
 **Default:** https://duckduckgo.com?q=
 
-## 17. Search Suggestion Engine
+## 17. Search Suggestion Engine [#search-suggestion-engine]
 
 Configure the search engine for text suggestions (autocomplete/hints)
 when typing in the address bar.

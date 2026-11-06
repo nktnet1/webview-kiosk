@@ -5,7 +5,7 @@ description: Authentication, launcher, lock task mode/pinning, device owner, DPC
 
 import Link from 'fumadocs-core/link';
 
-## 1. Settings Authentication Session
+## 1. Settings Authentication Session [#settings-authentication-session]
 
 The settings page is locked using the device's biometrics or credentials (if set).
 
@@ -15,16 +15,16 @@ This persisting session duration reset each time a settings page is accessed.
 When the device is locked, or the app is exited or placed in the background,
 the authentication session will be revoked.
 
-## 2. Default Launcher
+## 2. Default Launcher [#default-launcher]
 
 By setting {APP_NAME} as the default launcher (home screen) app, any attempts to
 leave the app will simply re-open it.
 
 To do this, use the `Launcher` option in [Setting Actions](/docs/setting-actions).
 
-## 3. App Pinning / Lock Task Mode
+## 3. App Pinning / Lock Task Mode [#app-pinning-lock-task-mode]
 
-### 3.1. User-owned Devices
+### 3.1. User-owned Devices [#user-owned-devices]
 
 On regular user-owned devices, to improve security, enable **Ask for
 PIN/pattern/password before unpinning** in your device settings.
@@ -45,7 +45,7 @@ For more on Android App Pinning ([screen pinning](https://developer.android.com/
 When in screen pinning mode, you will not be able to launch other applications.
 See the `Device Owner Mode` section for further details.
 
-### 3.2. Device Policy Controller
+### 3.2. Device Policy Controller [#device-policy-controller]
 
 If you have access to your
 [Device Policy Controller (DPC)](https://developer.android.com/work/dpc/build-dpc),
@@ -103,7 +103,7 @@ dpm.setLockTaskPackages(adminName, APP_PACKAGES)
 For more information, see
 [Android's official documentation](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#allowlist_apps).
 
-### 3.3. Device Owner Mode
+### 3.3. Device Owner Mode [#device-owner-mode]
 
 When set as the device owner, {APP_NAME} can act as a DPC and automatically adds itself to the
 [allowlist for lock task packages](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode).
@@ -111,7 +111,7 @@ It is also possible for {APP_NAME} to add other applications in settings, thus a
 launch other apps in Lock Task Mode (kiosk).
 
 The easiest way is to factory reset your device and use the
-[QR Code installation method](/docs/installation#3-qr-code-provisioning).
+[QR Code installation method](/docs/installation#qr-code-provisioning).
 
 However, if this isn't possible, you can try the following:
 
@@ -165,7 +165,7 @@ If you encounter any troubles with the setup, it is worth taking a look at the
 [Dhizuku activation guide](https://github.com/iamr0s/Dhizuku/discussions/19),
 which includes helpful debugging steps when setting up a device owner application.
 
-## 4. Managed Configurations (App Restrictions)
+## 4. Managed Configurations (App Restrictions) [#managed-configurations-app-restrictions]
 
 For fully managed (company-owned) devices, you can use
 [managed configurations](https://developer.android.com/work/managed-configurations)

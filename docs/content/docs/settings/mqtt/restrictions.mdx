@@ -6,50 +6,50 @@ description: Broker and client restrictions and limitations
 The settings below are modelled after HiveMQ client library's documentation for
 [connect#restrictions](https://hivemq.github.io/hivemq-mqtt-client/docs/mqtt-operations/connect/#restrictions).
 
-### 1. Receive Maximum
+### 1. Receive Maximum [#receive-maximum]
 
 Maximum number of MQTT messages the client can receive simultaneously.
 
 **Default:** 65535
 
-### 2. Send Maximum
+### 2. Send Maximum [#send-maximum]
 
 Maximum number of MQTT messages the client can send simultaneously.
 
 **Default:** 65535
 
-### 3. Maximum Packet Size
+### 3. Maximum Packet Size [#maximum-packet-size]
 
 Maximum size in bytes of MQTT packets the client can receive.
 
 **Default:** 268435460
 
-### 4. Send Maximum Packet Size
+### 4. Send Maximum Packet Size [#send-maximum-packet-size]
 
 Maximum size in bytes of MQTT packets the client can send.
 
 **Default:** 268435460
 
-### 5. Topic Alias Maximum
+### 5. Topic Alias Maximum [#topic-alias-maximum]
 
 Maximum number of topic aliases the client can receive.
 
 **Default:** 0
 
-### 6. Send Topic Alias Maximum
+### 6. Send Topic Alias Maximum [#send-topic-alias-maximum]
 
 Maximum number of topic aliases the client can send.
 
 **Default:** 16
 
-### 7. Request Problem Information
+### 7. Request Problem Information [#request-problem-information]
 
 When enabled, the client requests additional problem information
 from the broker in MQTT responses.
 
 **Default:** true
 
-### 8. Request Response Information
+### 8. Request Response Information [#request-response-information]
 
 When enabled, the client requests additional response information
 from the broker in MQTT responses.
