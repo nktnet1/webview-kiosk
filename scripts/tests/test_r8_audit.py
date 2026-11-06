@@ -269,7 +269,7 @@ class R8AuditTest(unittest.TestCase):
         with patch.object(audit, "dump_selected", side_effect=fake_dump):
             status, details = audit.inspect_bridges(self.apk, "dexdump", mapping)
         self.assertEqual("pass", status)
-        self.assertEqual(14, len(details["verified"]))
+        self.assertEqual(sum(len(methods) for methods in audit.BRIDGES.values()), len(details["verified"]))
         self.assertEqual(["classes.dex", "classes2.dex"], calls)
 
     def test_removed_or_renamed_js_method_fails_when_mapping_is_available(self):
