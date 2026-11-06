@@ -111,15 +111,30 @@ gradle.beforeProject { project ->
                     def libraries = project.extensions
                         .getByType(VersionCatalogsExtension).named('libs')
                     def kotlinVersion = libraries.findVersion('kotlin').get().requiredVersion
-                    // AGP uses this same project property for resource compilation;
-                    // the exporter can resolve the AAPT2 artifact independently of
-                    // the AGP version in the version catalog.
+                    // AGP resolves AAPT2 with a detached configuration during
+                    // resource compilation. Read the exact default coordinate from
+                    // the loaded AGP plugin so it is also cached for offline builds.
+                    // Respect an optional override just as AGP does.
                     def aapt2Version = project.providers
                         .gradleProperty('android.aapt2Version').orNull?.trim()
                     if (!aapt2Version) {
-                        throw new GradleException(
-                            'Missing android.aapt2Version: set a published AAPT2 version in gradle.properties'
+                        def pluginLoader = project.plugins
+                            .getPlugin('com.android.application').class.classLoader
+                        def resource = pluginLoader.getResourceAsStream(
+                            'com/android/build/gradle/internal/res/aapt2_version.properties'
                         )
+                        if (resource == null) {
+                            throw new GradleException('Cannot read AGP AAPT2 version metadata')
+                        }
+                        def properties = new Properties()
+                        resource.withCloseable { properties.load(it) }
+                        def buildNumber = properties.getProperty('aapt2Version')?.trim()
+                        if (!buildNumber) {
+                            throw new GradleException('AGP AAPT2 version metadata is empty')
+                        }
+                        def pluginVersion = pluginLoader.loadClass('com.android.Version')
+                            .getField('ANDROID_GRADLE_PLUGIN_VERSION').get(null)
+                        aapt2Version = "${pluginVersion}-${buildNumber}"
                     }
                     // AGP and Kotlin resolve these outside the ordinary test
                     // configurations, during resource and Compose compilation.

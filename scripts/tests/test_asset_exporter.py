@@ -6,7 +6,6 @@ import importlib.util
 import io
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -606,6 +605,8 @@ class DispatchTest(unittest.TestCase):
         self.assertIn("com.android.tools.build:aapt2:${aapt2Version}:linux", script)
         self.assertIn("org.jetbrains.kotlin:compose-group-mapping:${kotlinVersion}", script)
         self.assertIn(".gradleProperty('android.aapt2Version')", script)
+        self.assertIn("com/android/build/gradle/internal/res/aapt2_version.properties", script)
+        self.assertIn("ANDROID_GRADLE_PLUGIN_VERSION", script)
         self.assertIn("libraries.findVersion('kotlin')", script)
         self.assertNotIn("libraries.findVersion('agp')", script)
         self.assertNotIn("agpVersion", script)
@@ -613,20 +614,20 @@ class DispatchTest(unittest.TestCase):
         # Android lint dependencies are resolved as files, not graph metadata.
         self.assertIn("incoming.artifacts.artifactFiles.files", script)
 
-    def test_aapt2_export_uses_project_property_without_agp_version_checks(self):
+    def test_aapt2_version_is_selected_by_agp_without_a_project_pin(self):
         properties = (ROOT / "gradle.properties").read_text(encoding="utf-8")
-        versions = re.findall(r"^android\.aapt2Version=([^\s]+)$", properties, re.MULTILINE)
-        self.assertEqual(1, len(versions), "AAPT2 must have a single project-wide version")
-        self.assertRegex(versions[0], r"^\d+\.\d+\.\d+-\d+$")
+        self.assertNotIn("android.aapt2Version=", properties)
 
         script = (ROOT / "scripts/android/resolve-android-test-assets.init.gradle").read_text(
             encoding="utf-8"
         )
         self.assertIn(".gradleProperty('android.aapt2Version')", script)
+        self.assertIn("com/android/build/gradle/internal/res/aapt2_version.properties", script)
+        self.assertIn("ANDROID_GRADLE_PLUGIN_VERSION", script)
         self.assertIn("com.android.tools.build:aapt2:${aapt2Version}:linux", script)
-        self.assertNotIn(versions[0], script, "Do not duplicate the AAPT2 pin in the exporter")
         self.assertNotIn("libraries.findVersion('agp')", script)
         self.assertNotIn("agpVersion", script)
+        self.assertNotIn("aapt2:9.5.0-16666295", script)
 
     def test_docker_rejects_native_paths_unavailable_daemon_and_windows_containers(self):
         with mock.patch.object(ASSETS.platform, "system", return_value="Darwin"), \

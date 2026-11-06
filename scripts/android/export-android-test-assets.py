@@ -588,7 +588,7 @@ Gradle deps destination: $GRADLE_USER_HOME/caches/modules-2/ (extract into $GRAD
 Android SDK destination: $ANDROID_SDK_ROOT/
 Robolectric Maven destination: ~/.m2/repository/ (default)
 Android lint: androidLintTool and its transitive dependencies included in gradle-deps
-Linux AAPT2: project-configured artifact included in gradle-deps
+Linux AAPT2: AGP-selected artifact included in gradle-deps
 Kotlin formatting: Spotless, ktfmt, and Detekt brace-check dependencies included
 """
             publish(
