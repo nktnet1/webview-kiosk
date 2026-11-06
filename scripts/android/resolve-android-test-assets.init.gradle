@@ -110,25 +110,22 @@ gradle.beforeProject { project ->
                 if (!engine) {
                     def libraries = project.extensions
                         .getByType(VersionCatalogsExtension).named('libs')
-                    def agpVersion = libraries.findVersion('agp').get().requiredVersion
                     def kotlinVersion = libraries.findVersion('kotlin').get().requiredVersion
-                    // AAPT2 has a separate build-number suffix, so fail loudly
-                    // when AGP is bumped until the exporter pin is updated.
-                    if (agpVersion != '9.5.0') {
+                    // AGP uses this same project property for resource compilation;
+                    // the exporter can resolve the AAPT2 artifact independently of
+                    // the AGP version in the version catalog.
+                    def aapt2Version = project.providers
+                        .gradleProperty('android.aapt2Version').orNull?.trim()
+                    if (!aapt2Version) {
                         throw new GradleException(
-                            "Update pinned AAPT2 for AGP ${agpVersion} before exporting assets"
-                        )
-                    }
-                    if (kotlinVersion != '2.4.21') {
-                        throw new GradleException(
-                            "Update pinned Compose group mapping for Kotlin ${kotlinVersion} before exporting assets"
+                            'Missing android.aapt2Version: set a published AAPT2 version in gradle.properties'
                         )
                     }
                     // AGP and Kotlin resolve these outside the ordinary test
                     // configurations, during resource and Compose compilation.
                     [
-                        'com.android.tools.build:aapt2:9.5.0-16666295:linux',
-                        'org.jetbrains.kotlin:compose-group-mapping:2.4.21',
+                        "com.android.tools.build:aapt2:${aapt2Version}:linux",
+                        "org.jetbrains.kotlin:compose-group-mapping:${kotlinVersion}",
                     ].each { coordinate ->
                         def configuration = project.configurations.detachedConfiguration(
                             project.dependencies.create(coordinate)
