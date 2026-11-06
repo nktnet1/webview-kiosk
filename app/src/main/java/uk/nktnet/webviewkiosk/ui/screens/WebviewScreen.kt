@@ -176,6 +176,7 @@ fun WebviewScreen(navController: NavController) {
     var linkToOpen by remember { mutableStateOf<String?>(null) }
     var imageToOpen by remember { mutableStateOf<String?>(null) }
     var progress by remember { mutableIntStateOf(100) }
+    var isPageLoading by remember { mutableStateOf(false) }
 
     val showAddressBar =
         when (userSettings.addressBarMode) {
@@ -344,6 +345,9 @@ fun WebviewScreen(navController: NavController) {
                         }
                     },
                     onProgressChanged = { newProgress -> progress = newProgress },
+                    onLoadingStateChanged = { isLoading ->
+                        isPageLoading = isLoading
+                    },
                     finishSwipeRefresh = {
                         isSwipeRefreshing = false
                     },
@@ -587,6 +591,9 @@ fun WebviewScreen(navController: NavController) {
             searchUrl.isNotBlank() &&
                 (searchUrl != systemSettings.currentUrl || userSettings.allowRefresh)
         ) {
+            // A slow connection may not produce WebView callbacks immediately.
+            isPageLoading = true
+            progress = 0
             customLoadUrl(searchUrl)
         }
     }
@@ -637,6 +644,7 @@ fun WebviewScreen(navController: NavController) {
                                         urlBarText = urlBarText,
                                         onUrlBarTextChange = { urlBarText = it },
                                         hasFocus = addressBarHasFocus,
+                                        isPageLoading = isPageLoading,
                                         onFocusChanged = {
                                             addressBarHasFocus = it.isFocused
                                         },
@@ -733,7 +741,7 @@ fun WebviewScreen(navController: NavController) {
 
                 if (userSettings.showLoadingProgressBar && progress < 100) {
                     LinearProgressIndicator(
-                        progress = { progress / 100f },
+                        progress = { progress.coerceAtLeast(10) / 100f },
                         modifier =
                             Modifier.fillMaxWidth().align(Alignment.TopCenter),
                     )

@@ -169,6 +169,7 @@ data class WebViewConfig(
     val onLocalNetworkPermissionMissing: () -> Unit,
     val finishSwipeRefresh: () -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
+    val onLoadingStateChanged: (isLoading: Boolean) -> Unit,
     val updateAddressBarAndHistory: (url: String, originalUrl: String?) -> Unit,
     val onHttpAuthRequest: (request: HttpAuthRequest?) -> Unit,
     val onLinkLongClick: (url: String) -> Unit,
@@ -352,6 +353,7 @@ fun createCustomWebview(
         fun finishLoadingProgress() {
             trackLoadingProgress = false
             config.onProgressChanged(100)
+            config.onLoadingStateChanged(false)
         }
 
         var cosmetics: WebViewCosmetics? = null
@@ -736,6 +738,7 @@ fun createCustomWebview(
                                 }
                                 trackLoadingProgress = true
                                 config.onProgressChanged(0)
+                                config.onLoadingStateChanged(true)
                                 awaitingPdfPageStart = false
                                 config.setLastErrorUrl("")
                                 config.onHttpAuthRequest(null)

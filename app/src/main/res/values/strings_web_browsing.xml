@@ -104,6 +104,7 @@ For example, when searching for \"new\", you may get suggested
     <string name="ui_open_link" formatted="false">"Open Link"</string>
     <string name="ui_open_link_2" formatted="false">"Open link"</string>
     <string name="ui_page_url" formatted="false">"Page URL"</string>
+    <string name="ui_loading_page">"Loading page…"</string>
     <string name="ui_retrieving_image_details" tools:ignore="TypographyEllipsis" formatted="false">"Retrieving image details..."</string>
     <string name="ui_search_provider_bing" formatted="false">"Bing"</string>
     <string name="ui_search_provider_duckduckgo" formatted="false">"DuckDuckGo"</string>

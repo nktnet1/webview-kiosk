@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.text.AnnotatedString
 import androidx.navigation.NavHostController
 import androidx.webkit.WebResourceErrorCompat
 import androidx.webkit.WebViewClientCompat
@@ -388,6 +389,7 @@ class MainActivityWebViewRefreshTest {
         chrome.onProgressChanged(webView, 10)
         frames()
         assertTrue(loadingProgress().isEmpty())
+        assertFalse(hasLoadingIcon())
 
         val url = "https://example.invalid/signage"
         webView.loadUrl(url)
@@ -395,10 +397,13 @@ class MainActivityWebViewRefreshTest {
         chrome.onProgressChanged(webView, 40)
         frames()
         assertEquals(listOf(0.4f), loadingProgress())
+        assertTrue(hasLoadingIcon())
 
         chrome.onProgressChanged(webView, 100)
         frames()
         assertTrue(loadingProgress().isEmpty())
+        // 100% resource progress can arrive before the navigation completes.
+        assertTrue(hasLoadingIcon())
         // The page-finished callback may be delayed while iframe loads continue.
         for (progress in listOf(5, 60, 20)) {
             chrome.onProgressChanged(webView, progress)
@@ -409,6 +414,171 @@ class MainActivityWebViewRefreshTest {
         chrome.onProgressChanged(webView, 15)
         frames()
         assertTrue(loadingProgress().isEmpty())
+        assertFalse(hasLoadingIcon())
+    }
+
+    @Test
+    fun pendingPageWithoutNetworkProgressShowsLoadingUntilError() {
+        val webView = webView()
+        val url = "http://192.168.4.163:3000"
+        webView.loadUrl(url)
+        webView.webViewClient.onPageStarted(webView, url, null)
+        frames()
+        assertEquals(listOf(0.1f), loadingProgress())
+        assertTrue(hasLoadingIcon())
+
+        val error =
+            object : WebResourceErrorCompat() {
+                override fun getErrorCode(): Int = -8
+
+                override fun getDescription(): CharSequence = "Connection timed out"
+            }
+        (webView.webViewClient as WebViewClientCompat).onReceivedError(
+            webView,
+            documentRequest(url),
+            error,
+        )
+        frames()
+        assertTrue(loadingProgress().isEmpty())
+        assertFalse(hasLoadingIcon())
+    }
+
+    @Test
+    fun addressBarSearchShowsLoadingBeforeWebViewReportsPageStart() {
+        val webView = webView()
+        val nodes = mutableListOf<androidx.compose.ui.semantics.SemanticsNode>()
+        fun collect(current: View) {
+            if (current is ViewRootForTest) {
+                nodes +=
+                    current.semanticsOwner.getAllSemanticsNodes(
+                        mergingEnabled = true
+                    )
+            }
+            if (current is ViewGroup) {
+                (0 until current.childCount).forEach {
+                    collect(current.getChildAt(it))
+                }
+            }
+        }
+        collect(view)
+        val input = nodes.firstNotNullOf {
+            it.config.getOrNull(SemanticsActions.SetText)?.action
+        }
+        assertTrue(input(AnnotatedString("192.168.4.163:3000")))
+        frames()
+
+        nodes.clear()
+        collect(view)
+        val search = nodes.first {
+            it.config
+                .getOrNull(SemanticsProperties.ContentDescription)
+                ?.contains(
+                    activity.getString(uk.nktnet.webviewkiosk.R.string.ui_search)
+                ) == true && it.config.getOrNull(SemanticsActions.OnClick) != null
+        }
+        assertTrue(
+            search.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke() ==
+                true
+        )
+        frames()
+
+        assertEquals(
+            "http://192.168.4.163:3000",
+            shadowOf(webView).lastLoadedUrl,
+        )
+        assertTrue(hasLoadingIcon())
+    }
+
+    @Test
+    fun progressBarStartsAtTenPercentAndTracksProgressAboveIt() {
+        val webView = webView()
+        val chrome = requireNotNull(webView.webChromeClient)
+        val url = "https://example.invalid/clamp"
+        webView.loadUrl(url)
+        webView.webViewClient.onPageStarted(webView, url, null)
+        frames()
+        assertEquals(listOf(0.1f), loadingProgress())
+
+        for (reported in listOf(1, 9, 10)) {
+            chrome.onProgressChanged(webView, reported)
+            frames()
+            assertEquals(listOf(0.1f), loadingProgress())
+        }
+        chrome.onProgressChanged(webView, 34)
+        frames()
+        assertEquals(listOf(0.34f), loadingProgress())
+        chrome.onProgressChanged(webView, 100)
+        frames()
+        assertTrue(loadingProgress().isEmpty())
+        assertTrue(hasLoadingIcon())
+        webView.webViewClient.onPageFinished(webView, url)
+        frames()
+        assertFalse(hasLoadingIcon())
+    }
+
+    @Test
+    fun focusedAddressBarShowsSearchInsteadOfSpinnerAndRestoresSpinnerOnSubmit() {
+        val webView = webView()
+        val searchDescription =
+            activity.getString(uk.nktnet.webviewkiosk.R.string.ui_search)
+        val url = "http://192.168.4.163:3000"
+        webView.loadUrl(url)
+        webView.webViewClient.onPageStarted(webView, url, null)
+        frames()
+        assertTrue(hasLoadingIcon())
+        assertFalse(addressBarIconHasDescription(searchDescription))
+
+        val requestFocus =
+            requireNotNull(
+                addressBarField().config.getOrNull(SemanticsActions.RequestFocus)
+            )
+        assertTrue(requestFocus.action?.invoke() == true)
+        frames()
+        assertFalse(hasLoadingIcon())
+        assertTrue(addressBarIconHasDescription(searchDescription))
+        // Submit the same local address rather than the initial home URL.
+        val setText =
+            requireNotNull(
+                addressBarField().config.getOrNull(SemanticsActions.SetText)
+            )
+        assertTrue(
+            setText.action?.invoke(AnnotatedString("192.168.4.163:3000")) == true
+        )
+        frames()
+
+        // Tapping Search should clear focus and expose the spinner immediately,
+        // without waiting for a new onPageStarted callback.
+        val search = findAddressBarIcon(searchDescription)
+        assertTrue(
+            search.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke() ==
+                true
+        )
+        frames()
+        assertEquals(url, shadowOf(webView).lastLoadedUrl)
+        assertTrue(hasLoadingIcon())
+        assertFalse(addressBarIconHasDescription(searchDescription))
+
+        webView.webViewClient.onPageFinished(webView, url)
+        frames()
+        assertFalse(hasLoadingIcon())
+        assertTrue(addressBarIconHasDescription(searchDescription))
+    }
+
+    @Test
+    fun addressBarSpinnerIsIndependentOfLinearProgressBarSetting() {
+        val settings = UserSettings(activity)
+        settings.showLoadingProgressBar = false
+        frames()
+        val webView = webView()
+        val url = "https://example.invalid/disabled-progress"
+        webView.loadUrl(url)
+        webView.webViewClient.onPageStarted(webView, url, null)
+        frames()
+        assertTrue(loadingProgress().isEmpty())
+        assertTrue(hasLoadingIcon())
+        webView.webViewClient.onPageFinished(webView, url)
+        frames()
+        assertFalse(hasLoadingIcon())
     }
 
     @Test
@@ -749,6 +919,7 @@ class MainActivityWebViewRefreshTest {
         chrome.onProgressChanged(webView, 20)
         frames()
         assertTrue(loadingProgress().isEmpty())
+        assertFalse(hasLoadingIcon())
     }
 
     @Test
@@ -763,6 +934,8 @@ class MainActivityWebViewRefreshTest {
         chrome.onProgressChanged(webView, 40)
         frames()
         assertTrue(loadingProgress().isEmpty())
+        // Hiding the linear progress bar does not hide the address-bar spinner.
+        assertTrue(hasLoadingIcon())
 
         settings.showLoadingProgressBar = true
         navigateToWebViewScreen(controller())
@@ -775,6 +948,7 @@ class MainActivityWebViewRefreshTest {
             .onProgressChanged(enabledWebView, 50)
         frames()
         assertEquals(listOf(0.5f), loadingProgress())
+        assertTrue(hasLoadingIcon())
     }
 
     @Test
@@ -1304,6 +1478,9 @@ class MainActivityWebViewRefreshTest {
                     .mapNotNullTo(progress) {
                         it.config
                             .getOrNull(SemanticsProperties.ProgressBarRangeInfo)
+                            ?.takeIf { info ->
+                                info.range.endInclusive > info.range.start
+                            }
                             ?.current
                     }
             }
@@ -1313,6 +1490,73 @@ class MainActivityWebViewRefreshTest {
         }
         collect(view)
         return progress
+    }
+
+    private fun hasLoadingIcon(): Boolean =
+        addressBarIconHasDescription(
+            activity.getString(uk.nktnet.webviewkiosk.R.string.ui_loading_page)
+        )
+
+    private fun addressBarIconHasDescription(description: String): Boolean =
+        findAddressBarIconOrNull(description) != null
+
+    private fun findAddressBarIcon(description: String) =
+        requireNotNull(findAddressBarIconOrNull(description))
+
+    private fun findAddressBarIconOrNull(
+        description: String
+    ): androidx.compose.ui.semantics.SemanticsNode? {
+        fun findIcon(view: View): androidx.compose.ui.semantics.SemanticsNode? {
+            if (view is ViewRootForTest) {
+                val icon =
+                    view.semanticsOwner
+                        .getAllSemanticsNodes(mergingEnabled = true)
+                        .firstOrNull { node ->
+                            node.config
+                                .getOrNull(SemanticsProperties.ContentDescription)
+                                ?.contains(description) == true &&
+                                node.config.getOrNull(SemanticsActions.OnClick) !=
+                                    null
+                        }
+                if (icon != null) {
+                    return icon
+                }
+            }
+            if (view is ViewGroup) {
+                (0 until view.childCount).forEach {
+                    findIcon(view.getChildAt(it))?.let { icon ->
+                        return icon
+                    }
+                }
+            }
+            return null
+        }
+        return findIcon(view)
+    }
+
+    private fun addressBarField(): androidx.compose.ui.semantics.SemanticsNode {
+        fun findField(view: View): androidx.compose.ui.semantics.SemanticsNode? {
+            if (view is ViewRootForTest) {
+                val field =
+                    view.semanticsOwner
+                        .getAllSemanticsNodes(mergingEnabled = true)
+                        .firstOrNull {
+                            it.config.getOrNull(SemanticsActions.SetText) != null
+                        }
+                if (field != null) {
+                    return field
+                }
+            }
+            if (view is ViewGroup) {
+                (0 until view.childCount).forEach {
+                    findField(view.getChildAt(it))?.let { field ->
+                        return field
+                    }
+                }
+            }
+            return null
+        }
+        return requireNotNull(findField(view))
     }
 
     private fun awaitCondition(condition: () -> Boolean) {

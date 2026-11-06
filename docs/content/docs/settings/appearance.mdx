@@ -185,13 +185,23 @@ Customise the position of the address bar. Select one of:
 ## 10. Show Loading Progress Bar [#show-loading-progress-bar]
 
 Show a progress bar at the top of the WebView while the main page loads.
+The displayed value is clamped to a minimum of **10%** while the bar is
+visible, even if WebView reports 0–9%.
 
 Only a main-frame page load starts the bar. After the load completes, later
 iframe loads do not reopen it. The percentage during the initial page load
 can still include iframe and other resource loading reported by WebView.
 
-Disable this to hide the bar during all page loads, including navigation and
-refreshes, for kiosk or signage pages.
+In the address bar, the Search icon changes to an animated loading spinner
+while the main page is loading (including connection stalls). It changes
+back to Search when the address field is focused, so another URL can be
+entered. Unfocusing the field restores the spinner if loading is still in
+progress. The spinner disappears when the page finishes, fails, or is
+stopped, even if WebView previously reported 100% progress. This address
+bar feedback is independent of the progress bar setting.
+
+Disable this setting to hide only the linear progress bar during page loads,
+including navigation and refreshes, for kiosk or signage pages.
 
 The setting applies in both locked and unlocked modes. It is also available
 through managed configuration and settings import/export using
