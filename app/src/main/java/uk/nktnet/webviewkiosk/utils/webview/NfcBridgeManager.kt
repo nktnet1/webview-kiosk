@@ -33,16 +33,11 @@ object NfcBridgeManager {
     @Volatile private var pendingWrite: PendingWriteRequest? = null
 
     private class PendingWriteRequest(
-        requestId: String,
-        messageJson: String,
-        sessionId: Long,
-        clientId: String?,
-    ) {
-        val requestId = requestId
-        val messageJson = messageJson
-        val sessionId = sessionId
-        val clientId = clientId
-    }
+        val requestId: String,
+        val messageJson: String,
+        val sessionId: Long,
+        val clientId: String?,
+    )
 
     fun attachWebView(webView: WebView) {
         resetSession()
