@@ -1,5 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, BellRing, QrCode, Radio, Regex } from "lucide-react";
+import {
+  ArrowUpRight,
+  BellRing,
+  QrCode,
+  Radio,
+  Regex,
+  Smartphone,
+} from "lucide-react";
 import { toolDirectory } from "#/lib/tool-directory";
 
 export const Route = createFileRoute("/_homelayout/tools/")({
@@ -9,6 +16,7 @@ export const Route = createFileRoute("/_homelayout/tools/")({
 const icons = {
   mqtt: Radio,
   unifiedpush: BellRing,
+  interfaces: Smartphone,
   regex: Regex,
   qr: QrCode,
 } as const;

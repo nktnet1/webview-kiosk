@@ -3,6 +3,8 @@ title: Web Engine
 description: JavaScript, DOM storage, cookies, cache, Mutual TLS, user agent, zoom
 ---
 
+import { APP_NAME } from '#/config/app'
+
 import { EllipsisVertical, Wrench } from 'lucide-react';
 
 ## 1. Enable JavaScript [#enable-javascript]
@@ -215,6 +217,8 @@ download directory, e.g. `/storage/emulated/0/Download/`
 
 For Android 9.0 (SDK 28) and below, the `WRITE_EXTERNAL_STORAGE`
 permission is required.
+
+Use the [WebView Interfaces tool](/tools/webview-interfaces) to test a small Blob download from inside {APP_NAME}.
 
 **Android API:** [WebView#setDownloadListener(android.webkit.DownloadListener)](https://developer.android.com/reference/android/webkit/WebView#setDownloadListener(android.webkit.DownloadListener))
 

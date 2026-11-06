@@ -15,6 +15,13 @@ export const toolDirectory = [
     href: "/tools/unifiedpush",
   },
   {
+    id: "interfaces",
+    title: "WebView Interfaces",
+    description:
+      "Test battery, brightness, NFC, vibration, and Blob downloads in the kiosk WebView.",
+    href: "/tools/webview-interfaces",
+  },
+  {
     id: "regex",
     title: "Regex Playground",
     description:

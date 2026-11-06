@@ -26,6 +26,7 @@ import { Route as HomelayoutToolsMqttIndexRouteImport } from './routes/_homelayo
 import { Route as HomelayoutToolsQrInstallationIndexRouteImport } from './routes/_homelayout/tools/qr-installation/index'
 import { Route as HomelayoutToolsRegexIndexRouteImport } from './routes/_homelayout/tools/regex/index'
 import { Route as HomelayoutToolsUnifiedpushIndexRouteImport } from './routes/_homelayout/tools/unifiedpush/index'
+import { Route as HomelayoutToolsWebviewInterfacesIndexRouteImport } from './routes/_homelayout/tools/webview-interfaces/index'
 
 const HomelayoutRouteRoute = HomelayoutRouteRouteImport.update({
   id: '/_homelayout',
@@ -118,6 +119,12 @@ const HomelayoutToolsUnifiedpushIndexRoute =
     path: '/tools/unifiedpush/',
     getParentRoute: () => HomelayoutRouteRoute,
   } as any)
+const HomelayoutToolsWebviewInterfacesIndexRoute =
+  HomelayoutToolsWebviewInterfacesIndexRouteImport.update({
+    id: '/tools/webview-interfaces/',
+    path: '/tools/webview-interfaces/',
+    getParentRoute: () => HomelayoutRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof HomelayoutIndexRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/tools/qr-installation/': typeof HomelayoutToolsQrInstallationIndexRoute
   '/tools/regex/': typeof HomelayoutToolsRegexIndexRoute
   '/tools/unifiedpush/': typeof HomelayoutToolsUnifiedpushIndexRoute
+  '/tools/webview-interfaces/': typeof HomelayoutToolsWebviewInterfacesIndexRoute
 }
 export interface FileRoutesByTo {
   '/llms-full.txt': typeof LlmsFullDottxtRoute
@@ -154,6 +162,7 @@ export interface FileRoutesByTo {
   '/tools/qr-installation': typeof HomelayoutToolsQrInstallationIndexRoute
   '/tools/regex': typeof HomelayoutToolsRegexIndexRoute
   '/tools/unifiedpush': typeof HomelayoutToolsUnifiedpushIndexRoute
+  '/tools/webview-interfaces': typeof HomelayoutToolsWebviewInterfacesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -174,6 +183,7 @@ export interface FileRoutesById {
   '/_homelayout/tools/qr-installation/': typeof HomelayoutToolsQrInstallationIndexRoute
   '/_homelayout/tools/regex/': typeof HomelayoutToolsRegexIndexRoute
   '/_homelayout/tools/unifiedpush/': typeof HomelayoutToolsUnifiedpushIndexRoute
+  '/_homelayout/tools/webview-interfaces/': typeof HomelayoutToolsWebviewInterfacesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/tools/qr-installation/'
     | '/tools/regex/'
     | '/tools/unifiedpush/'
+    | '/tools/webview-interfaces/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/llms-full.txt'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/tools/qr-installation'
     | '/tools/regex'
     | '/tools/unifiedpush'
+    | '/tools/webview-interfaces'
   id:
     | '__root__'
     | '/_homelayout'
@@ -231,6 +243,7 @@ export interface FileRouteTypes {
     | '/_homelayout/tools/qr-installation/'
     | '/_homelayout/tools/regex/'
     | '/_homelayout/tools/unifiedpush/'
+    | '/_homelayout/tools/webview-interfaces/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -364,6 +377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomelayoutToolsUnifiedpushIndexRouteImport
       parentRoute: typeof HomelayoutRouteRoute
     }
+    '/_homelayout/tools/webview-interfaces/': {
+      id: '/_homelayout/tools/webview-interfaces/'
+      path: '/tools/webview-interfaces'
+      fullPath: '/tools/webview-interfaces/'
+      preLoaderRoute: typeof HomelayoutToolsWebviewInterfacesIndexRouteImport
+      parentRoute: typeof HomelayoutRouteRoute
+    }
   }
 }
 
@@ -378,6 +398,7 @@ interface HomelayoutRouteRouteChildren {
   HomelayoutToolsQrInstallationIndexRoute: typeof HomelayoutToolsQrInstallationIndexRoute
   HomelayoutToolsRegexIndexRoute: typeof HomelayoutToolsRegexIndexRoute
   HomelayoutToolsUnifiedpushIndexRoute: typeof HomelayoutToolsUnifiedpushIndexRoute
+  HomelayoutToolsWebviewInterfacesIndexRoute: typeof HomelayoutToolsWebviewInterfacesIndexRoute
 }
 
 const HomelayoutRouteRouteChildren: HomelayoutRouteRouteChildren = {
@@ -393,6 +414,8 @@ const HomelayoutRouteRouteChildren: HomelayoutRouteRouteChildren = {
     HomelayoutToolsQrInstallationIndexRoute,
   HomelayoutToolsRegexIndexRoute: HomelayoutToolsRegexIndexRoute,
   HomelayoutToolsUnifiedpushIndexRoute: HomelayoutToolsUnifiedpushIndexRoute,
+  HomelayoutToolsWebviewInterfacesIndexRoute:
+    HomelayoutToolsWebviewInterfacesIndexRoute,
 }
 
 const HomelayoutRouteRouteWithChildren = HomelayoutRouteRoute._addFileChildren(
