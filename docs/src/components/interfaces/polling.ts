@@ -7,7 +7,7 @@ import {
   readBrightness,
 } from "./bridge";
 
-export const DEVICE_POLL_INTERVAL_MS = 2_000;
+export const DEVICE_POLL_INTERVAL_MS = 1_000;
 
 export interface DeviceSnapshot {
   availability: AvailableInterfaces;
@@ -39,7 +39,7 @@ export function readDeviceSnapshot(host: InterfaceHost): DeviceSnapshot {
   return { availability, battery, brightness };
 }
 
-/** Poll immediately and every two seconds; return a route-unmount cleanup. */
+/** Poll immediately and every second; return a route-unmount cleanup. */
 export function subscribeDeviceSnapshots(
   getHost: () => InterfaceHost,
   onSnapshot: (snapshot: DeviceSnapshot) => void,

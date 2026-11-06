@@ -158,24 +158,32 @@ function BrightnessPanel({
     }
   }, [brightness]);
 
+  function applyBrightness(target: number) {
+    try {
+      setBrightness(currentHost(), target);
+      toast.info(
+        target === -1
+          ? "System brightness requested."
+          : "Brightness requested.",
+      );
+    } catch (cause) {
+      toast.error(describeError(cause));
+    }
+  }
+
   function handleSet() {
     if (!isValidBrightness(value)) {
       toast.warning("Enter an integer from -1 to 100.");
       return;
     }
-    try {
-      setBrightness(currentHost(), Number(value));
-      toast.info("Brightness requested.");
-    } catch (cause) {
-      toast.error(describeError(cause));
-    }
+    applyBrightness(Number(value));
   }
 
   return (
     <Card>
       <PanelHeading
         title="Brightness"
-        description="-1 uses the system default."
+        description="Auto uses the system default (-1)."
         setting="js_scripts.enable_brightness_api"
         available={available}
         icon={Sun}
@@ -192,18 +200,32 @@ function BrightnessPanel({
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
           <div className="min-w-0 space-y-2">
             <Label htmlFor="brightness-value">Brightness (-1 to 100)</Label>
-            <Input
-              id="brightness-value"
-              type="number"
-              min={-1}
-              max={100}
-              step={1}
-              value={value}
-              onChange={(event) => {
-                initialized.current = true;
-                setValue(event.target.value);
-              }}
-            />
+            <div className="relative">
+              <Input
+                id="brightness-value"
+                type="number"
+                min={-1}
+                max={100}
+                step={1}
+                className="pr-15 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                value={value}
+                onChange={(event) => {
+                  initialized.current = true;
+                  setValue(event.target.value);
+                }}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="absolute top-1/2 right-1 h-7 -translate-y-1/2 rounded-sm px-2 text-xs"
+                title="Set system brightness (-1)"
+                disabled={!available}
+                onClick={() => applyBrightness(-1)}
+              >
+                Auto
+              </Button>
+            </div>
           </div>
           <Button
             disabled={!available || !isValidBrightness(value)}

@@ -90,7 +90,7 @@ describe("device API polling", () => {
     });
   });
 
-  it("polls immediately and every 2 seconds, detects new APIs, and stops on cleanup", () => {
+  it("polls immediately and every second, detects new APIs, and stops on cleanup", () => {
     vi.useFakeTimers();
     let level = 40;
     const host: InterfaceHost = {
@@ -103,7 +103,7 @@ describe("device API polling", () => {
     const getHost = vi.fn(() => host);
     const stop = subscribeDeviceSnapshots(getHost, onSnapshot);
 
-    expect(DEVICE_POLL_INTERVAL_MS).toBe(2_000);
+    expect(DEVICE_POLL_INTERVAL_MS).toBe(1_000);
     expect(onSnapshot).toHaveBeenCalledTimes(1);
     expect(onSnapshot.mock.lastCall?.[0]).toMatchObject({
       availability: { battery: true, brightness: false },
@@ -121,7 +121,7 @@ describe("device API polling", () => {
       appendChunk: () => true,
       finishDownload: () => true,
     };
-    vi.advanceTimersByTime(1_999);
+    vi.advanceTimersByTime(999);
     expect(onSnapshot).toHaveBeenCalledTimes(1);
     vi.advanceTimersByTime(1);
     expect(onSnapshot).toHaveBeenCalledTimes(2);
@@ -137,14 +137,14 @@ describe("device API polling", () => {
     });
 
     delete host.WebviewKioskBatteryInterface;
-    vi.advanceTimersByTime(2_000);
+    vi.advanceTimersByTime(1_000);
     expect(onSnapshot.mock.lastCall?.[0]).toMatchObject({
       availability: { battery: false },
       battery: null,
       brightness: 65,
     });
     stop();
-    vi.advanceTimersByTime(6_000);
+    vi.advanceTimersByTime(3_000);
     expect(onSnapshot).toHaveBeenCalledTimes(3);
     expect(getHost).toHaveBeenCalledTimes(3);
   });

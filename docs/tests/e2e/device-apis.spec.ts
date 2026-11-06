@@ -111,6 +111,7 @@ test("device API readings poll and native actions work", async ({ page }) => {
   );
 
   const field = page.getByLabel("Brightness (-1 to 100)");
+  const autoBrightness = page.getByRole("button", { name: "Auto" });
   await expect(field).toHaveValue("42");
   // The input is prefilled once; later polls update only the current reading.
   await page.evaluate(() => {
@@ -124,6 +125,19 @@ test("device API readings poll and native actions work", async ({ page }) => {
   await expect(field).toHaveValue("42");
   await field.fill("101");
   await expect(page.getByRole("button", { name: "Set" })).toBeDisabled();
+  // Auto immediately applies -1, regardless of an invalid draft, and never
+  // overwrites the value being edited.
+  await expect(autoBrightness).toBeEnabled();
+  await autoBrightness.click();
+  await expect(page.getByText("Current: System default")).toBeVisible({
+    timeout: 5_000,
+  });
+  await expect(field).toHaveValue("101");
+  await expect(
+    page.locator("[data-sonner-toast]", {
+      hasText: "System brightness requested.",
+    }),
+  ).toBeVisible();
   await field.fill("25");
   await expect(page.getByRole("button", { name: "Set" })).toHaveCSS(
     "cursor",
@@ -240,6 +254,7 @@ test("unavailable bridges are detected automatically", async ({ page }) => {
   await page.goto("tools/device-apis/");
   await expect(page.getByText("Not detected", { exact: true })).toHaveCount(5);
   await expect(page.getByRole("button", { name: "Set" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Auto" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Start scan" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Vibrate" })).toBeDisabled();
   await expect(
@@ -296,7 +311,9 @@ for (const width of [320, 375, 768]) {
 
     await page.goto("tools/device-apis/");
     const field = page.getByLabel("Brightness (-1 to 100)");
+    const auto = page.getByRole("button", { name: "Auto" });
     await expect(field).toHaveValue("42");
+    await expect(auto).toBeVisible();
     await expect(page.getByRole("button", { name: "Set" })).toBeVisible();
 
     const overflow = await page.evaluate(
@@ -305,12 +322,22 @@ for (const width of [320, 375, 768]) {
     expect(overflow).toBeLessThanOrEqual(0);
 
     const fieldRect = await field.boundingBox();
+    const autoRect = await auto.boundingBox();
     const setRect = await page
       .getByRole("button", { name: "Set" })
       .boundingBox();
     expect(fieldRect).not.toBeNull();
+    expect(autoRect).not.toBeNull();
     expect(setRect).not.toBeNull();
-    if (fieldRect && setRect) {
+    if (fieldRect && autoRect && setRect) {
+      expect(autoRect.x).toBeGreaterThan(fieldRect.x);
+      expect(autoRect.x + autoRect.width).toBeLessThanOrEqual(
+        fieldRect.x + fieldRect.width,
+      );
+      expect(autoRect.y).toBeGreaterThanOrEqual(fieldRect.y);
+      expect(autoRect.y + autoRect.height).toBeLessThanOrEqual(
+        fieldRect.y + fieldRect.height,
+      );
       expect(setRect.y).toBeGreaterThanOrEqual(fieldRect.y);
       expect(setRect.y).toBeLessThan(fieldRect.y + fieldRect.height);
       expect(setRect.x).toBeGreaterThanOrEqual(fieldRect.x + fieldRect.width);
