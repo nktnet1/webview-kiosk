@@ -207,8 +207,37 @@ test("device API readings poll and native actions work", async ({ page }) => {
 });
 
 test("unavailable bridges are detected automatically", async ({ page }) => {
+  // Chromium may implement the standard Vibration API without WebView Kiosk.
+  // Make this unavailable-interfaces scenario independent of the browser.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "vibrate", {
+      configurable: true,
+      value: undefined,
+    });
+  });
   await page.goto("tools/device-apis/");
   await expect(page.getByText("Not detected", { exact: true })).toHaveCount(5);
+  await expect(page.getByRole("button", { name: "Set" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Start scan" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Vibrate" })).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Download sample" }),
+  ).toBeDisabled();
+});
+
+test("browser vibration does not imply native bridge availability", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "vibrate", {
+      configurable: true,
+      value: () => true,
+    });
+  });
+  await page.goto("tools/device-apis/");
+  await expect(page.getByText("Not detected", { exact: true })).toHaveCount(4);
+  await expect(page.getByText("Detected", { exact: true })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Vibrate" })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Set" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Start scan" })).toBeDisabled();
   await expect(
