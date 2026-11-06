@@ -1,4 +1,4 @@
-import { Battery, Download, Nfc, RotateCcw, Sun, Vibrate } from "lucide-react";
+import { Battery, Download, Nfc, Sun, Vibrate } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
@@ -12,21 +12,18 @@ import {
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import {
-  type AvailableInterfaces,
   type BatteryStatus,
   decodeTag,
   describeError,
-  detectInterfaces,
   type InterfaceHost,
   isValidBrightness,
   type NfcReader,
   type NfcReadingEvent,
-  readBattery,
-  readBrightness,
   requestVibration,
   type ScannedTag,
   setBrightness,
 } from "./bridge";
+import { type DeviceSnapshot, subscribeDeviceSnapshots } from "./polling";
 
 function currentHost(): InterfaceHost {
   return window as Window & InterfaceHost;
@@ -86,32 +83,24 @@ function PanelHeading({
   );
 }
 
-function BatteryPanel({ available }: { available: boolean }) {
-  const [reading, setReading] = useState<BatteryStatus | null>(null);
-
-  function handleRead() {
-    try {
-      setReading(readBattery(currentHost()));
-    } catch (cause) {
-      setReading(null);
-      toast.error(describeError(cause));
-    }
-  }
-
+function BatteryPanel({
+  available,
+  reading,
+}: {
+  available: boolean;
+  reading: BatteryStatus | null;
+}) {
   return (
     <Card>
       <PanelHeading
         title="Battery"
-        description="Read battery metrics."
+        description="Live battery metrics."
         setting="js_scripts.enable_battery_api"
         available={available}
         icon={Battery}
       />
-      <CardContent className="space-y-4">
-        <Button disabled={!available} onClick={handleRead}>
-          Read battery
-        </Button>
-        {reading && (
+      <CardContent>
+        {reading ? (
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border p-4 text-sm sm:grid-cols-3">
             {(
               [
@@ -139,29 +128,24 @@ function BatteryPanel({ available }: { available: boolean }) {
               </div>
             ))}
           </dl>
+        ) : (
+          <p className="text-sm text-muted-foreground">No reading</p>
         )}
       </CardContent>
     </Card>
   );
 }
 
-function BrightnessPanel({ available }: { available: boolean }) {
-  const [value, setValue] = useState("-1");
-  const [initial, setInitial] = useState<number | null>(null);
-  const [changed, setChanged] = useState(false);
-
-  function handleRead() {
-    try {
-      const brightness = readBrightness(currentHost());
-      setValue(String(brightness));
-      setInitial((old) => old ?? brightness);
-      toast.info(
-        `Brightness: ${brightness === -1 ? "system default" : `${brightness}%`}`,
-      );
-    } catch (cause) {
-      toast.error(describeError(cause));
-    }
-  }
+function BrightnessPanel({
+  available,
+  brightness,
+}: {
+  available: boolean;
+  brightness: number | null;
+}) {
+  // A draft protects text being edited from being overwritten by the poll.
+  const [draft, setDraft] = useState<string | null>(null);
+  const value = draft ?? String(brightness ?? -1);
 
   function handleSet() {
     if (!isValidBrightness(value)) {
@@ -169,25 +153,9 @@ function BrightnessPanel({ available }: { available: boolean }) {
       return;
     }
     try {
-      const host = currentHost();
-      const before = readBrightness(host);
-      setBrightness(host, Number(value));
-      setInitial((old) => old ?? before);
-      setChanged(true);
-      // Android applies brightness asynchronously on the UI thread.
-      toast.info("Brightness requested. Read to verify.");
-    } catch (cause) {
-      toast.error(describeError(cause));
-    }
-  }
-
-  function handleRestore() {
-    if (initial === null) return;
-    try {
-      setBrightness(currentHost(), initial);
-      setValue(String(initial));
-      setChanged(false);
-      toast.info("Restore requested. Read to verify.");
+      setBrightness(currentHost(), Number(value));
+      setDraft(null);
+      toast.info("Brightness requested.");
     } catch (cause) {
       toast.error(describeError(cause));
     }
@@ -202,44 +170,34 @@ function BrightnessPanel({ available }: { available: boolean }) {
         available={available}
         icon={Sun}
       />
-      <CardContent className="space-y-2">
-        <Label htmlFor="brightness-value">Brightness (-1 to 100)</Label>
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
-          <Input
-            id="brightness-value"
-            type="number"
-            min={-1}
-            max={100}
-            step={1}
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            className="col-span-2 min-w-0 sm:w-28"
-          />
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Current:{" "}
+          {brightness === null
+            ? "No reading"
+            : brightness === -1
+              ? "System default"
+              : `${brightness}%`}
+        </p>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
+          <div className="min-w-0 space-y-2">
+            <Label htmlFor="brightness-value">Brightness (-1 to 100)</Label>
+            <Input
+              id="brightness-value"
+              type="number"
+              min={-1}
+              max={100}
+              step={1}
+              value={value}
+              onChange={(event) => setDraft(event.target.value)}
+            />
+          </div>
           <Button
-            className="w-full sm:w-auto"
-            variant="outline"
-            disabled={!available}
-            onClick={handleRead}
-          >
-            Read
-          </Button>
-          <Button
-            className="w-full sm:w-auto"
             disabled={!available || !isValidBrightness(value)}
             onClick={handleSet}
           >
             Set
           </Button>
-          {changed && initial !== null && (
-            <Button
-              className="col-span-2 w-full sm:w-auto"
-              variant="outline"
-              onClick={handleRestore}
-            >
-              <RotateCcw aria-hidden="true" />
-              Restore {initial === -1 ? "system default" : `${initial}%`}
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>
@@ -308,21 +266,37 @@ function NfcPanel({ available }: { available: boolean }) {
             setTags((previous) => [{ ...tag, id }, ...previous].slice(0, 5));
           })
           .catch((cause: unknown) => {
-            if (session.current === current) toast.error(describeError(cause));
+            if (session.current === current)
+              toast.error(describeError(cause), { id: "nfc-scan" });
           });
       };
       reader.addEventListener("reading", onReading);
-      reader.onreadingerror = (cause) => toast.error(describeError(cause));
+      // A failed scan can emit readingerror and reject scan(). Buffer the
+      // first event until startup settles so it produces only one toast.
+      let started = false;
+      let startupReadingError: unknown = null;
+      reader.onreadingerror = (cause) => {
+        if (session.current !== current) return;
+        if (!started) {
+          startupReadingError = cause;
+        } else {
+          toast.error(describeError(cause), { id: "nfc-scan" });
+        }
+      };
       current = { reader, abort, onReading };
       session.current = current;
       setScanning("starting");
-      toast.info("Starting scan…", { id: "nfc-scan" });
       await reader.scan({ signal: abort.signal });
       if (session.current === current) {
+        started = true;
         setScanning("active");
-        toast.success("Scanning. Hold a tag near your device.", {
-          id: "nfc-scan",
-        });
+        if (startupReadingError !== null) {
+          toast.error(describeError(startupReadingError), { id: "nfc-scan" });
+        } else {
+          toast.success("Scanning. Hold a tag near your device.", {
+            id: "nfc-scan",
+          });
+        }
       }
     } catch (cause) {
       if (current && session.current === current) {
@@ -472,34 +446,28 @@ function VibrationPanel({ available }: { available: boolean }) {
 }
 
 export default function InterfaceTester() {
-  const [availability, setAvailability] = useState<AvailableInterfaces | null>(
-    null,
-  );
+  const [snapshot, setSnapshot] = useState<DeviceSnapshot | null>(null);
 
-  function refresh() {
-    setAvailability(detectInterfaces(currentHost()));
-  }
-
-  useEffect(() => {
-    setAvailability(detectInterfaces(currentHost()));
-  }, []);
+  useEffect(() => subscribeDeviceSnapshots(currentHost, setSnapshot), []);
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4">
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Enable the settings below, then reload the page.
-        </p>
-        <Button variant="outline" onClick={refresh}>
-          Refresh
-        </Button>
-      </div>
+      <p className="rounded-xl border p-4 text-sm text-muted-foreground">
+        Enable the settings below, then reload the page. Readings refresh every
+        2 seconds.
+      </p>
       <div className="grid min-w-0 gap-5 lg:grid-cols-2">
-        <BatteryPanel available={availability?.battery ?? false} />
-        <BrightnessPanel available={availability?.brightness ?? false} />
-        <NfcPanel available={availability?.nfc ?? false} />
-        <VibrationPanel available={availability?.vibration ?? false} />
-        <BlobPanel available={availability?.blob ?? false} />
+        <BatteryPanel
+          available={snapshot?.availability.battery ?? false}
+          reading={snapshot?.battery ?? null}
+        />
+        <BrightnessPanel
+          available={snapshot?.availability.brightness ?? false}
+          brightness={snapshot?.brightness ?? null}
+        />
+        <NfcPanel available={snapshot?.availability.nfc ?? false} />
+        <VibrationPanel available={snapshot?.availability.vibration ?? false} />
+        <BlobPanel available={snapshot?.availability.blob ?? false} />
       </div>
     </div>
   );

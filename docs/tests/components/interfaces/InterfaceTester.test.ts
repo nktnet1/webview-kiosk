@@ -20,10 +20,16 @@ describe("device API tester", () => {
     ]);
   });
 
-  it("stacks brightness input and buttons on narrow screens", () => {
-    expect(markup).toContain(
-      "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center",
-    );
-    expect(markup).toContain("col-span-2 min-w-0 sm:w-28");
+  it("uses automatic polling instead of manual reads or refresh", () => {
+    expect(markup).toContain("Readings refresh every 2 seconds.");
+    expect(markup).not.toContain(">Refresh<");
+    expect(markup).not.toContain(">Read<");
+    expect(markup).not.toContain(">Read battery<");
+    expect(markup).not.toContain("Restore");
+  });
+
+  it("keeps brightness input and Set button on a single narrow-screen row", () => {
+    expect(markup).toContain("grid-cols-[minmax(0,1fr)_auto]");
+    expect(markup).toContain("Current: ");
   });
 });
