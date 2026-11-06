@@ -3,11 +3,11 @@ title: Command
 description: Subscribe to control commands (actions)
 ---
 
-## 1. Settings
+## 1. Settings [#settings]
 
-### 1.1. Topic Name
+### 1.1. Topic Name [#topic-name]
 
-All [global variables](/docs/settings/mqtt/#3-global-variables) are supported.
+All [global variables](/docs/settings/mqtt/#global-variables) are supported.
 For example,
 
 ```js
@@ -20,31 +20,31 @@ wk/${USERNAME}/${APP_INSTANCE_ID}/command
 wk/command
 ```
 
-### 1.2. Quality of Service (QoS)
+### 1.2. Quality of Service (QoS) [#quality-of-service-qos]
 
 Quality of Service (QoS) ensures different message delivery guarantees
 in case of connection failures.
 
 **Default:** At Most Once (0)
 
-### 1.3. Retain Handling
+### 1.3. Retain Handling [#retain-handling]
 
 Control whether {APP_NAME} should receive existing
 retained messages when subscribing.
 
 **Default:** Do Not Send (2)
 
-### 1.4. Retain as Published
+### 1.4. Retain as Published [#retain-as-published]
 
 Controls whether retained messages from the broker keep their original
 retained flag when delivered to the subscriber.
 
 **Default:** false
 
-## 2. Payloads
+## 2. Payloads [#payloads]
 
 In addition to the
-[Shared Subscribe Payload Properties](/docs/settings/mqtt/topics/#3-shared-subscribe-payload-properties),
+[Shared Subscribe Payload Properties](/docs/settings/mqtt/topics/#shared-subscribe-payload-properties),
 the following properties exists for all commands:
 
 <table>
@@ -92,7 +92,7 @@ the following properties exists for all commands:
   </tbody>
 </table>
 
-### 2.1. Go Back
+### 2.1. Go Back [#go-back]
 
 Navigates one page back in history.
 
@@ -115,7 +115,7 @@ Example payload:
 }
 ```
 
-### 2.2. Go Forward
+### 2.2. Go Forward [#go-forward]
 
 Navigates one page forward in history.
 
@@ -138,7 +138,7 @@ Example payload:
 }
 ```
 
-### 2.3. Go Home
+### 2.3. Go Home [#go-home]
 
 Navigates to your configured home page.
 
@@ -161,7 +161,7 @@ Example payload:
 }
 ```
 
-### 2.4. Refresh
+### 2.4. Refresh [#refresh]
 
 Refresh the current webview page.
 
@@ -184,7 +184,7 @@ Example payload:
 }
 ```
 
-### 2.5. Go to URL
+### 2.5. Go to URL [#go-to-url]
 
 Navigates to a specific URL.
 
@@ -213,7 +213,7 @@ Example Payload:
 }
 ```
 
-### 2.6. Search
+### 2.6. Search [#search]
 
 Perform a query search using the selected search engine. This
 is the same as using {APP_NAME}'s address bar.
@@ -243,7 +243,7 @@ Example Payload:
 }
 ```
 
-### 2.7. Clear History
+### 2.7. Clear History [#clear-history]
 
 Removes the navigation history, leaving the current URL
 as the only entry in the stack.
@@ -267,7 +267,7 @@ Example Payload:
 }
 ```
 
-### 2.8. Toast
+### 2.8. Toast [#toast]
 
 Shows a short toast message.
 
@@ -301,7 +301,7 @@ Example Payload:
 }
 ```
 
-### 2.9. Lock
+### 2.9. Lock [#lock]
 
 Start lock task mode (or screen pinning) depending on whether {APP_NAME} has
 device owner permissions.
@@ -331,7 +331,7 @@ Example Payload:
 }
 ```
 
-### 2.10. Unlock
+### 2.10. Unlock [#unlock]
 
 Stop lock task mode (or screen pinning) depending on whether {APP_NAME} has
 device owner permissions.
@@ -355,7 +355,7 @@ Example Payload:
 }
 ```
 
-### 2.11. Reconnect
+### 2.11. Reconnect [#reconnect]
 
 Disconnect, then reconnect and resubscribe to all MQTT topics.
 
@@ -381,12 +381,12 @@ Example Payload:
 }
 ```
 
-### 2.12. Lock Device
+### 2.12. Lock Device [#lock-device]
 
 Turns the device screen off.
 
 This command requires device owner privileges or Dhizuku permission. For more
-details, see the [security](/docs/security#33-device-owner-mode) documentation.
+details, see the [security](/docs/security#device-owner-mode) documentation.
 
 Note that if the `MQTT → Use Foreground Service` setting is not enabled,
 locking the device will also stop the MQTT connection.
@@ -410,7 +410,7 @@ Example Payload:
 }
 ```
 
-### 2.13. Page Up
+### 2.13. Page Up [#page-up]
 
 Scrolls the contents of this WebView up by half the view size.
 
@@ -443,7 +443,7 @@ Example Payload:
 }
 ```
 
-### 2.14. Page Down
+### 2.14. Page Down [#page-down]
 
 Scrolls the contents of this WebView down by half the page size.
 
@@ -476,7 +476,7 @@ Example Payload:
 }
 ```
 
-### 2.15. Notify
+### 2.15. Notify [#notify]
 
 Shows a notification on the device.
 
@@ -537,7 +537,7 @@ Example payload:
 }
 ```
 
-### 2.16. Launch Package
+### 2.16. Launch Package [#launch-package]
 
 Open an application based on its package name, e.g. `com.afwsamples.testdpc`.
 
@@ -579,9 +579,9 @@ Example Payload:
 }
 ```
 
-### 2.17. Clear Cache
+### 2.17. Clear Cache [#clear-cache]
 
-Clears webview cache.  This is equivalent to [Clear Cache Action](/docs/setting-actions/#43-clear-actions).
+Clears webview cache.  This is equivalent to [Clear Cache Action](/docs/setting-actions/#clear-actions).
 
 Example Payload:
 

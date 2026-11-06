@@ -5,7 +5,7 @@ description: Rotation, camera, microphone, location, unlock controls
 
 import { APP_NAME } from '#/config/app'
 
-## 1. Keep Screen On
+## 1. Keep Screen On [#keep-screen-on]
 
 Enable this option to keep your device awake (no screen timeout).
 
@@ -13,7 +13,7 @@ Useful if you have a kiosk application that should always remain active.
 
 **Default:** false
 
-## 2. Rotation
+## 2. Rotation [#rotation]
 
 Select one of:
 
@@ -29,7 +29,7 @@ For more details, refer to Android's official documentation for [R.attr.screenOr
 
 **Default:** Auto
 
-## 3. Brightness
+## 3. Brightness [#brightness]
 
 Set the app window brightness from 0 (very dim) to 100 (very bright).
 
@@ -37,7 +37,7 @@ Use -1 to disable (i.e. the system default brightness will be used).
 
 **Default:** -1
 
-## 4. Allow Camera
+## 4. Allow Camera [#allow-camera]
 
 Set to true to give WebView access to your device's camera.
 
@@ -48,7 +48,7 @@ feature.
 
 **Default:** false
 
-## 5. Allow Microphone
+## 5. Allow Microphone [#allow-microphone]
 
 Set to true to give WebView access to your device's microphone.
 
@@ -60,7 +60,7 @@ feature.
 
 **Default:** false
 
-## 6. Allow Location
+## 6. Allow Location [#allow-location]
 
 When enabled, websites can request the device's location.
 
@@ -78,7 +78,7 @@ required for the WebView's
 
 **Default:** false
 
-## 7. Allow NFC
+## 7. Allow NFC [#allow-nfc]
 
 Set to true to enable NFC support in {APP_NAME} via a Web NFC compatibility bridge.
 
@@ -92,7 +92,7 @@ as Web NFC and can also operate on insecure (non-HTTPS) websites.
 
 **Default:** false
 
-## 8. Allow Notifications
+## 8. Allow Notifications [#allow-notifications]
 
 Set to true to allow {APP_NAME} to send notifications. For example, this
 will allow the MQTT notify command to create alerts.
@@ -108,7 +108,7 @@ do not want them.
 
 **Default:** false
 
-## 9. Back Button Hold Action
+## 9. Back Button Hold Action [#back-button-hold-action]
 
 Customise the behaviour when the back button is held down (long pressed).
 
@@ -120,7 +120,7 @@ Customise the behaviour when the back button is held down (long pressed).
 
 **Default:** Open Kiosk Control Panel
 
-## 10. Custom Unlock Shortcut
+## 10. Custom Unlock Shortcut [#custom-unlock-shortcut]
 
 Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)
 in combination with another standard key to unlock/unpin the application.
@@ -132,7 +132,7 @@ has a physical keyboard connected.
 
 **Default:** *(blank)*
 
-## 11. Custom Auth Password
+## 11. Custom Auth Password [#custom-auth-password]
 
 Specify a custom password to protect your settings or when unlocking from
 the kiosk state.
@@ -149,7 +149,7 @@ Leave this setting blank to use your device's biometrics or credentials.
 
 **Default:** *(blank)*
 
-## 12. Unlock Auth Requirement
+## 12. Unlock Auth Requirement [#unlock-auth-requirement]
 
 This setting only applies to in-app unlock methods, e.g. when unlocking
 using `Kiosk Control Panel` or `Custom Unlock Shortcut`.
@@ -165,7 +165,7 @@ unpinning, which is outside the control of {APP_NAME}.
 
 **Default:** Default
 
-## 13. Block Screen Capture
+## 13. Block Screen Capture [#block-screen-capture]
 
 Prevent screenshots, screen recording and content previews in Recent Apps.
 This is done by setting the FLAG_SECURE window flag.
@@ -175,7 +175,7 @@ For more information, see
 
 **Default:** false
 
-## 14. Block Volume Keys
+## 14. Block Volume Keys [#block-volume-keys]
 
 Disable the volume control buttons, specifically:
 
@@ -185,11 +185,11 @@ Disable the volume control buttons, specifically:
 
 **Default:** false
 
-## 15. Device Owner
+## 15. Device Owner [#device-owner]
 
 For more information about `Device Owner`, see the [Security](/docs/security) documentation.
 
-### 15.1. Lock Task Features
+### 15.1. Lock Task Features [#lock-task-features]
 
 The following settings are based on Android's lock-task documentation:
 - [Lock Task Mode -> Customise UI](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#customize-ui)
@@ -307,7 +307,7 @@ The following settings are based on Android's lock-task documentation:
   </tbody>
 </table>
 
-### 15.2. Dhizuku Request Permission on Launch
+### 15.2. Dhizuku Request Permission on Launch [#dhizuku-request-permission-on-launch]
 
 When enabled, if [Dhizuku](https://github.com/iamr0s/Dhizuku) is installed and
 has not granted {APP_NAME} access through the

@@ -8,7 +8,7 @@ import { EllipsisVertical } from 'lucide-react';
 Setting actions are accessible on the default app settings list page by clicking
 the <span className="inline-flex">(<EllipsisVertical />)</span> icon.
 
-## 1. Backups & Restore
+## 1. Backups & Restore [#backups-and-restore]
 
 When selecting `Export`, a dialog will appear showing all user settings encoded
 as either `Base64` or raw `JSON`. You can either copy the text in your desired
@@ -21,7 +21,7 @@ Content-blocking exports include the enabled setting, but not filter list
 subscriptions or custom filter contents. Add those lists again after importing
 settings on another device.
 
-## 2. Device Settings
+## 2. Device Settings [#device-settings]
 
 Clicking the `Settings` entry here will open your device's settings
 application.
@@ -35,17 +35,17 @@ desired launcher, e.g.
 - Nova Launcher
 - Pixel Launcher
 
-## 3. Help
+## 3. Help [#help]
 
 This will open the {APP_NAME} Home Page in your default browser:
 
 - https://webviewkiosk.nktnet.uk
 
-## 4. More
+## 4. More [#more]
 
 This will open the `More Actions` screen.
 
-### 4.1. Quick Access Actions
+### 4.1. Quick Access Actions [#quick-access-actions]
 
 Open relevant device settings via intent. Buttons are listed in their screen
 order, left to right and top to bottom.
@@ -59,14 +59,14 @@ order, left to right and top to bottom.
 | Wi-Fi Settings   | Opens the Wi-Fi settings screen.<br />See [ACTION_WIFI_SETTINGS](https://developer.android.com/reference/android/provider/Settings.html#ACTION_WIFI_SETTINGS) |
 | Data Usage       | Opens the data usage settings screen (Android P+).<br />See [ACTION_DATA_USAGE_SETTINGS](https://developer.android.com/reference/android/provider/Settings.html#ACTION_DATA_USAGE_SETTINGS) |
 
-### 4.2. Tools Actions
+### 4.2. Tools Actions [#tools-actions]
 
 | Action          | Description |
 |-----------------|-------------|
 | Create Shortcut | Opens a dialog to create a home screen shortcut to a chosen URL, with custom labels and an automatically generated icon. |
 | App Launcher    | Opens a dialog for installed apps on the device that can be launched. |
 
-### 4.3. Manage Actions
+### 4.3. Manage Actions [#manage-actions]
 
 Manage stored data and states. The four buttons form a 2×2 grid, listed here
 left to right and top to bottom.
@@ -78,7 +78,7 @@ left to right and top to bottom.
 | Site Permissions | Opens `Web Browsing -> Manage Site Permissions`. |
 | Device Owner     | Opens `Device -> Manage Device Owner`. |
 
-### 4.4. Clear Actions
+### 4.4. Clear Actions [#clear-actions]
 
 Clear WebView or application data and cache.
 

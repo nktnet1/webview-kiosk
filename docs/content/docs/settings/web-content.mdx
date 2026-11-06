@@ -6,13 +6,13 @@ description: Home URL, blacklist, whitelist, bookmark, files
 import { EllipsisVertical } from 'lucide-react';
 import RegexPlayground from '#/components/RegexPlayground';
 
-## 1. Home URL
+## 1. Home URL [#home-url]
 
-Configure the Home URL, which can be returned to as per <a href="/docs/settings/web-browsing/#4-allow-go-home">`Web Browsing -> Allow Go Home`</a>.
+Configure the Home URL, which can be returned to as per <a href="/docs/settings/web-browsing/#allow-go-home">`Web Browsing -> Allow Go Home`</a>.
 
 **Default:** https://webviewkiosk.nktnet.uk
 
-## 2. Blacklist & Whitelist Regex
+## 2. Blacklist & Whitelist Regex [#blacklist-and-whitelist-regex]
 
 Specify regular expressions (regex), one per line.
 Escaping is required for special characters in regex like `.` and `?`.
@@ -24,7 +24,7 @@ Whitelist patterns take precedence over blacklist patterns.
 
 **Default:** (blank)
 
-### 2.1. Blacklist Example
+### 2.1. Blacklist Example [#blacklist-example]
 
 Block all:
 
@@ -38,7 +38,7 @@ Block google, including all subdomains and paths:
 ^https://.*\.?google\.com/?.*
 ```
 
-### 2.2. Whitelist Example
+### 2.2. Whitelist Example [#whitelist-example]
 
 Allow the `https://trusted.org` home page, as well as its subdomains and paths, to bypass the blacklist:
 ```
@@ -46,11 +46,11 @@ Allow the `https://trusted.org` home page, as well as its subdomains and paths, 
 ^https://.*\.trusted\.org(/.*)?$
 ```
 
-### 2.3. Regex Playground
+### 2.3. Regex Playground [#regex-playground]
 
 <RegexPlayground />
 
-## 3. Bookmarks
+## 3. Bookmarks [#bookmarks]
 
 Specify bookmarked URLs one per line. Blank lines will be ignored.
 
@@ -70,7 +70,7 @@ https://f-droid.org | F-Droid
 
 **Default:** (blank)
 
-## 4. Support PDF Rendering
+## 4. Support PDF Rendering [#support-pdf-rendering]
 
 Set to true to support PDF Rendering using Mozilla's PDF.js renderer:
 
@@ -90,7 +90,7 @@ WebViewAssetLoader API:
 
 **Default:** false
 
-## 5. Allow Local Files
+## 5. Allow Local Files [#allow-local-files]
 
 Allow the WebView to open local files such as HTML, PDF, images, audio, video
 and text. Upload and manage these files under
@@ -102,7 +102,7 @@ or the kiosk control panel (if that action is configured).
 
 **Default:** true
 
-## 6. Enable Content Blocking
+## 6. Enable Content Blocking [#enable-content-blocking]
 
 Enable to block ads, malware and trackers using filter lists.
 

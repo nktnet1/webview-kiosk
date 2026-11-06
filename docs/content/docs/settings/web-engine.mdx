@@ -5,7 +5,7 @@ description: JavaScript, DOM storage, cookies, cache, Mutual TLS, user agent, zo
 
 import { EllipsisVertical, Wrench } from 'lucide-react';
 
-## 1. Enable JavaScript
+## 1. Enable JavaScript [#enable-javascript]
 
 When enabled, the WebView can execute JavaScript code on web pages.
 This is required for most modern websites to function properly.
@@ -14,7 +14,7 @@ This is required for most modern websites to function properly.
 
 **Default:** true
 
-## 2. Enable DOM Storage
+## 2. Enable DOM Storage [#enable-dom-storage]
 
 When enabled, websites can use DOM storage APIs such as `localStorage` and `sessionStorage`.
 Useful for saving data client-side in the browser context.
@@ -23,7 +23,7 @@ Useful for saving data client-side in the browser context.
 
 **Default:** true
 
-## 3. Accept Cookies
+## 3. Accept Cookies [#accept-cookies]
 
 When enabled, the WebView allows websites to store and read cookies.
 This includes first-party cookies that persist session or preference data.
@@ -32,7 +32,7 @@ This includes first-party cookies that persist session or preference data.
 
 **Default:** true
 
-## 4. Accept Third-party Cookies
+## 4. Accept Third-party Cookies [#accept-third-party-cookies]
 
 When enabled, third-party websites (embedded in iframes or resources) are allowed to set cookies.
 This is important for services like embedded analytics or login widgets.
@@ -41,7 +41,7 @@ This is important for services like embedded analytics or login widgets.
 
 **Default:** false
 
-## 5. Cache Mode
+## 5. Cache Mode [#cache-mode]
 
 Controls how the WebView uses its cache when loading pages. Options:
 
@@ -54,7 +54,7 @@ Controls how the WebView uses its cache when loading pages. Options:
 
 **Default:** `LOAD_DEFAULT`
 
-## 6. User Agent
+## 6. User Agent [#user-agent]
 
 The User Agent string controls how the web engine identifies itself
 to websites. Some sites may behave differently depending on this value.
@@ -65,7 +65,7 @@ Leave blank to use the system default User Agent.
 
 **Default:** (blank)
 
-## 7. Layout Algorithm
+## 7. Layout Algorithm [#layout-algorithm]
 
 Controls how the WebView arranges and scales content. Options:
 
@@ -83,7 +83,7 @@ Controls how the WebView arranges and scales content. Options:
 
 **Default:** `NORMAL`
 
-## 8. Use Wide ViewPort
+## 8. Use Wide ViewPort [#use-wide-viewport]
 
 When enabled, the WebView will use a viewport wide enough to fit the content as if viewed on a desktop browser.
 
@@ -91,7 +91,7 @@ When enabled, the WebView will use a viewport wide enough to fit the content as 
 
 **Default:** true
 
-## 9. Load With Overview Mode
+## 9. Load With Overview Mode [#load-with-overview-mode]
 
 When enabled, the WebView scales the page so that the content fits on screen
 initially.
@@ -100,9 +100,9 @@ initially.
 
 **Default:** true
 
-## 10. Zoom
+## 10. Zoom [#zoom]
 
-### 10.1. Support Zoom
+### 10.1. Support Zoom [#support-zoom]
 
 Sets whether the WebView should support zooming using its on-screen zoom
 controls and gestures.
@@ -111,7 +111,7 @@ controls and gestures.
 
 **Default:** true
 
-### 10.2. Built In Zoom Controls
+### 10.2. Built In Zoom Controls [#built-in-zoom-controls]
 
 Sets whether the WebView should use its built-in zoom mechanisms.
 
@@ -123,7 +123,7 @@ control zooming.
 
 **Default:** true
 
-### 10.3. Display Zoom Controls
+### 10.3. Display Zoom Controls [#display-zoom-controls]
 
 Sets whether the WebView should display on-screen zoom controls when using the
 built-in zoom mechanisms.
@@ -132,7 +132,7 @@ built-in zoom mechanisms.
 
 **Default:** false
 
-### 10.4. Initial Scale
+### 10.4. Initial Scale [#initial-scale]
 
 Sets the initial scale for this WebView as a percentage. 0 means default.
 
@@ -154,7 +154,7 @@ this method doesn't take the screen density into account.
 
 **Default:** 0
 
-## 11. File Access
+## 11. File Access [#file-access]
 
 These settings are insecure and deprecated.
 
@@ -162,7 +162,7 @@ To access `file://` URLs, you will also need to enable `Web Content -> Allow Loc
 [WebSettings#setAllowFileAccess(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setAllowFileAccess(boolean))
 accordingly.
 
-### 11.1. Allow File Access from File URLs
+### 11.1. Allow File Access from File URLs [#allow-file-access-from-file-urls]
 
 This method was deprecated in API level 30.
 
@@ -180,7 +180,7 @@ app private data.
 
 **Default:** false
 
-### 11.2. Allow Universal Access from File URLs
+### 11.2. Allow Universal Access from File URLs [#allow-universal-access-from-file-urls]
 
 This method was deprecated in API level 30.
 
@@ -200,7 +200,7 @@ credentials used on arbitrary web sites.
 
 **Default:** false
 
-## 12. Allow File Picker
+## 12. Allow File Picker [#allow-file-picker]
 
 Allow websites to open the system file picker, e.g. for uploading files.
 
@@ -208,7 +208,7 @@ Allow websites to open the system file picker, e.g. for uploading files.
 
 **Default:** false
 
-## 13. Allow File Download
+## 13. Allow File Download [#allow-file-download]
 
 Allow files to be downloaded from websites to the device's default
 download directory, e.g. `/storage/emulated/0/Download/`
@@ -220,7 +220,7 @@ permission is required.
 
 **Default:** false
 
-## 14. Media Playback Requires User Gesture
+## 14. Media Playback Requires User Gesture [#media-playback-requires-user-gesture]
 
 Sets whether the WebView requires a user gesture (e.g. tap) to play media.
 
@@ -228,7 +228,7 @@ Sets whether the WebView requires a user gesture (e.g. tap) to play media.
 
 **Default:** true
 
-## 15. Mutual TLS
+## 15. Mutual TLS [#mutual-tls]
 
 Configure exact sites that may use a client certificate for
 [Mutual TLS](https://www.cloudflare.com/learning/access-management/what-is-mutual-tls/).
@@ -268,7 +268,7 @@ managed.example.com=work-client-cert
 
 **Default:** (blank)
 
-## 16. SSL Error Mode
+## 16. SSL Error Mode [#ssl-error-mode]
 
 Configure the action to take when an SSL Error is received.
 
@@ -280,7 +280,7 @@ Configure the action to take when an SSL Error is received.
 
 **Default:** Block
 
-## 17. Mixed Content Mode
+## 17. Mixed Content Mode [#mixed-content-mode]
 
 Configures the WebView's behavior when a secure origin attempts to load
 a resource from an insecure origin.
@@ -295,7 +295,7 @@ a resource from an insecure origin.
 
 **Default:** Never Allow
 
-## 18. Over Scroll Mode
+## 18. Over Scroll Mode [#over-scroll-mode]
 
 Configures the WebView's behavior when the user scrolls beyond the content boundaries.
 
@@ -309,7 +309,7 @@ Configures the WebView's behavior when the user scrolls beyond the content bound
 
 **Default:** If Content Scrolls
 
-## 19. Request Focus On Page Start
+## 19. Request Focus On Page Start [#request-focus-on-page-start]
 
 Sets whether the WebView should request focus when a page starts loading.
 

@@ -24,7 +24,7 @@ To understand MQTT's publish and subscribe architecture, refer to
 
 </Callout>
 
-## 1. Introduction
+## 1. Introduction [#introduction]
 
 Message Queueing Telemetry Transport ([MQTT](https://mqtt.org)) is a
 lightweight messaging protocol for devices with limited resources. MQTT is
@@ -38,7 +38,7 @@ the Internet of Things (IoT).
 - perform actions via commands
 - request information
 
-## 2. MQTT Broker
+## 2. MQTT Broker [#mqtt-broker]
 
 To communicate with {APP_NAME}, you will need an
 [MQTT Broker](https://www.emqx.com/en/blog/the-ultimate-guide-to-mqtt-broker-comparison).
@@ -69,7 +69,7 @@ There are also public brokers you can use for testing purposes, such as
 - Mosquitto: https://test.mosquitto.org
 - EMQX: https://www.emqx.com/en/mqtt/public-mqtt5-broker
 
-## 3. Global Variables
+## 3. Global Variables [#global-variables]
 
 The following variables will be string-interpolated for supported settings,
 such as topic names and will payload:
@@ -95,7 +95,7 @@ wk/kiosk_user_01/b8378168-ca69-11f0-af20-5a93ec0e6f90/command
 
 Some settings will support additional variables.
 
-## 4. Debug Logs
+## 4. Debug Logs [#debug-logs]
 
 MQTT operations are recorded in the debug logs, which can be accessed from any
 MQTT settings screens. This includes:
@@ -108,9 +108,9 @@ MQTT settings screens. This includes:
 A maximum of 100 messages will be stored for the duration of the app activity
 lifecycle. The logs will not persist between app restarts.
 
-## 5. Settings
+## 5. Settings [#settings]
 
-### 5.1. Enabled
+### 5.1. Enabled [#enabled]
 
 Set to `true` to allow connections to your configured broker in `MQTT -> Connections`.
 
@@ -126,7 +126,7 @@ connected. Instead, you will need to reconnect by:
 
 **Default:** false
 
-### 5.2. Use Foreground Service
+### 5.2. Use Foreground Service [#use-foreground-service]
 
 Start a
 [Foreground Service](https://developer.android.com/develop/background-work/services/fgs)

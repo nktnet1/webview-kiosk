@@ -10,7 +10,7 @@ Credentials are stored unencrypted in your browser.
 
 </Callout>
 
-## 1. Introduction
+## 1. Introduction [#introduction]
 
 UnifiedPush is a decentralised push notification system designed to be
 privacy-friendly, flexible, and open.
@@ -21,7 +21,7 @@ For more information, see the official documentation: https://unifiedpush.org
 - update app settings
 - perform actions via commands
 
-## 2. Distributor
+## 2. Distributor [#distributor]
 
 To use UnifiedPush with {APP_NAME}, you will need to choose a
 [distributor](https://unifiedpush.org/users/distributors)
@@ -35,7 +35,7 @@ You will also need a push server, e.g. by self-hosting or using the public serve
 - [autopush-rs](https://github.com/p1gp1g/autopush-rs)
 - [ntfy (server)](https://github.com/binwiederhier/ntfy)
 
-## 3. Debug Logs
+## 3. Debug Logs [#debug-logs]
 
 UnifiedPush operations are recorded in the debug logs, which can be accessed
 from the UnifiedPush settings screen.
@@ -50,15 +50,15 @@ This includes
 A maximum of 100 messages will be stored for the duration of the app activity
 lifecycle. The logs will not persist between app restarts.
 
-## 4. Settings
+## 4. Settings [#settings]
 
-### 4.1. Enabled
+### 4.1. Enabled [#enabled]
 
 Allow {APP_NAME} to process new push messages or register new endpoints.
 
 **Default:** false
 
-### 4.2. Distributor
+### 4.2. Distributor [#distributor-setting]
 
 The package name of the [distributor](https://unifiedpush.org/users/distributors), e.g.
 
@@ -70,7 +70,7 @@ from the push server and forwarding it to {APP_NAME}.
 
 **Default:** (blank)
 
-### 4.3. Instance
+### 4.3. Instance [#instance]
 
 Registration instance. Can be used to create multiple registrations.
 
@@ -84,14 +84,14 @@ If left blank, `default` will be used.
 
 **Default:** (blank)
 
-### 4.4. Message for Distributor
+### 4.4. Message for Distributor [#message-for-distributor]
 
 A customised message that may be shown by the distributor UI to
 identify this registration.
 
 **Default:** (blank)
 
-### 4.5. VAPID Public Key
+### 4.5. VAPID Public Key [#vapid-public-key]
 
 VAPID public key (RFC8292), base64url, in uncompressed form (87 chars long).
 
@@ -100,7 +100,7 @@ For more details, see:
 
 **Default:** (blank)
 
-### 4.6. Process Unencrypted Messages
+### 4.6. Process Unencrypted Messages [#process-unencrypted-messages]
 
 When enabled, {APP_NAME} will also handle UnifiedPush messages that
 did not successfully decrypt.
@@ -111,7 +111,7 @@ this reduces security.
 
 **Default:** false
 
-### 4.7. Store Endpoint Credentials
+### 4.7. Store Endpoint Credentials [#store-endpoint-credentials]
 
 When enabled, {APP_NAME} will persist the following values after registration:
 
