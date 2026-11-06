@@ -32,4 +32,22 @@ describe("device API tester", () => {
     expect(markup).toContain("grid-cols-[minmax(0,1fr)_auto]");
     expect(markup).toContain("Current: ");
   });
+
+  it("right-aligns actions and places the primary NFC action last", () => {
+    const nfcButtons =
+      markup.match(
+        /<div class="flex flex-wrap justify-end gap-2">(.*?)<\/div>/s,
+      )?.[1] ?? "";
+    expect(nfcButtons).toContain(">Clear tags</button>");
+    expect(nfcButtons).toContain(">Start scan</button>");
+    expect(nfcButtons.indexOf(">Clear tags</button>")).toBeLessThan(
+      nfcButtons.indexOf(">Start scan</button>"),
+    );
+    expect(markup).toMatch(
+      /data-slot="card-content" class="px-6 flex justify-end"><button[^>]*>Download sample<\/button>/,
+    );
+    expect(markup).toMatch(
+      /data-slot="card-content" class="px-6 flex justify-end"><button[^>]*>Vibrate<\/button>/,
+    );
+  });
 });

@@ -267,6 +267,54 @@ for (const width of [320, 375, 768]) {
   });
 }
 
+for (const width of [320, 375, 768, 1280]) {
+  test(`primary actions are right-aligned at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("tools/device-apis/");
+
+    for (const [title, action] of [
+      ["Brightness", "Set"],
+      ["NFC", "Start scan"],
+      ["Vibration", "Vibrate"],
+      ["Blob downloads", "Download sample"],
+    ] as const) {
+      const panel = page.locator('[data-slot="card"]').filter({
+        has: page.locator('[data-slot="card-title"]', {
+          hasText: new RegExp(`^${title}$`),
+        }),
+      });
+      const content = panel.locator('[data-slot="card-content"]');
+      const actionRight = await content
+        .getByRole("button", { name: action })
+        .evaluate((button) => button.getBoundingClientRect().right);
+      const contentRight = await content.evaluate(
+        (element) =>
+          element.getBoundingClientRect().right
+          - Number.parseFloat(getComputedStyle(element).paddingRight),
+      );
+      expect(actionRight).toBeCloseTo(contentRight, 0);
+    }
+
+    const nfcPanel = page.locator('[data-slot="card"]').filter({
+      has: page.locator('[data-slot="card-title"]', { hasText: /^NFC$/ }),
+    });
+    const clear = await nfcPanel
+      .getByRole("button", { name: "Clear tags" })
+      .boundingBox();
+    const primary = await nfcPanel
+      .getByRole("button", { name: "Start scan" })
+      .boundingBox();
+    expect(clear).not.toBeNull();
+    expect(primary).not.toBeNull();
+    if (clear && primary) {
+      expect(clear.y).toBeLessThanOrEqual(primary.y);
+      if (clear.y === primary.y) {
+        expect(clear.x + clear.width).toBeLessThan(primary.x);
+      }
+    }
+  });
+}
+
 test("a failing battery read does not stop the brightness poll", async ({
   page,
 }) => {

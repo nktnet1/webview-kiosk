@@ -320,7 +320,14 @@ function NfcPanel({ available }: { available: boolean }) {
         icon={Nfc}
       />
       <CardContent className="space-y-4">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            variant="ghost"
+            disabled={tags.length === 0}
+            onClick={() => setTags([])}
+          >
+            Clear tags
+          </Button>
           {scanning === "idle" ? (
             <Button disabled={!available} onClick={() => void handleStart()}>
               Start scan
@@ -330,13 +337,6 @@ function NfcPanel({ available }: { available: boolean }) {
               Stop scan
             </Button>
           )}
-          <Button
-            variant="ghost"
-            disabled={tags.length === 0}
-            onClick={() => setTags([])}
-          >
-            Clear tags
-          </Button>
         </div>
         {tags.length > 0 && (
           <div aria-live="polite" className="space-y-3">
@@ -408,7 +408,7 @@ function BlobPanel({ available }: { available: boolean }) {
         available={available}
         icon={Download}
       />
-      <CardContent className="space-y-4">
+      <CardContent className="flex justify-end">
         <Button disabled={!available} onClick={handleDownload}>
           Download sample
         </Button>
@@ -436,7 +436,7 @@ function VibrationPanel({ available }: { available: boolean }) {
         available={available}
         icon={Vibrate}
       />
-      <CardContent className="space-y-4">
+      <CardContent className="flex justify-end">
         <Button disabled={!available} onClick={handleTest}>
           Vibrate
         </Button>
