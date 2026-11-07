@@ -7,7 +7,10 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Response
+import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
+import okio.Buffer
+import okio.BufferedSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
@@ -610,11 +613,43 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun downloadedBodyUsesSameSizeValidationAsLocalImports() {
-        val oversized = "||ads.example^\n".repeat(600_000)
-        assertTrue(
-            runCatching { downloader(content = oversized).download(preset, store) }
-                .isFailure
+        val large = "||ads.example^\n".repeat(900_000)
+        assertTrue(large.toByteArray().size > 12 * 1024 * 1024)
+        val imported = downloader(content = large).download(preset, store)
+        assertEquals(
+            large.toByteArray().size.toLong(),
+            store.fileSizeBytes(imported.id),
         )
+    }
+
+    @Test
+    fun downloadsStillRejectBodiesAboveTheNewLimit() {
+        val oversizedBody =
+            object : ResponseBody() {
+                override fun contentType() = "text/plain".toMediaType()
+
+                override fun contentLength() = FilterListStore.MAX_LIST_BYTES + 1
+
+                override fun source(): BufferedSource =
+                    Buffer().writeUtf8("||ads.example^\n")
+            }
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("OK")
+                            .body(oversizedBody)
+                            .build()
+                    }
+                    .build()
+            )
+        val error =
+            assertThrows(IOException::class.java) { client.download(preset, store) }
+        assertEquals("Expanded filter list exceeds 64 MiB", error.message)
         assertTrue(store.list().isEmpty())
     }
 
@@ -687,7 +722,7 @@ class SuggestedFilterListDownloaderTest {
                 downloader(status = 503),
                 downloader(content = "<html>oops</html>", mime = "text/html"),
                 downloader(content = ""),
-                downloader(content = "||ads.example^\n".repeat(600_000)),
+                downloader(content = "||ads.example^\u0000"),
             )
         invalid.forEach { client ->
             assertTrue(runCatching { client.refresh(original, store) }.isFailure)

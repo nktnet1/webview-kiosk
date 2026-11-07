@@ -515,10 +515,10 @@ internal class FilterListStore(
                         }
                         written += count
                         require(written <= MAX_LIST_BYTES) {
-                            "Filter list exceeds 8 MiB"
+                            "Filter list exceeds $MAX_LIST_MIB MiB"
                         }
                         require(otherBytes + written <= MAX_TOTAL_BYTES) {
-                            "Total filter lists exceed 32 MiB"
+                            "Total filter lists exceed $MAX_TOTAL_MIB MiB"
                         }
                         output.write(buffer, 0, count)
                     }
@@ -699,8 +699,10 @@ internal class FilterListStore(
         private const val MAX_NAME_LENGTH = 100
         internal const val MAX_INLINE_EDIT_BYTES = 128L * 1024
         private const val MAX_LISTS = 16
-        internal const val MAX_LIST_BYTES = 8L * 1024 * 1024
-        private const val MAX_TOTAL_BYTES = 32L * 1024 * 1024
+        internal const val MAX_LIST_MIB = 64L
+        private const val MAX_TOTAL_MIB = 256L
+        internal const val MAX_LIST_BYTES = MAX_LIST_MIB * 1024 * 1024
+        private const val MAX_TOTAL_BYTES = MAX_TOTAL_MIB * 1024 * 1024
         private val UUID_PATTERN = Regex("[0-9a-fA-F-]{36}")
     }
 }

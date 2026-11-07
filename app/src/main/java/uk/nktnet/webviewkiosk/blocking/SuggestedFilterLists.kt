@@ -312,7 +312,9 @@ internal class SuggestedFilterListDownloader(
             }
             .toString()
 
-    /** Resolve only same-origin relative text files, with a shared 8 MiB budget. */
+    /**
+     * Resolve only same-origin relative text files, sharing the per-list byte limit.
+     */
     private fun <T> fetch(url: String, save: (java.io.InputStream) -> T): T {
         val source = requireNotNull(requireListUrl(url).toHttpUrlOrNull())
         val budget = IncludeBudget()
@@ -334,7 +336,7 @@ internal class SuggestedFilterListDownloader(
 
         val expanded = expand(source, 0).toByteArray(StandardCharsets.UTF_8)
         require(expanded.size <= FilterListStore.MAX_LIST_BYTES) {
-            "Expanded filter list exceeds 8 MiB"
+            "Expanded filter list exceeds ${FilterListStore.MAX_LIST_MIB} MiB"
         }
         return save(ByteArrayInputStream(expanded))
     }
@@ -388,7 +390,9 @@ internal class SuggestedFilterListDownloader(
                 response.body.contentLength() >
                     FilterListStore.MAX_LIST_BYTES - budget.bytes
             ) {
-                throw IOException("Expanded filter list exceeds 8 MiB")
+                throw IOException(
+                    "Expanded filter list exceeds ${FilterListStore.MAX_LIST_MIB} MiB"
+                )
             }
             if (
                 response.body.contentType()?.let {
@@ -409,7 +413,9 @@ internal class SuggestedFilterListDownloader(
                     }
                     budget.bytes += read
                     if (budget.bytes > FilterListStore.MAX_LIST_BYTES) {
-                        throw IOException("Expanded filter list exceeds 8 MiB")
+                        throw IOException(
+                            "Expanded filter list exceeds ${FilterListStore.MAX_LIST_MIB} MiB"
+                        )
                     }
                     output.write(buffer, 0, read)
                 }
