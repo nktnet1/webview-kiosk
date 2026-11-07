@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.blocking
 
 import java.io.ByteArrayInputStream
+import java.io.InputStream
 import org.json.JSONArray
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -17,6 +18,33 @@ import org.robolectric.RuntimeEnvironment
 @RunWith(RobolectricTestRunner::class)
 class FilterListStoreTest {
     private lateinit var store: FilterListStore
+
+    /** Exercise the byte limit without allocating an entire 64 MiB test array. */
+    private fun oversizedInput(): InputStream =
+        object : InputStream() {
+            private var remaining = FilterListStore.MAX_LIST_BYTES + 1
+
+            override fun read(): Int {
+                if (remaining <= 0) {
+                    return -1
+                }
+                remaining--
+                return '!'.code
+            }
+
+            override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                if (length == 0) {
+                    return 0
+                }
+                if (remaining <= 0) {
+                    return -1
+                }
+                val count = minOf(remaining, length.toLong()).toInt()
+                buffer.fill('!'.code.toByte(), offset, offset + count)
+                remaining -= count
+                return count
+            }
+        }
 
     @Before
     fun setup() {
@@ -243,7 +271,7 @@ class FilterListStoreTest {
             store.fileSizeBytes(item.id)
         }
         java.io.RandomAccessFile(file, "rw").use {
-            it.setLength(8L * 1024 * 1024 + 1)
+            it.setLength(FilterListStore.MAX_LIST_BYTES + 1)
         }
         assertThrows(java.io.IOException::class.java) { store.info(item.id) }
         assertThrows(java.io.IOException::class.java) {
@@ -453,11 +481,35 @@ class FilterListStoreTest {
         val oversized = runCatching {
             store.importFrom(
                 "oversized",
-                ByteArrayInputStream(ByteArray(8 * 1024 * 1024 + 1)),
+                oversizedInput(),
             )
         }
         assertTrue(oversized.isFailure)
+        assertEquals(
+            "Filter list exceeds 64 MiB",
+            oversized.exceptionOrNull()?.message,
+        )
         assertTrue(store.list().isEmpty())
+    }
+
+    @Test
+    fun largeListsAndCombinedStorageBeyondFormerLimitsAreAccepted() {
+        // A Vivaldi URLhaus-sized document must fit, and copies must not run
+        // into the former 32 MiB aggregate limit.
+        val text = "||malicious.example^\$document\n".repeat(550_000)
+        val byteCount = text.toByteArray().size.toLong()
+        assertTrue(byteCount > 12L * 1024 * 1024)
+        val original = store.importFrom("urlhaus.txt", text.byteInputStream())
+        val firstCopy = store.cloneList(original.id)
+        val secondCopy = store.cloneList(original.id)
+        assertEquals(byteCount, store.fileSizeBytes(original.id))
+        assertEquals(byteCount, store.fileSizeBytes(firstCopy.id))
+        assertEquals(byteCount, store.fileSizeBytes(secondCopy.id))
+        assertTrue(byteCount * 3 > 32L * 1024 * 1024)
+        assertEquals(
+            3,
+            FilterListStore(RuntimeEnvironment.getApplication()).list().size,
+        )
     }
 
     @Test
@@ -560,10 +612,10 @@ class FilterListStoreTest {
             )
         val invalidBodies =
             listOf(
-                byteArrayOf(),
-                byteArrayOf(0),
-                byteArrayOf(0xc3.toByte(), 0x28),
-                ByteArray(8 * 1024 * 1024 + 1),
+                ByteArrayInputStream(byteArrayOf()),
+                ByteArrayInputStream(byteArrayOf(0)),
+                ByteArrayInputStream(byteArrayOf(0xc3.toByte(), 0x28)),
+                oversizedInput(),
             )
         invalidBodies.forEach { body ->
             assertTrue(
@@ -571,7 +623,7 @@ class FilterListStoreTest {
                     store.replaceFromSource(
                         item.id,
                         item.sourceUrl!!,
-                        ByteArrayInputStream(body),
+                        body,
                     )
                 }
                     .isFailure
