@@ -16,11 +16,11 @@ When set to \"Hidden\", the \"Settings\" button will be visible from the Kiosk C
 You can temporarily reveal the system bars with gestures such as swiping from the edge of the screen where the bar is hidden from.
 
 Note: immersive mode is enabled automatically when entering fullscreen (for example, when watching a video), irrespective of this setting."</string>
-    <string name="setting_info_show_loading_progress_bar" formatted="false">"Show a progress bar at the top of the WebView while the main page loads.
+    <string name="setting_info_show_loading_progress_bar" formatted="false">"Show a progress bar at the top of the WebView while the main page loads. Its displayed progress starts at 10% even if WebView reports less.
 
 Background iframe loads after the page finishes do not reopen the bar.
 
-Disable this to hide the bar during all page loads."</string>
+Disable this to hide the bar. The address bar still shows a loading spinner when a page is loading."</string>
     <string name="setting_info_theme" formatted="false">"Select the app theme: System (default), Dark or Light.
 
 See also: Settings -&gt; JS Scripts -&gt; Apply App Theme."</string>

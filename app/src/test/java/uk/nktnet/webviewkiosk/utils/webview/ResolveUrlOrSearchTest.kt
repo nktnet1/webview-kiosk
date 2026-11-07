@@ -46,6 +46,10 @@ class ResolveUrlOrSearchTest {
             resolveUrlOrSearch(searchProvider, "192.168.1.2:8080/path"),
         )
         assertEquals(
+            "http://192.168.4.163:3000",
+            resolveUrlOrSearch(searchProvider, "192.168.4.163:3000"),
+        )
+        assertEquals(
             "http://localhost:3000/path",
             resolveUrlOrSearch(searchProvider, "localhost:3000/path"),
         )

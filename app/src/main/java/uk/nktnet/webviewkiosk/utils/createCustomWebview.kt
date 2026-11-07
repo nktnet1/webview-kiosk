@@ -169,6 +169,7 @@ data class WebViewConfig(
     val onLocalNetworkPermissionMissing: () -> Unit,
     val finishSwipeRefresh: () -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
+    val onLoadingStateChanged: (isLoading: Boolean) -> Unit,
     val updateAddressBarAndHistory: (url: String, originalUrl: String?) -> Unit,
     val onHttpAuthRequest: (request: HttpAuthRequest?) -> Unit,
     val onLinkLongClick: (url: String) -> Unit,
@@ -349,9 +350,16 @@ fun createCustomWebview(
         // WebChromeClient also reports later iframe activity.
         var trackLoadingProgress = false
 
+        fun startLoadingProgress() {
+            trackLoadingProgress = true
+            config.onProgressChanged(0)
+            config.onLoadingStateChanged(true)
+        }
+
         fun finishLoadingProgress() {
             trackLoadingProgress = false
             config.onProgressChanged(100)
+            config.onLoadingStateChanged(false)
         }
 
         var cosmetics: WebViewCosmetics? = null
@@ -387,6 +395,11 @@ fun createCustomWebview(
         }
 
         fun beginLoad(url: String) {
+            // javascript: executes in the current document without navigating.
+            // It must not leave a loading spinner waiting for a page callback.
+            if (url.startsWith("javascript:", ignoreCase = true)) {
+                return
+            }
             scriptlets?.refresh()
             val currentEntry =
                 systemSettings.historyStack.getOrNull(systemSettings.historyIndex)
@@ -401,6 +414,8 @@ fun createCustomWebview(
                     userSettings,
                 ) ?: url,
             )
+            // Give every accepted main-frame load immediate feedback.
+            startLoadingProgress()
         }
 
         fun updateAddressBarAndHistory(url: String, originalUrl: String?) {
@@ -734,8 +749,7 @@ fun createCustomWebview(
                                 url?.let {
                                     navigation.pageStarted(it)
                                 }
-                                trackLoadingProgress = true
-                                config.onProgressChanged(0)
+                                startLoadingProgress()
                                 awaitingPdfPageStart = false
                                 config.setLastErrorUrl("")
                                 config.onHttpAuthRequest(null)
@@ -1243,6 +1257,21 @@ fun createCustomWebview(
                                         isRedirect,
                                     )
                                     clearPdfNavigation()
+                                    // Legacy callbacks may represent iframes; wait
+                                    // for
+                                    // onPageStarted when frame metadata is
+                                    // unavailable.
+                                    // Fragment-only changes do not load a document.
+                                    val currentUrl = view?.url
+                                    if (
+                                        method != null &&
+                                            (currentUrl == null ||
+                                                requestUrl == currentUrl ||
+                                                requestUrl.substringBefore('#') !=
+                                                    currentUrl.substringBefore('#'))
+                                    ) {
+                                        startLoadingProgress()
+                                    }
                                 }
                                 return false
                             }

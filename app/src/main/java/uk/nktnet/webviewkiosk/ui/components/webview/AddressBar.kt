@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -48,6 +49,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -104,18 +107,43 @@ private fun AddressBarCopyButton(iconSize: Dp, onCopy: () -> Unit) {
     }
 }
 
+// The search drawable occupies about 75% of its 24dp viewport. Match its
+// visible size without shrinking the clickable button or search glyph.
+internal fun addressBarSpinnerPadding(iconSize: Dp, iconPadding: Dp): Dp =
+    iconPadding + (iconSize - iconPadding * 2) * 0.125f
+
 @Composable
 private fun AddressBarSearchButton(
     onSearch: () -> Unit,
+    isLoading: Boolean,
     iconSize: Dp,
     iconPadding: Dp,
 ) {
-    IconButton(modifier = Modifier.size(iconSize), onClick = onSearch) {
-        Icon(
-            painter = painterResource(R.drawable.baseline_search_24),
-            contentDescription = stringResource(R.string.ui_search),
-            modifier = Modifier.fillMaxSize().padding(iconPadding),
-        )
+    val description =
+        if (isLoading) {
+            stringResource(R.string.ui_loading_page)
+        } else {
+            stringResource(R.string.ui_search)
+        }
+    IconButton(
+        modifier =
+            Modifier.size(iconSize).semantics { contentDescription = description },
+        onClick = onSearch,
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .padding(addressBarSpinnerPadding(iconSize, iconPadding)),
+                strokeWidth = 2.dp,
+            )
+        } else {
+            Icon(
+                painter = painterResource(R.drawable.baseline_search_24),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize().padding(iconPadding),
+            )
+        }
     }
 }
 
@@ -146,6 +174,7 @@ fun AddressBar(
     urlBarText: TextFieldValue,
     onUrlBarTextChange: (TextFieldValue) -> Unit,
     hasFocus: Boolean,
+    isPageLoading: Boolean,
     onFocusChanged: (FocusState) -> Unit,
     showFindInPage: () -> Unit,
     addressBarSearch: (String) -> Unit,
@@ -166,6 +195,10 @@ fun AddressBar(
     var replacementHadFocus by remember { mutableStateOf(false) }
     var pastedOversizedUrl by remember { mutableStateOf(false) }
     val oversizedUrl = urlBarText.text.length > MAX_ADDRESS_BAR_EDITABLE_LENGTH
+    val submitSearch: () -> Unit = {
+        focusManager.clearFocus()
+        addressBarSearch(urlBarText.text)
+    }
     // Avoid comparing very large URL keys on every recomposition.
     val urlPreview = boundedAddressBarPreview(urlBarText.text)
     val copyFullUrl: () -> Unit = {
@@ -514,7 +547,8 @@ fun AddressBar(
                     onCopy = copyFullUrl,
                 )
                 AddressBarSearchButton(
-                    onSearch = { addressBarSearch(urlBarText.text) },
+                    onSearch = submitSearch,
+                    isLoading = isPageLoading && !hasFocus,
                     iconSize = userSettings.addressBarSize.searchIconSizeDp,
                     iconPadding = userSettings.addressBarSize.searchIconPaddingDp,
                 )
@@ -569,7 +603,7 @@ fun AddressBar(
                     KeyboardActions(
                         onSearch = {
                             if (urlBarText.text.isNotBlank()) {
-                                addressBarSearch(urlBarText.text)
+                                submitSearch()
                             }
                         }
                     ),
@@ -634,7 +668,8 @@ fun AddressBar(
                             )
                         }
                         AddressBarSearchButton(
-                            onSearch = { addressBarSearch(urlBarText.text) },
+                            onSearch = submitSearch,
+                            isLoading = isPageLoading && !hasFocus,
                             iconSize = userSettings.addressBarSize.searchIconSizeDp,
                             iconPadding =
                                 userSettings.addressBarSize.searchIconPaddingDp,
