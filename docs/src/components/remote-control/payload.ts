@@ -21,6 +21,9 @@ export type CommandField = {
   placeholder?: string;
   required?: boolean;
   options?: readonly string[];
+  /** Inclusive bounds for integer fields. */
+  min?: number;
+  max?: number;
 };
 export type CommandDefinition = {
   name: string;
@@ -183,6 +186,8 @@ export const COMMANDS: readonly CommandDefinition[] = [
         label: "Volume (0-100)",
         kind: "integer",
         required: true,
+        min: 0,
+        max: 100,
         placeholder: "40",
       },
     ],
@@ -321,6 +326,29 @@ export function assertEditablePayload(
   return message;
 }
 
+/** A required field is missing when absent or blank, whatever its kind. */
+function isMissingFieldValue(value: unknown): boolean {
+  if (value === undefined || value === null) return true;
+  return typeof value === "string" && !v.is(NonBlankStringSchema, value);
+}
+
+/** Returns an error for integer values outside the field's min/max bounds. */
+function fieldRangeError(field: CommandField, value: unknown): string | null {
+  if (field.kind !== "integer" || typeof value !== "number") return null;
+  const { min, max } = field;
+  if (
+    (min === undefined || value >= min)
+    && (max === undefined || value <= max)
+  ) {
+    return null;
+  }
+  const bounds = [
+    min === undefined ? null : `at least ${min}`,
+    max === undefined ? null : `at most ${max}`,
+  ].filter((bound) => bound !== null);
+  return `${field.label} must be ${bounds.join(" and ")}.`;
+}
+
 function isFieldValue(
   kind: string,
   value: unknown,
@@ -450,7 +478,7 @@ export function validateRemotePayload(
     const data = isJsonObject(message.data) ? message.data : {};
     for (const field of command?.fields ?? []) {
       const fieldValue = data[field.key];
-      if (field.required && !v.is(NonBlankStringSchema, fieldValue)) {
+      if (field.required && isMissingFieldValue(fieldValue)) {
         throw new Error(`${field.label} is required for ${command?.label}.`);
       }
       if (
@@ -459,6 +487,8 @@ export function validateRemotePayload(
       ) {
         throw new Error(`${field.label} has an invalid value.`);
       }
+      const rangeError = fieldRangeError(field, fieldValue);
+      if (rangeError) throw new Error(rangeError);
     }
   } else {
     const settings = (message.data as JsonObject).settings;
