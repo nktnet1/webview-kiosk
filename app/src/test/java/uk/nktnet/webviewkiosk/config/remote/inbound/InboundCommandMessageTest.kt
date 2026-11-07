@@ -66,6 +66,8 @@ class InboundCommandMessageTest {
                 """{"command":"go_to_url"}""",
                 """{"command":"go_to_url","data":{}}""",
                 """{"command":"launch_package","data":{}}""",
+                """{"command":"set_volume"}""",
+                """{"command":"set_volume","data":{}}""",
                 """{}""",
             )) {
             assertThrows(SerializationException::class.java) {
@@ -74,6 +76,36 @@ class InboundCommandMessageTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun setVolumeCarriesTheRequestedPercentage() {
+        val command =
+            InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
+                """{"command":"set_volume","data":{"volume":40},"wakeScreen":true}"""
+            )
+
+        assertTrue(command is InboundSetVolumeCommand)
+        command as InboundSetVolumeCommand
+        assertEquals(40, command.data.volume)
+        assertEquals("set_volume", command.toString())
+        assertTrue(command.wakeScreen)
+    }
+
+    @Test
+    fun setVolumeOnlyInteractsWhenRequested() {
+        val defaultCommand =
+            InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
+                """{"command":"set_volume","data":{"volume":40}}"""
+            )
+        val interactingCommand =
+            InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
+                """{"command":"set_volume","data":{"volume":40},"interact":true}"""
+            )
+
+        assertFalse(defaultCommand.interact)
+        assertFalse(defaultCommand.wakeScreen)
+        assertTrue(interactingCommand.interact)
     }
 
     @Test

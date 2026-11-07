@@ -211,6 +211,24 @@ data class InboundPageDownCommand(
 }
 
 @Serializable
+@SerialName("set_volume")
+data class InboundSetVolumeCommand(
+    override val messageId: String? = null,
+    override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
+    // A volume change is not a page interaction: it should not restore a
+    // dimmed screen or restart the inactivity timeout unless asked to.
+    override val interact: Boolean = false,
+    override val wakeScreen: Boolean = false,
+    val data: VolumeData,
+) : InboundCommandMessage {
+    /** Media (music) stream volume, as a percentage from 0 to 100. */
+    @Serializable data class VolumeData(val volume: Int)
+
+    override fun toString() = "set_volume"
+}
+
+@Serializable
 @SerialName("notify")
 data class InboundNotifyCommand(
     override val messageId: String? = null,

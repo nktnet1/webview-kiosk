@@ -155,7 +155,8 @@ function CommandControls({
               <Input
                 id={id}
                 type="number"
-                min={0}
+                min={field.min ?? 0}
+                max={field.max}
                 step={1}
                 value={
                   typeof fieldValue === "number"

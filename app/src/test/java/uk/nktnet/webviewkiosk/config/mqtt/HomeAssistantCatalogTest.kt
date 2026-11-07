@@ -154,7 +154,7 @@ class HomeAssistantCatalogTest {
         val components = payload().getValue("components").jsonObject
         val commandNames = variants(InboundCommandMessage.serializer().descriptor)
         val requestNames = variants(InboundRequestMessage.serializer().descriptor)
-        assertEquals(17, commandNames.size)
+        assertEquals(18, commandNames.size)
         assertEquals(5, requestNames.size)
         assertTrue(
             components.keys.containsAll(
@@ -162,6 +162,7 @@ class HomeAssistantCatalogTest {
                     when (it) {
                         "toast" -> "toast_message"
                         "notify" -> "notification_message"
+                        "set_volume" -> "media_volume"
                         else -> it
                     }
                 }

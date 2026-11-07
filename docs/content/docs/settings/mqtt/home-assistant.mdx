@@ -74,6 +74,13 @@ to open a URL, search, or send a toast message or notification.
 
 Saving a command text field sends its value immediately.
 
+The **Media volume** slider sets the device's media volume (0-100%), which is
+used for audio played by web pages. It shows the current volume and is updated
+right after a change. Changes made with the device's volume buttons appear at
+the next status update. Moving the slider does not count as a user
+interaction, so it does not restore a dimmed screen or restart the inactivity
+timeout.
+
 Navigation needs an active WebView. **Lock device** requires device owner
 permission. Notifications require both the app's notification setting and
 Android notification permission.
@@ -95,7 +102,7 @@ its entire value.
 ## 5. Status [#status]
 
 Status sensors report battery level, current URL, screen state, kiosk lock,
-brightness, and last interaction.
+brightness, media volume, and last interaction.
 
 Use the **Refresh** buttons to fetch status, app settings, device information,
 or launchable packages.

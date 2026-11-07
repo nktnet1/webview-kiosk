@@ -10,6 +10,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandJsonParser
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandMessage
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSetVolumeCommand
 
 class HomeAssistantDiscoveryTest {
     private val discovery = HomeAssistantDiscovery("instance-a", "homeassistant")
@@ -20,7 +21,7 @@ class HomeAssistantDiscoveryTest {
         val renamed = discovery.payload("Hallway", "Example", "Tablet", "2.0")
         val components = first.getValue("components").jsonObject
 
-        assertEquals(37, components.size)
+        assertEquals(38, components.size)
         assertEquals(
             "Webview Kiosk",
             first.getValue("origin").jsonObject["name"]?.jsonPrimitive?.content,
@@ -155,6 +156,57 @@ class HomeAssistantDiscoveryTest {
                     entity.getValue("command_template").jsonPrimitive.content,
                 )
             }
+    }
+
+    @Test
+    fun mediaVolumeIsAPercentageNumberBackedByTheSetVolumeCommand() {
+        val entity =
+            discovery
+                .payload("", "", "", "1")["components"]!!
+                .jsonObject
+                .getValue("media_volume")
+                .jsonObject
+
+        assertEquals("number", entity.getValue("platform").jsonPrimitive.content)
+        assertEquals("0", entity.getValue("min").jsonPrimitive.content)
+        assertEquals("100", entity.getValue("max").jsonPrimitive.content)
+        assertEquals(
+            "%",
+            entity.getValue("unit_of_measurement").jsonPrimitive.content,
+        )
+        assertEquals(
+            discovery.commandTopic,
+            entity.getValue("command_topic").jsonPrimitive.content,
+        )
+        assertEquals(
+            discovery.stateTopic,
+            entity.getValue("state_topic").jsonPrimitive.content,
+        )
+        assertEquals(
+            "{{ value_json.mediaVolumePercentage }}",
+            entity.getValue("value_template").jsonPrimitive.content,
+        )
+        val template = entity.getValue("command_template").jsonPrimitive.content
+        assertEquals(
+            "{{ {\"command\":\"set_volume\",\"targetInstances\":[\"instance-a\"],\"data\":{\"volume\":value | int}} | tojson }}",
+            template,
+        )
+        // The rendered template must decode as a set_volume command.
+        val rendered =
+            template
+                .removePrefix("{{ ")
+                .removeSuffix(" | tojson }}")
+                .replace("value | int", "40")
+        val command =
+            InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
+                rendered
+            )
+        assertTrue(command is InboundSetVolumeCommand)
+        assertEquals(40, (command as InboundSetVolumeCommand).data.volume)
+        assertEquals(setOf("instance-a"), command.targetInstances)
+        // Moving the slider must not count as a user interaction.
+        assertFalse(command.interact)
+        assertFalse(command.wakeScreen)
     }
 
     @Test

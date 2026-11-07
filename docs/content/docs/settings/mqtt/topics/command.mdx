@@ -69,7 +69,8 @@ the following properties exists for all commands:
 
         For example, this will restore brightness if <code>Web Lifecycle → Dim Screen on Inactivity (seconds)</code> is configured.
 
-        <strong>Default:</strong> true
+        <strong>Default:</strong> true, except for
+        [set_volume](#set-volume), where it is false
       </td>
     </tr>
     <tr>
@@ -599,5 +600,51 @@ Example Payload:
   "targetUsernames": ["user-001"],
   "interact": false,
   "wakeScreen": true
+}
+```
+
+### 2.18. Set Volume [#set-volume]
+
+Sets the device's media volume, which is the volume used for audio played by
+web pages. The `volume` is a percentage from 0 to 100. Values outside this
+range are clamped.
+
+Android volume has a fixed number of steps, which depends on the device (often
+15 or 25). The requested percentage is rounded to the nearest step, so the
+volume reported afterwards may differ slightly (e.g. 50 becomes 53 on a device
+with 15 steps).
+
+A [volume_changed](/docs/settings/mqtt/topics/event#volume-changed) event
+is published with the resulting volume. Devices with a fixed volume cannot be
+changed, and a toast message will be shown instead.
+
+Unlike other commands, `interact` defaults to `false` for `set_volume`.
+Changing the volume is not an interaction with the page, and is often done
+remotely (e.g. right before a page plays an alert sound), so by default it
+does not restore a dimmed screen's brightness or restart the inactivity
+timeout. Set `interact` to `true` to treat it as an interaction.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "set_volume",
+  "data": {
+    "volume": 40
+  }
+}
+```
+
+```json tab="Full"
+{
+  "command": "set_volume",
+  "data": {
+    "volume": 40
+  },
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": true,
+  "wakeScreen": false
 }
 ```

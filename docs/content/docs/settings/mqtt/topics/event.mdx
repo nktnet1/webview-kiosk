@@ -61,7 +61,8 @@ Example payload:
     "batteryPercentage": 62,
     "appBrightnessPercentage": -1,
     "systemBrightness": 255,
-    "isDeviceInteractive": true
+    "isDeviceInteractive": true,
+    "mediaVolumePercentage": 40
   }
 }
 ```
@@ -286,5 +287,26 @@ Example payload:
   "messageId": "f4ba1dbd-dc5d-4ea8-8693-0f6c81b67248",
   "username": "medium-phone-api-35",
   "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1"
+}
+```
+
+### 2.14. Volume Changed [#volume-changed]
+
+The `volume_changed` event is published after a
+[set_volume](/docs/settings/mqtt/topics/command#set-volume) command changes
+the device's media volume. `mediaVolumePercentage` is the resulting volume,
+from 0 to 100.
+
+Example payload:
+
+```json
+{
+  "eventType": "volume_changed",
+  "messageId": "0c5d7f4e-31b2-4c8a-9e6f-2a7b8c9d0e1f",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
+  "data": {
+    "mediaVolumePercentage": 40
+  }
 }
 ```
