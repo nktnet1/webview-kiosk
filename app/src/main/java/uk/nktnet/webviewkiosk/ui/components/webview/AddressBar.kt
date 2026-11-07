@@ -107,6 +107,11 @@ private fun AddressBarCopyButton(iconSize: Dp, onCopy: () -> Unit) {
     }
 }
 
+// The search drawable occupies about 75% of its 24dp viewport. Match its
+// visible size without shrinking the clickable button or search glyph.
+internal fun addressBarSpinnerPadding(iconSize: Dp, iconPadding: Dp): Dp =
+    iconPadding + (iconSize - iconPadding * 2) * 0.125f
+
 @Composable
 private fun AddressBarSearchButton(
     onSearch: () -> Unit,
@@ -127,7 +132,9 @@ private fun AddressBarSearchButton(
     ) {
         if (isLoading) {
             CircularProgressIndicator(
-                modifier = Modifier.fillMaxSize().padding(iconPadding),
+                modifier =
+                    Modifier.fillMaxSize()
+                        .padding(addressBarSpinnerPadding(iconSize, iconPadding)),
                 strokeWidth = 2.dp,
             )
         } else {
