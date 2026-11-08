@@ -611,7 +611,7 @@ pathlib.Path('/var/cache/android-test-assets/gradle').mkdir(parents=True, exist_
 options = ['--sdk-root', '/opt/android-sdk', '--gradle-bin', '/opt/gradle/bin/gradle',
            '--gradle-user-home', '/var/cache/android-test-assets/gradle',
            '--download-cache', '/var/cache/android-test-assets/downloads']
-subprocess.run([sys.executable, str(root / 'scripts/android/export-android-test-assets.py'),
+subprocess.run([sys.executable, str(root / 'scripts/android/export_android_test_assets.py'),
                 '--output', '/export', *options, *sys.argv[1:]], check=True)
 """
 

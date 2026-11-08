@@ -19,7 +19,7 @@ from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location("asset_exporter", ROOT / "scripts/android/export-android-test-assets.py")
+SPEC = importlib.util.spec_from_file_location("asset_exporter", ROOT / "scripts/android/export_android_test_assets.py")
 ASSETS = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ASSETS)
 
@@ -485,7 +485,7 @@ else:
 class DispatchTest(unittest.TestCase):
     def test_python_cli_help_without_tools(self):
         result = subprocess.run(
-            [sys.executable, str(ROOT / "scripts/android/export-android-test-assets.py"), "--help"],
+            [sys.executable, str(ROOT / "scripts/android/export_android_test_assets.py"), "--help"],
             text=True, capture_output=True,
         )
         self.assertEqual(0, result.returncode, result.stderr)
@@ -588,7 +588,7 @@ class DispatchTest(unittest.TestCase):
             self.assertNotIn("--download-node", command)
             self.assertNotIn("--download-pnpm", command)
             self.assertIn("'docs'", ASSETS.DOCKER_BOOTSTRAP)
-            self.assertIn("scripts/android/export-android-test-assets.py", ASSETS.DOCKER_BOOTSTRAP)
+            self.assertIn("scripts/android/export_android_test_assets.py", ASSETS.DOCKER_BOOTSTRAP)
             build = next(call.args[0] for call in run.call_args_list
                          if call.args[0][1] == "build")
             self.assertEqual(ROOT / "scripts/android/Dockerfile.android-test-assets",

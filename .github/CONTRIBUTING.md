@@ -118,7 +118,7 @@ Android check in branch protection: GitHub leaves it pending when skipped.
 Export Linux x86_64 Android SDK, Gradle dependencies, and Robolectric runtimes:
 
 ```bash
-python3 scripts/android/export-android-test-assets.py --output build/android-test-assets
+python3 scripts/android/export_android_test_assets.py --output build/android-test-assets
 ```
 
 The exporter requires Python 3.10+. On Linux x86_64, it uses local Gradle, JBR 21,
