@@ -21,6 +21,7 @@ import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLockTaskPackagesReque
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundNotifyCommand
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundReconnectCommand
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRequestMessage
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSetVolumeCommand
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsRequest
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundStatusRequest
@@ -34,9 +35,11 @@ import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
+import uk.nktnet.webviewkiosk.utils.getMediaVolumePercentage
 import uk.nktnet.webviewkiosk.utils.getStatus
 import uk.nktnet.webviewkiosk.utils.getSystemInfo
 import uk.nktnet.webviewkiosk.utils.openPackage
+import uk.nktnet.webviewkiosk.utils.setMediaVolumePercentage
 import uk.nktnet.webviewkiosk.utils.wakeScreen
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.WebViewStartup
@@ -141,6 +144,31 @@ object RemoteInboundHandler {
                         context.getString(
                             R.string
                                 .ui_cannot_execute_notify_command_notifications_disabled_i
+                        ),
+                    )
+                }
+            }
+            is InboundSetVolumeCommand -> {
+                try {
+                    if (setMediaVolumePercentage(context, command.data.volume)) {
+                        MqttManager.publishVolumeChangedEvent(
+                            getMediaVolumePercentage(context)
+                        )
+                    } else {
+                        ToastManager.show(
+                            context,
+                            context.getString(
+                                R.string.ui_cannot_change_media_volume_on_this_device
+                            ),
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.e(javaClass.simpleName, "Failed to set media volume", e)
+                    ToastManager.show(
+                        context,
+                        context.getString(
+                            R.string.ui_failed_to_set_media_volume_value,
+                            e.message,
                         ),
                     )
                 }

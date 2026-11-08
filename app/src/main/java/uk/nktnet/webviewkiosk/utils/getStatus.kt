@@ -22,6 +22,7 @@ data class WebviewKioskStatus(
     val appBrightnessPercentage: Int,
     val systemBrightness: Int,
     val isDeviceInteractive: Boolean,
+    val mediaVolumePercentage: Int,
 )
 
 fun getStatus(context: Context): WebviewKioskStatus {
@@ -58,5 +59,6 @@ fun getStatus(context: Context): WebviewKioskStatus {
         appBrightnessPercentage = getWindowBrightness(context),
         systemBrightness = systemBrightness,
         isDeviceInteractive = pm.isInteractive,
+        mediaVolumePercentage = getMediaVolumePercentage(context),
     )
 }

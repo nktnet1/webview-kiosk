@@ -80,6 +80,7 @@ import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundSystemInfoResponse
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundUnlockEvent
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundUrlChangedEvent
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundUserPresentEvent
+import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundVolumeChangedEvent
 import uk.nktnet.webviewkiosk.utils.BaseJson
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 import uk.nktnet.webviewkiosk.utils.filterSettingsJson
@@ -836,6 +837,18 @@ object MqttManager {
                 messageId = UUID.randomUUID().toString(),
                 username = config.username,
                 appInstanceId = config.appInstanceId,
+            )
+        publishEventMessage(c, event)
+    }
+
+    fun publishVolumeChangedEvent(mediaVolumePercentage: Int) {
+        val c = getReadyClient() ?: return
+        val event =
+            OutboundVolumeChangedEvent(
+                messageId = UUID.randomUUID().toString(),
+                username = config.username,
+                appInstanceId = config.appInstanceId,
+                data = OutboundVolumeChangedEvent.VolumeData(mediaVolumePercentage),
             )
         publishEventMessage(c, event)
     }

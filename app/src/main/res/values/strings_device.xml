@@ -77,12 +77,14 @@ Available options are:
 For user-owned devices without lock task mode, the device will auto-lock when unpinning, which is outside the control of %1$s."</string>
     <!-- UI labels, placeholders, and messages -->
     <string name="ui_blank_device_credentials" formatted="false">"(blank = device credentials)"</string>
+    <string name="ui_cannot_change_media_volume_on_this_device" formatted="false">"Cannot change the media volume on this device"</string>
     <string name="ui_cannot_lock_device_without_device_owner_privileges" formatted="false">"Cannot lock device without device owner privileges"</string>
     <string name="ui_disable_in_app_info" formatted="false">"Disable in App Info"</string>
     <string name="ui_e_g_20" formatted="false">"e.g. 20"</string>
     <string name="ui_enable_in_app_info" formatted="false">"Enable in App Info"</string>
     <string name="ui_error_kiosk_launch_requires_android_api_value_current">"Error: kiosk launch requires Android API %1$s+ (current: %2$s)."</string>
     <string name="ui_failed_to_lock_device_value">"Failed to lock device: %1$s"</string>
+    <string name="ui_failed_to_set_media_volume_value">"Failed to set media volume: %1$s"</string>
     <string name="ui_kiosk_control_panel" formatted="false">"Kiosk Control Panel"</string>
     <string name="ui_listening" tools:ignore="TypographyEllipsis" formatted="false">"Listening..."</string>
     <string name="ui_nfc_disabled" formatted="false">"(NFC disabled)"</string>

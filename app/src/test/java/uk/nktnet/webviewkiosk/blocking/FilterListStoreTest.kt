@@ -496,7 +496,7 @@ class FilterListStoreTest {
     fun largeListsAndCombinedStorageBeyondFormerLimitsAreAccepted() {
         // A Vivaldi URLhaus-sized document must fit, and copies must not run
         // into the former 32 MiB aggregate limit.
-        val text = "||malicious.example^\$document\n".repeat(550_000)
+        val text = $$"||malicious.example^$document\n".repeat(550_000)
         val byteCount = text.toByteArray().size.toLong()
         assertTrue(byteCount > 12L * 1024 * 1024)
         val original = store.importFrom("urlhaus.txt", text.byteInputStream())

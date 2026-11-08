@@ -54,7 +54,71 @@ describe("shared remote message editor", () => {
       if (definition.name === "toast")
         expect(message.data).toEqual({ message: "Hello from Webview Kiosk!" });
     }
-    expect(COMMANDS).toHaveLength(17);
+    expect(COMMANDS).toHaveLength(18);
+  });
+
+  it("validates default command payloads for MQTT and UnifiedPush", () => {
+    for (const transport of ["mqtt", "unifiedpush"] as const) {
+      for (const definition of COMMANDS) {
+        const missingDefault = (definition.fields ?? []).some(
+          (field) =>
+            field.required && definition.defaults?.[field.key] === undefined,
+        );
+        if (missingDefault) continue;
+        const message = createRemotePayload(
+          transport,
+          "command",
+          definition.name,
+        );
+        expect(
+          validateRemotePayload(
+            stringifyPayload(message),
+            transport,
+            "command",
+          ),
+          `${transport} ${definition.name}`,
+        ).toBe(JSON.stringify(message));
+      }
+    }
+  });
+
+  it("accepts set_volume values within 0-100 for MQTT and UnifiedPush", () => {
+    expect(
+      COMMANDS.find((command) => command.name === "set_volume")?.fields,
+    ).toEqual([expect.objectContaining({ key: "volume", min: 0, max: 100 })]);
+    for (const transport of ["mqtt", "unifiedpush"] as const) {
+      const payload = (data: unknown) =>
+        JSON.stringify({
+          ...createRemotePayload(transport, "command", "set_volume"),
+          data,
+        });
+      for (const volume of [0, 40, 100]) {
+        expect(
+          JSON.parse(
+            validateRemotePayload(payload({ volume }), transport, "command"),
+          ).data,
+        ).toEqual({ volume });
+      }
+      for (const data of [{}, { volume: "" }]) {
+        expect(() =>
+          validateRemotePayload(payload(data), transport, "command"),
+        ).toThrow("Volume (0-100) is required for Set volume.");
+      }
+      for (const volume of [-1, 101]) {
+        expect(() =>
+          validateRemotePayload(payload({ volume }), transport, "command"),
+        ).toThrow("Volume (0-100) must be at least 0 and at most 100.");
+      }
+      for (const volume of [4.5, "40", true]) {
+        expect(() =>
+          validateRemotePayload(payload({ volume }), transport, "command"),
+        ).toThrow("Volume (0-100) has an invalid value.");
+      }
+      // Out-of-range values stay editable in the form so they can be fixed.
+      expect(
+        assertEditablePayload(payload({ volume: 150 }), transport, "command"),
+      ).toMatchObject({ data: { volume: 150 } });
+    }
   });
 
   it("preserves custom metadata and changes only requested command fields", () => {

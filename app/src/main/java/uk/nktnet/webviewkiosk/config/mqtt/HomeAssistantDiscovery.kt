@@ -190,6 +190,27 @@ class HomeAssistantDiscovery(
                         "{{ value_json.systemBrightness }}",
                     ),
                 )
+                put(
+                    "media_volume",
+                    component("number", "media_volume", "Media volume") {
+                        put("command_topic", commandTopic)
+                        put(
+                            "command_template",
+                            "{{ {\"command\":\"set_volume\",\"targetInstances\":$target,\"data\":{\"volume\":value | int}} | tojson }}",
+                        )
+                        put("state_topic", stateTopic)
+                        put(
+                            "value_template",
+                            "{{ value_json.mediaVolumePercentage }}",
+                        )
+                        put("min", 0)
+                        put("max", 100)
+                        put("step", 1)
+                        put("mode", "slider")
+                        put("unit_of_measurement", "%")
+                        put("retain", false)
+                    },
+                )
                 commandComponents().forEach { (key, value) -> put(key, value) }
                 requestComponents().forEach { (key, value) -> put(key, value) }
                 settings.forEach { put(it.componentId, settingComponent(it)) }
