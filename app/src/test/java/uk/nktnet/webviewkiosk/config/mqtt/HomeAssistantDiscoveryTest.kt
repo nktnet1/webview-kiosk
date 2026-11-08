@@ -204,9 +204,6 @@ class HomeAssistantDiscoveryTest {
         assertTrue(command is InboundSetVolumeCommand)
         assertEquals(40, (command as InboundSetVolumeCommand).data.volume)
         assertEquals(setOf("instance-a"), command.targetInstances)
-        // Moving the slider must not count as a user interaction.
-        assertFalse(command.interact)
-        assertFalse(command.wakeScreen)
     }
 
     @Test

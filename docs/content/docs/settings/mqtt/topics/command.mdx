@@ -618,12 +618,6 @@ A [volume_changed](/docs/settings/mqtt/topics/event#volume-changed) event
 is published with the resulting volume. Devices with a fixed volume cannot be
 changed, and a toast message will be shown instead.
 
-Unlike other commands, `interact` defaults to `false` for `set_volume`.
-Changing the volume is not an interaction with the page, and is often done
-remotely (e.g. right before a page plays an alert sound), so by default it
-does not restore a dimmed screen's brightness or restart the inactivity
-timeout. Set `interact` to `true` to treat it as an interaction.
-
 Example Payload:
 
 ```json tab="Minimal"

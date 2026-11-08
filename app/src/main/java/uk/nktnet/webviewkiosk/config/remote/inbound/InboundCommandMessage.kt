@@ -216,9 +216,7 @@ data class InboundSetVolumeCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
-    // A volume change is not a page interaction: it should not restore a
-    // dimmed screen or restart the inactivity timeout unless asked to.
-    override val interact: Boolean = false,
+    override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
     val data: VolumeData,
 ) : InboundCommandMessage {

@@ -93,22 +93,6 @@ class InboundCommandMessageTest {
     }
 
     @Test
-    fun setVolumeOnlyInteractsWhenRequested() {
-        val defaultCommand =
-            InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
-                """{"command":"set_volume","data":{"volume":40}}"""
-            )
-        val interactingCommand =
-            InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
-                """{"command":"set_volume","data":{"volume":40},"interact":true}"""
-            )
-
-        assertFalse(defaultCommand.interact)
-        assertFalse(defaultCommand.wakeScreen)
-        assertTrue(interactingCommand.interact)
-    }
-
-    @Test
     fun notifyDefaultsAndPriorityAliasesRemainCompatible() {
         val defaultCommand =
             InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
