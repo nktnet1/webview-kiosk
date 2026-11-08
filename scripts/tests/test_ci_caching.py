@@ -72,6 +72,74 @@ class CiCachingTest(unittest.TestCase):
         self.assertNotIn("cache: pnpm", TESTS)
         self.assertNotIn("playwright", TESTS)
 
+    def test_android_ci_runs_only_for_relevant_changes_on_pushes_and_prs(self):
+        # Keep one identical allowlist for push and pull_request events.
+        # workflow_call and workflow_dispatch must remain unfiltered.
+        triggers = TESTS.split("\nconcurrency:", 1)[0]
+        match = re.search(
+            r"  push:\n    branches:\n      - main\n"
+            r"(?:    #[^\n]*\n)*"
+            r"    paths: &android_paths\n"
+            r"(?P<patterns>(?:      - '[^']+'\n)+)"
+            r"  pull_request:\n    paths: \*android_paths\n",
+            triggers,
+        )
+        self.assertIsNotNone(match)
+        paths = re.findall(r"^      - '([^']+)'$", match.group("patterns"), re.MULTILINE)
+        self.assertEqual(
+            [
+                "app/**",
+                "adblock/**",
+                "config/**",
+                "gradle/**",
+                "scripts/**",
+                "build.gradle.kts",
+                "settings.gradle.kts",
+                "gradle.properties",
+                "gradlew",
+                "gradlew.bat",
+                ".editorconfig",
+                ".github/workflows/tests.yaml",
+                ".github/workflows/release.yaml",
+            ],
+            paths,
+        )
+        self.assertIn("  workflow_dispatch:\n", triggers)
+        self.assertIn("  workflow_call:\n", triggers)
+
+        # These simple patterns are directory/** or exact filenames.
+        def matches(changed_files):
+            return any(
+                file.startswith(path[:-3] + "/") if path.endswith("/**")
+                else file == path
+                for file in changed_files
+                for path in paths
+            )
+
+        for changed_files in (
+            ["docs/content/docs/index.mdx"],
+            ["docs/src/components/example.tsx", "README.md"],
+            ["metadata/en-US/changelogs/123.txt"],
+            ["misc/icons/foreground.svg"],
+            [".github/CONTRIBUTING.md"],
+        ):
+            with self.subTest(ignored=changed_files):
+                self.assertFalse(matches(changed_files))
+        for changed_files in (
+            ["app/src/main/AndroidManifest.xml"],
+            ["adblock/src/main/kotlin/Filter.kt"],
+            ["config/detekt/braces.yml"],
+            ["gradle/libs.versions.toml"],
+            ["scripts/tests/test_ci_caching.py"],
+            ["gradle.properties"],
+            [".editorconfig"],
+            [".github/workflows/tests.yaml"],
+            [".github/workflows/release.yaml"],
+            ["docs/content/docs/index.mdx", "app/build.gradle.kts"],
+        ):
+            with self.subTest(included=changed_files):
+                self.assertTrue(matches(changed_files))
+
     def test_docs_validation_installs_and_caches_once(self):
         self.assertEqual(1, DOCS_CI.count("uses: pnpm/action-setup@v6"))
         self.assertEqual(1, DOCS_CI.count("uses: actions/setup-node@v6"))
