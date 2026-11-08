@@ -1,0 +1,8 @@
+## Unreleaseed
+
+Broken release due to R8 9.5.28 (AGP 9.5.0) optimising away
+java9.util.concurrent.ThreadLocalRandom (from android-retrostreams 1.7.4).
+
+Source:
+
+- https://issuetracker.google.com/u/1/issues/558217403#comment10

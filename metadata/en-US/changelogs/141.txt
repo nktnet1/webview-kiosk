@@ -1,0 +1,13 @@
+## Changes
+
+- Fixed app disappearing from Recents, authentication and MQTT
+- Added media volume control via MQTT and Home Assistant
+- Improved NFC scanning after screen wake
+- Improved WebView loading, stability and recovery
+- Improved content blocking and access to settings
+- Improved QR setup and device testing tools
+- Fixed Settings navigation and notification status on older Android
+
+## Warning
+
+- You may need to reselect your default home app
