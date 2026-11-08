@@ -1,0 +1,110 @@
+name: Docs CI
+
+permissions:
+  contents: read
+  pull-requests: read
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs-ci.yaml'
+      - '.github/workflows/docs.yaml'
+  # Docs Deployment reuses these checks on main and manual runs.
+  workflow_call:
+
+concurrency:
+  group: docs-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        working-directory: docs
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # Most docs-only edits do not affect the provisioning QR browser UI.
+      # Reserve Chromium installation and E2E runs for relevant changes.
+      - name: Detect browser-relevant docs changes
+        if: github.event_name != 'workflow_dispatch'
+        id: browser_changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            browser:
+              - 'docs/src/**'
+              - 'docs/tests/e2e/**'
+              - 'docs/vite.config.ts'
+              - 'docs/config/playwright.config.ts'
+              - 'docs/package.json'
+              - 'docs/pnpm-lock.yaml'
+              - '.github/workflows/docs-ci.yaml'
+              - '.github/workflows/docs.yaml'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: docs/package.json
+
+      - name: Set up Node.js and cache pnpm store
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: docs/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check lint and format
+        run: pnpm check
+
+      - name: Typecheck documentation
+        run: pnpm typecheck
+
+      - name: Run documentation unit tests
+        run: pnpm test
+
+      - name: Setup Pages
+        if: github.event_name != 'pull_request'
+        id: setup_pages
+        uses: actions/configure-pages@v5
+
+      - name: Build static site
+        run: pnpm build
+        env:
+          # Do not expose a repository token to pull-request build scripts.
+          GITHUB_TOKEN: ${{ github.event_name != 'pull_request' && github.token || '' }}
+          PUBLIC_DOCS_BASE_PATH: ${{ steps.setup_pages.outputs.base_path || '/' }}
+
+      - name: Install Chromium for browser tests
+        if: github.event_name == 'workflow_dispatch' || steps.browser_changes.outputs.browser == 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run documentation browser tests
+        if: github.event_name == 'workflow_dispatch' || steps.browser_changes.outputs.browser == 'true'
+        run: pnpm test:e2e
+        env:
+          PUBLIC_DOCS_BASE_PATH: ${{ steps.setup_pages.outputs.base_path || '/' }}
+
+      - name: Upload browser reports
+        if: always() && (github.event_name == 'workflow_dispatch' || steps.browser_changes.outputs.browser == 'true')
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-browser-results
+          path: |
+            docs/playwright-report/
+            docs/test-results/
+          if-no-files-found: ignore
+
+      - name: Upload artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs/dist/client

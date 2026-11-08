@@ -7,8 +7,25 @@ on:
   push:
     branches:
       - main
+    # Exclude docs/metadata-only changes from expensive Android verification.
+    paths: &android_paths
+      - 'app/**'
+      - 'adblock/**'
+      - 'config/**'
+      - 'gradle/**'
+      - 'scripts/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.editorconfig'
+      - '.github/workflows/tests.yaml'
+      - '.github/workflows/release.yaml'
   pull_request:
+    paths: *android_paths
   workflow_dispatch:
+  # Release verification must always run, regardless of changed paths.
   workflow_call:
 
 concurrency:

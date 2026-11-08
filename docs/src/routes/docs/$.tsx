@@ -24,6 +24,9 @@ import { staticFunctionMiddleware } from "#/lib/staticMiddlewareFunction";
 
 export const Route = createFileRoute("/docs/$")({
   component: Page,
+  // Metadata is generated at build time and only changes with a full deployment.
+  staleTime: Number.POSITIVE_INFINITY,
+  preloadStaleTime: Number.POSITIVE_INFINITY,
   loader: async ({ params }) => {
     const slugs = params._splat?.split("/") ?? [];
     const data = await loader({ data: slugs });

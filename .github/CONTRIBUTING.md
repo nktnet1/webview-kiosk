@@ -103,7 +103,15 @@ pnpm test:e2e
 
 See [docs/README.md](../docs/README.md) for the development server.
 CI checks are defined in the [Android](./workflows/tests.yaml) and
-[documentation](./workflows/docs.yaml) workflows.
+[documentation CI](./workflows/docs-ci.yaml) workflows. Documentation CI runs
+on relevant pull requests and is reused by the
+[documentation deployment](./workflows/docs.yaml) workflow for pushes to `main`
+and manual deployments. The deployment workflow does not run on pull requests.
+Android CI runs for changes to application code, Gradle configuration, CI
+scripts, or associated workflows; docs-only and metadata-only PRs do not
+trigger it. Release verification still runs the full Android checks through
+`workflow_call`, regardless of changed paths. Do not require a path-filtered
+Android check in branch protection: GitHub leaves it pending when skipped.
 
 ## Offline test assets
 
@@ -124,7 +132,7 @@ Concatenate numbered archive parts in order before extraction. The export's
 
 ## R8 release audits
 
-Every Android pull request builds the non-debuggable, R8-optimised `smokeRelease`
+Android CI builds the non-debuggable, R8-optimised `smokeRelease`
 APK with test signing. Release CI audits the **actual signed release APK**. Both
 jobs run `scripts/r8/r8_audit.py`, which checks the retrostreams constructor guard,
 all `@JavascriptInterface` method names, signatures and runtime annotations,
