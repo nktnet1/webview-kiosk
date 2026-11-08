@@ -46,6 +46,7 @@ import {
 } from "@tanstack/react-start";
 import { fromJSON, toJSONAsync } from "seroval";
 import { joinURL } from "ufo";
+import { createAsyncRequestCache } from "#/lib/async-request-cache";
 
 type StaticCachedResult = {
   result: any;
@@ -113,7 +114,9 @@ const jsonToFilenameSafeString = (json: any) => {
 };
 
 const staticClientCache =
-  typeof document !== "undefined" ? new Map<string, any>() : null;
+  typeof document !== "undefined"
+    ? createAsyncRequestCache<StaticCachedResult>()
+    : null;
 
 async function addItemToCache({
   functionId,
@@ -157,17 +160,23 @@ const fetchItem = async ({
   const hash = jsonToFilenameSafeString(data);
   const url = await getStaticCacheUrl({ functionId, hash });
 
-  let result: any = staticClientCache?.get(url);
-
   const basePath = process.env.TSS_ROUTER_BASEPATH ?? "/";
+  const requestUrl = joinURL("/", basePath, url);
 
-  result = await fetch(joinURL("/", basePath, url), {
-    method: "GET",
-  })
-    .then((r) => r.json())
-    .then((d) => fromJSON(d, { plugins: getDefaultSerovalPlugins() }));
+  const load = async (): Promise<StaticCachedResult> => {
+    const response = await fetch(requestUrl, { method: "GET" });
+    if (!response.ok) {
+      throw new Error(
+        `Failed to load static server function data at ${requestUrl}: ${response.status}`,
+      );
+    }
 
-  return result;
+    return fromJSON(await response.json(), {
+      plugins: getDefaultSerovalPlugins(),
+    }) as StaticCachedResult;
+  };
+
+  return staticClientCache ? staticClientCache(requestUrl, load) : load();
 };
 
 export const staticFunctionMiddleware = createMiddleware({ type: "function" })
