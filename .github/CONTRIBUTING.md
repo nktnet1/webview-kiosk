@@ -103,7 +103,10 @@ pnpm test:e2e
 
 See [docs/README.md](../docs/README.md) for the development server.
 CI checks are defined in the [Android](./workflows/tests.yaml) and
-[documentation](./workflows/docs.yaml) workflows.
+[documentation CI](./workflows/docs-ci.yaml) workflows. Documentation CI runs
+on relevant pull requests and is reused by the
+[documentation deployment](./workflows/docs.yaml) workflow for pushes to `main`
+and manual deployments. The deployment workflow does not run on pull requests.
 
 ## Offline test assets
 
