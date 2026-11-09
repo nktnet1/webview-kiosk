@@ -17,14 +17,14 @@ matrix as passed until it has been run. Use disposable test devices and record
 Android version, OEM/build, package source, full user ID, owner component,
 Dhizuku version, ADB result, and actual `dumpsys activity` Lock Task state.
 
-| Device/API | Cases | Expected result |
-| --- | --- | --- |
-| Android 5–7.1 / 21–25 | Native Device Owner; pre-existing allowlist; unmanaged app | Existing entries survive self-allowlisting if the legacy getter is available; unsupported getter leaves policy untouched. No feature setter calls. Detailed lock state is Unknown on 21–22. |
-| Android 8–8.1 / 26–27 | Native Device Owner; affiliated secondary-user PO; independent PO | Public package enumeration; affiliated secondary-user policies allowed by Android; independent PO has no assumed Lock Task access; features disabled. |
-| Android 9–10 / 28–29 | Native and Dhizuku Device Owner; native and Dhizuku full-user PO without DO | Correct source/owner identity; full-user scope through the owner API; packages and features work; external entries preserved. |
-| Android 11–12L / 30–32 | Same modes; ordinary personal/work-profile copies; affiliated user with DO | Correct `UserManager` scope; ordinary work-profile policy controls disabled; profile lock cannot be presented as whole-device lock. Advanced activity-start flag is gated to 30+. |
-| Android 13+ / 33+ through target API 37 | Same modes; non-work profile types where available; policy coexistence/conflict | Other profile types are distinguished; denied policy reads/writes are safe; resolved policy and actual allowlisting decide behaviour. |
-| Headless-system-user device | Foreground full user has an ID other than 0 | Detection uses profile APIs, not user-0 identity; ADB tool uses the supplied full-user ID. |
+| Device/API                              | Cases                                                                           | Expected result                                                                                                                                                                             |
+| --------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Android 5–7.1 / 21–25                   | Native Device Owner; pre-existing allowlist; unmanaged app                      | Existing entries survive self-allowlisting if the legacy getter is available; unsupported getter leaves policy untouched. No feature setter calls. Detailed lock state is Unknown on 21–22. |
+| Android 8–8.1 / 26–27                   | Native Device Owner; affiliated secondary-user PO; independent PO               | Public package enumeration; affiliated secondary-user policies allowed by Android; independent PO has no assumed Lock Task access; features disabled.                                       |
+| Android 9–10 / 28–29                    | Native and Dhizuku Device Owner; native and Dhizuku full-user PO without DO     | Correct source/owner identity; full-user scope through the owner API; packages and features work; external entries preserved.                                                               |
+| Android 11–12L / 30–32                  | Same modes; ordinary personal/work-profile copies; affiliated user with DO      | Correct `UserManager` scope; ordinary work-profile policy controls disabled; profile lock cannot be presented as whole-device lock. Advanced activity-start flag is gated to 30+.           |
+| Android 13+ / 33+ through target API 37 | Same modes; non-work profile types where available; policy coexistence/conflict | Other profile types are distinguished; denied policy reads/writes are safe; resolved policy and actual allowlisting decide behaviour.                                                       |
+| Headless-system-user device             | Foreground full user has an ID other than 0                                     | Detection uses profile APIs, not user-0 identity; ADB tool uses the supplied full-user ID.                                                                                                  |
 
 For each eligible owner mode:
 
