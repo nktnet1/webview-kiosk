@@ -39,7 +39,7 @@ For each eligible owner mode:
 3. Allowlist another installed app and an uninstalled package before opening
    settings. Add/remove a third app. Confirm the original entries survive. Make
    a second policy change while a package dialog is open and repeat the edit.
-4. Lock and verify `LOCK_TASK_MODE_LOCKED` / About `LOCK_TASK`. Remove policy
+4. Lock and verify `LOCK_TASK_MODE_LOCKED` / `get_system_info` response `data.app.lockState` = `LOCK_TASK`. Remove policy
    authority or allowlisting and verify the reported state is not silently
    labelled Lock Task. An ordinary unmanaged or work-profile app can request
    pinning; approve it manually and confirm `SCREEN_PINNING`.

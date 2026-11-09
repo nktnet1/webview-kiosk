@@ -215,9 +215,10 @@ adding or removing an app.
 
 4. Open the app in that user. Check **Settings → Device → Manage Device Policies**
    and **Settings → About**. Confirm Profile Owner, Full Android user, and Lock
-   Task policy capability. After locking, `LOCK_TASK` is genuine kiosk mode;
-   `SCREEN_PINNING` is the user-exitable mode. Being allowlisted alone does not
-   mean Lock Task is currently running.
+   Task policy capability. The `get_system_info` response field
+   `data.app.lockState` reports `LOCK_TASK` for genuine kiosk mode and `SCREEN_PINNING` for the
+   user-exitable mode. Being allowlisted alone does not mean Lock Task is
+   currently running.
 
 The [installation tool](/tools/qr-installation) can generate these commands for
 the chosen user and installation source. Account, existing-owner, and completed
@@ -225,10 +226,41 @@ setup restrictions vary by Android release and OEM. Use an eligible, account-fre
 test device; follow the exact `dpm` error instead of bypassing ownership checks.
 Do not remove an organisation's existing management configuration to enroll.
 
-There is **no Android QR provisioning mode for assigning a Profile Owner to the
-existing main user**. `PROVISIONING_MODE_MANAGED_PROFILE` creates a work profile;
-it does not provision this mode. Webview Kiosk's QR provisioning and provisioning
-activity continue to request fully managed Device Owner enrollment.
+#### Why main-user Profile Owner setup uses ADB [#profile-owner-qr]
+
+Android supports **Profile Owner enrollment through QR for a separate work
+profile** on compatible devices and Android versions. It does not expose a
+standard QR enrollment mode that assigns a Profile Owner to the existing main
+user. Google's provisioning guide uses "Profile Owner" for work-profile
+enrollment; it does not mean full-user Profile Owner enrollment.
+
+The setup wizard owns the provisioning flow. On Android 12+, it supplies the
+allowed modes to the DPC, which must return one of those modes:
+
+| Android provisioning mode | Result |
+| --- | --- |
+| `PROVISIONING_MODE_FULLY_MANAGED_DEVICE` | Device Owner on a fully managed device |
+| `PROVISIONING_MODE_MANAGED_PROFILE` | Profile Owner in a separate managed work profile |
+| `PROVISIONING_MODE_MANAGED_PROFILE_ON_PERSONAL_DEVICE` | Profile Owner in a separate work profile on a personal device, when offered by the initiator |
+
+None is an "existing main-user Profile Owner" mode. Adding a custom mode or user
+ID to a QR payload or its admin extras does not grant the app authority to
+change Android's owner-assignment rules. Switching to a work-profile mode would
+create a different user scope, with different kiosk restrictions.
+
+The ADB `dpm set-profile-owner --user USER_ID` command is a privileged shell setup
+path that directly requests assignment for the selected existing user, subject
+to Android's account and ownership checks. The tool therefore offers ADB for
+main-user Profile Owner setup and QR for Device Owner setup. Its work-profile
+option explains the separate enrollment flow; it does not generate a main-user
+Profile Owner QR code. Webview Kiosk's provisioning activity continues to request
+fully managed enrollment and rejects a work-profile-only list of allowed modes.
+
+References:
+
+- [Google's provisioning modes and version matrix](https://developers.google.com/android/work/play/emm-api/prov-devices)
+- [Allowed provisioning mode selection](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#ACTION_GET_PROVISIONING_MODE)
+- [Android provisioning mode constants](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#PROVISIONING_MODE_MANAGED_PROFILE)
 
 #### Capabilities and limits [#owner-capabilities]
 

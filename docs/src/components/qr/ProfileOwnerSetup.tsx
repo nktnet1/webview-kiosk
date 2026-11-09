@@ -20,10 +20,11 @@ export default function ProfileOwnerSetup() {
     <section className="max-w-3xl space-y-5 rounded-2xl border bg-card p-5 sm:p-6">
       <h2 className="text-xl font-semibold">Main-user Profile Owner via ADB</h2>
       <p>
-        Android has no QR provisioning mode that assigns a Profile Owner to the
-        existing main user. Work-profile provisioning creates a separate
-        profile. Install the selected app first, enable USB debugging, and
-        connect ADB.
+        QR enrollment can create a Profile Owner in a separate work profile.
+        Android's setup wizard has no mode that assigns a Profile Owner to the
+        existing main user. Adding a user ID to the QR data cannot change that
+        scope. Install the selected app first, enable USB debugging, and connect
+        ADB.
       </p>
       <p>Find the foreground full user and inspect the users on your device:</p>
       <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-sm">

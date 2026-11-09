@@ -203,7 +203,7 @@ export default function QRCodeForm() {
           </p>
           <a
             className="underline"
-            href="https://developer.android.com/work/dpc/provisioning"
+            href="https://developers.google.com/android/work/play/emm-api/prov-devices"
           >
             Android provisioning documentation
           </a>

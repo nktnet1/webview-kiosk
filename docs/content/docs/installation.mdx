@@ -175,7 +175,9 @@ For an eligible full-user Profile Owner, install the app normally, then use
 [installation tool](/tools/qr-installation) includes a **Main-user Profile Owner
 (ADB)** option with a command generator for Webview Kiosk or Dhizuku.
 
-Android QR enrollment cannot assign a Profile Owner to an existing main user.
+Android supports QR enrollment for a Profile Owner in a separate work profile,
+but it cannot assign a Profile Owner to the existing main user through the
+standard QR flow. See [why main-user setup uses ADB](/docs/security#profile-owner-qr).
 The QR option above provisions Device Owner on a fresh device. Managed
 work-profile enrollment creates a separate profile and does not grant ordinary
 work-profile owners full-user kiosk authority. Independent full-user Profile

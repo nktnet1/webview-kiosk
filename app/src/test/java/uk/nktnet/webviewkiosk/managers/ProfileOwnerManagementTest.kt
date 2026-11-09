@@ -676,6 +676,12 @@ class LockTaskAuthorityShadow : ShadowDevicePolicyManager() {
         }
     }
 
+    // Robolectric invokes this hook reflectively. Stock Robolectric does not
+    // model this owner query on API 24–29; keep it even if an IDE reports no uses.
+    @Suppress("unused", "UNUSED_PARAMETER")
+    @Implementation(minSdk = 24)
+    fun isManagedProfile(admin: ComponentName): Boolean = managedProfile
+
     @Implementation
     public override fun getLockTaskPackages(admin: ComponentName): Array<String> {
         if (!packagesAllowed) {
