@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
+import uk.nktnet.webviewkiosk.ui.theme.warning
 
 @Composable
 fun GenericSettingFieldDialog(
@@ -123,7 +124,7 @@ fun GenericSettingFieldDialog(
                 if (disabledReason != null) {
                     Text(
                         text = disabledReason,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.warning,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
                     )

@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.ui.theme.warning
 
 @Composable
 fun <T> GenericSettingFieldItem(
@@ -75,7 +76,7 @@ fun <T> GenericSettingFieldItem(
                     if (disabledReason != null) {
                         Text(
                             text = disabledReason,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.warning,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(top = 4.dp),
                         )

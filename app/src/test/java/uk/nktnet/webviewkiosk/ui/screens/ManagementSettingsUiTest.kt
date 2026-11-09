@@ -6,12 +6,17 @@ import android.os.Looper
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.semantics.SemanticsActions
@@ -19,6 +24,7 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.text.TextLayoutResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -53,6 +59,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.theme.warning
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], qualifiers = "w480dp-h1000dp")
@@ -231,6 +238,46 @@ class ManagementSettingsUiTest {
     }
 
     @Test
+    fun availabilityWarningsAndRestrictionsUseDistinctThemeColors() {
+        restrictHome()
+        val reason = message(R.string.ui_lock_task_work_profile_unavailable)
+        for (colors in listOf(lightColorScheme(), darkColorScheme())) {
+            render(colors) { LockTaskFeatureHomeSetting(reason) }
+            assertTextColor(reason, colors.warning)
+            assertTextColor(message(R.string.ui_restricted), colors.error)
+            openField(message(R.string.device_owner_lock_task_feature_home_title))
+            assertTextColor(reason, colors.warning)
+            assertTextColor(
+                message(R.string.ui_this_setting_is_managed_by_your_it_admin),
+                colors.error,
+            )
+            assertReadOnlyDialog()
+            click("Close")
+        }
+    }
+
+    @Test
+    fun warningTextHasReadableContrastOnLightAndDarkMaterialSurfaces() {
+        for (colors in listOf(lightColorScheme(), darkColorScheme())) {
+            val warning = colors.warning.luminance()
+            for (surface in
+                listOf(
+                    colors.surface,
+                    colors.surfaceVariant,
+                    colors.surfaceContainerLow,
+                    colors.surfaceContainerHigh,
+                    colors.surfaceContainerHighest,
+                )) {
+                val background = surface.luminance()
+                val contrast =
+                    (maxOf(warning, background) + 0.05f) /
+                        (minOf(warning, background) + 0.05f)
+                assertTrue("Warning contrast: $contrast", contrast >= 4.5f)
+            }
+        }
+    }
+
+    @Test
     fun availableBooleanFieldRetainsItsSaveBehaviour() {
         var saved: Boolean? = null
         render {
@@ -271,9 +318,26 @@ class ManagementSettingsUiTest {
 
     private fun message(id: Int) = controller.get().getString(id)
 
-    private fun render(content: @Composable () -> Unit) {
-        view.setContent { MaterialTheme { content() } }
+    private fun render(
+        colors: ColorScheme = lightColorScheme(),
+        content: @Composable () -> Unit,
+    ) {
+        view.setContent { MaterialTheme(colorScheme = colors) { content() } }
         frames()
+    }
+
+    private fun assertTextColor(value: String, expected: Color) {
+        val matches = nodes().filter { value in text(it) }
+        assertTrue(value, matches.isNotEmpty())
+        for (node in matches) {
+            val results = mutableListOf<TextLayoutResult>()
+            assertTrue(
+                node.config[SemanticsActions.GetTextLayoutResult]
+                    .action!!
+                    .invoke(results)
+            )
+            assertEquals(value, expected, results.single().layoutInput.style.color)
+        }
     }
 
     private fun openField(label: String) = click(label)

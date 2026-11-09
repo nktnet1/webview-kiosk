@@ -35,15 +35,15 @@
     <string name="ui_management_profile">Android Profile</string>
     <string name="ui_cannot_launch_apps_while_screen_pinned">Other apps cannot be launched while screen pinning is active.</string>
     <string name="ui_management_native">Native</string>
-    <string name="ui_management_lock_task_available">Lock Task policy access available</string>
-    <string name="ui_lock_task_requires_android_8">Requires Android 8 or later.</string>
-    <string name="ui_lock_task_requires_android_9">Requires Android 9 or later.</string>
-    <string name="ui_lock_task_requires_android_11">Requires Android 11 or later.</string>
-    <string name="ui_lock_task_owner_access_required">Owner access required. Configure an owner or grant Dhizuku permission.</string>
-    <string name="ui_lock_task_dhizuku_permission_required">Dhizuku owner permission is not granted. Grant permission or reconnect Dhizuku.</string>
-    <string name="ui_lock_task_work_profile_unavailable">Android has not granted Lock Task policy access in this work profile.</string>
-    <string name="ui_lock_task_profile_unavailable">Android has not granted Lock Task policy access in this profile.</string>
-    <string name="ui_lock_task_policy_access_denied">Android has not granted this owner Lock Task policy access.</string>
+    <string name="ui_management_lock_task_available">Lock Task policies available</string>
+    <string name="ui_lock_task_requires_android_8">Requires Android 8+</string>
+    <string name="ui_lock_task_requires_android_9">Requires Android 9+</string>
+    <string name="ui_lock_task_requires_android_11">Requires Android 11+</string>
+    <string name="ui_lock_task_owner_access_required">Owner permission required</string>
+    <string name="ui_lock_task_dhizuku_permission_required">Dhizuku permission required</string>
+    <string name="ui_lock_task_work_profile_unavailable">Unavailable in this work profile</string>
+    <string name="ui_lock_task_profile_unavailable">Unavailable in this profile</string>
+    <string name="ui_lock_task_policy_access_denied">Lock Task access denied</string>
     <string name="ui_view_setting">View setting</string>
-    <string name="ui_lock_task_policy_update_failed">The Lock Task allowlist could not be read or updated. Policy access may have changed.</string>
+    <string name="ui_lock_task_policy_update_failed">Could not update Lock Task packages.</string>
 </resources>

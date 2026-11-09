@@ -32,6 +32,7 @@ import uk.nktnet.webviewkiosk.config.data.ManagementCapabilities
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.ui.resources.lockTaskPolicyUnavailableReason
+import uk.nktnet.webviewkiosk.ui.theme.warning
 
 @Composable
 fun ManagementStatusCard(
@@ -108,7 +109,12 @@ fun ManagementStatusCard(
                     policyReason ?: R.string.ui_management_lock_task_available
                 ),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color =
+                    if (policyReason != null) {
+                        MaterialTheme.colorScheme.warning
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
             )
         }
     }
