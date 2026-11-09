@@ -1,3 +1,5 @@
+@file:Suppress("UsePropertyAccessSyntax")
+
 package uk.nktnet.webviewkiosk.managers
 
 import android.app.Activity
@@ -13,7 +15,11 @@ import android.os.UserManager
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
 import java.time.Duration
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -252,7 +258,7 @@ class ProfileOwnerManagementTest {
                 "getUserInfo",
                 ReflectionHelpers.ClassParameter.from(
                     Int::class.javaPrimitiveType!!,
-                    ReflectionHelpers.callInstanceMethod<Int>(app, "getUserId"),
+                    ReflectionHelpers.callInstanceMethod(app, "getUserId"),
                 ),
             )
         val profileFlag =
@@ -669,9 +675,6 @@ class LockTaskAuthorityShadow : ShadowDevicePolicyManager() {
             featureWrites = 0
         }
     }
-
-    @Implementation(minSdk = 24)
-    fun isManagedProfile(admin: ComponentName): Boolean = managedProfile
 
     @Implementation
     public override fun getLockTaskPackages(admin: ComponentName): Array<String> {

@@ -1,3 +1,5 @@
+@file:Suppress("UsePropertyAccessSyntax")
+
 package uk.nktnet.webviewkiosk.managers
 
 import android.app.admin.DevicePolicyManager
@@ -5,7 +7,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import android.os.UserManager
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -54,10 +54,8 @@ object DeviceOwnerManager {
     internal var sharedOwnerBridge: SharedOwnerBridge =
         object : SharedOwnerBridge {
             override fun init(context: Context): Boolean {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-                    return false
-                }
-                return HiddenApiBypass.setHiddenApiExemptions("") &&
+                return Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                    HiddenApiBypass.setHiddenApiExemptions("") &&
                     Dhizuku.init(context)
             }
 
@@ -351,26 +349,24 @@ object DeviceOwnerManager {
         packageName: String,
         allowed: Boolean,
     ): Boolean {
-        if (!hasOwnerPermission(context)) {
-            return false
-        }
-        return try {
-            val current = readLockTaskPackages().toSet()
-            val updated =
-                if (allowed) {
-                    current + packageName
-                } else {
-                    current - packageName
+        return hasOwnerPermission(context) &&
+            try {
+                val current = readLockTaskPackages().toSet()
+                val updated =
+                    if (allowed) {
+                        current + packageName
+                    } else {
+                        current - packageName
+                    }
+                if (current != updated) {
+                    DPM.setLockTaskPackages(DAR, updated.toTypedArray())
                 }
-            if (current != updated) {
-                DPM.setLockTaskPackages(DAR, updated.toTypedArray())
+                // Policies can conflict or become unaffiliated while the UI is open.
+                (packageName in readLockTaskPackages()) == allowed
+            } catch (e: Exception) {
+                Log.w(javaClass.simpleName, "Unable to update lock task package", e)
+                false
             }
-            // Policies can conflict or become unaffiliated while the UI is open.
-            (packageName in readLockTaskPackages()) == allowed
-        } catch (e: Exception) {
-            Log.w(javaClass.simpleName, "Unable to update lock task package", e)
-            false
-        }
     }
 
     @Synchronized
