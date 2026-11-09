@@ -6,7 +6,6 @@
     <string name="ui_confirm_remove_device_owner">"Remove management ownership from %1$s?\n\nThis action is intended for testing. Policy cleanup is best-effort: some policies and user data may remain. For production unenrollment, use your managed reset process. Lock Task Mode will require allowlisting by another eligible DPC; otherwise locking uses Screen Pinning."</string>
     <string name="ui_deactivate" formatted="false">"Deactivate"</string>
     <string name="ui_deactivate_device_owner" formatted="false">"Deactivate Owner"</string>
-    <string name="ui_device_owner_not_configured">"%1$s has no active management owner permission.\nPolicy controls are unavailable; an external DPC can still allowlist this app."</string>
     <string name="ui_dhizuku" formatted="false">"Dhizuku"</string>
     <string name="ui_dpm_value_error_value">"DPM %1$s) error: %2$s"</string>
     <string name="ui_error_lock_task_feature_home_under_device_owner_is_req" formatted="false">"Error: lock task feature HOME (under Device Policies) is required."</string>
@@ -29,13 +28,22 @@
     <string name="ui_transfer_ownership" formatted="false">"Transfer Ownership"</string>
     <string name="ui_value_has_been_added_to_lock_task_packages">"%1$s has been added to lock task packages."</string>
     <string name="ui_value_has_been_removed_from_lock_task_packages">"%1$s has been removed from lock task packages."</string>
-    <string name="ui_owner_status">"%1$s · %2$s"</string>
-    <string name="ui_shared_owner_status">"Dhizuku: %1$s · %2$s"</string>
     <string name="ui_management_owner_none">No owner permission</string>
     <string name="ui_management_unknown">Unknown</string>
-    <string name="ui_management_full_user">Full Android user</string>
-    <string name="ui_management_work_profile">Managed work profile</string>
-    <string name="ui_management_profile">Android profile</string>
-    <string name="ui_lock_task_policy_unavailable">Lock Task policy access is unavailable for this owner or Android version. Ordinary work-profile ownership does not grant kiosk policy access. Another eligible DPC can allowlist the app.</string>
+    <string name="ui_management_full_user">Full User</string>
+    <string name="ui_management_work_profile">Managed Work Profile</string>
+    <string name="ui_management_profile">Android Profile</string>
     <string name="ui_cannot_launch_apps_while_screen_pinned">Other apps cannot be launched while screen pinning is active.</string>
+    <string name="ui_management_native">Native</string>
+    <string name="ui_management_lock_task_available">Lock Task policy access available</string>
+    <string name="ui_lock_task_requires_android_8">Requires Android 8 or later.</string>
+    <string name="ui_lock_task_requires_android_9">Requires Android 9 or later.</string>
+    <string name="ui_lock_task_requires_android_11">Requires Android 11 or later.</string>
+    <string name="ui_lock_task_owner_access_required">Owner access required. Configure an owner or grant Dhizuku permission.</string>
+    <string name="ui_lock_task_dhizuku_permission_required">Dhizuku owner permission is not granted. Grant permission or reconnect Dhizuku.</string>
+    <string name="ui_lock_task_work_profile_unavailable">Android has not granted Lock Task policy access in this work profile.</string>
+    <string name="ui_lock_task_profile_unavailable">Android has not granted Lock Task policy access in this profile.</string>
+    <string name="ui_lock_task_policy_access_denied">Android has not granted this owner Lock Task policy access.</string>
+    <string name="ui_view_setting">View setting</string>
+    <string name="ui_lock_task_policy_update_failed">The Lock Task allowlist could not be read or updated. Policy access may have changed.</string>
 </resources>

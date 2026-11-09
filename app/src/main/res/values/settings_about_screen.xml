@@ -4,7 +4,7 @@
     <string name="about_open_app_info">Open App Info</string>
     <string name="about_section_app">App</string>
     <string name="about_section_device">Device</string>
-    <string name="about_section_management">Management &amp; Kiosk</string>
+    <string name="about_section_management">Management</string>
 
     <!-- App Info Labels -->
     <string name="about_app_name">Name</string>

@@ -41,6 +41,7 @@ import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
+import uk.nktnet.webviewkiosk.ui.components.setting.ManagementStatusCard
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.DeviceAdminReceiverListDialog
@@ -53,7 +54,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureNotificationsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
-import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
+import uk.nktnet.webviewkiosk.ui.resources.lockTaskPolicyUnavailableReason
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 import uk.nktnet.webviewkiosk.utils.openPackage
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
@@ -101,40 +102,36 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
-            if (!hasOwnerPermission) {
-                Text(
-                    text =
-                        stringResource(
-                            R.string.ui_device_owner_not_configured,
-                            stringResource(R.string.app_name),
-                        ),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(top = 6.dp),
-                )
-            }
+            ManagementStatusCard(deviceOwnerStatus, hasOwnerPermission, capabilities)
 
-            Spacer(modifier = Modifier.height(6.dp))
+            val featureReason =
+                lockTaskPolicyUnavailableReason(
+                        sdkInt = Build.VERSION.SDK_INT,
+                        minimumSdk = Build.VERSION_CODES.P,
+                        status = deviceOwnerStatus,
+                        hasOwnerPermission = hasOwnerPermission,
+                        policyAccess = capabilities.lockTaskFeatures,
+                    )
+                    ?.let { stringResource(it) }
+            val blockActivityReason =
+                lockTaskPolicyUnavailableReason(
+                        sdkInt = Build.VERSION.SDK_INT,
+                        minimumSdk = Build.VERSION_CODES.R,
+                        status = deviceOwnerStatus,
+                        hasOwnerPermission = hasOwnerPermission,
+                        policyAccess = capabilities.lockTaskFeatures,
+                    )
+                    ?.let { stringResource(it) }
+            val packagesReason =
+                lockTaskPolicyUnavailableReason(
+                        sdkInt = Build.VERSION.SDK_INT,
+                        minimumSdk = Build.VERSION_CODES.O,
+                        status = deviceOwnerStatus,
+                        hasOwnerPermission = hasOwnerPermission,
+                        policyAccess = capabilities.lockTaskPackages,
+                    )
+                    ?.let { stringResource(it) }
 
-            Text(
-                text =
-                    stringResource(
-                        if (deviceOwnerStatus.mode == DeviceOwnerMode.Dhizuku) {
-                            R.string.ui_shared_owner_status
-                        } else {
-                            R.string.ui_owner_status
-                        },
-                        stringResource(deviceOwnerStatus.owner.displayLabelRes),
-                        stringResource(deviceOwnerStatus.userType.displayLabelRes),
-                    ),
-                modifier = Modifier.padding(vertical = 6.dp),
-            )
-            if (!capabilities.lockTaskPackages) {
-                Text(
-                    stringResource(R.string.ui_lock_task_policy_unavailable),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
             if (capabilities.removeOwner) {
                 Button(
                     onClick = { showDeviceOwnerRemovalDialog = true },
@@ -173,34 +170,35 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 DividerDefaults.color,
             )
 
-            LockTaskFeatureHomeSetting(enabled = capabilities.lockTaskFeatures)
-            LockTaskFeatureOverviewSetting(enabled = capabilities.lockTaskFeatures)
-            LockTaskFeatureGlobalActionsSetting(
-                enabled = capabilities.lockTaskFeatures
-            )
-            LockTaskFeatureNotificationsSetting(
-                enabled = capabilities.lockTaskFeatures
-            )
-            LockTaskFeatureSystemInfoSetting(enabled = capabilities.lockTaskFeatures)
-            LockTaskFeatureKeyguardSetting(enabled = capabilities.lockTaskFeatures)
+            LockTaskFeatureHomeSetting(disabledReason = featureReason)
+            LockTaskFeatureOverviewSetting(disabledReason = featureReason)
+            LockTaskFeatureGlobalActionsSetting(disabledReason = featureReason)
+            LockTaskFeatureNotificationsSetting(disabledReason = featureReason)
+            LockTaskFeatureSystemInfoSetting(disabledReason = featureReason)
+            LockTaskFeatureKeyguardSetting(disabledReason = featureReason)
             LockTaskFeatureBlockActivityStartInTaskSetting(
-                enabled =
-                    capabilities.lockTaskFeatures &&
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                disabledReason = blockActivityReason
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
-                enabled =
-                    capabilities.lockTaskPackages &&
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O,
+                enabled = packagesReason == null,
                 onClick = {
                     showLockTaskPackagesDialog = true
                 },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
             ) {
                 Text(stringResource(R.string.ui_manage_lock_task_packages))
+            }
+
+            if (packagesReason != null) {
+                Text(
+                    packagesReason,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
 
             Spacer(modifier = Modifier.height(32.dp))

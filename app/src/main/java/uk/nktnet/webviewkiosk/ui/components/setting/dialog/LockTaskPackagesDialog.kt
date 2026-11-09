@@ -208,7 +208,7 @@ fun RemoveLockTaskAppDialog(
                             )
                         ) {
                             context.getString(
-                                R.string.ui_lock_task_policy_unavailable
+                                R.string.ui_lock_task_policy_update_failed
                             )
                         }
                         ToastManager.show(
@@ -305,7 +305,7 @@ fun AddLockTaskPackagesDialog(
                         true,
                     )
                 ) {
-                    context.getString(R.string.ui_lock_task_policy_unavailable)
+                    context.getString(R.string.ui_lock_task_policy_update_failed)
                 }
                 ToastManager.show(
                     context,

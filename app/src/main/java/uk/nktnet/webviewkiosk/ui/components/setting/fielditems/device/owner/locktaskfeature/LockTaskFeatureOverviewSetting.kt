@@ -10,7 +10,7 @@ import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun LockTaskFeatureOverviewSetting(enabled: Boolean = true) {
+fun LockTaskFeatureOverviewSetting(disabledReason: String?) {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
     val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW
@@ -21,10 +21,11 @@ fun LockTaskFeatureOverviewSetting(enabled: Boolean = true) {
         infoText = stringResource(R.string.setting_info_lock_task_feature_overview),
         initialValue = userSettings.lockTaskFeatureOverview,
         settingKey = settingKey,
-        restricted = userSettings.isRestricted(settingKey) || !enabled,
+        restricted = userSettings.isRestricted(settingKey),
+        disabledReason = disabledReason,
         onSave = {
             if (
-                enabled &&
+                disabledReason == null &&
                     DeviceOwnerManager.getCapabilities(context).lockTaskFeatures
             ) {
                 userSettings.lockTaskFeatureOverview = it

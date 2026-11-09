@@ -12,6 +12,7 @@ fun BooleanSettingFieldItem(
     settingKey: String,
     restricted: Boolean,
     onSave: (Boolean) -> Unit,
+    disabledReason: String? = null,
     itemText: (@Composable (Boolean) -> String)? = null,
     extraContent: (@Composable ((setValue: (Boolean) -> Unit) -> Unit))? = null,
 ) {
@@ -33,6 +34,7 @@ fun BooleanSettingFieldItem(
         initialValue = initialValue,
         settingKey = settingKey,
         restricted = restricted,
+        disabledReason = disabledReason,
         onSave = onSave,
         itemText = resolvedItemText,
         extraContent = extraContent,

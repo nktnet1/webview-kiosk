@@ -10,7 +10,7 @@ import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun LockTaskFeatureBlockActivityStartInTaskSetting(enabled: Boolean = true) {
+fun LockTaskFeatureBlockActivityStartInTaskSetting(disabledReason: String?) {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
     val settingKey =
@@ -28,10 +28,11 @@ fun LockTaskFeatureBlockActivityStartInTaskSetting(enabled: Boolean = true) {
             ),
         initialValue = userSettings.lockTaskFeatureBlockActivityStartInTask,
         settingKey = settingKey,
-        restricted = userSettings.isRestricted(settingKey) || !enabled,
+        restricted = userSettings.isRestricted(settingKey),
+        disabledReason = disabledReason,
         onSave = {
             if (
-                enabled &&
+                disabledReason == null &&
                     DeviceOwnerManager.getCapabilities(context).lockTaskFeatures
             ) {
                 userSettings.lockTaskFeatureBlockActivityStartInTask = it

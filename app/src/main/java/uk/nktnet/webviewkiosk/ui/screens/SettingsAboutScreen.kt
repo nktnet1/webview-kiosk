@@ -37,6 +37,9 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.resources.managementModeLabelRes
+import uk.nktnet.webviewkiosk.ui.resources.managementOwnerLabelRes
+import uk.nktnet.webviewkiosk.ui.resources.managementUserTypeLabelRes
 import uk.nktnet.webviewkiosk.utils.getSystemInfo
 import uk.nktnet.webviewkiosk.utils.humanReadableSize
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
@@ -172,15 +175,24 @@ fun SettingsAboutScreen(navController: NavController) {
             )
             InfoItem(
                 label = stringResource(R.string.about_app_management_mode),
-                value = systemInfo.app.managementMode,
+                value =
+                    stringResource(
+                        managementModeLabelRes(systemInfo.app.managementMode)
+                    ),
             )
             InfoItem(
                 label = stringResource(R.string.about_app_management_owner),
-                value = systemInfo.app.managementOwner,
+                value =
+                    stringResource(
+                        managementOwnerLabelRes(systemInfo.app.managementOwner)
+                    ),
             )
             InfoItem(
                 label = stringResource(R.string.about_app_management_user_type),
-                value = systemInfo.app.managementUserType,
+                value =
+                    stringResource(
+                        managementUserTypeLabelRes(systemInfo.app.managementUserType)
+                    ),
             )
             InfoItem(
                 label = stringResource(R.string.about_device_managed_profile),

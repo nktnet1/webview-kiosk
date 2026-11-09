@@ -63,7 +63,7 @@ This value can be reset by clearing data or uninstalling the app.
 
 The link to the application's source code, e.g. https://github.com/nktnet1/webview-kiosk
 
-## 2. Management & Kiosk [#management-kiosk]
+## 2. Management [#management-kiosk]
 
 Ownership, user scope, Dhizuku access, and kiosk policy permissions are grouped
 here, separately from app metadata and hardware details.
@@ -82,15 +82,15 @@ Shared Dhizuku ownership does not change this field.
 
 ### 2.3. Management Connection and Owner [#management-connection]
 
-**Management Connection** (`DeviceOwner`, `ProfileOwner`, `Dhizuku`, or `None`)
-identifies the connection. **Management Owner** identifies the actual
-`DeviceOwner` or `ProfileOwner` behind it. An ungranted Dhizuku connection reports
-Unknown rather than assuming Device Owner authority.
+**Management Connection** (Device Owner, Profile Owner, Dhizuku, or None)
+identifies the connection. **Management Owner** identifies the actual Device
+Owner or Profile Owner behind it. Ungranted Dhizuku access reports Unknown.
+Remote API values retain their original names, such as `ProfileOwner`.
 
 ### 2.4. Management User Type [#management-user-type]
 
-Distinguishes full Android users, managed work profiles, other profiles, and
-Unknown when a usable user-scope query is unavailable.
+Displays Full User, Managed Work Profile, Android Profile, or Unknown when scope
+cannot be verified. Remote API names such as `FullUser` remain unchanged.
 
 ### 2.5. Managed Profile [#managed-profile]
 

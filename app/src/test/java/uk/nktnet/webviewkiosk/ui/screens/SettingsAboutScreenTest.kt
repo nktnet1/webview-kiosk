@@ -44,7 +44,7 @@ import uk.nktnet.webviewkiosk.utils.BaseJson
 import uk.nktnet.webviewkiosk.utils.getSystemInfo
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28], qualifiers = "w480dp-h1000dp")
+@Config(sdk = [30], qualifiers = "w480dp-h1000dp")
 @LooperMode(LooperMode.Mode.PAUSED)
 class SettingsAboutScreenTest {
     private lateinit var controller: ActivityController<AppCompatActivity>
@@ -64,7 +64,7 @@ class SettingsAboutScreenTest {
                 .visible()
         val activity = controller.get()
         shadowOf(activity.getSystemService(DevicePolicyManager::class.java))
-            .setDeviceOwner(
+            .setProfileOwner(
                 ComponentName(activity, WebviewKioskAdminReceiver::class.java)
             )
         shadowOf(activity.getSystemService(ActivityManager::class.java))
@@ -110,7 +110,7 @@ class SettingsAboutScreenTest {
                 .filter { it.config.getOrNull(SemanticsProperties.Heading) != null }
                 .sortedBy { it.positionInRoot.y }
         assertEquals(
-            listOf("App", "Management & Kiosk", "Device"),
+            listOf("App", "Management", "Device"),
             headings.map { text(it).single() },
         )
         val appTop = headings[0].positionInRoot.y
@@ -139,6 +139,22 @@ class SettingsAboutScreenTest {
             assertTrue(label, y > managementTop && y < deviceTop)
         }
         assertTrue(node("Android Version").positionInRoot.y > deviceTop)
+    }
+
+    @Test
+    fun managementValuesAreReadableWithoutChangingTheRemoteApi() {
+        assertFalse(
+            nodes().any { "ProfileOwner" in text(it) || "FullUser" in text(it) }
+        )
+        assertTrue(nodes().any { "Full User" in text(it) })
+        assertEquals(3, nodes().count { "Profile Owner" in text(it) })
+        val app =
+            BaseJson.encodeToJsonElement(getSystemInfo(controller.get()))
+                .jsonObject["app"]!!
+                .jsonObject
+        assertEquals("ProfileOwner", app["managementMode"]!!.jsonPrimitive.content)
+        assertEquals("ProfileOwner", app["managementOwner"]!!.jsonPrimitive.content)
+        assertEquals("FullUser", app["managementUserType"]!!.jsonPrimitive.content)
     }
 
     @Test

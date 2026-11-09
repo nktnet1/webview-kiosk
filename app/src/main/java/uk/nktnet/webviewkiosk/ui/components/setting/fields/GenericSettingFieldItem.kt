@@ -33,6 +33,7 @@ fun <T> GenericSettingFieldItem(
     onClick: () -> Unit,
     onLongClick: ((value: T) -> Unit)? = null,
     restricted: Boolean,
+    disabledReason: String? = null,
     description: @Composable (T) -> Unit,
 ) {
     val clipboard = LocalClipboard.current
@@ -71,18 +72,33 @@ fun <T> GenericSettingFieldItem(
                             style = MaterialTheme.typography.titleSmall,
                         )
                     }
+                    if (disabledReason != null) {
+                        Text(
+                            text = disabledReason,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 description(value)
             }
             Icon(
                 painter =
-                    if (restricted) {
+                    if (restricted || disabledReason != null) {
                         painterResource(R.drawable.baseline_remove_red_eye_24)
                     } else {
                         painterResource(R.drawable.baseline_edit_24)
                     },
-                contentDescription = stringResource(R.string.ui_edit),
+                contentDescription =
+                    stringResource(
+                        if (restricted || disabledReason != null) {
+                            R.string.ui_view_setting
+                        } else {
+                            R.string.ui_edit
+                        }
+                    ),
                 modifier = Modifier.align(Alignment.CenterEnd),
             )
         }
