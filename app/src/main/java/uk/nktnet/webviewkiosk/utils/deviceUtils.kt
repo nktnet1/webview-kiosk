@@ -11,7 +11,6 @@ import android.os.Build
 import android.os.Environment
 import android.os.PowerManager
 import android.os.StatFs
-import android.os.UserManager
 import android.util.Log
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
@@ -24,10 +23,13 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.config.data.ManagementOwner
+import uk.nktnet.webviewkiosk.config.data.ManagementUserType
 import uk.nktnet.webviewkiosk.config.data.SystemAppInfo
 import uk.nktnet.webviewkiosk.config.data.SystemDeviceInfo
 import uk.nktnet.webviewkiosk.config.data.SystemInfo
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
+import uk.nktnet.webviewkiosk.config.option.LockStateType
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
@@ -154,14 +156,12 @@ fun updateDeviceSettings(context: Context) {
 }
 
 fun getAppInfo(context: Context): SystemAppInfo {
+    DeviceOwnerManager.init(context)
     val pm = context.packageManager
     val packageName = context.packageName
     val dpm =
         context.getSystemService(Context.DEVICE_POLICY_SERVICE)
             as DevicePolicyManager
-    val dhizukuPermissionGranted =
-        (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku &&
-            DeviceOwnerManager.hasOwnerPermission(context))
     val systemSettings = SystemSettings(context)
 
     val versionName =
@@ -205,6 +205,13 @@ fun getAppInfo(context: Context): SystemAppInfo {
             null
         }
 
+    val capabilities = DeviceOwnerManager.getCapabilities(context)
+    val ownerStatus = DeviceOwnerManager.status.value
+    val dhizukuPermissionGranted =
+        ownerStatus.mode == DeviceOwnerMode.Dhizuku &&
+            ownerStatus.owner in
+                setOf(ManagementOwner.DeviceOwner, ManagementOwner.ProfileOwner)
+
     return SystemAppInfo(
         name = context.applicationInfo.loadLabel(pm).toString(),
         packageName = packageName,
@@ -215,6 +222,17 @@ fun getAppInfo(context: Context): SystemAppInfo {
         isDebug = isDebug,
         installer = installer,
         isDeviceOwner = dpm.isDeviceOwnerApp(packageName),
+        isProfileOwner = dpm.isProfileOwnerApp(packageName),
+        managementMode = ownerStatus.mode.name,
+        managementOwner = ownerStatus.owner.name,
+        managementUserType = ownerStatus.userType.name,
+        canManageLockTaskPackages = capabilities.lockTaskPackages,
+        canManageLockTaskFeatures = capabilities.lockTaskFeatures,
+        canLockDevice = capabilities.lockDevice,
+        lockState =
+            LockStateType.fromActivityManager(
+                context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            ),
         isLockTaskPermitted = dpm.isLockTaskPermitted(packageName),
         dhizukuPermissionGranted = dhizukuPermissionGranted,
         instanceId = systemSettings.appInstanceId,
@@ -229,12 +247,12 @@ fun getDeviceInfo(context: Context): SystemDeviceInfo {
 
     val stat = StatFs(Environment.getDataDirectory().path)
 
-    val um = context.getSystemService(Context.USER_SERVICE) as UserManager
+    DeviceOwnerManager.hasOwnerPermission(context)
     val isManagedProfile =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            um.isManagedProfile
-        } else {
-            null
+        when (DeviceOwnerManager.status.value.userType) {
+            ManagementUserType.ManagedProfile -> true
+            ManagementUserType.FullUser -> false
+            else -> null
         }
 
     val securityPatch =

@@ -1,6 +1,6 @@
 ---
 title: Security
-description: Authentication, launcher, lock task mode/pinning, device owner, DPC and managed configurations
+description: Authentication, launcher, lock task mode/pinning, Device Owner, Profile Owner, DPC and managed configurations
 ---
 
 import Link from 'fumadocs-core/link';
@@ -43,7 +43,7 @@ For more on Android App Pinning ([screen pinning](https://developer.android.com/
 1. [Samsung Guide for Unpin Lock](https://www.samsung.com/sg/support/mobile-devices/pin-an-app-to-your-phone-screen-so-that-it-cant-be-closed)
 
 When in screen pinning mode, you will not be able to launch other applications.
-See the `Device Owner Mode` section for further details.
+See the ownership modes below for further details.
 
 ### 3.2. Device Policy Controller [#device-policy-controller]
 
@@ -64,9 +64,8 @@ This has the benefits of:
 
 In
 [Lock Task Mode](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode),
-the only way to unlock {APP_NAME} would be using a methods provided in-app,
-which are always configurable and can be disabled. The supported methods are
-currently:
+the in-app unlock methods are configurable and can be disabled. An eligible
+DPC can also end Lock Task by updating its policy. The in-app methods are:
 
 1. Opening the Kiosk Control Panel by either
    - holding the back button
@@ -75,7 +74,7 @@ currently:
 1. Adding a custom unlock shortcut (requires a physical keyboard or
    a method of that sending key combinations, e.g. `CTRL+1`)
 
-There are also standalone applications that, when set as the device owner, can
+There are also standalone applications that, when granted eligible ownership, can
 perform the duties of a DPC. Below are instructions for two popular applications:
 1. Google's [Test DPC](https://github.com/googlesamples/android-testdpc)
 
@@ -97,7 +96,9 @@ val APP_PACKAGES = arrayOf(
 
 val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 val adminName = getComponentName(context)
-dpm.setLockTaskPackages(adminName, APP_PACKAGES)
+// Android 8+ (API 26+): preserve packages already allowed by the DPC.
+val packages = (dpm.getLockTaskPackages(adminName).toList() + APP_PACKAGES).distinct()
+dpm.setLockTaskPackages(adminName, packages.toTypedArray())
 ```
 
 For more information, see
@@ -159,15 +160,162 @@ for a video demonstration.
 </Steps>
 
 {APP_NAME} also supports [Dhizuku](https://github.com/iamr0s/Dhizuku), a
-tool that can share device owner permissions.
+tool that can share Device Owner or Profile Owner permissions. See the Dhizuku section below.
 
 If you encounter any troubles with the setup, it is worth taking a look at the
 [Dhizuku activation guide](https://github.com/iamr0s/Dhizuku/discussions/19),
 which includes helpful debugging steps when setting up a device owner application.
 
+### 3.4. Main-user Profile Owner [#profile-owner-mode]
+
+A Profile Owner can manage an existing **full Android user**, including the main
+user, without creating a work profile. This is different from a Profile Owner
+inside a separate managed work profile. Device Owner is still the recommended
+mode for a fully managed dedicated kiosk.
+
+Android 9 (API 28) and later allow a full-user Profile Owner to configure Lock
+Task packages and features when **no Device Owner is set**. Android 8 (API 26)
+and later also support affiliated secondary users managed alongside a Device
+Owner. Android enforces affiliation and clears Lock Task policy when a user
+becomes unaffiliated. An ordinary unaffiliated work-profile owner cannot use
+these policies. Do not grant affiliation just to bypass an organisation's policy.
+
+{APP_NAME} checks the actual owner and queries Lock Task policy access before
+exposing its controls. A successful read is not a guarantee that a later write
+will succeed: permission can be revoked, and policies can conflict. Failed writes
+are handled without replacing an unreadable allowlist. Existing package entries,
+including packages not installed or shown in the app list, are preserved when
+adding or removing an app.
+
+#### ADB setup [#profile-owner-adb]
+
+1. Install {APP_NAME} in the intended full user. Enable USB debugging and connect
+   a computer with [ADB](https://developer.android.com/tools/adb).
+2. Find the foreground full user and inspect the device's users:
+
+   ```sh
+   adb shell am get-current-user
+   adb shell pm list users
+   ```
+
+3. Substitute that ID for `USER_ID` below. Do not select a managed work-profile
+   ID. The main user is often 0, but it need not be, particularly on devices with
+   a headless system user. App detection uses Android APIs, never an ID-0 test.
+
+   ```sh
+   adb shell dpm set-profile-owner --user USER_ID uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
+   ```
+
+   Google Play/Aurora installations use a different package and need the full
+   receiver class name:
+
+   ```sh
+   adb shell dpm set-profile-owner --user USER_ID com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+   ```
+
+4. Open the app in that user. Check **Settings → Device → Manage Device Policies**
+   and **Settings → About**. Confirm Profile Owner, Full Android user, and Lock
+   Task policy capability. After locking, `LOCK_TASK` is genuine kiosk mode;
+   `SCREEN_PINNING` is the user-exitable mode. Being allowlisted alone does not
+   mean Lock Task is currently running.
+
+The [installation tool](/tools/qr-installation) can generate these commands for
+the chosen user and installation source. Account, existing-owner, and completed
+setup restrictions vary by Android release and OEM. Use an eligible, account-free
+test device; follow the exact `dpm` error instead of bypassing ownership checks.
+Do not remove an organisation's existing management configuration to enroll.
+
+There is **no Android QR provisioning mode for assigning a Profile Owner to the
+existing main user**. `PROVISIONING_MODE_MANAGED_PROFILE` creates a work profile;
+it does not provision this mode. Webview Kiosk's QR provisioning and provisioning
+activity continue to request fully managed Device Owner enrollment.
+
+#### Capabilities and limits [#owner-capabilities]
+
+| Operation | Device Owner | Eligible full-user Profile Owner | Ordinary work-profile Profile Owner |
+| --- | --- | --- | --- |
+| Configure Lock Task packages | Yes | Android 9+ without a Device Owner; Android 8+ for affiliated secondary users | Unavailable unless Android explicitly grants eligible affiliation/policy access |
+| Configure Lock Task features | Android 9+ | Android 9+ when policy access is granted | Unavailable for ordinary unaffiliated work profiles |
+| Start genuine Lock Task | App must be allowlisted | App must be allowlisted | Ownership alone is insufficient; check Android's allowlisting result |
+| Lock the whole device (`lock_device`) | Requires declared force-lock policy | Requires full-user scope and force-lock policy | Not exposed as a whole-device command by this app |
+| Transfer native ownership | Android 9+ | Android 9+, retaining Profile Owner scope | Android 9+, retaining work-profile scope |
+| Remove native owner in app | Testing only; best-effort cleanup | Android 7+ on full users (`clearProfileOwner`); testing only | Not offered; clearing a work-profile owner is not supported by that API |
+
+Profile Owner does not gain all Device Owner powers, manage other users, or
+become a fully managed device. Only permissions for each operation are used.
+Dhizuku does not enable native-only ownership removal or transfer in this app.
+The `lock_device` capability also checks the
+actual owner's declared force-lock policy. Work-profile `lockNow()` behaviour
+can depend on whether a separate work challenge is enabled, so this app does
+not expose it as a device-wide command.
+
+Android's clear-owner APIs are deprecated and intended for testing. Cleanup is
+best-effort: some policies and user data can remain after ownership is removed.
+The in-app confirmation explains this limitation. Use your organisation's reset
+or unenrollment process for production devices; the app does not automatically
+wipe a main user to remove ownership. See
+[clearProfileOwner](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#clearProfileOwner(android.content.ComponentName)).
+
+On Android 11+, user scope comes from `UserManager.isManagedProfile()`; on
+Android 13+, `isProfile()` also identifies other profile types. On Android 7–10,
+a Profile Owner can use `DevicePolicyManager.isManagedProfile(admin)`. On older
+versions, a known Device Owner or Android's system-user check can identify a
+full user; otherwise the UI reports Unknown rather than guessing. Independent
+Profile Owner Lock Task support is not assumed on those old releases.
+
+On Android 5–7.1, the Lock Task package getter exists in AOSP but was not yet a
+public SDK API. For legacy Device Owners the app attempts this getter only on
+those releases, before non-SDK enforcement, so it can merge existing entries.
+If the OEM does not supply it, the app leaves the policy untouched. Android 8+
+uses the public getter. The advanced Block Activity Start in Task feature requires
+Android 11+.
+
+#### Dhizuku shared ownership [#dhizuku-profile-owner]
+
+Install [Dhizuku](https://github.com/iamr0s/Dhizuku) in the **same full Android
+user** as {APP_NAME}, then assign it the desired owner role. For Profile Owner:
+
+```sh
+adb shell dpm set-profile-owner --user USER_ID com.rosan.dhizuku/.server.DhizukuDAReceiver
+```
+
+Open {APP_NAME}, go to **Device → Manage Device Policies**, and grant Dhizuku
+permission. The status distinguishes **Dhizuku: Profile Owner** from
+**Dhizuku: Device Owner** and shows the user scope. Android 9+ is required for
+this app's Dhizuku integration. Permission granted to the personal-user app does
+not automatically grant it to the work-profile copy.
+
+Shared permission grants the capabilities of Dhizuku's actual owner role in
+that user. Sharing ordinary work-profile ownership does not promote it to
+full-user or Device Owner authority. A denied, revoked, unavailable, or dead
+Dhizuku connection disables management operations; existing external allowlisting
+can still permit Lock Task.
+
+#### External DPC and lock state [#external-dpc-lock-state]
+
+An eligible external DPC can allowlist {APP_NAME} without granting it ownership or
+Dhizuku access. The app honours `isLockTaskPermitted()` and leaves the external
+DPC's policy intact. External policy controls are unavailable in the app; the
+local Home-button preference does not override an external DPC's app allowlist.
+
+On Android 6+, actual runtime state is reported separately as `NONE`, `LOCK_TASK`,
+`SCREEN_PINNING`, or `UNKNOWN`. Android 5–5.1 cannot distinguish pinning from
+Lock Task using the public state API, so the detailed state is Unknown. Screen
+pinning remains available when Android does not allowlist the app; it is never
+reported as genuine Lock Task merely because an owner exists.
+
+References:
+
+- [Android Lock Task guide and version table](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode)
+- [DevicePolicyManager: setLockTaskPackages](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#setLockTaskPackages(android.content.ComponentName,%20java.lang.String[]))
+- [DevicePolicyManager: isManagedProfile](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#isManagedProfile(android.content.ComponentName))
+- [UserManager user/profile queries](https://developer.android.com/reference/android/os/UserManager#isManagedProfile())
+- [Android provisioning modes](https://developer.android.com/work/versions/android-10#provisioning)
+- [AOSP Lock Task eligibility checks](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/services/devicepolicy/java/com/android/server/devicepolicy/DevicePolicyManagerService.java)
+
 ## 4. Managed Configurations (App Restrictions) [#managed-configurations-app-restrictions]
 
-For fully managed (company-owned) devices, you can use
+With an eligible Device Owner or Profile Owner in the same user, you can use
 [managed configurations](https://developer.android.com/work/managed-configurations)
 to restrict and remotely modify {APP_NAME} settings through your MDM/EMM.
 

@@ -3,7 +3,7 @@
     <string name="admin_restrictions_changed_title">New Configurations</string>
 
     <string name="settings_title">Settings</string>
-    <string name="settings_device_owner_title">Device Owner</string>
+    <string name="settings_device_owner_title">Device Policies</string>
     <string name="settings_more_actions_title">More Actions</string>
     <string name="settings_site_permissions_title">Site Permissions</string>
     <string name="settings_files_title">Files</string>

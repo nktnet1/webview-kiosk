@@ -298,7 +298,7 @@ Retrieves the list of lock task packages using
 
 This list is not limited to only launchable packages.
 
-If neither Device Owner nor Dhizuku privileges were granted to {APP_NAME}, an empty list will be returned.
+If Android does not grant Lock Task policy access to the native or Dhizuku-shared owner, an empty list is returned. External DPC allowlisting can still permit Lock Task without allowing policy enumeration.
 
 Example payload:
 

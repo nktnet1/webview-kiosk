@@ -104,7 +104,7 @@ class SettingsMoreActionsScreenTest {
         val localFiles = textNode("Local Files").boundsInWindow
         val contentBlocking = textNode("Content Blocking").boundsInWindow
         val sitePermissions = textNode("Site Permissions").boundsInWindow
-        val deviceOwner = textNode("Device Owner").boundsInWindow
+        val deviceOwner = textNode("Device Policies").boundsInWindow
 
         assertEquals(localFiles.top, contentBlocking.top, 1f)
         assertTrue(localFiles.left < contentBlocking.left)
@@ -120,7 +120,7 @@ class SettingsMoreActionsScreenTest {
                 "Local Files" to Screen.SettingsWebContentFiles,
                 "Content Blocking" to Screen.SettingsContentBlocking,
                 "Site Permissions" to Screen.SettingsWebBrowsingSitePermissions,
-                "Device Owner" to Screen.SettingsDeviceOwner,
+                "Device Policies" to Screen.SettingsDeviceOwner,
             )
             .forEach { (label, screen) ->
                 val button =

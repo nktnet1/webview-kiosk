@@ -32,6 +32,47 @@ test.beforeEach(async ({ page }) => {
   ).toBeVisible();
 });
 
+test("Profile Owner setup uses ADB and never reuses a Device Owner QR", async ({
+  page,
+}) => {
+  await generatePayload(page);
+  await page
+    .getByLabel("Management mode", { exact: true })
+    .selectOption("profile-owner");
+  await expect(page.getByTestId("provisioning-qr")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Generate QR code", exact: true }),
+  ).toHaveCount(0);
+  await page.getByLabel("Full Android user ID", { exact: true }).fill("10");
+  await expect(page.getByTestId("profile-owner-command")).toContainText(
+    "adb shell dpm set-profile-owner --user 10 uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver",
+  );
+  await page
+    .getByLabel("Management app", { exact: true })
+    .selectOption("Dhizuku");
+  await expect(page.getByTestId("profile-owner-command")).toContainText(
+    "com.rosan.dhizuku/.server.DhizukuDAReceiver",
+  );
+  await page
+    .getByLabel("Full Android user ID", { exact: true })
+    .fill("0; reboot");
+  await expect(page.getByTestId("profile-owner-command")).toHaveCount(0);
+  await page
+    .getByLabel("Management mode", { exact: true })
+    .selectOption("work-profile");
+  await expect(
+    page.getByRole("heading", { name: "Managed work profile", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByTestId("provisioning-qr")).toHaveCount(0);
+  await expect(page.getByTestId("profile-owner-command")).toHaveCount(0);
+  await page
+    .getByLabel("Management mode", { exact: true })
+    .selectOption("device-owner");
+  await expect(
+    page.getByTestId("provisioning-qr").locator("svg"),
+  ).toBeVisible();
+});
+
 test("switching download sources changes the rendered QR payload and URL", async ({
   page,
 }) => {

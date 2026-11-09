@@ -167,6 +167,14 @@ private fun ConfirmTransferDialog(
             TextButton(
                 onClick = {
                     try {
+                        check(
+                            DeviceOwnerManager.getCapabilities(context)
+                                .transferOwnership
+                        ) {
+                            context.getString(
+                                R.string.ui_error_owner_permission_is_not_granted
+                            )
+                        }
                         dpm.transferOwnership(
                             DeviceOwnerManager.DAR,
                             selectedAdminReceiver.admin,

@@ -161,6 +161,38 @@ fun SettingsAboutScreen(navController: NavController) {
                 value = systemInfo.app.isDeviceOwner.toString(),
             )
             InfoItem(
+                label = stringResource(R.string.about_app_profile_owner),
+                value = systemInfo.app.isProfileOwner.toString(),
+            )
+            InfoItem(
+                label = stringResource(R.string.about_app_management_mode),
+                value = systemInfo.app.managementMode,
+            )
+            InfoItem(
+                label = stringResource(R.string.about_app_management_owner),
+                value = systemInfo.app.managementOwner,
+            )
+            InfoItem(
+                label = stringResource(R.string.about_app_management_user_type),
+                value = systemInfo.app.managementUserType,
+            )
+            InfoItem(
+                label = stringResource(R.string.about_app_manage_lock_task_packages),
+                value = systemInfo.app.canManageLockTaskPackages.toString(),
+            )
+            InfoItem(
+                label = stringResource(R.string.about_app_manage_lock_task_features),
+                value = systemInfo.app.canManageLockTaskFeatures.toString(),
+            )
+            InfoItem(
+                label = stringResource(R.string.about_app_lock_device),
+                value = systemInfo.app.canLockDevice.toString(),
+            )
+            InfoItem(
+                label = stringResource(R.string.about_app_lock_state),
+                value = systemInfo.app.lockState.toString(),
+            )
+            InfoItem(
                 label = stringResource(R.string.about_app_lock_task_permitted),
                 value = systemInfo.app.isLockTaskPermitted.toString(),
             )

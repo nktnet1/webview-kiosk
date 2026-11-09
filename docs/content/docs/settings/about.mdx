@@ -52,7 +52,8 @@ The package or store that installed the app, e.g.:
 
 ### 1.8. Device Owner [#device-owner]
 
-Whether the app was set as the device owner or not, e.g. `true` / `false`
+Whether this app itself is the native Device Owner, e.g. `true` / `false`. Shared
+Dhizuku ownership does not change this field.
 
 See [DevicePolicyManager.isDeviceOwnerApp](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#isDeviceOwnerApp(java.lang.String)).
 
@@ -65,7 +66,7 @@ See [DevicePolicyManager.isLockTaskPermitted](https://developer.android.com/refe
 
 ### 1.10. Dhizuku Permission Granted [#dhizuku-permission-granted]
 
-Whether the app has been granted device owner privileges by [Dhizuku](https://github.com/iamr0s/Dhizuku).
+Whether the app has been granted Device Owner or Profile Owner privileges by [Dhizuku](https://github.com/iamr0s/Dhizuku).
 
 This is done using the [Dhizuku API](https://github.com/iamr0s/Dhizuku-API).
 
@@ -81,6 +82,25 @@ This value can be reset by clearing data or uninstalling the app.
 ### 1.12. Source Code URL [#source-code-url]
 
 The link to the application's source code, e.g. https://github.com/nktnet1/webview-kiosk
+
+### 1.13. Management capabilities [#management-capabilities]
+
+**Profile Owner** reports whether the app itself is the native Profile Owner.
+**Management Connection** (`DeviceOwner`, `ProfileOwner`, `Dhizuku`, or `None`)
+identifies the connection, while **Management Owner** identifies the actual
+`DeviceOwner` or `ProfileOwner` behind it. An ungranted Dhizuku connection reports
+Unknown, not an assumed Device Owner.
+
+**Management User Type** distinguishes full users, managed work profiles, other
+profiles, and Unknown on platforms without a usable query. **Can Manage Lock
+Task Packages**, **Can Manage Lock Task Features**, and **Can Lock Device**
+report the separately checked capabilities.
+
+**Lock State** reports `LOCK_TASK` only when Android actually reports locked
+Lock Task Mode; `SCREEN_PINNING` is distinct. On Android 5–5.1, the public API
+cannot distinguish the two and reports `UNKNOWN`. **Lock Task Permitted** is
+allowlisting permission, not current runtime state. These fields are also
+included in the remote `get_system_info` response.
 
 ## 2. Device [#device]
 

@@ -303,8 +303,8 @@ Example Payload:
 
 ### 2.9. Lock [#lock]
 
-Start lock task mode (or screen pinning) depending on whether {APP_NAME} has
-device owner permissions.
+Start Lock Task Mode when Android allowlists the app, including through an
+external DPC. Otherwise, request screen pinning.
 
 Please note that for screen pinning, the user will be prompted to confirm the
 action, which needs to be done on the device.
@@ -333,8 +333,8 @@ Example Payload:
 
 ### 2.10. Unlock [#unlock]
 
-Stop lock task mode (or screen pinning) depending on whether {APP_NAME} has
-device owner permissions.
+Stop the current Lock Task or screen-pinning session. Where policy access is
+available, temporarily end other locked tasks and restore the complete policy.
 
 Example Payload:
 
@@ -385,8 +385,11 @@ Example Payload:
 
 Turns the device screen off.
 
-This command requires device owner privileges or Dhizuku permission. For more
-details, see the [security](/docs/security#device-owner-mode) documentation.
+This command requires a native or Dhizuku-shared full-user owner with the
+force-lock policy. This app excludes work profiles from the device-wide command;
+Android's profile-lock behaviour depends on challenge configuration. Check
+`canLockDevice` in `get_system_info`. See
+[owner capabilities](/docs/security#owner-capabilities).
 
 Note that if the `MQTT → Use Foreground Service` setting is not enabled,
 locking the device will also stop the MQTT connection.
@@ -491,8 +494,8 @@ This feature requires:
 Additionally, when in kiosk/locked mode, the following are required:
 
 - Device owner or Dhizuku privileges
-- `Settings -> Device -> Device Owner -> Home`
-- `Settings -> Device -> Device Owner -> Notifications`
+- `Settings -> Device -> Device Policies -> Home`
+- `Settings -> Device -> Device Policies -> Notifications`
 
 Your payload data value can have the following properties:
 

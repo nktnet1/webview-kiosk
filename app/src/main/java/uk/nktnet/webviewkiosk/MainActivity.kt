@@ -226,7 +226,7 @@ open class MainActivity : AppCompatActivity() {
         // https://github.com/nktnet1/webview-kiosk/pull/195
         getExternalFilesDir(null)
 
-        if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.DeviceOwner) {
+        if (DeviceOwnerManager.hasOwnerPermission(this)) {
             setupLockTaskPackage(this)
         }
 
@@ -632,12 +632,14 @@ open class MainActivity : AppCompatActivity() {
         updateDeviceSettings(this)
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-                DeviceOwnerManager.status.value.mode != DeviceOwnerMode.DeviceOwner
+                DeviceOwnerManager.status.value.mode !in
+                    setOf(DeviceOwnerMode.DeviceOwner, DeviceOwnerMode.ProfileOwner)
         ) {
             deviceOwnerInitJob?.cancel()
             deviceOwnerInitJob = lifecycleScope.launch {
                 val mode = DeviceOwnerManager.initWithDhizukuRetry(this@MainActivity)
                 if (mode == DeviceOwnerMode.Dhizuku) {
+                    setupLockTaskPackage(this@MainActivity)
                     updateDeviceSettings(this@MainActivity)
                     if (
                         pendingDhizukuPermissionRequest && isApplicationEventHost()

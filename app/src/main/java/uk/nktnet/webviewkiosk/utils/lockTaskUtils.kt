@@ -53,7 +53,7 @@ fun applyLockTaskFeatures(context: Context) {
         return
     }
 
-    if (!DeviceOwnerManager.hasOwnerPermission(context)) {
+    if (!DeviceOwnerManager.getCapabilities(context).lockTaskFeatures) {
         return
     }
 
@@ -250,6 +250,28 @@ fun tryLockTask(activity: Activity?): Boolean {
         return false
     }
 
+    // External DPC allowlisting works without shared owner permission. If this
+    // app manages the policy, do not silently pin after an allowlisting failure.
+    val capabilities = DeviceOwnerManager.getCapabilities(activity)
+    val platformDpm =
+        activity.getSystemService(Context.DEVICE_POLICY_SERVICE)
+            as DevicePolicyManager
+    if (
+        capabilities.lockTaskPackages &&
+            !platformDpm.isLockTaskPermitted(activity.packageName)
+    ) {
+        if (!setupLockTaskPackage(activity)) {
+            ToastManager.show(
+                activity,
+                activity.getString(
+                    R.string
+                        .ui_failed_to_lock_app_is_not_permitted_for_lock_task_mode
+                ),
+            )
+            return false
+        }
+    }
+
     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
         if (
             activity.javaClass == MainActivity::class.java ||
@@ -302,12 +324,13 @@ fun tryUnlockTask(activity: Activity?): Boolean {
         return false
     }
     logAndroid6LockAction(activity, "stopLockTask")
+    val capabilities = DeviceOwnerManager.getCapabilities(activity)
     return tryLockAction(
         activity,
         lockAction = {
             if (
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-                    DeviceOwnerManager.hasOwnerPermission(activity)
+                    capabilities.lockTaskPackages
             ) {
                 try {
                     val savedPackages =
@@ -315,29 +338,35 @@ fun tryUnlockTask(activity: Activity?): Boolean {
                             DeviceOwnerManager.DAR
                         )
                     val savedFeatures =
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        if (
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                                capabilities.lockTaskFeatures
+                        ) {
                             DeviceOwnerManager.DPM.getLockTaskFeatures(
                                 DeviceOwnerManager.DAR
                             )
                         } else {
                             null
                         }
-                    DeviceOwnerManager.DPM.setLockTaskPackages(
-                        DeviceOwnerManager.DAR,
-                        arrayOf(activity.packageName),
-                    )
-                    DeviceOwnerManager.DPM.setLockTaskPackages(
-                        DeviceOwnerManager.DAR,
-                        savedPackages,
-                    )
-                    if (
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-                            savedFeatures != null
-                    ) {
-                        DeviceOwnerManager.DPM.setLockTaskFeatures(
+                    try {
+                        DeviceOwnerManager.DPM.setLockTaskPackages(
                             DeviceOwnerManager.DAR,
-                            savedFeatures,
+                            arrayOf(activity.packageName),
                         )
+                    } finally {
+                        DeviceOwnerManager.DPM.setLockTaskPackages(
+                            DeviceOwnerManager.DAR,
+                            savedPackages,
+                        )
+                        if (
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                                savedFeatures != null
+                        ) {
+                            DeviceOwnerManager.DPM.setLockTaskFeatures(
+                                DeviceOwnerManager.DAR,
+                                savedFeatures,
+                            )
+                        }
                     }
                 } catch (e: Exception) {
                     Log.w(
@@ -371,28 +400,21 @@ fun tryUnlockTask(activity: Activity?): Boolean {
 
 fun setupLockTaskPackage(context: Context): Boolean {
     try {
-        if (!DeviceOwnerManager.hasOwnerPermission(context)) {
+        val dpm =
+            context.getSystemService(Context.DEVICE_POLICY_SERVICE)
+                as DevicePolicyManager
+        if (
+            !dpm.isLockTaskPermitted(context.packageName) &&
+                !DeviceOwnerManager.editLockTaskPackage(
+                    context,
+                    context.packageName,
+                    true,
+                )
+        ) {
             return false
         }
-        val packages =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val current =
-                    DeviceOwnerManager.DPM.getLockTaskPackages(
-                            DeviceOwnerManager.DAR
-                        )
-                        .toMutableSet()
-                current.add(context.packageName)
-                current.toTypedArray()
-            } else {
-                arrayOf(context.packageName)
-            }
-        DeviceOwnerManager.DPM.setLockTaskPackages(
-            DeviceOwnerManager.DAR,
-            packages,
-        )
-
-        updateDeviceSettings(context)
-        return true
+        applyLockTaskFeatures(context)
+        return dpm.isLockTaskPermitted(context.packageName)
     } catch (e: Exception) {
         Log.e(Constants.APP_SCHEME, "Failed to setup lock task packages", e)
         return false
@@ -415,6 +437,14 @@ fun requireAuthForUnlock(context: Context, userSettings: UserSettings): Boolean 
     }
     if (userSettings.unlockAuthRequirement == UnlockAuthRequirementOption.REQUIRE) {
         return true
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        val activityManager =
+            context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        when (activityManager.lockTaskModeState) {
+            ActivityManager.LOCK_TASK_MODE_LOCKED -> return true
+            ActivityManager.LOCK_TASK_MODE_PINNED -> return false
+        }
     }
     val dpm =
         context.getSystemService(Context.DEVICE_POLICY_SERVICE)

@@ -197,7 +197,7 @@
     <string name="device_owner_lock_task_feature_block_activity_start_in_task_title">Block Activity Start in Task</string>
 
     <string name="device_owner_dhizuku_request_permission_on_launch_title">Dhizuku Request Permission on Launch</string>
-    <string name="device_owner_dhizuku_request_permission_on_launch_description">Request Dhizuku device-owner access on launch when the app has not yet been granted permission.</string>
+    <string name="device_owner_dhizuku_request_permission_on_launch_description">Request Dhizuku Device Owner or Profile Owner access on launch when the app has not yet been granted permission.</string>
 
     <!-- JS Scripts -->
     <string name="js_scripts_apply_app_theme_title">Apply App Theme</string>

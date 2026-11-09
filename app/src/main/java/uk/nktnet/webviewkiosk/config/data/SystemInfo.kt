@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.config.data
 
 import kotlinx.serialization.Serializable
+import uk.nktnet.webviewkiosk.config.option.LockStateType
 
 @Serializable
 data class SystemAppInfo(
@@ -17,6 +18,14 @@ data class SystemAppInfo(
     val dhizukuPermissionGranted: Boolean,
     val instanceId: String,
     val sourceCodeUrl: String,
+    val isProfileOwner: Boolean,
+    val managementMode: String,
+    val managementOwner: String,
+    val managementUserType: String,
+    val canManageLockTaskPackages: Boolean,
+    val canManageLockTaskFeatures: Boolean,
+    val canLockDevice: Boolean,
+    val lockState: LockStateType,
 )
 
 @Serializable
