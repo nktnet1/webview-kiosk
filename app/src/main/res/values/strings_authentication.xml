@@ -4,7 +4,6 @@
     <string name="ui_authentication_required" formatted="false">"Authentication Required"</string>
     <string name="ui_confirm_password" formatted="false">"Confirm password"</string>
     <string name="ui_enter_your_password" formatted="false">"Enter your password"</string>
-    <string name="ui_failed_to_create_cipher_value">"Failed to create cipher: %1$s"</string>
     <string name="ui_hide_password" formatted="false">"Hide password"</string>
     <string name="ui_host_value">"Host: %1$s"</string>
     <string name="ui_incorrect_password" formatted="false">"Incorrect password"</string>

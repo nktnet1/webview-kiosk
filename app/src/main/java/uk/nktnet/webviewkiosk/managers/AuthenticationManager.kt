@@ -4,9 +4,6 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.os.Build
 import android.os.SystemClock
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyPermanentlyInvalidatedException
-import android.security.keystore.KeyProperties
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -17,25 +14,13 @@ import androidx.biometric.BiometricPrompt.PromptInfo
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import java.security.KeyStore
-import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
-import javax.crypto.SecretKey
-import javax.crypto.spec.GCMParameterSpec
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 
 object AuthenticationManager {
-    private const val ANDROID_KEYSTORE = "AndroidKeyStore"
-    private const val BIOMETRIC_KEY_ALIAS = "WebViewKioskBiometricKey"
-    private const val CIPHER_TRANSFORMATION = "AES/GCM/NoPadding"
-
-    private var encryptedAuthToken: ByteArray? = null
-    private var encryptedAuthTokenIv: ByteArray? = null
     private const val BYPASS_AUTH_WINDOW_MS = 5000L
 
     private var activity: AppCompatActivity? = null
@@ -52,18 +37,6 @@ object AuthenticationManager {
     val customAuthRequest: State<Any?> = _customAuthRequest
 
     internal var session = AuthenticationSession(SystemClock::elapsedRealtime)
-    internal var authCipherFactory: (Pair<ByteArray, ByteArray>?) -> Cipher =
-        { token ->
-            // Method references to the API 23 Keystore implementation must not be
-            // resolved unconditionally on the supported Android 5.x runtimes.
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                throw UnsupportedOperationException(
-                    "Authentication cipher requires Android 6 or newer"
-                )
-            }
-            createAuthCipher(token)
-        }
-    internal var authKeyInvalidator: () -> Unit = ::deleteAuthKey
     internal var biometricPromptFactory:
         (
             AppCompatActivity,
@@ -72,10 +45,7 @@ object AuthenticationManager {
         ::AndroidAuthenticationPrompt
 
     internal interface AuthenticationPrompt {
-        fun authenticate(
-            info: PromptInfo,
-            cryptoObject: BiometricPrompt.CryptoObject?,
-        )
+        fun authenticate(info: PromptInfo)
 
         fun cancelAuthentication()
     }
@@ -86,16 +56,7 @@ object AuthenticationManager {
     ) : AuthenticationPrompt {
         private val prompt = BiometricPrompt(activity, callback)
 
-        override fun authenticate(
-            info: PromptInfo,
-            cryptoObject: BiometricPrompt.CryptoObject?,
-        ) {
-            if (cryptoObject == null) {
-                prompt.authenticate(info)
-            } else {
-                prompt.authenticate(info, cryptoObject)
-            }
-        }
+        override fun authenticate(info: PromptInfo) = prompt.authenticate(info)
 
         override fun cancelAuthentication() = prompt.cancelAuthentication()
     }
@@ -328,12 +289,6 @@ object AuthenticationManager {
             promptInfoBuilder.setDeviceCredentialAllowed(true)
         }
 
-        var existingToken = encryptedAuthToken?.let { token ->
-            encryptedAuthTokenIv?.let { iv ->
-                token to iv
-            }
-        }
-
         val prompt =
             biometricPromptFactory(
                 activity,
@@ -350,174 +305,15 @@ object AuthenticationManager {
                         result: BiometricPrompt.AuthenticationResult
                     ) {
                         super.onAuthenticationSucceeded(result)
-                        if (pendingAuthentication !== pending) {
-                            return
-                        }
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            val cipher = result.cryptoObject?.cipher
-
-                            if (cipher == null) {
-                                handleAuthError(
-                                    pending,
-                                    "Missing cryptographic context.",
-                                )
-                                return
-                            }
-
-                            val token = existingToken
-                            try {
-                                if (token == null) {
-                                    encryptedAuthToken =
-                                        cipher.doFinal(
-                                            "auth-token".toByteArray(Charsets.UTF_8)
-                                        )
-                                    encryptedAuthTokenIv = cipher.iv
-                                } else {
-                                    cipher.doFinal(token.first)
-                                }
-                                handleAuthSuccess(pending)
-                            } catch (e: Exception) {
-                                if (e is KeyPermanentlyInvalidatedException) {
-                                    try {
-                                        clearInvalidatedAuthKey()
-                                    } catch (cleanupError: Exception) {
-                                        Log.e(
-                                            javaClass.simpleName,
-                                            "Failed to remove invalidated key.",
-                                            cleanupError,
-                                        )
-                                    }
-                                }
-                                Log.e(
-                                    javaClass.simpleName,
-                                    "Secure authentication validation failed.",
-                                    e,
-                                )
-                                handleAuthError(
-                                    pending,
-                                    "Secure authentication validation failed.",
-                                )
-                            }
-                        } else {
-                            handleAuthSuccess(pending)
-                        }
+                        handleAuthSuccess(pending)
                     }
                 },
             )
         pending.cancel = prompt::cancelAuthentication
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val decryptCipher =
-                try {
-                    try {
-                        authCipherFactory(existingToken)
-                    } catch (_: KeyPermanentlyInvalidatedException) {
-                        // The old token cannot be used with a replacement key.
-                        // Prepare encryption
-                        // for a new token, but still require a fresh authentication
-                        // prompt.
-                        clearInvalidatedAuthKey()
-                        existingToken = null
-                        authCipherFactory(null)
-                    }
-                } catch (e: Exception) {
-                    Log.e(javaClass.simpleName, "Failed to create cipher.", e)
-                    handleAuthError(pending, "Failed to create cipher: ${e.message}")
-                    ToastManager.show(
-                        activity,
-                        activity.getString(
-                            R.string.ui_failed_to_create_cipher_value,
-                            e.message,
-                        ),
-                    )
-                    return
-                }
-            prompt.authenticate(
-                promptInfoBuilder.build(),
-                BiometricPrompt.CryptoObject(decryptCipher),
-            )
-        } else {
-            prompt.authenticate(
-                promptInfoBuilder.build(),
-                null,
-            )
-        }
-    }
-
-    private fun getCipher(): Cipher = Cipher.getInstance(CIPHER_TRANSFORMATION)
-
-    @RequiresApi(Build.VERSION_CODES.M)
-    private fun createAuthCipher(token: Pair<ByteArray, ByteArray>?): Cipher {
-        return getCipher().apply {
-            if (token == null) {
-                init(Cipher.ENCRYPT_MODE, generateOrGetSecretKey())
-            } else {
-                init(
-                    Cipher.DECRYPT_MODE,
-                    getSecretKey(),
-                    GCMParameterSpec(128, token.second),
-                )
-            }
-        }
-    }
-
-    private fun clearInvalidatedAuthKey() {
-        encryptedAuthToken = null
-        encryptedAuthTokenIv = null
-        authKeyInvalidator()
-    }
-
-    private fun deleteAuthKey() {
-        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
-        keyStore.load(null)
-        keyStore.deleteEntry(BIOMETRIC_KEY_ALIAS)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.M)
-    private fun generateOrGetSecretKey(): SecretKey {
-        return try {
-            getSecretKey()
-        } catch (_: Exception) {
-            val keyGenerator =
-                KeyGenerator.getInstance(
-                    KeyProperties.KEY_ALGORITHM_AES,
-                    ANDROID_KEYSTORE,
-                )
-            val keySpecBuilder =
-                KeyGenParameterSpec.Builder(
-                        BIOMETRIC_KEY_ALIAS,
-                        KeyProperties.PURPOSE_ENCRYPT or
-                            KeyProperties.PURPOSE_DECRYPT,
-                    )
-                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                    .setUserAuthenticationRequired(true)
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                keySpecBuilder.setUserAuthenticationParameters(
-                    0,
-                    KeyProperties.AUTH_BIOMETRIC_STRONG or
-                        KeyProperties.AUTH_DEVICE_CREDENTIAL,
-                )
-            }
-
-            if (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
-                    Build.VERSION.SDK_INT < Build.VERSION_CODES.R
-            ) {
-                keySpecBuilder.setInvalidatedByBiometricEnrollment(true)
-            }
-
-            keyGenerator.init(keySpecBuilder.build())
-            keyGenerator.generateKey()
-        }
-    }
-
-    private fun getSecretKey(): SecretKey {
-        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
-        keyStore.load(null)
-        return keyStore.getKey(BIOMETRIC_KEY_ALIAS, null) as SecretKey
+        // This prompt gates the UI. No encrypted data needs a CryptoObject or
+        // a per-user Keystore key, which can reject work-profile credentials.
+        prompt.authenticate(promptInfoBuilder.build())
     }
 
     private fun showDeviceCredentialLollipop(

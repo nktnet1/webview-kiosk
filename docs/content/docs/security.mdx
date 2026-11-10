@@ -118,7 +118,6 @@ The easiest way is to factory reset your device and use the
 
 The [XDA community guide](https://xdaforums.com/t/how-i-got-device-owner-without-factory-reset.4745834/#post-90768446)
 describes an alternative to removing accounts or freezing account apps.
-Compatibility depends on your Android version and device.
 
 </Callout>
 
@@ -167,42 +166,17 @@ for a video demonstration.
 
 </Steps>
 
-{APP_NAME} also supports [Dhizuku](https://github.com/iamr0s/Dhizuku), a
-tool that can share Device Owner or Profile Owner permissions. See the Dhizuku section below.
+{APP_NAME} also supports [Dhizuku](https://github.com/iamr0s/Dhizuku) for shared
+Device Owner or Profile Owner permissions. See the
+[activation guide](https://github.com/iamr0s/Dhizuku/discussions/19) or
+[Dhizuku setup below](#dhizuku-profile-owner).
 
-If you encounter any troubles with the setup, it is worth taking a look at the
-[Dhizuku activation guide](https://github.com/iamr0s/Dhizuku/discussions/19),
-which includes helpful debugging steps when setting up a device owner application.
+### 3.4. Profile Owner (Main User) [#profile-owner-mode]
 
-### 3.4. Main-user Profile Owner [#profile-owner-mode]
+Profile Owner (Main User) manages kiosk settings in your personal user.
+A separate work profile is optional and can isolate work or testing apps.
 
-Main-user Profile Owner lets you manage kiosk settings while keeping your
-personal user and a separate work profile. Personal apps and work or testing
-apps can stay isolated.
-
-#### 3.4.1. Create a work profile [#work-profile-setup]
-
-1. Before assigning the main-user Profile Owner, install
-   [Shelter](https://f-droid.org/packages/net.typeblog.shelter/) in your personal user.
-2. Open Shelter and complete its setup wizard. Accept Android's work-profile
-   setup prompt.
-3. In Shelter's **Main** tab, select an app and choose **Clone to Shelter**.
-   Open its work copy from the **Shelter** tab or the launcher icon with a
-   briefcase badge.
-4. Keep {APP_NAME} or Dhizuku in the personal user and follow the ADB setup below.
-   Shelter manages the separate work profile.
-
-If your organisation already manages a work profile, use its existing setup.
-
-<Callout title="Create the work profile first" type="info">
-
-Android's [standard setup](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/services/devicepolicy/java/com/android/server/devicepolicy/DevicePolicyManagerService.java#17273)
-blocks new work-profile provisioning once the personal user has a Profile Owner.
-An existing work profile can coexist with a main-user Profile Owner.
-
-</Callout>
-
-#### 3.4.2. ADB setup [#profile-owner-adb]
+#### 3.4.1. ADB setup [#profile-owner-adb]
 
 <Callout title="Android user" type="info">
 
@@ -229,8 +203,51 @@ Do not use a work-profile ID. This also applies to the Dhizuku command below.
 3. Open **Settings → Device → Manage Device Policies**. Confirm **Profile Owner**,
    **Full User**, and Lock Task policy access.
 
-Accounts or existing management may prevent setup. If enrollment fails, follow
-Android's reported `dpm` error.
+#### 3.4.2. Optional work profile (ADB) [#work-profile-setup]
+
+Create a work profile using ADB:
+
+```sh
+adb shell pm create-user --profileOf 0 --managed Work
+```
+
+<Callout title="Work-profile user ID" type="info">
+
+The remaining commands assume the new profile has ID `10`. Use the ID printed
+by `create-user` if it differs. `--profileOf 0` refers to the personal user from
+the ADB setup above.
+
+</Callout>
+
+Start the profile and install the existing {APP_NAME} package in it:
+
+```sh
+adb shell am start-user 10
+adb shell pm install-existing --user 10 uk.nktnet.webviewkiosk
+adb shell dpm set-profile-owner --user 10 uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
+adb shell am start --user 10 -n uk.nktnet.webviewkiosk/.MainActivity
+```
+
+For Google Play/Aurora installations, use:
+
+```sh
+adb shell am start-user 10
+adb shell pm install-existing --user 10 com.nktnet.webview_kiosk
+adb shell dpm set-profile-owner --user 10 com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+adb shell am start --user 10 -n com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.MainActivity
+```
+
+For debug APKs, use:
+
+```sh
+adb shell am start-user 10
+adb shell pm install-existing --user 10 uk.nktnet.webviewkiosk.debug
+adb shell dpm set-profile-owner --user 10 uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+adb shell am start --user 10 -n uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewkiosk.MainActivity
+```
+
+The work copy has separate app data and work-profile permissions. It does not
+replace the owner in the personal user.
 
 #### 3.4.3. QR provisioning [#profile-owner-qr]
 

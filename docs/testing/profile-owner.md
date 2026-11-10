@@ -11,6 +11,11 @@ ActivityTaskManager. Provisioning-result tests verify fully
 managed mode selection and cancellation of unsupported work-profile-only flows
 on Android 10, 13, and 17.
 
+`AuthenticationManagerTest` exercises system-success callbacks on Android 9–11,
+including device credentials in a simulated work profile and stale/cancelled
+results. Real biometric hardware and work-challenge handling use the device
+checks below.
+
 Real provisioning, OEM policy enforcement, affiliation transitions, and Dhizuku
 Binder identity forwarding need a device/emulator. Do not describe the following
 matrix as passed until it has been run. Use disposable test devices and record
@@ -69,3 +74,10 @@ For each eligible owner mode:
 
 Primary references and setup instructions are linked in
 `docs/content/docs/security.mdx`.
+
+For authentication regression checks, test both the personal and work copies
+with unified and separate work-profile screen locks. A successful biometric or
+PIN/pattern/password prompt must open settings without a Keystore operation.
+Cancel, lock out, replace the activity, or lock the kiosk while a prompt is open.
+Late callbacks must not authenticate a newer request or revive an expired
+session. Also verify custom passwords and Android 5 credential fallback.

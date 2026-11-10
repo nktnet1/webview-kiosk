@@ -554,10 +554,7 @@ class RequireAuthWrapperTest {
         var cancelCalls = 0
         lateinit var info: BiometricPrompt.PromptInfo
 
-        override fun authenticate(
-            info: BiometricPrompt.PromptInfo,
-            cryptoObject: BiometricPrompt.CryptoObject?,
-        ) {
+        override fun authenticate(info: BiometricPrompt.PromptInfo) {
             this.info = info
             authenticateCalls++
         }

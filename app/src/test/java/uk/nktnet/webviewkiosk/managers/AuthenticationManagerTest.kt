@@ -6,14 +6,10 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.security.keystore.KeyPermanentlyInvalidatedException
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
-import javax.crypto.Cipher
-import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.SecretKeySpec
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -39,22 +35,18 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager.AuthenticationResult
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28], shadows = [CredentialKeyguardShadow::class])
+@Config(sdk = [28, 29, 30], shadows = [CredentialKeyguardShadow::class])
 @LooperMode(LooperMode.Mode.PAUSED)
 class AuthenticationManagerTest {
     private val manager = AuthenticationManager
     private val originalSession = manager.session
     private val originalPromptFactory = manager.biometricPromptFactory
-    private val originalCipherFactory = manager.authCipherFactory
-    private val originalKeyInvalidator = manager.authKeyInvalidator
     private val originalSdk = Build.VERSION.SDK_INT
     private lateinit var activityController: ActivityController<AuthTestActivity>
     private lateinit var activity: AuthTestActivity
     private lateinit var keyguardManager: KeyguardManager
     private val prompts = mutableListOf<FakePrompt>()
     private var time = 1_000L
-    private var deletedKeys = 0
-    private val secretKey = SecretKeySpec(ByteArray(16) { 7 }, "AES")
 
     @Before
     fun setUp() {
@@ -75,9 +67,6 @@ class AuthenticationManagerTest {
         manager.biometricPromptFactory = { _, callback ->
             FakePrompt(callback).also { prompts.add(it) }
         }
-        manager.authCipherFactory = ::createCipher
-        manager.authKeyInvalidator = { deletedKeys++ }
-        setStoredToken(null, null)
         manager.init(activity)
     }
 
@@ -86,30 +75,8 @@ class AuthenticationManagerTest {
         manager.clear(activity)
         manager.session = originalSession
         manager.biometricPromptFactory = originalPromptFactory
-        manager.authCipherFactory = originalCipherFactory
-        manager.authKeyInvalidator = originalKeyInvalidator
-        setStoredToken(null, null)
         setSdk(originalSdk)
         activityController.pause().stop().destroy()
-    }
-
-    @Test
-    fun cipherFactoryDoesNotResolveMarshmallowKeystoreCodeOnAndroidFive() {
-        manager.authCipherFactory = originalCipherFactory
-        setSdk(Build.VERSION_CODES.LOLLIPOP)
-        try {
-            val failure = runCatching {
-                manager.authCipherFactory(null)
-            }
-                .exceptionOrNull()
-            assertTrue(failure is UnsupportedOperationException)
-            assertEquals(
-                "Authentication cipher requires Android 6 or newer",
-                failure?.message,
-            )
-        } finally {
-            setSdk(originalSdk)
-        }
     }
 
     @Test
@@ -210,7 +177,7 @@ class AuthenticationManagerTest {
 
     @Test
     fun credentialResultFromReplacedHostCannotAuthenticateItsSuccessor() {
-        // Build both Robolectric activities on the configured API 28 framework;
+        // Build both activities on the configured Robolectric framework;
         // only the production SDK gate is overridden to exercise API 21/22 logic.
         val replacementController =
             Robolectric.buildActivity(AuthTestActivity::class.java).setup()
@@ -359,9 +326,8 @@ class AuthenticationManagerTest {
 
     @Test
     fun secureDevicesWithoutEnrolledBiometricsKeepCredentialFallbackOnAndroid6To10() {
-        // Only exercise the SDK gates on the exported API 28 runtime. The fake
-        // prompt
-        // does not invoke hardware or APIs from a different Android runtime.
+        // Exercise the SDK gates without invoking hardware or APIs from a
+        // different Android runtime.
         for (sdk in listOf(23, 28, 29)) {
             setSdk(sdk)
             showPrompt()
@@ -369,7 +335,7 @@ class AuthenticationManagerTest {
 
             @Suppress("DEPRECATION")
             assertTrue(prompt.info.isDeviceCredentialAllowed)
-            assertNull(prompt.cryptoObject)
+            assertEquals(1, prompt.authenticateCalls)
             assertFalse(manager.hasValidSession())
             manager.resetAuthentication()
         }
@@ -743,151 +709,111 @@ class AuthenticationManagerTest {
     }
 
     @Test
-    fun android11RequiresACipherAndAllowsBiometricsOrDeviceCredentials() {
-        setSdk(30)
+    @Config(sdk = [30])
+    fun android11AcceptsSuccessfulBiometricsWithoutACryptoObject() {
         showPrompt()
         val prompt = prompts.single()
         assertEquals(
             BIOMETRIC_STRONG or DEVICE_CREDENTIAL,
             prompt.info.allowedAuthenticators,
         )
-        assertTrue(prompt.cryptoObject?.cipher != null)
-        assertFalse(manager.hasValidSession())
-
-        prompt.succeed(cryptoObject = null)
-        assertEquals(
-            AuthenticationResult.AuthenticationError(
-                "Missing cryptographic context."
-            ),
-            manager.promptResults.value,
-        )
-        assertFalse(manager.hasValidSession())
-    }
-
-    @Test
-    fun android11EncryptsThenValidatesTheStoredTokenAfterFreshAuthentication() {
-        setSdk(30)
-        val requestedTokens = mutableListOf<Pair<ByteArray, ByteArray>?>()
-        manager.authCipherFactory = { token ->
-            requestedTokens.add(token)
-            createCipher(token)
-        }
-
-        showPrompt()
-        prompts.single().succeed()
-        assertTrue(manager.hasValidSession())
-        manager.resetAuthentication()
-        showPrompt()
-        assertFalse(manager.hasValidSession())
-        assertNull(requestedTokens.first())
-        assertTrue(requestedTokens.last() != null)
-        prompts.last().succeed()
-        assertTrue(manager.hasValidSession())
-    }
-
-    @Test
-    fun anInvalidatedKeyIsDeletedAndStillRequiresTheNewPromptToSucceed() {
-        setSdk(30)
-        showPrompt()
-        prompts.single().succeed()
-        manager.resetAuthentication()
-        val requestedTokens = mutableListOf<Pair<ByteArray, ByteArray>?>()
-        manager.authCipherFactory = { token ->
-            requestedTokens.add(token)
-            if (token != null) {
-                throw KeyPermanentlyInvalidatedException()
-            }
-            createCipher(null)
-        }
-
-        showPrompt()
-        assertEquals(1, deletedKeys)
-        assertEquals(2, requestedTokens.size)
-        assertTrue(requestedTokens.first() != null)
-        assertNull(requestedTokens.last())
         assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
         assertFalse(manager.hasValidSession())
-        assertEquals(1, prompts.last().authenticateCalls)
 
+        prompt.succeed()
+        assertEquals(
+            AuthenticationResult.AuthenticationSuccess,
+            manager.promptResults.value,
+        )
+        assertTrue(manager.hasValidSession())
+    }
+
+    @Test
+    @Config(sdk = [30])
+    fun workProfileCredentialsAuthenticateWithoutAKeystoreOperation() {
+        val users =
+            activity.getSystemService(Context.USER_SERVICE) as android.os.UserManager
+        shadowOf(users).setManagedProfile(true)
+        assertTrue(users.isManagedProfile)
+        showPrompt()
+        assertFalse(manager.hasValidSession())
+
+        prompts
+            .single()
+            .succeed(BiometricPrompt.AUTHENTICATION_RESULT_TYPE_DEVICE_CREDENTIAL)
+        assertEquals(
+            AuthenticationResult.AuthenticationSuccess,
+            manager.promptResults.value,
+        )
+        assertTrue(manager.hasValidSession())
+    }
+
+    @Test
+    @Config(sdk = [30])
+    fun aFreshSystemSuccessIsRequiredAfterResettingAuthentication() {
+        showPrompt()
+        val previous = prompts.single()
+        previous.succeed(
+            BiometricPrompt.AUTHENTICATION_RESULT_TYPE_DEVICE_CREDENTIAL
+        )
+        manager.resetAuthentication()
+        showPrompt()
+        assertFalse(manager.hasValidSession())
+        assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
+
+        previous.succeed()
+        assertFalse(manager.hasValidSession())
+        assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
         prompts.last().succeed()
         assertTrue(manager.hasValidSession())
     }
 
     @Test
-    fun invalidatedKeyCleanupFailureDoesNotLaunchOrCompleteAuthentication() {
-        setSdk(30)
-        manager.authCipherFactory = { throw KeyPermanentlyInvalidatedException() }
-        manager.authKeyInvalidator = {
-            deletedKeys++
-            error("key deletion failed")
-        }
-
+    @Config(sdk = [30])
+    fun cancelledWorkProfileAuthenticationDoesNotGrantASession() {
+        val users =
+            activity.getSystemService(Context.USER_SERVICE) as android.os.UserManager
+        shadowOf(users).setManagedProfile(true)
         showPrompt()
-        assertEquals(1, deletedKeys)
-        assertEquals(0, prompts.single().authenticateCalls)
-        assertTrue(
-            manager.promptResults.value is AuthenticationResult.AuthenticationError
+        val prompt = prompts.single()
+        prompt.callback.onAuthenticationError(
+            BiometricPrompt.ERROR_USER_CANCELED,
+            "cancelled",
         )
-        prompts.single().succeed()
+        prompt.succeed(BiometricPrompt.AUTHENTICATION_RESULT_TYPE_DEVICE_CREDENTIAL)
+
         assertFalse(manager.hasValidSession())
+        assertEquals(
+            AuthenticationResult.AuthenticationError("cancelled"),
+            manager.promptResults.value,
+        )
     }
 
     @Test
-    fun replacementCipherCreationFailureCannotUnlockOrLeaveAPendingPrompt() {
-        setSdk(30)
-        var calls = 0
-        manager.authCipherFactory = {
-            if (calls++ == 0) {
-                throw KeyPermanentlyInvalidatedException()
+    fun aPromptLaunchFailureRejectsLateSuccessAndAllowsAFreshRetry() {
+        manager.biometricPromptFactory = { _, callback ->
+            FakePrompt(callback).also {
+                it.launchFailure = IllegalStateException("prompt unavailable")
+                prompts.add(it)
             }
-            error("replacement cipher failed")
         }
-
         showPrompt()
-        assertEquals(2, calls)
-        assertEquals(1, deletedKeys)
-        assertEquals(0, prompts.single().authenticateCalls)
+        val failed = prompts.single()
+        assertEquals(1, failed.authenticateCalls)
+        assertEquals(1, failed.cancelCalls)
         assertTrue(
             manager.promptResults.value is AuthenticationResult.AuthenticationError
         )
         assertFalse(manager.hasValidSession())
-    }
 
-    @Test
-    fun aCorruptedTokenFailsValidationInsteadOfUnlocking() {
-        setSdk(30)
-        showPrompt()
-        prompts.single().succeed()
-        manager.resetAuthentication()
-        val token = getStoredBytes("encryptedAuthToken")!!.copyOf()
-        token[0] = (token[0].toInt() xor 1).toByte()
-        setStoredToken(token, getStoredBytes("encryptedAuthTokenIv"))
-
-        showPrompt()
-        prompts.last().succeed()
-        assertEquals(
-            AuthenticationResult.AuthenticationError(
-                "Secure authentication validation failed."
-            ),
-            manager.promptResults.value,
-        )
+        failed.succeed()
         assertFalse(manager.hasValidSession())
-    }
-
-    @Test
-    fun aLateCryptoCallbackDoesNotWriteATokenOrChangeTheReplacementPrompt() {
-        setSdk(30)
+        manager.biometricPromptFactory = { _, callback ->
+            FakePrompt(callback).also { prompts.add(it) }
+        }
         showPrompt()
-        val oldPrompt = prompts.single()
-        manager.resetAuthentication()
-        showPrompt()
-        val currentPrompt = prompts.last()
-        oldPrompt.succeed()
-
-        assertNull(getStoredBytes("encryptedAuthToken"))
         assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
-        assertFalse(manager.hasValidSession())
-        currentPrompt.succeed()
+        prompts.last().succeed()
         assertTrue(manager.hasValidSession())
     }
 
@@ -931,52 +857,20 @@ class AuthenticationManagerTest {
             "Test authentication",
         )
 
-    private fun createCipher(token: Pair<ByteArray, ByteArray>?): Cipher =
-        Cipher.getInstance("AES/GCM/NoPadding").apply {
-            if (token == null) {
-                init(Cipher.ENCRYPT_MODE, secretKey)
-            } else {
-                init(
-                    Cipher.DECRYPT_MODE,
-                    secretKey,
-                    GCMParameterSpec(128, token.second),
-                )
-            }
-        }
-
     private fun setSdk(sdk: Int) =
         ReflectionHelpers.setStaticField(Build.VERSION::class.java, "SDK_INT", sdk)
-
-    private fun setStoredToken(token: ByteArray?, iv: ByteArray?) {
-        for ((name, value) in
-            listOf("encryptedAuthToken" to token, "encryptedAuthTokenIv" to iv)) {
-            manager.javaClass
-                .getDeclaredField(name)
-                .apply { isAccessible = true }
-                .set(null, value)
-        }
-    }
-
-    private fun getStoredBytes(name: String): ByteArray? =
-        manager.javaClass
-            .getDeclaredField(name)
-            .apply { isAccessible = true }
-            .get(null) as ByteArray?
 
     private class FakePrompt(val callback: BiometricPrompt.AuthenticationCallback) :
         AuthenticationManager.AuthenticationPrompt {
         lateinit var info: BiometricPrompt.PromptInfo
-        var cryptoObject: BiometricPrompt.CryptoObject? = null
         var authenticateCalls = 0
+        var launchFailure: Exception? = null
         var cancelCalls = 0
 
-        override fun authenticate(
-            info: BiometricPrompt.PromptInfo,
-            cryptoObject: BiometricPrompt.CryptoObject?,
-        ) {
+        override fun authenticate(info: BiometricPrompt.PromptInfo) {
             this.info = info
-            this.cryptoObject = cryptoObject
             authenticateCalls++
+            launchFailure?.let { throw it }
         }
 
         override fun cancelAuthentication() {
@@ -988,21 +882,22 @@ class AuthenticationManagerTest {
         }
 
         fun succeed(
-            cryptoObject: BiometricPrompt.CryptoObject? = this.cryptoObject
+            authenticationType: Int =
+                BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC
         ) {
             val result =
                 ReflectionHelpers.callConstructor(
                     BiometricPrompt.AuthenticationResult::class.java,
                     ReflectionHelpers.ClassParameter.from(
                         BiometricPrompt.CryptoObject::class.java,
-                        cryptoObject,
+                        null,
                     ),
                     ReflectionHelpers.ClassParameter.from(
                         Int::class.javaPrimitiveType!!,
-                        BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC,
+                        authenticationType,
                     ),
                 )
-            assertSame(cryptoObject, result.cryptoObject)
+            assertNull(result.cryptoObject)
             callback.onAuthenticationSucceeded(result)
         }
     }
