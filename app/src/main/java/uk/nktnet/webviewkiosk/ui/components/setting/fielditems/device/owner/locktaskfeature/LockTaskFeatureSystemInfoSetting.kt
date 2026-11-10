@@ -6,10 +6,11 @@ import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun LockTaskFeatureSystemInfoSetting() {
+fun LockTaskFeatureSystemInfoSetting(disabledReason: String?) {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
     val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO
@@ -24,6 +25,14 @@ fun LockTaskFeatureSystemInfoSetting() {
         initialValue = userSettings.lockTaskFeatureSystemInfo,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.lockTaskFeatureSystemInfo = it },
+        disabledReason = disabledReason,
+        onSave = {
+            if (
+                disabledReason == null &&
+                    DeviceOwnerManager.getCapabilities(context).lockTaskFeatures
+            ) {
+                userSettings.lockTaskFeatureSystemInfo = it
+            }
+        },
     )
 }

@@ -1,5 +1,8 @@
 <!--suppress AndroidElementNotAllowed -->
 <device-admin>
+    <uses-policies>
+        <force-lock />
+    </uses-policies>
     <!-- https://developer.android.com/work/versions/android-9.0#migrate_dpcs -->
     <support-transfer-ownership />
 </device-admin>

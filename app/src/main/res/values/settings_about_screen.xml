@@ -4,6 +4,7 @@
     <string name="about_open_app_info">Open App Info</string>
     <string name="about_section_app">App</string>
     <string name="about_section_device">Device</string>
+    <string name="about_section_management">Management</string>
 
     <!-- App Info Labels -->
     <string name="about_app_name">Name</string>
@@ -42,4 +43,11 @@
     <string name="about_device_supported_64bit_abis">Supported 64-bit ABIs</string>
     <string name="about_device_build_fingerprint">Build Fingerprint</string>
 
+    <string name="about_app_profile_owner">Profile Owner</string>
+    <string name="about_app_management_owner">Management Owner</string>
+    <string name="about_app_management_mode">Management Connection</string>
+    <string name="about_app_management_user_type">Management User Type</string>
+    <string name="about_app_manage_lock_task_packages">Can Manage Lock Task Packages</string>
+    <string name="about_app_manage_lock_task_features">Can Manage Lock Task Features</string>
+    <string name="about_app_lock_device">Can Lock Device</string>
 </resources>

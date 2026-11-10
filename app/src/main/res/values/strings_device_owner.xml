@@ -3,13 +3,12 @@
     <string name="ui_add_lock_task_package" formatted="false">"Add Lock Task Package"</string>
     <string name="ui_app" formatted="false">"App"</string>
     <string name="ui_are_you_sure_you_want_to_transfer_ownership_to_value">"Are you sure you want to transfer ownership to %1$s?"</string>
-    <string name="ui_confirm_remove_device_owner">"Are you sure you want to unset %1$s\nas the device owner?\n\nThis means Lock Task Mode will no longer be available, meaning\nthe kiosk lock feature will utilise Screen Pinning instead."</string>
+    <string name="ui_confirm_remove_device_owner">"Remove management ownership from %1$s?\n\nThis action is intended for testing. Policy cleanup is best-effort: some policies and user data may remain. For production unenrollment, use your managed reset process. Lock Task Mode will require allowlisting by another eligible DPC; otherwise locking uses Screen Pinning."</string>
     <string name="ui_deactivate" formatted="false">"Deactivate"</string>
-    <string name="ui_deactivate_device_owner" formatted="false">"Deactivate Device Owner"</string>
-    <string name="ui_device_owner_not_configured">"%1$s is not set as the device owner.\nThe settings below will not take effect."</string>
+    <string name="ui_deactivate_device_owner" formatted="false">"Deactivate Owner"</string>
     <string name="ui_dhizuku" formatted="false">"Dhizuku"</string>
     <string name="ui_dpm_value_error_value">"DPM %1$s) error: %2$s"</string>
-    <string name="ui_error_lock_task_feature_home_under_device_owner_is_req" formatted="false">"Error: lock task feature HOME (under device owner) is required."</string>
+    <string name="ui_error_lock_task_feature_home_under_device_owner_is_req" formatted="false">"Error: lock task feature HOME (under Device Policies) is required."</string>
     <string name="ui_error_owner_permission_is_not_granted" formatted="false">"Error: owner permission is not granted."</string>
     <string name="ui_error_value_is_not_lock_task_permitted_in_settings">"Error: %1$s is not lock task permitted in settings."</string>
     <string name="ui_error_value_must_be_lock_task_permitted_to_launch_apps">"Error: %1$s must be lock task permitted to launch apps."</string>
@@ -29,4 +28,22 @@
     <string name="ui_transfer_ownership" formatted="false">"Transfer Ownership"</string>
     <string name="ui_value_has_been_added_to_lock_task_packages">"%1$s has been added to lock task packages."</string>
     <string name="ui_value_has_been_removed_from_lock_task_packages">"%1$s has been removed from lock task packages."</string>
+    <string name="ui_management_owner_none">No owner permission</string>
+    <string name="ui_management_unknown">Unknown</string>
+    <string name="ui_management_full_user">Full User</string>
+    <string name="ui_management_work_profile">Managed Work Profile</string>
+    <string name="ui_management_profile">Android Profile</string>
+    <string name="ui_cannot_launch_apps_while_screen_pinned">Other apps cannot be launched while screen pinning is active.</string>
+    <string name="ui_management_native">Native</string>
+    <string name="ui_management_lock_task_available">Lock Task policies available</string>
+    <string name="ui_lock_task_requires_android_8">Requires Android 8+</string>
+    <string name="ui_lock_task_requires_android_9">Requires Android 9+</string>
+    <string name="ui_lock_task_requires_android_11">Requires Android 11+</string>
+    <string name="ui_lock_task_owner_access_required">Owner permission required</string>
+    <string name="ui_lock_task_dhizuku_permission_required">Dhizuku permission required</string>
+    <string name="ui_lock_task_work_profile_unavailable">Unavailable in this work profile</string>
+    <string name="ui_lock_task_profile_unavailable">Unavailable in this profile</string>
+    <string name="ui_lock_task_policy_access_denied">Lock Task access denied</string>
+    <string name="ui_view_setting">View setting</string>
+    <string name="ui_lock_task_policy_update_failed">Could not update Lock Task packages.</string>
 </resources>

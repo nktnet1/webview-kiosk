@@ -19,6 +19,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.services.LockTaskService
 
@@ -107,6 +108,19 @@ fun openPackage(
     val isLocked = getIsLocked(activityManager)
 
     if (isLocked) {
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                activityManager.lockTaskModeState ==
+                    ActivityManager.LOCK_TASK_MODE_PINNED
+        ) {
+            ToastManager.show(
+                context,
+                context.getString(
+                    R.string.ui_cannot_launch_apps_while_screen_pinned
+                ),
+            )
+            return
+        }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             ToastManager.show(
                 context,
@@ -143,7 +157,10 @@ fun openPackage(
             )
             return
         }
-        if (!userSettings.lockTaskFeatureHome) {
+        if (
+            DeviceOwnerManager.getCapabilities(context).lockTaskFeatures &&
+                !userSettings.lockTaskFeatureHome
+        ) {
             ToastManager.show(
                 context,
                 context.getString(

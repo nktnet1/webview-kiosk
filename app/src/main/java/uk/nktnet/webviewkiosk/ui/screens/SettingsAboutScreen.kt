@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.content.ClipData
+import androidx.annotation.StringRes
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +27,8 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -34,6 +37,9 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.resources.managementModeLabelRes
+import uk.nktnet.webviewkiosk.ui.resources.managementOwnerLabelRes
+import uk.nktnet.webviewkiosk.ui.resources.managementUserTypeLabelRes
 import uk.nktnet.webviewkiosk.utils.getSystemInfo
 import uk.nktnet.webviewkiosk.utils.humanReadableSize
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
@@ -114,17 +120,7 @@ fun SettingsAboutScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = stringResource(R.string.about_section_app),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
-            HorizontalDivider(
-                modifier = Modifier,
-                thickness = DividerDefaults.Thickness,
-                color = DividerDefaults.color,
-            )
+            AboutSectionHeading(R.string.about_section_app)
 
             InfoItem(
                 label = stringResource(R.string.about_app_name),
@@ -157,8 +153,52 @@ fun SettingsAboutScreen(navController: NavController) {
                 value = systemInfo.app.installer ?: stringResource(R.string.ui_n_a),
             )
             InfoItem(
+                label = stringResource(R.string.about_app_instance_id),
+                value = systemInfo.app.instanceId,
+            )
+            InfoItem(
+                label = stringResource(R.string.about_source_code_url),
+                value = systemInfo.app.sourceCodeUrl,
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            AboutSectionHeading(R.string.about_section_management)
+
+            InfoItem(
                 label = stringResource(R.string.about_app_device_owner),
                 value = systemInfo.app.isDeviceOwner.toString(),
+            )
+            InfoItem(
+                label = stringResource(R.string.about_app_profile_owner),
+                value = systemInfo.app.isProfileOwner.toString(),
+            )
+            InfoItem(
+                label = stringResource(R.string.about_app_management_mode),
+                value =
+                    stringResource(
+                        managementModeLabelRes(systemInfo.app.managementMode)
+                    ),
+            )
+            InfoItem(
+                label = stringResource(R.string.about_app_management_owner),
+                value =
+                    stringResource(
+                        managementOwnerLabelRes(systemInfo.app.managementOwner)
+                    ),
+            )
+            InfoItem(
+                label = stringResource(R.string.about_app_management_user_type),
+                value =
+                    stringResource(
+                        managementUserTypeLabelRes(systemInfo.app.managementUserType)
+                    ),
+            )
+            InfoItem(
+                label = stringResource(R.string.about_device_managed_profile),
+                value =
+                    systemInfo.device.isManagedProfile?.toString()
+                        ?: stringResource(R.string.ui_n_a),
             )
             InfoItem(
                 label = stringResource(R.string.about_app_lock_task_permitted),
@@ -170,27 +210,21 @@ fun SettingsAboutScreen(navController: NavController) {
                 value = systemInfo.app.dhizukuPermissionGranted.toString(),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_instance_id),
-                value = systemInfo.app.instanceId,
+                label = stringResource(R.string.about_app_manage_lock_task_packages),
+                value = systemInfo.app.canManageLockTaskPackages.toString(),
             )
             InfoItem(
-                label = stringResource(R.string.about_source_code_url),
-                value = systemInfo.app.sourceCodeUrl,
+                label = stringResource(R.string.about_app_manage_lock_task_features),
+                value = systemInfo.app.canManageLockTaskFeatures.toString(),
+            )
+            InfoItem(
+                label = stringResource(R.string.about_app_lock_device),
+                value = systemInfo.app.canLockDevice.toString(),
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(
-                text = stringResource(R.string.about_section_device),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
-            HorizontalDivider(
-                modifier = Modifier,
-                thickness = DividerDefaults.Thickness,
-                color = DividerDefaults.color,
-            )
+            AboutSectionHeading(R.string.about_section_device)
 
             InfoItem(
                 label = stringResource(R.string.about_device_android_version),
@@ -216,12 +250,6 @@ fun SettingsAboutScreen(navController: NavController) {
                         systemInfo.device.screenHeight,
                         systemInfo.device.screenDensity,
                     ),
-            )
-            InfoItem(
-                label = stringResource(R.string.about_device_managed_profile),
-                value =
-                    systemInfo.device.isManagedProfile?.toString()
-                        ?: stringResource(R.string.ui_n_a),
             )
             InfoItem(
                 label = stringResource(R.string.about_device_time_zone),
@@ -306,4 +334,19 @@ fun SettingsAboutScreen(navController: NavController) {
             Spacer(modifier = Modifier.padding(bottom = 8.dp))
         }
     }
+}
+
+@Composable
+private fun AboutSectionHeading(@StringRes label: Int) {
+    Text(
+        text = stringResource(label),
+        style = MaterialTheme.typography.headlineSmall,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(bottom = 8.dp).semantics { heading() },
+    )
+    HorizontalDivider(
+        modifier = Modifier,
+        thickness = DividerDefaults.Thickness,
+        color = DividerDefaults.color,
+    )
 }

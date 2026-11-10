@@ -158,7 +158,7 @@ using `Kiosk Control Panel` or `Custom Unlock Shortcut`.
 
 | Option   | Description |
 |----------|-------------|
-| Default  | Require authentication for lock task mode (device owner, fully-managed/company-owned devices), off for screen pinning (user-owned devices). |
+| Default  | Require authentication for Lock Task Mode (allowlisted by an eligible management owner), off for screen pinning (user-owned devices). |
 | Off      | Unlock without requiring authentication. |
 | Require  | Prompt for biometrics or device credentials when unlocking. |
 
@@ -187,9 +187,28 @@ Disable the volume control buttons, specifically:
 
 **Default:** false
 
-## 15. Device Owner [#device-owner]
+## 15. Device Policies [#device-owner]
 
-For more information about `Device Owner`, see the [Security](/docs/security) documentation.
+Open **Device → Manage Device Policies** to see the actual owner role, whether
+it is native or shared through Dhizuku, and whether it manages a full user or a
+work profile. The existing `device.owner.*` setting keys and navigation route
+remain compatible with saved settings and remote management.
+
+Lock Task controls show why they are read-only, such as an unsupported Android
+version, missing owner/Dhizuku permission, or denied work-profile policy access.
+**Restricted** is reserved for managed app restrictions. Features
+require Android 9+. Block Activity Start in Task requires Android 11+. Native
+eligible Profile Owners and Dhizuku-shared owners receive the same checks.
+Package edits read the complete current allowlist and preserve entries that are
+not displayed or installed. An external DPC can allowlist this app without
+exposing policy editing controls here.
+
+Native owner transfer is available on Android 9+. Deactivate Owner uses the
+correct Device Owner or full-user Profile Owner removal API. Work-profile
+removal and shared-owner removal are not offered. Android intends clear-owner
+actions for testing: policies and user data can remain, so use your managed reset
+process for production unenrollment. Handle Dhizuku ownership in Dhizuku itself. See [Security](/docs/security#profile-owner-mode) for setup,
+capabilities, and restrictions.
 
 ### 15.1. Lock Task Features [#lock-task-features]
 
@@ -316,3 +335,12 @@ has not granted {APP_NAME} access through the
 [Dhizuku API](https://github.com/iamr0s/Dhizuku-API), prompt for permission.
 
 **Default:** true
+
+
+### 15.2. Dhizuku [#dhizuku]
+
+**Request Permission on Launch** requests shared Device Owner or Profile Owner
+permission when Dhizuku is available. Open Dhizuku and grant access from this
+screen when needed. The app must be installed in the same user as Dhizuku.
+Denied or revoked permission disables policy controls. Work-profile ownership
+remains subject to Android's work-profile restrictions.

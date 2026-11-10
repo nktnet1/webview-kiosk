@@ -14,7 +14,7 @@
     <string name="ui_go_to_webview" formatted="false">"Go to WebView"</string>
     <string name="ui_invalid_filename_value">"Invalid filename: \'%1$s\'"</string>
     <string name="ui_launcher" formatted="false">"Launcher"</string>
-    <string name="ui_manage_device_owner" formatted="false">"Manage Device Owner"</string>
+    <string name="ui_manage_device_owner" formatted="false">"Manage Device Policies"</string>
     <string name="ui_remote_settings_value">"Remote: settings %1$s."</string>
     <string name="ui_resetting_in" formatted="false">"Resetting in"</string>
     <string name="ui_restricted" formatted="false">"[Restricted]"</string>

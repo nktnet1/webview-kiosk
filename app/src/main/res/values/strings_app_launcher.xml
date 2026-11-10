@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="ui_app_launcher_no_apps_in_kiosk">"No apps available.\n\nIn kiosk/locked mode, you can only launch apps that have been added to\nthe lock task permitted list (under device owner settings).\n\nFor user devices that utilise screen pinning, you will not be able to\nlaunch other apps.\n\nRefer to the documentations for how device owner can be obtained - this\nrequires one of: ADB, Shizuku or Dhizuku.\n\n- %1$s"</string>
+    <string name="ui_app_launcher_no_apps_in_kiosk">"No apps available.\n\nIn kiosk/locked mode, you can only launch apps that have been added to\nthe lock task permitted list (under Device Policies).\n\nFor user devices that utilise screen pinning, you will not be able to\nlaunch other apps.\n\nSee the security documentation for Device Owner, eligible full-user\nProfile Owner, Dhizuku, or external DPC allowlisting.\n\n- %1$s"</string>
     <string name="ui_apps" formatted="false">"Apps"</string>
     <string name="ui_error_handling_intent_no_package_available_for_value">"Error handling intent: no package available for %1$s"</string>
     <string name="ui_error_no_activities_for_app" formatted="false">"Error: no activities for app."</string>

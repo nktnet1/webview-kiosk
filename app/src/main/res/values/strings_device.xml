@@ -44,7 +44,7 @@ For example, CTRL+1.
 
 This is useful for devices with no navigation buttons on screen and instead has a physical keyboard connected."</string>
     <string name="setting_info_device_rotation" formatted="false">"Choose a fixed device rotation or select \'Auto\' to allow the system to rotate the screen automatically."</string>
-    <string name="setting_info_dhizuku_request_permission_on_launch">"When enabled, if Dhizuku is installed and has not granted %1$s access to Device Owner privileges, prompt the user for permission."</string>
+    <string name="setting_info_dhizuku_request_permission_on_launch">"When enabled, if Dhizuku is installed and has not granted %1$s access to Device Owner or Profile Owner privileges, prompt the user for permission."</string>
     <string name="setting_info_keep_screen_on" formatted="false">"Enable this option to keep your device awake (no screen timeout)."</string>
     <string name="setting_info_lock_task_feature_block_activity_start_in_task" formatted="false">"Enable blocking of non-allowlisted activities from being started into a locked task.
 
@@ -70,7 +70,7 @@ If you enable this button, you must also enable the Home button."</string>
     <string name="setting_info_unlock_auth_requirement">"This setting only applies to in-app unlock methods, e.g. when unlocking using Kiosk Control Panel or Custom Unlock Shortcut.
 
 Available options are:
-- DEFAULT: require authentication for lock task mode (device owner, fully-managed/company-owned devices), off for screen pinning (user-owned devices)
+- DEFAULT: require authentication for Lock Task Mode (allowlisted by an eligible management owner), off for screen pinning (user-owned devices)
 - OFF: unlock without requiring authentication
 - REQUIRE: Prompt for biometrics or device credentials when unlocking
 
@@ -78,7 +78,7 @@ For user-owned devices without lock task mode, the device will auto-lock when un
     <!-- UI labels, placeholders, and messages -->
     <string name="ui_blank_device_credentials" formatted="false">"(blank = device credentials)"</string>
     <string name="ui_cannot_change_media_volume_on_this_device" formatted="false">"Cannot change the media volume on this device"</string>
-    <string name="ui_cannot_lock_device_without_device_owner_privileges" formatted="false">"Cannot lock device without device owner privileges"</string>
+    <string name="ui_cannot_lock_device_without_device_owner_privileges" formatted="false">"Device locking requires a full-user owner with the force-lock policy"</string>
     <string name="ui_disable_in_app_info" formatted="false">"Disable in App Info"</string>
     <string name="ui_e_g_20" formatted="false">"e.g. 20"</string>
     <string name="ui_enable_in_app_info" formatted="false">"Enable in App Info"</string>

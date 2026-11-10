@@ -24,12 +24,14 @@ fun <T> DropdownSettingFieldItem(
     initialValue: T,
     settingKey: String,
     restricted: Boolean,
+    disabledReason: String? = null,
     extraContent: (@Composable ((setValue: (T) -> Unit) -> Unit))? = null,
     validator: (value: T) -> Boolean = { true },
     validationMessage: String? = null,
     onSave: (T) -> Unit,
     itemText: @Composable (T) -> String,
 ) {
+    val canEdit = !restricted && disabledReason == null
     var showDialog by remember { mutableStateOf(false) }
     var value by remember { mutableStateOf(initialValue) }
     var draftValue by remember { mutableStateOf(initialValue) }
@@ -39,6 +41,7 @@ fun <T> DropdownSettingFieldItem(
         label = label,
         value = itemText(value),
         restricted = restricted,
+        disabledReason = disabledReason,
         onClick = {
             draftValue = value
             draftError = !validator(value)
@@ -60,8 +63,9 @@ fun <T> DropdownSettingFieldItem(
             onDismiss = { showDialog = false },
             settingKey = settingKey,
             restricted = restricted,
+            disabledReason = disabledReason,
             onSave = {
-                if (!draftError) {
+                if (canEdit && !draftError) {
                     value = draftValue
                     onSave(draftValue)
                     showDialog = false
@@ -71,10 +75,12 @@ fun <T> DropdownSettingFieldItem(
             DropdownSelector(
                 options = options,
                 selected = draftValue,
-                enabled = !restricted,
+                enabled = canEdit,
                 onSelectedChange = {
-                    draftValue = it
-                    draftError = !validator(it)
+                    if (canEdit) {
+                        draftValue = it
+                        draftError = !validator(it)
+                    }
                 },
             ) { option ->
                 val isSelected = option == draftValue
@@ -101,7 +107,11 @@ fun <T> DropdownSettingFieldItem(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 )
             }
-            extraContent?.invoke { draftValue = it }
+            extraContent?.invoke {
+                if (canEdit) {
+                    draftValue = it
+                }
+            }
         }
     }
 }

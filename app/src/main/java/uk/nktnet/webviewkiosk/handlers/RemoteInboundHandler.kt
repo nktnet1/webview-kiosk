@@ -109,7 +109,7 @@ object RemoteInboundHandler {
                 }
             }
             is InboundLockDeviceCommand -> {
-                if (DeviceOwnerManager.hasOwnerPermission(context)) {
+                if (DeviceOwnerManager.getCapabilities(context).lockDevice) {
                     try {
                         DeviceOwnerManager.DPM.lockNow()
                     } catch (e: Exception) {

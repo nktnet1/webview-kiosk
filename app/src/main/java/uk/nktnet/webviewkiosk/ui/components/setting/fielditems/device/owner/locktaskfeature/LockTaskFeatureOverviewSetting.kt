@@ -6,10 +6,11 @@ import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun LockTaskFeatureOverviewSetting() {
+fun LockTaskFeatureOverviewSetting(disabledReason: String?) {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
     val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW
@@ -21,6 +22,14 @@ fun LockTaskFeatureOverviewSetting() {
         initialValue = userSettings.lockTaskFeatureOverview,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.lockTaskFeatureOverview = it },
+        disabledReason = disabledReason,
+        onSave = {
+            if (
+                disabledReason == null &&
+                    DeviceOwnerManager.getCapabilities(context).lockTaskFeatures
+            ) {
+                userSettings.lockTaskFeatureOverview = it
+            }
+        },
     )
 }

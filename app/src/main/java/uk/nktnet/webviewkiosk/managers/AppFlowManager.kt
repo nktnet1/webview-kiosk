@@ -22,8 +22,6 @@ import uk.nktnet.webviewkiosk.config.data.AppInfo
 import uk.nktnet.webviewkiosk.config.data.AppLoadState
 import uk.nktnet.webviewkiosk.config.data.AppType
 import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager.DAR
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager.DPM
 
 object AppFlowManager {
     private fun getLaunchablePackages(
@@ -100,15 +98,7 @@ object AppFlowManager {
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun getLockTaskPackageNames(context: Context): List<String> {
-        if (!DeviceOwnerManager.hasOwnerPermission(context)) {
-            return emptyList()
-        }
-        try {
-            return DPM.getLockTaskPackages(DAR).toList()
-        } catch (e: Exception) {
-            Log.w(javaClass.simpleName, "Failed to get lock task packages", e)
-            return emptyList()
-        }
+        return DeviceOwnerManager.getLockTaskPackages(context)
     }
 
     fun getLaunchableAppsFlow(

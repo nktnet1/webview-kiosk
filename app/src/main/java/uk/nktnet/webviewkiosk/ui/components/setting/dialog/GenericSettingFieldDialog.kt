@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
+import uk.nktnet.webviewkiosk.ui.theme.warning
 
 @Composable
 fun GenericSettingFieldDialog(
@@ -40,6 +41,7 @@ fun GenericSettingFieldDialog(
     settingKey: String,
     restricted: Boolean,
     saveText: String? = null,
+    disabledReason: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val resolvedSaveText = saveText ?: stringResource(R.string.ui_save)
@@ -119,11 +121,19 @@ fun GenericSettingFieldDialog(
                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
                     )
                 }
+                if (disabledReason != null) {
+                    Text(
+                        text = disabledReason,
+                        color = MaterialTheme.colorScheme.warning,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                    )
+                }
                 content()
             }
         },
         confirmButton = {
-            if (!restricted) {
+            if (!restricted && disabledReason == null) {
                 TextButton(onClick = onSave) {
                     Text(resolvedSaveText)
                 }
@@ -132,7 +142,7 @@ fun GenericSettingFieldDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text(
-                    if (restricted) {
+                    if (restricted || disabledReason != null) {
                         stringResource(R.string.ui_close)
                     } else {
                         stringResource(R.string.ui_cancel)

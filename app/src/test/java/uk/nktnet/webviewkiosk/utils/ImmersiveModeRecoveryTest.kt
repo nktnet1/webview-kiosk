@@ -42,6 +42,7 @@ class ImmersiveModeRecoveryTest {
     private val looper
         get() = shadowOf(Looper.getMainLooper())
 
+    @Suppress("SameReturnValue")
     private val delay
         get() = ImmersiveModeRecovery.REHIDE_DELAY_MILLIS
 

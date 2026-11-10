@@ -1,8 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
-import android.app.admin.DevicePolicyManager
-import android.content.ComponentName
-import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.compose.foundation.layout.Column
@@ -39,11 +36,12 @@ import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
+import uk.nktnet.webviewkiosk.ui.components.setting.ManagementStatusCard
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.DeviceAdminReceiverListDialog
@@ -56,6 +54,8 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureNotificationsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
+import uk.nktnet.webviewkiosk.ui.resources.lockTaskPolicyUnavailableReason
+import uk.nktnet.webviewkiosk.ui.theme.warning
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 import uk.nktnet.webviewkiosk.utils.openPackage
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
@@ -64,17 +64,8 @@ import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 fun SettingsDeviceOwnerScreen(navController: NavController) {
     val context = LocalContext.current
 
-    val dpm =
-        context.getSystemService(Context.DEVICE_POLICY_SERVICE)
-            as DevicePolicyManager
-    val adminComponent =
-        ComponentName(
-            context.packageName,
-            WebviewKioskAdminReceiver::class.java.name,
-        )
-
-    var isDeviceOwner by remember {
-        mutableStateOf(dpm.isDeviceOwnerApp(context.packageName))
+    var capabilities by remember {
+        mutableStateOf(DeviceOwnerManager.getCapabilities(context))
     }
     var hasOwnerPermission by remember {
         mutableStateOf(DeviceOwnerManager.hasOwnerPermission(context))
@@ -86,15 +77,13 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
     var showAdminReceiverListDialog by remember { mutableStateOf(false) }
     var showLockTaskPackagesDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(isDeviceOwner) {
-        DeviceOwnerManager.init(context)
-    }
-
     LaunchedEffect(Unit) {
+        DeviceOwnerManager.initWithDhizukuRetry(context)
         while (true) {
-            delay(1000.milliseconds)
-            isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)
+            DeviceOwnerManager.init(context)
             hasOwnerPermission = DeviceOwnerManager.hasOwnerPermission(context)
+            capabilities = DeviceOwnerManager.getCapabilities(context)
+            delay(1000.milliseconds)
         }
     }
 
@@ -114,25 +103,37 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
-            if (!hasOwnerPermission) {
-                Text(
-                    text =
-                        stringResource(
-                            R.string.ui_device_owner_not_configured,
-                            stringResource(R.string.app_name),
-                        ),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(top = 6.dp),
-                )
-            }
+            ManagementStatusCard(deviceOwnerStatus, hasOwnerPermission, capabilities)
 
-            Spacer(modifier = Modifier.height(6.dp))
+            val featureReason =
+                lockTaskPolicyUnavailableReason(
+                        sdkInt = Build.VERSION.SDK_INT,
+                        minimumSdk = Build.VERSION_CODES.P,
+                        status = deviceOwnerStatus,
+                        hasOwnerPermission = hasOwnerPermission,
+                        policyAccess = capabilities.lockTaskFeatures,
+                    )
+                    ?.let { stringResource(it) }
+            val blockActivityReason =
+                lockTaskPolicyUnavailableReason(
+                        sdkInt = Build.VERSION.SDK_INT,
+                        minimumSdk = Build.VERSION_CODES.R,
+                        status = deviceOwnerStatus,
+                        hasOwnerPermission = hasOwnerPermission,
+                        policyAccess = capabilities.lockTaskFeatures,
+                    )
+                    ?.let { stringResource(it) }
+            val packagesReason =
+                lockTaskPolicyUnavailableReason(
+                        sdkInt = Build.VERSION.SDK_INT,
+                        minimumSdk = Build.VERSION_CODES.O,
+                        status = deviceOwnerStatus,
+                        hasOwnerPermission = hasOwnerPermission,
+                        policyAccess = capabilities.lockTaskPackages,
+                    )
+                    ?.let { stringResource(it) }
 
-            if (
-                deviceOwnerStatus.mode == DeviceOwnerMode.DeviceOwner &&
-                    isDeviceOwner
-            ) {
+            if (capabilities.removeOwner) {
                 Button(
                     onClick = { showDeviceOwnerRemovalDialog = true },
                     colors =
@@ -146,14 +147,13 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 ) {
                     Text(stringResource(R.string.ui_deactivate_device_owner))
                 }
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    Button(
-                        onClick = { showAdminReceiverListDialog = true },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
-                    ) {
-                        Text(stringResource(R.string.ui_transfer_ownership))
-                    }
+            }
+            if (capabilities.transferOwnership) {
+                Button(
+                    onClick = { showAdminReceiverListDialog = true },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                ) {
+                    Text(stringResource(R.string.ui_transfer_ownership))
                 }
             }
 
@@ -171,26 +171,35 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 DividerDefaults.color,
             )
 
-            LockTaskFeatureHomeSetting()
-            LockTaskFeatureOverviewSetting()
-            LockTaskFeatureGlobalActionsSetting()
-            LockTaskFeatureNotificationsSetting()
-            LockTaskFeatureSystemInfoSetting()
-            LockTaskFeatureKeyguardSetting()
-            LockTaskFeatureBlockActivityStartInTaskSetting()
+            LockTaskFeatureHomeSetting(disabledReason = featureReason)
+            LockTaskFeatureOverviewSetting(disabledReason = featureReason)
+            LockTaskFeatureGlobalActionsSetting(disabledReason = featureReason)
+            LockTaskFeatureNotificationsSetting(disabledReason = featureReason)
+            LockTaskFeatureSystemInfoSetting(disabledReason = featureReason)
+            LockTaskFeatureKeyguardSetting(disabledReason = featureReason)
+            LockTaskFeatureBlockActivityStartInTaskSetting(
+                disabledReason = blockActivityReason
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
-                enabled =
-                    hasOwnerPermission &&
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O,
+                enabled = packagesReason == null,
                 onClick = {
                     showLockTaskPackagesDialog = true
                 },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
             ) {
                 Text(stringResource(R.string.ui_manage_lock_task_packages))
+            }
+
+            if (packagesReason != null) {
+                Text(
+                    packagesReason,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.warning,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -219,6 +228,8 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                                 context = context,
                                 onGranted = {
                                     setupLockTaskPackage(context)
+                                    capabilities =
+                                        DeviceOwnerManager.getCapabilities(context)
                                     hasOwnerPermission =
                                         DeviceOwnerManager.hasOwnerPermission(
                                             context
@@ -281,30 +292,25 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 TextButton(
                     onClick = {
                         showDeviceOwnerRemovalDialog = false
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            try {
-                                @Suppress("DEPRECATION")
-                                dpm.clearProfileOwner(adminComponent)
-                            } catch (e: Throwable) {
-                                Log.w(
-                                    Constants.APP_SCHEME,
-                                    "Failed to clear profile owner",
-                                    e,
-                                )
-                            }
-                        }
                         try {
-                            @Suppress("DEPRECATION")
-                            dpm.clearDeviceOwnerApp(context.packageName)
-                        } catch (e: Throwable) {
+                            DeviceOwnerManager.removeNativeOwner(context)
+                        } catch (e: Exception) {
                             Log.e(
                                 Constants.APP_SCHEME,
-                                "Failed to clear device owner app",
+                                "Failed to remove management owner",
                                 e,
                             )
+                            ToastManager.show(
+                                context,
+                                context.getString(
+                                    R.string.ui_error_value,
+                                    e.message,
+                                ),
+                            )
                         }
-                        DeviceOwnerManager.init(context)
-                        isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)
+                        hasOwnerPermission =
+                            DeviceOwnerManager.hasOwnerPermission(context)
+                        capabilities = DeviceOwnerManager.getCapabilities(context)
                     }
                 ) {
                     Text(

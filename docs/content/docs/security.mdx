@@ -1,9 +1,10 @@
 ---
 title: Security
-description: Authentication, launcher, lock task mode/pinning, device owner, DPC and managed configurations
+description: Authentication, launcher, lock task mode/pinning, Device Owner, Profile Owner, DPC and managed configurations
 ---
 
 import Link from 'fumadocs-core/link';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 ## 1. Settings Authentication Session [#settings-authentication-session]
 
@@ -43,7 +44,7 @@ For more on Android App Pinning ([screen pinning](https://developer.android.com/
 1. [Samsung Guide for Unpin Lock](https://www.samsung.com/sg/support/mobile-devices/pin-an-app-to-your-phone-screen-so-that-it-cant-be-closed)
 
 When in screen pinning mode, you will not be able to launch other applications.
-See the `Device Owner Mode` section for further details.
+See the ownership modes below for further details.
 
 ### 3.2. Device Policy Controller [#device-policy-controller]
 
@@ -64,9 +65,8 @@ This has the benefits of:
 
 In
 [Lock Task Mode](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode),
-the only way to unlock {APP_NAME} would be using a methods provided in-app,
-which are always configurable and can be disabled. The supported methods are
-currently:
+the in-app unlock methods are configurable and can be disabled. An eligible
+DPC can also end Lock Task by updating its policy. The in-app methods are:
 
 1. Opening the Kiosk Control Panel by either
    - holding the back button
@@ -75,7 +75,7 @@ currently:
 1. Adding a custom unlock shortcut (requires a physical keyboard or
    a method of that sending key combinations, e.g. `CTRL+1`)
 
-There are also standalone applications that, when set as the device owner, can
+There are also standalone applications that, when granted eligible ownership, can
 perform the duties of a DPC. Below are instructions for two popular applications:
 1. Google's [Test DPC](https://github.com/googlesamples/android-testdpc)
 
@@ -97,7 +97,9 @@ val APP_PACKAGES = arrayOf(
 
 val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 val adminName = getComponentName(context)
-dpm.setLockTaskPackages(adminName, APP_PACKAGES)
+// Android 8+ (API 26+): preserve packages already allowed by the DPC.
+val packages = (dpm.getLockTaskPackages(adminName).toList() + APP_PACKAGES).distinct()
+dpm.setLockTaskPackages(adminName, packages.toTypedArray())
 ```
 
 For more information, see
@@ -113,7 +115,14 @@ launch other apps in Lock Task Mode (kiosk).
 The easiest way is to factory reset your device and use the
 [QR Code installation method](/docs/installation#qr-code-provisioning).
 
-However, if this isn't possible, you can try the following:
+<Callout title="Alternative without removing accounts" type="info">
+
+The [XDA community guide](https://xdaforums.com/t/how-i-got-device-owner-without-factory-reset.4745834/#post-90768446)
+describes an alternative to removing accounts or freezing account apps.
+
+</Callout>
+
+If you use the account-removal method instead, follow these steps:
 
 <Steps>
 
@@ -158,16 +167,173 @@ for a video demonstration.
 
 </Steps>
 
-{APP_NAME} also supports [Dhizuku](https://github.com/iamr0s/Dhizuku), a
-tool that can share device owner permissions.
+{APP_NAME} also supports [Dhizuku](https://github.com/iamr0s/Dhizuku) for shared
+Device Owner or Profile Owner permissions. See the
+[activation guide](https://github.com/iamr0s/Dhizuku/discussions/19) or
+[Dhizuku setup below](#dhizuku-profile-owner).
 
-If you encounter any troubles with the setup, it is worth taking a look at the
-[Dhizuku activation guide](https://github.com/iamr0s/Dhizuku/discussions/19),
-which includes helpful debugging steps when setting up a device owner application.
+### 3.4. Profile Owner (Main User) [#profile-owner-mode]
+
+Profile Owner manages kiosk settings in your personal user.
+
+The advantage when compared to device owner is that this still enables you to
+have a [Work Profile](https://www.android.com/intl/en_au/enterprise/work-profile/).
+
+#### 3.4.1. ADB setup [#profile-owner-adb]
+
+<Callout title="Android user" type="warning">
+
+The commands below use user `0`, the main user on most devices. Check yours with
+`adb shell am get-current-user`. If it differs, use that main user ID instead.
+
+</Callout>
+
+1. Install {APP_NAME}, enable USB debugging, and connect a computer with
+   [ADB](https://developer.android.com/tools/adb).
+
+2. Assign Profile Owner:
+
+   <Tabs items={['GitHub/F-Droid/IzzyOnDroid', 'Google Play/Aurora Store', 'Debug APK']}>
+
+   <Tab value="GitHub/F-Droid/IzzyOnDroid">
+
+   ```sh
+   adb shell dpm set-profile-owner --user 0 uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
+   ```
+
+   </Tab>
+
+   <Tab value="Google Play/Aurora Store">
+
+   ```sh
+   adb shell dpm set-profile-owner --user 0 com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+   ```
+
+   </Tab>
+
+   <Tab value="Debug APK">
+
+   ```sh
+   adb shell dpm set-profile-owner --user 0 uk.nktnet.webviewkiosk.debug/.WebviewKioskAdminReceiver
+   ```
+
+   </Tab>
+
+   </Tabs>
+
+3. Open **Settings → Device → Manage Device Policies**. Confirm **Profile Owner**,
+   **Full User**, and Lock Task policy access.
+
+#### 3.4.2. Work Profile [#work-profile-setup]
+
+This step is optional. However, if you do not wish to create a work profile, consider
+using the Device Owner setup instead.
+
+```sh
+adb shell pm create-user --profileOf 0 --managed Work
+```
+
+<Callout title="Work-profile user ID" type="warning">
+
+The remaining commands assume the new profile has ID `10`. Use the ID printed
+by `create-user` if it differs. `--profileOf 0` refers to the personal profile
+(main user) from the ADB setup above.
+
+</Callout>
+
+Start the profile and install the existing {APP_NAME} package in it:
+
+<Tabs items={['GitHub / F-Droid / IzzyOnDroid', 'Google Play / Aurora', 'Debug APK']}>
+
+<Tab value="GitHub / F-Droid / IzzyOnDroid">
+
+```sh
+adb shell am start-user 10
+adb shell pm install-existing --user 10 uk.nktnet.webviewkiosk
+adb shell dpm set-profile-owner --user 10 uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
+adb shell am start --user 10 -n uk.nktnet.webviewkiosk/.MainActivity
+```
+
+</Tab>
+
+<Tab value="Google Play / Aurora">
+
+```sh
+adb shell am start-user 10
+adb shell pm install-existing --user 10 com.nktnet.webview_kiosk
+adb shell dpm set-profile-owner --user 10 com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+adb shell am start --user 10 -n com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.MainActivity
+```
+
+</Tab>
+
+<Tab value="Debug APK">
+
+```sh
+adb shell am start-user 10
+adb shell pm install-existing --user 10 uk.nktnet.webviewkiosk.debug
+adb shell dpm set-profile-owner --user 10 uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+adb shell am start --user 10 -n uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewkiosk.MainActivity
+```
+
+</Tab>
+
+</Tabs>
+
+The work copy has separate app data and work-profile permissions. It does not
+replace the owner in the personal user.
+
+#### 3.4.3. QR provisioning [#profile-owner-qr]
+
+QR enrollment can set up Device Owner or create a Profile Owner in a **separate
+work profile**. It cannot assign Profile Owner to your existing main user.
+Use ADB for main-user setup.
+
+The [QR installation tool](/tools/qr-installation) sets up Device Owner only.
+Use a compatible DPC or MDM for work-profile enrollment.
+
+See [Google's provisioning modes](https://developers.google.com/android/work/play/emm-api/prov-devices).
+
+#### 3.4.4. Capabilities and limits [#owner-capabilities]
+
+| Operation | Device Owner | Eligible full-user Profile Owner | Ordinary work-profile Profile Owner |
+| --- | --- | --- | --- |
+| Choose Lock Task apps | Yes | Android 9+ without a Device Owner, or Android 8+ for affiliated secondary users | Only with eligible affiliation/policy access |
+| Configure Lock Task features | Android 9+ | Android 9+ with policy access | Unavailable in ordinary unaffiliated work profiles |
+| Lock Task Mode | App must be allowlisted | App must be allowlisted | Ownership alone is insufficient |
+| Transfer native ownership | Android 9+ | Android 9+, retaining owner scope | Android 9+, retaining work-profile scope |
+| Deactivate owner | Testing only | Android 7+ on full users, testing only | Not available |
+
+#### 3.4.5. Dhizuku shared ownership [#dhizuku-profile-owner]
+
+Install [Dhizuku](https://github.com/iamr0s/Dhizuku) in the same full Android user
+as {APP_NAME}. Assign it Profile Owner:
+
+```sh
+adb shell dpm set-profile-owner --user 0 com.rosan.dhizuku/.server.DhizukuDAReceiver
+```
+
+On Android 9+, open **Device → Manage Device Policies** and grant Dhizuku
+permission. The status shows Dhizuku, its owner role, and user scope.
+Only that owner's permissions are shared. Native owner removal and transfer
+remain unavailable through Dhizuku. Revoking permission or disconnecting Dhizuku
+disables policy editing.
+
+#### 3.4.6. External DPC and lock state [#external-dpc-lock-state]
+
+An external DPC or MDM with Lock Task access can allowlist {APP_NAME} without
+sharing ownership. That DPC retains control of its policy.
+
+Screen pinning is the fallback when the app is not allowlisted. Remote
+`get_system_info` reports `data.app.lockState` as `LOCK_TASK`, `SCREEN_PINNING`,
+`NONE`, or `UNKNOWN`. Android 5–5.1 reports Unknown because it cannot distinguish
+pinning from Lock Task. Allowlisting alone does not mean Lock Task is running.
+
+See the [Lock Task guide](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode).
 
 ## 4. Managed Configurations (App Restrictions) [#managed-configurations-app-restrictions]
 
-For fully managed (company-owned) devices, you can use
+With an eligible Device Owner or Profile Owner in the same user, you can use
 [managed configurations](https://developer.android.com/work/managed-configurations)
 to restrict and remotely modify {APP_NAME} settings through your MDM/EMM.
 

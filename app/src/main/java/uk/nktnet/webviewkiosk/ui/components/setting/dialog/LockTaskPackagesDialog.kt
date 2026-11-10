@@ -114,7 +114,6 @@ fun LockTaskPackagesDialog(
 
     RemoveLockTaskAppDialog(
         show = showConfirmDialog,
-        apps = apps,
         removeApp = selectedApp,
         onDismiss = {
             showConfirmDialog = false
@@ -137,7 +136,6 @@ fun LockTaskPackagesDialog(
 @Composable
 fun RemoveLockTaskAppDialog(
     show: Boolean,
-    apps: List<AppInfo>,
     removeApp: AppInfo?,
     onDismiss: () -> Unit,
     onConfirm: (AppInfo) -> Unit,
@@ -189,7 +187,9 @@ fun RemoveLockTaskAppDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    if (!DeviceOwnerManager.hasOwnerPermission(context)) {
+                    if (
+                        !DeviceOwnerManager.getCapabilities(context).lockTaskPackages
+                    ) {
                         ToastManager.show(
                             context,
                             context.getString(
@@ -200,15 +200,17 @@ fun RemoveLockTaskAppDialog(
                     }
 
                     try {
-                        DeviceOwnerManager.DPM.setLockTaskPackages(
-                            DeviceOwnerManager.DAR,
-                            apps
-                                .filter { app ->
-                                    app.packageName != removeApp.packageName
-                                }
-                                .map { it.packageName }
-                                .toTypedArray(),
-                        )
+                        check(
+                            DeviceOwnerManager.editLockTaskPackage(
+                                context,
+                                removeApp.packageName,
+                                false,
+                            )
+                        ) {
+                            context.getString(
+                                R.string.ui_lock_task_policy_update_failed
+                            )
+                        }
                         ToastManager.show(
                             context,
                             context.getString(
@@ -285,7 +287,7 @@ fun AddLockTaskPackagesDialog(
         },
         progress = progress,
         onSelectApp = { newApp ->
-            if (!DeviceOwnerManager.hasOwnerPermission(context)) {
+            if (!DeviceOwnerManager.getCapabilities(context).lockTaskPackages) {
                 ToastManager.show(
                     context,
                     context.getString(
@@ -296,10 +298,15 @@ fun AddLockTaskPackagesDialog(
             }
 
             try {
-                DeviceOwnerManager.DPM.setLockTaskPackages(
-                    DeviceOwnerManager.DAR,
-                    (existingPackages + newApp.packageName).toTypedArray(),
-                )
+                check(
+                    DeviceOwnerManager.editLockTaskPackage(
+                        context,
+                        newApp.packageName,
+                        true,
+                    )
+                ) {
+                    context.getString(R.string.ui_lock_task_policy_update_failed)
+                }
                 ToastManager.show(
                     context,
                     context.getString(
