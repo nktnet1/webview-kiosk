@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -46,6 +47,7 @@ import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.activation.ActivationResult
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.config.data.ManagementCapabilities
@@ -53,6 +55,7 @@ import uk.nktnet.webviewkiosk.config.data.ManagementOwner
 import uk.nktnet.webviewkiosk.config.data.ManagementUserType
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.ui.components.setting.ManagementStatusCard
+import uk.nktnet.webviewkiosk.ui.components.setting.ShizukuActivationSection
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureHomeSetting
@@ -103,6 +106,91 @@ class ManagementSettingsUiTest {
         scope.cancel()
         controller.pause().stop().destroy()
         ViewRootForTest.onViewCreatedCallback = null
+    }
+
+    @Test
+    fun shizukuActivationLetsUserPickProfileOwnerAndShowsAndroidFailure() {
+        var chosen: Boolean? = null
+        var refreshed = false
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = false,
+                onActivated = { refreshed = true },
+                activate = {
+                    chosen = it
+                    ActivationResult(false, "Error: another owner already exists")
+                },
+            )
+        }
+        click("Activate with Shizuku")
+        assertText("Device Owner")
+        assertText("Profile Owner")
+        click("Profile Owner")
+        assertText(message(R.string.ui_shizuku_profile_owner_info))
+        click("Activate")
+        assertEquals(true, chosen)
+        assertTrue(refreshed)
+        assertText("Activation failed")
+        assertText("Error: another owner already exists")
+        click("Close")
+        assertNoText("Activation failed")
+    }
+
+    @Test
+    fun shizukuDeviceOwnerSuccessRemainsVisibleWhenNativeStatusChanges() {
+        val native = mutableStateOf(false)
+        var chosen: Boolean? = null
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = native.value,
+                onActivated = { native.value = true },
+                activate = {
+                    chosen = it
+                    ActivationResult(true, "Success")
+                },
+            )
+        }
+        click("Activate with Shizuku")
+        click("Activate")
+        assertEquals(false, chosen)
+        assertText("Ownership activated")
+        assertText("Success")
+        click("Close")
+        assertNoText("Activate with Shizuku")
+    }
+
+    @Test
+    fun pendingShizukuActivationDisablesRoleChangesAndDuplicateSubmission() {
+        val result = CompletableDeferred<ActivationResult>()
+        var calls = 0
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = false,
+                onActivated = {},
+                activate = {
+                    calls++
+                    result.await()
+                },
+            )
+        }
+        click("Activate with Shizuku")
+        click("Activate")
+        assertEquals(1, calls)
+        assertText("Activating ownership…")
+        for (label in
+            listOf("Device Owner", "Profile Owner", "Activate", "Cancel")) {
+            assertTrue(
+                label,
+                nodes(merged = true).any {
+                    label in text(it) &&
+                        it.config.getOrNull(SemanticsProperties.Disabled) != null
+                },
+            )
+        }
+        result.complete(ActivationResult(false, "Rejected"))
+        frames()
+        assertText("Activation failed")
+        assertEquals(1, calls)
     }
 
     @Test

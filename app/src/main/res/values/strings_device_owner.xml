@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="ui_activate_with_shizuku">Activate with Shizuku</string>
+    <string name="ui_shizuku_activate">Activate</string>
+    <string name="ui_shizuku_activating">Activating ownership…</string>
+    <string name="ui_shizuku_activation_info">Start Shizuku and allow access when prompted. Choose the ownership to grant to this app in Android\'s main user (usually ID 0). Secondary users and work profiles are not supported.\n\nActivation temporarily changes the user setup flag, then restores it. Android may still reject activation because of existing owners, accounts, other users, or device restrictions. The result will show Android\'s response.</string>
+    <string name="ui_shizuku_profile_owner_info">This activates Profile Owner in your existing main user. It does not create a work profile. Lock Task policies depend on Android granting the required authority or affiliation.</string>
+    <string name="ui_shizuku_activation_success">Ownership activated</string>
+    <string name="ui_shizuku_activation_failed">Activation failed</string>
     <string name="ui_add_lock_task_package" formatted="false">"Add Lock Task Package"</string>
     <string name="ui_app" formatted="false">"App"</string>
     <string name="ui_are_you_sure_you_want_to_transfer_ownership_to_value">"Are you sure you want to transfer ownership to %1$s?"</string>

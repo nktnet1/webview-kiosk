@@ -30,6 +30,7 @@ android {
     }
 
     buildFeatures {
+        aidl = true
         buildConfig = true
         compose = true
     }
@@ -190,6 +191,8 @@ dependencies {
     retrofix(libs.android.retrostreams)
     retrofix(libs.android.retrofuture)
     implementation(libs.dhizuku.api)
+    implementation(libs.shizuku.api)
+    implementation(libs.shizuku.provider)
     implementation(libs.hiddenapibypass)
     implementation(libs.reorderable)
     debugImplementation(libs.androidx.ui.tooling)

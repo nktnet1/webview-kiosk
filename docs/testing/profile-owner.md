@@ -75,6 +75,30 @@ For each eligible owner mode:
 Primary references and setup instructions are linked in
 `docs/content/docs/security.mdx`.
 
+## Shizuku activation
+
+`OwnerActivationTest` covers explicit user targeting, both ownership commands,
+nonzero main-user IDs, secondary/work-profile rejection, unknown main-user
+responses, pre-Android-14 full-system-user detection, and setup restoration on
+success, command failure, and exceptions. Client tests cover permission and
+service lifecycle failures; UI tests cover role selection and result display.
+These tests do not provision an Android device or emulate the Shizuku server.
+
+On disposable devices, test both ownership choices with Shizuku running as
+ADB/shell and root. Record the original and final
+`settings --user <main-id> get secure user_setup_complete`, the result dialog,
+and `dumpsys device_policy`. Include Android 6–11 (legacy setup refresh),
+Android 12+ (per-user setup refresh), and Android 14+ with a nonzero main user
+where available. Test unknown main-user detection, secondary users, work
+profiles, existing ownership, account restrictions, denied/revoked permission,
+Shizuku unavailable/restarted, binding failure, and leaving the screen during
+activation. Confirm setup restoration after failed `dpm` calls and native owner
+status plus self-allowlisting after success. On Android 5–5.1 verify that the
+provider is disabled and the activation action is absent. Repeat with debug
+and minified release variants so R8 entry points and package names are checked.
+
+The real-device Shizuku matrix must not be reported as passed without running it.
+
 For authentication regression checks, test both the personal and work copies
 with unified and separate work-profile screen locks. A successful biometric or
 PIN/pattern/password prompt must open settings without a Keystore operation.

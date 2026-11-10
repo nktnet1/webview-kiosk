@@ -115,6 +115,28 @@ launch other apps in Lock Task Mode (kiosk).
 The easiest way is to factory reset your device and use the
 [QR Code installation method](/docs/installation#qr-code-provisioning).
 
+For an existing device, **Settings → Device → Manage Device Policies →
+Activate with Shizuku** provides in-app activation on Android 6+. Start
+[Shizuku](https://shizuku.rikka.app), choose **Device Owner** or **Profile Owner**,
+and grant Shizuku access when prompted. The app must be opened in Android's
+main user, usually user `0`. On Android 14+, activation resolves the main user
+ID rather than using the foreground user or assuming `0`. Older headless-system
+devices are rejected when their main user cannot be identified safely.
+
+Like [OwnDroid](https://github.com/BinTianqi/OwnDroid), activation uses a
+Shizuku user service to temporarily clear the target user's setup-complete flag,
+refresh device policy state, and run the selected `dpm` command. It then restores
+the original flag before returning the result, including when activation fails.
+Any setup-state refresh or restoration errors are included in the result.
+Stopping Shizuku or forcibly killing its service during activation can interrupt
+cleanup. Existing owners, accounts, other users, and OEM restrictions may still
+prevent activation; Android's response is shown in the result dialog.
+
+Successful activation grants native ownership to the installed app variant.
+Shizuku is not needed for subsequent policy operations. **Profile Owner** uses
+the existing main user and does not create a work profile. Confirm the owner
+role and available Lock Task policies in the Device Policies status card.
+
 <Callout title="Alternative without removing accounts" type="info">
 
 The [XDA community guide](https://xdaforums.com/t/how-i-got-device-owner-without-factory-reset.4745834/#post-90768446)
@@ -183,8 +205,11 @@ have a [Work Profile](https://www.android.com/intl/en_au/enterprise/work-profile
 
 <Callout title="Android user" type="warning">
 
-The commands below use user `0`, the main user on most devices. Check yours with
-`adb shell am get-current-user`. If it differs, use that main user ID instead.
+The commands below use user `0`, the main user on most devices. On Android 14+,
+check yours with `adb shell cmd user get-main-user`. The current foreground user
+can be a secondary user. Use the main user ID rather than a secondary or
+work-profile ID. You can also use **Activate with Shizuku** above for main-user
+Profile Owner activation.
 
 </Callout>
 
@@ -287,7 +312,7 @@ replace the owner in the personal user.
 
 QR enrollment can set up Device Owner or create a Profile Owner in a **separate
 work profile**. It cannot assign Profile Owner to your existing main user.
-Use ADB for main-user setup.
+Use ADB or **Activate with Shizuku** for main-user setup.
 
 The [QR installation tool](/tools/qr-installation) sets up Device Owner only.
 Use a compatible DPC or MDM for work-profile enrollment.
