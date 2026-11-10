@@ -3,7 +3,6 @@ title: Installation
 description: Supported platforms to download the app.
 ---
 
-import Link from 'fumadocs-core/link';
 import { joinURL } from 'ufo';
 import { PLAYSTORE_URL, GITHUB_URL } from '#/config/links'
 
@@ -142,27 +141,8 @@ criteria is also met.
 
 ## 3. QR Code Provisioning [#qr-code-provisioning]
 
-This is the recommended installation method for full device owner capabilities.
+For a new or factory-reset dedicated kiosk, follow the
+[factory reset and QR activation guide](/docs/activation/qr-code).
+It includes the [QR Installation tool](/tools/qr-installation) and setup steps.
 
-<Steps>
-
-<Step>
-On a new or factory-reset device, tap the screen 6 times on the same spot.
-</Step>
-
-<Step>
-You may be prompted to connect to a Wi-Fi network on some devices to download a QR scanner.
-</Step>
-
-<Step>
-Go to the <Link href="/tools/qr-installation">QR Installation tool</Link> to generate a QR code.
-</Step>
-
-<Step>
-Scan the QR code with device and follow the setup wizard instructions.
-</Step>
-
-</Steps>
-
-If you do not want to factory reset your device, refer to the
-[security](/docs/security#device-owner-mode) guide for a different method.
+To keep an existing device's data, choose [another activation method](/docs/activation).

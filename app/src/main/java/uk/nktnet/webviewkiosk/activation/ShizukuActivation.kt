@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
 import android.os.Process
+import android.util.Log
 import androidx.annotation.RequiresApi
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.resume
@@ -52,8 +53,12 @@ internal interface ShizukuAccess {
 @RequiresApi(Build.VERSION_CODES.M)
 private object PlatformShizukuAccess : ShizukuAccess {
     override fun checkAvailable() {
-        check(Shizuku.pingBinder()) { "Start Shizuku, then try again" }
-        check(Shizuku.getVersion() >= 11) { "Update Shizuku, then try again" }
+        checkActivation(Shizuku.pingBinder()) {
+            "Shizuku is not running. Open Shizuku, start its service, then try again."
+        }
+        checkActivation(Shizuku.getVersion() >= 11) {
+            "Update Shizuku, restart its service, then try again."
+        }
     }
 
     override fun permissionGranted() =
@@ -106,11 +111,12 @@ internal object ShizukuActivation {
                 val dpm =
                     context.getSystemService(Context.DEVICE_POLICY_SERVICE)
                         as DevicePolicyManager
-                check(
+                checkActivation(
                     !dpm.isDeviceOwnerApp(context.packageName) &&
                         !dpm.isProfileOwnerApp(context.packageName)
                 ) {
-                    "This app already has native ownership"
+                    "This app already has native ownership. Check Device Policies " +
+                        "before trying to activate another role."
                 }
                 access.checkAvailable()
                 awaitPermission(access)
@@ -128,7 +134,8 @@ internal object ShizukuActivation {
                         success = false,
                         output =
                             result.output +
-                                "\n\nAndroid did not confirm the requested ownership.",
+                                "\n\nAndroid did not confirm the requested ownership. " +
+                                "Check Device Policies and try again.",
                     )
                 } else {
                     if (verified) {
@@ -137,14 +144,13 @@ internal object ShizukuActivation {
                     result
                 }
             } catch (_: TimeoutCancellationException) {
-                ActivationResult(
-                    false,
-                    "Timed out waiting for Shizuku. Check Shizuku and try again.",
-                )
+                activationFailure(java.util.concurrent.TimeoutException())
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                ActivationResult(false, e.message ?: e.javaClass.simpleName)
+                activationFailure(e).also {
+                    Log.w("OwnerActivation", it.diagnostics)
+                }
             }
         }
     }
@@ -153,7 +159,7 @@ internal object ShizukuActivation {
         if (access.permissionGranted()) {
             return
         }
-        check(!access.permissionDeniedPermanently()) {
+        checkActivation(!access.permissionDeniedPermanently()) {
             "Shizuku permission was denied. Allow this app in Shizuku and try again."
         }
         val requestCode = permissionRequests.getAndIncrement()
@@ -165,7 +171,10 @@ internal object ShizukuActivation {
                     continuation.resume(Unit)
                 } else {
                     continuation.resumeWithException(
-                        IllegalStateException("Shizuku permission was denied")
+                        ActivationException(
+                            "Shizuku permission was denied. Allow this app in " +
+                                "Shizuku, then try again."
+                        )
                     )
                 }
             }
@@ -173,7 +182,11 @@ internal object ShizukuActivation {
         val died = Shizuku.OnBinderDeadListener {
             pending
                 ?.takeIf { it.isActive }
-                ?.resumeWithException(IllegalStateException("Shizuku disconnected"))
+                ?.resumeWithException(
+                    ActivationException(
+                        "Shizuku disconnected. Open Shizuku, restart its service, then try again."
+                    )
+                )
         }
         try {
             access.addPermissionListener(listener)
@@ -218,8 +231,9 @@ internal object ShizukuActivation {
                             continuation.resume(service)
                         } else {
                             continuation.resumeWithException(
-                                IllegalStateException(
-                                    "Shizuku activation service is unavailable"
+                                ActivationException(
+                                    "Could not connect to Shizuku. Open Shizuku, " +
+                                        "restart its service, then try again."
                                 )
                             )
                         }
@@ -230,8 +244,9 @@ internal object ShizukuActivation {
                     pending
                         ?.takeIf { it.isActive }
                         ?.resumeWithException(
-                            IllegalStateException(
-                                "Shizuku activation service disconnected"
+                            ActivationException(
+                                "Shizuku disconnected. Open Shizuku, restart " +
+                                    "its service, then try again."
                             )
                         )
                 }
@@ -256,9 +271,26 @@ internal object ShizukuActivation {
                     IActivationService.Stub.asInterface(binder)
                         .activate(profileOwner, Process.myUserHandle().hashCode())
                 ActivationResult(
-                    bundle?.getBoolean("success", false) == true,
-                    bundle?.getString("output") ?: "No activation result received",
-                )
+                        bundle?.getBoolean("success", false) == true,
+                        bundle?.getString("message")
+                            ?: if (bundle?.getBoolean("success", false) == true) {
+                                "Ownership is now active. Check Device Policies for available permissions."
+                            } else {
+                                activationFailure(
+                                        IllegalStateException(
+                                            bundle?.getString("output").orEmpty()
+                                        )
+                                    )
+                                    .output
+                            },
+                        bundle?.getString("diagnostics")
+                            ?: bundle?.getString("output").orEmpty(),
+                    )
+                    .also {
+                        if (it.diagnostics.isNotBlank()) {
+                            Log.d("OwnerActivation", it.diagnostics)
+                        }
+                    }
             }
         } finally {
             access.removeDeathListener(died)

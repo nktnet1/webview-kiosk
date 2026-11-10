@@ -73,7 +73,7 @@ For each eligible owner mode:
     unavailable. Apply an app restriction and confirm it cannot be edited.
 
 Primary references and setup instructions are linked in
-`docs/content/docs/security.mdx`.
+`docs/content/docs/activation/` and `docs/content/docs/security.mdx`.
 
 ## Shizuku activation
 
@@ -82,13 +82,17 @@ nonzero main-user IDs, secondary/work-profile rejection, unknown main-user
 responses, pre-Android-14 full-system-user detection, and setup restoration on
 success, command failure, and exceptions. Client tests cover permission and
 service lifecycle failures; UI tests cover role selection and result display.
-These tests do not provision an Android device or emulate the Shizuku server.
+`ShizukuActivationTest` also exercises the client on Android 6 and 11 runtimes
+with a fake transport. Android 6–11 activation must not change setup state;
+the optional workaround starts at Android 12. Error tests verify that raw
+Android stacktraces stay out of the result dialog. These tests do not provision
+an Android device or emulate the Shizuku server.
 
 On disposable devices, test both ownership choices with Shizuku running as
 ADB/shell and root. Record the original and final
 `settings --user <main-id> get secure user_setup_complete`, the result dialog,
-and `dumpsys device_policy`. Include Android 6–11 (legacy setup refresh),
-Android 12+ (per-user setup refresh), and Android 14+ with a nonzero main user
+and `dumpsys device_policy`. Include Android 6–11 (ordinary activation without changing setup state),
+Android 12+ (optional setup-state workaround), and Android 14+ with a nonzero main user
 where available. Test unknown main-user detection, secondary users, work
 profiles, existing ownership, account restrictions, denied/revoked permission,
 Shizuku unavailable/restarted, binding failure, and leaving the screen during

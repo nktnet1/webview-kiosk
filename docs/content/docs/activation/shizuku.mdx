@@ -1,0 +1,44 @@
+---
+title: Shizuku
+description: Activate Device Owner or main-user Profile Owner from the app.
+---
+
+Use this method on an existing device without resetting it. Android may still
+block activation because of accounts, existing ownership, or other users.
+
+## Requirements [#requirements]
+
+- **Android 6+** supports Shizuku and standard owner activation, subject to
+  Android's normal restrictions.
+- **Android 6–10 without root:** start Shizuku using a computer and USB debugging.
+- **Android 11+ without root:** you can start Shizuku using wireless debugging.
+- **Rooted devices:** use Shizuku's root startup option.
+- **Android 12+:** the app can try an experimental workaround for account
+  restrictions. It is not guaranteed, and is not attempted on Android 6–11.
+
+See [Shizuku's startup guide](https://shizuku.rikka.app/guide/setup/).
+The in-app method targets the main user only, usually ID `0`.
+
+## Activate ownership [#activate]
+
+1. Install [Shizuku](https://shizuku.rikka.app/download/), start it, and confirm
+   it shows that the service is running.
+2. Open {APP_NAME} in the main user.
+3. Go to **Settings → Device → Manage Device Policies → Activate with Shizuku**.
+4. Choose **Device Owner** or **Profile Owner**, then tap **Activate**.
+5. Allow {APP_NAME} access when Shizuku asks. Keep Shizuku running until the
+   result appears.
+6. Check the Device Policies card for the owner role and available Lock Task
+   policies.
+
+Profile Owner here manages your existing main user; it does not create a work
+profile. After successful activation, policy operations use native ownership
+and do not need Shizuku to stay running.
+
+## If activation fails [#activation-fails]
+
+The result explains what to check next. Start Shizuku if it stopped, allow the
+app if permission was denied, or review conflicting accounts and management.
+On Android 6–11, normal account restrictions still apply even when Shizuku is
+running. See [Troubleshooting](/docs/activation/troubleshooting) or choose
+[ADB](/docs/activation/adb) or [QR setup](/docs/activation/qr-code).

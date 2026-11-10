@@ -1,0 +1,14 @@
+{
+  "title": "Device Activation",
+  "defaultOpen": false,
+  "pages": [
+    "index",
+    "shizuku",
+    "adb",
+    "qr-code",
+    "dhizuku",
+    "external-dpc",
+    "work-profile",
+    "troubleshooting"
+  ]
+}

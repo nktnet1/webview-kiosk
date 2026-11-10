@@ -8,8 +8,6 @@ import androidx.annotation.Keep;
 
 @Keep
 public interface IDevicePolicyManager extends IInterface {
-    void forceUpdateUserSetupComplete();
-
     void forceUpdateUserSetupComplete(int userId);
 
     @SuppressWarnings("unused")

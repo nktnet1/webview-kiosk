@@ -118,7 +118,11 @@ class ManagementSettingsUiTest {
                 onActivated = { refreshed = true },
                 activate = {
                     chosen = it
-                    ActivationResult(false, "Error: another owner already exists")
+                    ActivationResult(
+                        false,
+                        "An owner is already configured. Check Device Policies.",
+                        "java.lang.IllegalStateException: existing owner\n at android.app.admin.DevicePolicyManager.run(DPM.java:42)",
+                    )
                 },
             )
         }
@@ -131,7 +135,10 @@ class ManagementSettingsUiTest {
         assertEquals(true, chosen)
         assertTrue(refreshed)
         assertText("Activation failed")
-        assertText("Error: another owner already exists")
+        assertText("An owner is already configured. Check Device Policies.")
+        assertNoText(
+            "java.lang.IllegalStateException: existing owner\n at android.app.admin.DevicePolicyManager.run(DPM.java:42)"
+        )
         click("Close")
         assertNoText("Activation failed")
     }

@@ -2,6 +2,7 @@
   "pages": [
     "index",
     "installation",
+    "activation",
     "security",
     "setting-actions",
     "settings",

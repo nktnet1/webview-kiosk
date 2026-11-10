@@ -44,6 +44,8 @@ class ActivationService : IActivationService.Stub() {
         return Bundle().apply {
             putBoolean("success", result.success)
             putString("output", result.output)
+            putString("message", result.output)
+            putString("diagnostics", result.diagnostics)
         }
     }
 
@@ -56,16 +58,17 @@ class ActivationService : IActivationService.Stub() {
 
     @SuppressLint("PrivateApi")
     private fun refreshSetupState(userId: Int) {
+        // The no-argument API on Android 8–11 is a no-op on production builds.
+        // https://github.com/BinTianqi/OwnDroid/issues/371
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            return
+        }
         val binder =
             Class.forName("android.os.ServiceManager")
                 .getMethod("getService", String::class.java)
                 .invoke(null, Context.DEVICE_POLICY_SERVICE) as IBinder
         val dpm = IDevicePolicyManager.Stub.asInterface(binder)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            dpm.forceUpdateUserSetupComplete(userId)
-        } else {
-            dpm.forceUpdateUserSetupComplete()
-        }
+        dpm.forceUpdateUserSetupComplete(userId)
     }
 }
 

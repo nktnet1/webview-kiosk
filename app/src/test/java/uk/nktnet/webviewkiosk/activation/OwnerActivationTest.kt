@@ -161,7 +161,8 @@ class OwnerActivationTest {
         dpmResult = CommandResult(1, "Error: another owner already exists")
         val result = engine().activate(true, 0)
         assertFalse(result.success)
-        assertTrue(result.output.contains("another owner already exists"))
+        assertTrue(result.output.contains("An owner is already configured"))
+        assertTrue(result.diagnostics.contains("another owner already exists"))
         assertTrue(commands.any { it.first() == "settings" && it.last() == "1" })
         assertEquals(listOf(0, 0), refreshed)
     }
@@ -175,7 +176,7 @@ class OwnerActivationTest {
         }
         val result = engine().activate(false, 0)
         assertFalse(result.success)
-        assertTrue(result.output.contains("Timed out"))
+        assertTrue(result.output.lowercase().contains("timed out"))
         assertTrue(commands.any { it.first() == "settings" && it.last() == "1" })
         assertEquals(listOf(0, 0), refreshed)
     }
@@ -202,7 +203,10 @@ class OwnerActivationTest {
         }
         val result = engine().activate(false, 0)
         assertTrue(result.success)
-        assertTrue(result.output.contains("WARNING: could not restore"))
+        assertTrue(
+            result.output.contains("could not restore the original setup state")
+        )
+        assertFalse(result.output.contains("Settings service unavailable"))
         assertEquals(listOf(0, 0), refreshed)
     }
 
@@ -211,7 +215,10 @@ class OwnerActivationTest {
         onRefresh = { error("Unsupported on this ROM") }
         val result = engine().activate(false, 0)
         assertTrue(result.success)
-        assertTrue(result.output.contains("Could not refresh"))
+        assertTrue(
+            result.output.contains("optional account workaround is unavailable")
+        )
+        assertFalse(result.output.contains("Unsupported on this ROM"))
         assertTrue(commands.any { it.first() == "settings" && it.last() == "1" })
     }
 
@@ -220,7 +227,10 @@ class OwnerActivationTest {
         onRefresh = { throw NoSuchMethodError("OEM method unavailable") }
         val result = engine().activate(false, 0)
         assertTrue(result.success)
-        assertTrue(result.output.contains("Could not refresh"))
+        assertTrue(
+            result.output.contains("optional account workaround is unavailable")
+        )
+        assertFalse(result.output.contains("NoSuchMethodError"))
         assertTrue(commands.any { it.first() == "settings" && it.last() == "1" })
         assertEquals(listOf(0, 0), refreshed)
     }
@@ -238,6 +248,47 @@ class OwnerActivationTest {
         }
         val result = engine().activate(false, 0)
         assertTrue(result.success)
-        assertTrue(result.output.contains("WARNING: could not restore"))
+        assertTrue(
+            result.output.contains("could not restore the original setup state")
+        )
+    }
+
+    @Test
+    fun android6Through11NeverChangesSetupStateOrCallsHiddenRefresh() {
+        for (sdk in 23..30) {
+            commands.clear()
+            refreshed.clear()
+            assertTrue(engine(sdk).activate(false, 0).success)
+            assertFalse(commands.any { it.first() == "settings" })
+            assertTrue(refreshed.isEmpty())
+            assertTrue(
+                listOf("dpm", "set-device-owner", "--user", "0", admin) in commands
+            )
+        }
+    }
+
+    @Test
+    fun android12UsesTheSetupWorkaround() {
+        assertTrue(engine(31).activate(false, 0).success)
+        assertEquals(listOf(0, 0), refreshed)
+        assertTrue(commands.any { it.first() == "settings" && it.last() == "0" })
+        assertTrue(commands.any { it.first() == "settings" && it.last() == "1" })
+    }
+
+    @Test
+    fun oldAndroidExplainsAccountRestrictionsWithoutStacktraceOrStateChanges() {
+        dpmResult =
+            CommandResult(
+                1,
+                "java.lang.IllegalStateException: accounts on the device\n" +
+                    "    at android.app.admin.DevicePolicyManager.setDeviceOwner(DPM.java:12)",
+            )
+        val result = engine(30).activate(false, 0)
+        assertFalse(result.success)
+        assertTrue(result.output.contains("Remove conflicting accounts"))
+        assertFalse(result.output.contains("java.lang"))
+        assertFalse(result.output.contains("DPM.java"))
+        assertTrue(result.diagnostics.contains("DPM.java"))
+        assertFalse(commands.any { it.first() == "settings" })
     }
 }

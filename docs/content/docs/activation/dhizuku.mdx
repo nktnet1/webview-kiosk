@@ -1,0 +1,28 @@
+---
+title: Dhizuku
+description: Share an activated owner's permissions with the kiosk.
+---
+
+Use [Dhizuku](https://github.com/iamr0s/Dhizuku) when several apps need to share
+an existing owner's permissions. {APP_NAME}'s Dhizuku integration needs Android
+9+ and both apps installed in the same full Android user.
+
+## Connect Dhizuku [#connect]
+
+1. Install Dhizuku in the same user as {APP_NAME}.
+2. Activate Dhizuku as Device Owner or an eligible main-user Profile Owner using
+   its [official activation guide](https://github.com/iamr0s/Dhizuku/discussions/19).
+   Installing or starting Dhizuku alone does not grant ownership.
+3. Open Dhizuku and confirm it has the intended owner role.
+4. Open {APP_NAME}, go to **Settings → Device → Manage Device Policies**, and
+   select **Request Dhizuku Permission** when available.
+5. Approve the request, then check that the status card shows **Dhizuku**, the
+   owner's role, and the expected user scope.
+
+If Dhizuku is not detected, open it again, confirm its activation, then reopen
+the Device Policies screen. See [Troubleshooting](/docs/activation/troubleshooting)
+if it still does not appear.
+
+Only the owner's existing authority is shared. Revoking permission or stopping
+Dhizuku disables policy editing. Manage Dhizuku's own activation, transfer, and
+removal in Dhizuku itself.

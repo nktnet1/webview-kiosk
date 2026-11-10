@@ -43,6 +43,9 @@ class ShizukuActivationTest {
     private lateinit var dpm: DevicePolicyManager
     private var grantNativeOwner = true
     private var serviceFailure = false
+    private var remoteMessage: String? = "Success"
+    private var remoteOutput = "Success"
+    private var remoteSuccess = true
     private var serviceStarted: CountDownLatch? = null
     private var serviceRelease: CountDownLatch? = null
     private val calls = mutableListOf<Pair<Boolean, Int>>()
@@ -119,7 +122,9 @@ class ShizukuActivationTest {
     @Test
     fun serviceBindingFailureStillUnbindsAndCleansListeners() {
         access.binding = { error("Binding failed") }
-        assertTrue(complete(start()).output.contains("Binding failed"))
+        val result = complete(start())
+        assertTrue(result.output.contains("Could not activate ownership"))
+        assertTrue(result.diagnostics.contains("Binding failed"))
         assertEquals(1, access.unbinds)
         assertClean()
     }
@@ -141,6 +146,18 @@ class ShizukuActivationTest {
             DeviceOwnerManager.status.value.mode,
         )
         assertEquals(1, access.unbinds)
+        assertClean()
+    }
+
+    @Test
+    @Config(sdk = [23])
+    fun clientSupportsStandardActivationOnAndroid6WithoutTheSetupWorkaround() {
+        assertTrue(complete(start()).success)
+        assertEquals(listOf(false to 0), calls)
+        assertEquals(
+            DeviceOwnerMode.DeviceOwner,
+            DeviceOwnerManager.status.value.mode,
+        )
         assertClean()
     }
 
@@ -180,8 +197,26 @@ class ShizukuActivationTest {
         serviceFailure = true
         val result = complete(start())
         assertFalse(result.success)
-        assertTrue(result.output.contains("Service failed"))
+        assertFalse(result.output.contains("Service failed"))
+        assertTrue(result.diagnostics.contains("Service failed"))
         assertEquals(1, access.unbinds)
+        assertClean()
+    }
+
+    @Test
+    fun legacyServiceCannotDumpAnAndroidStacktraceIntoTheResultDialog() {
+        grantNativeOwner = false
+        remoteSuccess = false
+        remoteMessage = null
+        remoteOutput =
+            "java.lang.IllegalStateException: accounts on the device\n" +
+                "    at android.app.admin.DevicePolicyManager.setDeviceOwner(DPM.java:12)"
+        val result = complete(start())
+        assertFalse(result.success)
+        assertTrue(result.output.contains("Remove conflicting accounts"))
+        assertFalse(result.output.contains("java.lang"))
+        assertFalse(result.output.contains("DPM.java"))
+        assertTrue(result.diagnostics.contains("DPM.java"))
         assertClean()
     }
 
@@ -292,8 +327,9 @@ class ShizukuActivationTest {
                             }
                         }
                         return Bundle().apply {
-                            putBoolean("success", true)
-                            putString("output", "Success")
+                            putBoolean("success", remoteSuccess)
+                            putString("output", remoteOutput)
+                            remoteMessage?.let { putString("message", it) }
                         }
                     }
 

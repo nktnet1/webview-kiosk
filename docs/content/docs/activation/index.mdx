@@ -1,0 +1,44 @@
+---
+title: Device Activation
+description: Choose how to enable managed kiosk permissions.
+---
+
+Activation is optional. Without owner permissions, {APP_NAME} can still browse
+and use Android screen pinning. Activate ownership when you need managed Lock
+Task policies. See [Security](/docs/security) for the protection each mode offers.
+
+## Choose an owner role [#choose-owner-role]
+
+| Role | Use it when |
+| --- | --- |
+| Device Owner | You are setting up a dedicated kiosk and need broad device management. |
+| Profile Owner in the main user | You need eligible kiosk policies in your existing personal user, potentially alongside a separate work profile. |
+| Shared owner through Dhizuku | You want Dhizuku to share its owner permissions with several apps. |
+| External DPC | Your organisation already manages the device and can allowlist the kiosk. |
+
+Main-user Profile Owner does not create a work profile. Available policies still
+depend on Android granting the required authority. Only one Device Owner can
+exist, and an existing owner may prevent another activation.
+
+## Choose an activation method [#choose-method]
+
+| Method | Requirements | Best for |
+| --- | --- | --- |
+| [Shizuku](/docs/activation/shizuku) | Android 6+; Shizuku running | In-app activation on an existing device. Wireless startup needs Android 11+. |
+| [ADB](/docs/activation/adb) | A computer with Android Platform Tools | Setting Device Owner or main-user Profile Owner directly. |
+| [Factory reset and QR code](/docs/activation/qr-code) | Android 7+; a new or reset device | A fresh dedicated kiosk with Device Owner. |
+| [Dhizuku](/docs/activation/dhizuku) | Android 9+ for this app's integration; Dhizuku already activated | Sharing an existing owner's permissions. |
+| [External DPC](/docs/activation/external-dpc) | Access to your existing management app | Allowlisting the kiosk without changing ownership. |
+
+Android 6–11 retains normal account and setup restrictions. On Android 12+,
+Shizuku can try an experimental account workaround; success still depends on
+your device. For persistent activation errors, use a backed-up, factory-reset
+device and QR setup.
+
+Use the app in the main Android user, usually ID `0`, for in-app Shizuku
+activation. Advanced [work-profile setup](/docs/activation/work-profile) is
+separate and does not give a work copy authority over the personal user.
+
+After activation, open **Settings → Device → Manage Device Policies** and check
+the role and available Lock Task policies. If setup fails, see
+[Troubleshooting](/docs/activation/troubleshooting).
