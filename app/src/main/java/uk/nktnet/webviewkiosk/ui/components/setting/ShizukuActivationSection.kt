@@ -40,7 +40,7 @@ import uk.nktnet.webviewkiosk.activation.ActivationResult
 import uk.nktnet.webviewkiosk.activation.ShizukuActivation
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
 
-@RequiresApi(Build.VERSION_CODES.M)
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 internal fun ShizukuActivationSection(
     hasNativeOwner: Boolean,

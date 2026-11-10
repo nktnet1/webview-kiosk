@@ -81,25 +81,24 @@ Primary references and setup instructions are linked in
 nonzero main-user IDs, secondary/work-profile rejection, unknown main-user
 responses, pre-Android-14 full-system-user detection, and setup restoration on
 success, command failure, and exceptions. Client tests cover permission and
-service lifecycle failures; UI tests cover role selection and result display.
-`ShizukuActivationTest` also exercises the client on Android 6 and 11 runtimes
-with a fake transport. Android 6–11 activation must not change setup state;
-the optional workaround starts at Android 12. Error tests verify that original Android stacktraces are collapsed in the
-result dialog until Show details is selected, and can be collapsed again. These tests do not provision
-an Android device or emulate the Shizuku server.
+service lifecycle failures. UI tests cover role selection and result display.
+`ShizukuActivationTest` exercises activation on Android 12 with a fake transport.
+Earlier Android versions must reject the request before permission prompts,
+service binding, or setup-state changes. Error tests cover collapsed stacktraces
+and their original exception causes. These tests do not provision a device or
+emulate the Shizuku server.
 
-On disposable devices, test both ownership choices with Shizuku running as
-ADB/shell and root. Record the original and final
-`settings --user <main-id> get secure user_setup_complete`, the result dialog,
-and `dumpsys device_policy`. Include Android 6–11 (ordinary activation without changing setup state),
-Android 12+ (optional setup-state workaround), and Android 14+ with a nonzero main user
-where available. Test unknown main-user detection, secondary users, work
-profiles, existing ownership, account restrictions, denied/revoked permission,
-Shizuku unavailable/restarted, binding failure, and leaving the screen during
-activation. Confirm setup restoration after failed `dpm` calls and native owner
-status plus self-allowlisting after success. On Android 5–5.1 verify that the
-provider is disabled and the activation action is absent. Repeat with debug
-and minified release variants so R8 entry points and package names are checked.
+On disposable devices, test both owner choices with Shizuku running as ADB/shell
+and root. Record the original and final setup state, the result dialog, and
+`dumpsys device_policy`. Include Android 12+ and Android 14+ with a nonzero main
+user where available. Test existing accounts, conflicting ownership, denied
+permission, disconnects, and navigation during activation. Confirm setup
+restoration after failed commands. Before Android 12, verify that the provider
+is disabled and the activation action is absent.
+
+`DhizukuVersionCompatibilityTest` covers Android 6 and 9 transport gates,
+permission callbacks, and native-owner priority. Test the real Dhizuku service
+on both versions before claiming device-level compatibility.
 
 The real-device Shizuku matrix must not be reported as passed without running it.
 

@@ -53,7 +53,7 @@ internal fun activationFailure(
             "account" in reason ->
                 "Android blocked activation because accounts are configured. Remove " +
                     "conflicting accounts, or back up the device and use factory reset " +
-                    "and QR setup. The Android 12+ account workaround is not guaranteed."
+                    "and QR setup."
             "several users" in reason ||
                 "multiple users" in reason ||
                 "additional users" in reason ->

@@ -3,7 +3,7 @@ title: ADB
 description: Assign Device Owner or main-user Profile Owner using a computer.
 ---
 
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 ## 1. Prepare the device [#prepare]
 
@@ -39,14 +39,18 @@ ID, replace `0` below with that ID. Do not use a secondary or work-profile ID.
 
 </Steps>
 
-Accounts, other users, or an existing owner can prevent activation. Review the
-[troubleshooting guide](/docs/activation/troubleshooting) before removing anything.
+<Callout title="Activate without removing accounts" type="info">
+
+For activation with existing accounts, see the
+[XDA guide](https://xdaforums.com/t/how-i-got-device-owner-without-factory-reset.4745834/#post-90768446).
+
+</Callout>
 
 ## 2. Choose the role and installed app [#assign-owner]
 
 Run **one** of the two owner commands in the tab matching your installation.
-Device Owner is for a dedicated kiosk. Profile Owner manages the main user and
-does not create a work profile.
+Choose [main-user Profile Owner](/docs/activation#profile-owner-work-profile)
+if you also want to use a work profile. Choose Device Owner for a dedicated kiosk.
 
 <Tabs items={['GitHub / F-Droid / IzzyOnDroid', 'Google Play / Aurora', 'Debug APK']}>
 <Tab value="GitHub / F-Droid / IzzyOnDroid">
@@ -99,9 +103,6 @@ adb shell dpm set-profile-owner --user 0 uk.nktnet.webviewkiosk.debug/uk.nktnet.
 ## 3. Check activation [#check-activation]
 
 Open **Settings → Device → Manage Device Policies**. Confirm the expected owner
-role, full-user scope, and available policies. Android's `Success` response
-alone does not guarantee every Lock Task feature is available.
+role, full-user scope, and available policies.
 
 If Android rejects the command, follow [Troubleshooting](/docs/activation/troubleshooting).
-On Android 12+, [Shizuku](/docs/activation/shizuku) may help with account
-restrictions. For a fresh dedicated kiosk, use [QR Code](/docs/activation/qr-code).

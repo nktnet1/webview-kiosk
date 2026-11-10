@@ -631,7 +631,7 @@ open class MainActivity : AppCompatActivity() {
         DeviceOwnerManager.init(this)
         updateDeviceSettings(this)
         if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
                 DeviceOwnerManager.status.value.mode !in
                     setOf(DeviceOwnerMode.DeviceOwner, DeviceOwnerMode.ProfileOwner)
         ) {

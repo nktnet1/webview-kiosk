@@ -1,43 +1,107 @@
 ---
 title: Owner Activation
-description: Choose how to enable managed kiosk permissions.
+description: Choose Device Owner or Profile Owner and an activation method.
 ---
 
-Activation is optional. Without owner permissions, {APP_NAME} can still browse
-and use Android screen pinning. Activate ownership when you need managed Lock
-Task policies. See [Security](/docs/security) for the protection each mode offers.
+Give {APP_NAME} owner permissions to manage Lock Task and kiosk policies.
+See [Security](/docs/security) for the protection each mode offers.
+
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 ## 1. Choose an owner role [#choose-owner-role]
 
 | Role | Use it when |
 | --- | --- |
-| Device Owner | You are setting up a dedicated kiosk and need broad device management. |
-| Profile Owner in the main user | You need eligible kiosk policies in your existing personal user, potentially alongside a separate work profile. |
+| Device Owner | You are setting up a dedicated kiosk without a work profile. |
+| Profile Owner in the main user | You want kiosk policies in the personal user alongside a separate work profile. |
 | Shared owner through Dhizuku | You want Dhizuku to share its owner permissions with several apps. |
-| External DPC | Your organisation already manages the device and can allowlist the kiosk. |
+| MDM/EMM | Your organisation already manages the device and can allowlist the kiosk. |
 
-Main-user Profile Owner does not create a work profile. Available policies still
-depend on Android granting the required authority. Only one Device Owner can
-exist, and an existing owner may prevent another activation.
+### 1.1. Profile Owner and work profiles [#profile-owner-work-profile]
+
+Choosing **Profile Owner for the main user** lets you keep or create a separate
+work profile. **Device Owner** prevents adding a work profile.
+
+First activate Profile Owner using [Shizuku](/docs/activation/shizuku) or
+[ADB](/docs/activation/adb). You can then create a work profile using your work-profile
+app or the optional ADB example below. The example uses main user `0`.
+
+<Accordions type="single">
+<Accordion title="Optional ADB example: add a work profile">
+
+<Steps>
+
+<Step>
+
+Create the work profile:
+
+```sh
+adb shell pm create-user --profileOf 0 --managed Work
+```
+
+</Step>
+
+<Step>
+
+Note the new profile ID printed by Android. The following examples use `10`.
+Replace every `10` with the actual new profile ID.
+
+</Step>
+
+<Step>
+
+Start the profile and install the work copy using the tab matching your app:
+
+<Tabs items={['GitHub / F-Droid / IzzyOnDroid', 'Google Play / Aurora', 'Debug APK']}>
+<Tab value="GitHub / F-Droid / IzzyOnDroid">
+
+```sh
+adb shell am start-user 10
+adb shell pm install-existing --user 10 uk.nktnet.webviewkiosk
+adb shell dpm set-profile-owner --user 10 uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
+adb shell am start --user 10 -n uk.nktnet.webviewkiosk/.MainActivity
+```
+
+</Tab>
+<Tab value="Google Play / Aurora">
+
+```sh
+adb shell am start-user 10
+adb shell pm install-existing --user 10 com.nktnet.webview_kiosk
+adb shell dpm set-profile-owner --user 10 com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+adb shell am start --user 10 -n com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.MainActivity
+```
+
+</Tab>
+<Tab value="Debug APK">
+
+```sh
+adb shell am start-user 10
+adb shell pm install-existing --user 10 uk.nktnet.webviewkiosk.debug
+adb shell dpm set-profile-owner --user 10 uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+adb shell am start --user 10 -n uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewkiosk.MainActivity
+```
+
+</Tab>
+</Tabs>
+
+</Step>
+
+</Steps>
+
+</Accordion>
+</Accordions>
 
 ## 2. Choose an activation method [#choose-method]
 
 | Method | Requirements | Best for |
 | --- | --- | --- |
-| [Shizuku](/docs/activation/shizuku) | Android 6+; Shizuku running | In-app activation on an existing device. Wireless startup needs Android 11+. |
+| [Shizuku](/docs/activation/shizuku) | Android 12+ with Shizuku running | Activation from the app on an existing device. |
 | [ADB](/docs/activation/adb) | A computer with Android Platform Tools | Setting Device Owner or main-user Profile Owner directly. |
-| [QR Code](/docs/activation/qr-code) | Android 7+; a new or reset device | A fresh dedicated kiosk with Device Owner. |
-| [Dhizuku](/docs/activation/dhizuku) | Android 9+ for this app's integration; Dhizuku already activated | Sharing an existing owner's permissions. |
-| [External DPC](/docs/activation/external-dpc) | Access to your existing management app | Allowlisting the kiosk without changing ownership. |
-
-Android 6–11 retains normal account and setup restrictions. On Android 12+,
-Shizuku can try an experimental account workaround; success still depends on
-your device. For persistent activation errors, use a backed-up, factory-reset
-device and QR setup.
-
-Use the app in the main Android user, usually ID `0`, for in-app Shizuku
-activation. Advanced [work-profile setup](/docs/activation/work-profile) is
-separate and does not give a work copy authority over the personal user.
+| [QR Code](/docs/activation/qr-code) | Android 7+ on a new or reset device | A fresh dedicated kiosk with Device Owner. |
+| [Dhizuku](/docs/activation/dhizuku) | Android 6+ with Dhizuku activated | Sharing an existing owner's permissions. |
+| [MDM/EMM](/docs/activation/external-dpc) | Access to your management platform | Allowlisting the kiosk without changing ownership. |
 
 After activation, open **Settings → Device → Manage Device Policies** and check
 the role and available Lock Task policies. If setup fails, see

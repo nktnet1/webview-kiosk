@@ -34,7 +34,7 @@ import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [30])
+@Config(sdk = [31])
 @LooperMode(LooperMode.Mode.PAUSED)
 class ShizukuActivationTest {
     private lateinit var app: Application
@@ -150,13 +150,16 @@ class ShizukuActivationTest {
     }
 
     @Test
-    @Config(sdk = [23])
-    fun clientSupportsStandardActivationOnAndroid6WithoutTheSetupWorkaround() {
-        assertTrue(complete(start()).success)
-        assertEquals(listOf(false to 0), calls)
-        assertEquals(
-            DeviceOwnerMode.DeviceOwner,
-            DeviceOwnerManager.status.value.mode,
+    @Config(sdk = [23, 30])
+    fun olderAndroidCannotStartShizukuActivation() {
+        val result = complete(start())
+        assertFalse(result.success)
+        assertTrue(result.output.contains("Android 12 or later"))
+        assertEquals(0, access.requests)
+        assertEquals(0, access.binds)
+        assertTrue(calls.isEmpty())
+        assertFalse(
+            app.resources.getBoolean(uk.nktnet.webviewkiosk.R.bool.shizuku_supported)
         )
         assertClean()
     }

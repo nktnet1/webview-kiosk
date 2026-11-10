@@ -27,6 +27,7 @@ import uk.nktnet.webviewkiosk.config.data.ManagementOwner
 import uk.nktnet.webviewkiosk.config.data.ManagementUserType
 
 object DeviceOwnerManager {
+    private const val DHIZUKU_MIN_SDK = Build.VERSION_CODES.M
     private const val DHIZUKU_SETTLE_TIME_MS = 1000L
     private val DHIZUKU_RETRY_DELAYS_MS = longArrayOf(100L, 250L, 650L, 1000L, 1000L)
 
@@ -54,9 +55,18 @@ object DeviceOwnerManager {
     internal var sharedOwnerBridge: SharedOwnerBridge =
         object : SharedOwnerBridge {
             override fun init(context: Context): Boolean {
-                return Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-                    HiddenApiBypass.setHiddenApiExemptions("") &&
-                    Dhizuku.init(context)
+                if (Build.VERSION.SDK_INT < DHIZUKU_MIN_SDK) {
+                    return false
+                }
+                // The API supports Android 6. Hidden API exemptions are only
+                // needed from Android 9, when non-SDK restrictions were added.
+                if (
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                        !HiddenApiBypass.setHiddenApiExemptions("")
+                ) {
+                    return false
+                }
+                return Dhizuku.init(context)
             }
 
             override fun ownerComponent() = Dhizuku.getOwnerComponent()
@@ -102,7 +112,7 @@ object DeviceOwnerManager {
             return
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+        if (Build.VERSION.SDK_INT < DHIZUKU_MIN_SDK) {
             updateStatus(DeviceOwnerMode.None)
             return
         }
@@ -146,7 +156,7 @@ object DeviceOwnerManager {
         init(context)
         if (
             status.value.mode != DeviceOwnerMode.None ||
-                Build.VERSION.SDK_INT < Build.VERSION_CODES.P
+                Build.VERSION.SDK_INT < DHIZUKU_MIN_SDK
         ) {
             return status.value.mode
         }
@@ -194,7 +204,7 @@ object DeviceOwnerManager {
                     DeviceOwnerMode.ProfileOwner ->
                         DPM.isProfileOwnerApp(context.packageName)
                     DeviceOwnerMode.Dhizuku -> {
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                        Build.VERSION.SDK_INT >= DHIZUKU_MIN_SDK &&
                             sharedOwnerBridge.permissionGranted()
                     }
                     else -> {
@@ -396,7 +406,7 @@ object DeviceOwnerManager {
         // Claim ownership before any Dhizuku preflight can reenter or suspend.
         val request = pendingPermissionRequests.replace()
         if (
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.P ||
+            Build.VERSION.SDK_INT < DHIZUKU_MIN_SDK ||
                 status.value.mode != DeviceOwnerMode.Dhizuku
         ) {
             if (pendingPermissionRequests.consume(request)) {
@@ -498,7 +508,7 @@ object DeviceOwnerManager {
     private fun binderWrapperDevicePolicyManager(
         appContext: Context
     ): DevicePolicyManager? {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+        if (Build.VERSION.SDK_INT < DHIZUKU_MIN_SDK) {
             return null
         }
         try {

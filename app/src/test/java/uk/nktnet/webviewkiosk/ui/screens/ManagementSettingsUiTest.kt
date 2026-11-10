@@ -109,6 +109,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
+    @Config(sdk = [31])
     fun shizukuActivationLetsUserPickProfileOwnerAndShowsAndroidFailure() {
         var chosen: Boolean? = null
         var refreshed = false
@@ -153,6 +154,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
+    @Config(sdk = [31])
     fun activationDetailsStartCollapsedForEachResult() {
         val details =
             "java.lang.IllegalStateException: original failure\n at android.app.admin.DPM.run(DPM.java:42)"
@@ -177,6 +179,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
+    @Config(sdk = [31])
     fun shizukuDeviceOwnerSuccessRemainsVisibleWhenNativeStatusChanges() {
         val native = mutableStateOf(false)
         var chosen: Boolean? = null
@@ -201,6 +204,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
+    @Config(sdk = [31])
     fun pendingShizukuActivationDisablesRoleChangesAndDuplicateSubmission() {
         val result = CompletableDeferred<ActivationResult>()
         var calls = 0

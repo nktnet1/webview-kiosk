@@ -4,7 +4,7 @@ description: Resolve ownership, permission, and startup problems.
 ---
 
 Start with **Settings → Device → Manage Device Policies**. No owner permission
-is a normal state before activation; it does not mean the app is broken.
+is a normal state before activation.
 
 Follow the short activation result first. If you need the original error or
 stacktrace, choose **Show details** in the result dialog. **Hide details**
@@ -14,15 +14,15 @@ collapses it again.
 
 | Problem | What to do |
 | --- | --- |
-| Shizuku is not running or disconnected | Open Shizuku, start its service, then retry. On Android 6–10 without root, use its computer startup method; wireless startup needs Android 11+. |
+| Shizuku is not running or disconnected | Open Shizuku, start its service, then retry. |
 | Permission denied | Allow {APP_NAME} in Shizuku or Dhizuku. A device restriction may still prevent the requested operation. |
 | No device owner is configured | Activate Device Owner, choose main-user Profile Owner, or ask your existing DPC to allowlist the kiosk. Starting Shizuku or installing Dhizuku alone does not grant ownership. |
-| Accounts block activation | Review conflicting accounts. The optional account workaround is attempted only on Android 12+ and may fail. Use a backed-up, factory-reset device with QR setup if necessary. |
+| Accounts block activation | See the account activation callout in the [ADB guide](/docs/activation/adb#prepare), or back up and use [QR Code](/docs/activation/qr-code) setup. |
 | Another owner already exists | Check the existing management app. Use its allowlist or shared permissions instead of trying to install a second Device Owner. |
 | Other users or profiles block activation | Review Android's users and profiles. Removing one deletes its data, so back it up before deciding to remove it. |
 | Wrong user | Open the app in the main user, usually ID `0`. On Android 14+, check with `adb shell cmd user get-main-user`. Do not substitute the current foreground user blindly. |
 | Administrator not found | Check that the app is installed in the intended user and that your ADB command matches its installation source. |
-| Dhizuku not detected | Open Dhizuku and confirm it has been activated in the same user, then reopen Device Policies. This integration requires Android 9+. |
+| Dhizuku not detected | Open Dhizuku and confirm it has been activated in the same user, then reopen Device Policies. Requires Android 6+. |
 | Owner role appears but Lock Task controls are unavailable | Read the reason shown beside the control. Work-profile scope, Android version, or insufficient policy authority can prevent access. |
 | Activation timed out | Check Device Policies before retrying, because Android may already have granted ownership. Keep Shizuku running during activation. |
 

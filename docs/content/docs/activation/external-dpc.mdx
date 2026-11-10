@@ -1,5 +1,5 @@
 ---
-title: External DPC or MDM
+title: MDM/EMM
 description: Allowlist the kiosk using an existing management app.
 ---
 
@@ -8,7 +8,7 @@ If your organisation already manages the device, ask its administrator to add
 to the kiosk or share the management app's permissions.
 
 Find the installed package name in **Settings → About**. GitHub/F-Droid builds
-normally use `uk.nktnet.webviewkiosk`; Google Play/Aurora builds use
+normally use `uk.nktnet.webviewkiosk`. Google Play/Aurora builds use
 `com.nktnet.webview_kiosk`.
 
 ## 1. Allowlist with your management app [#allowlist]
@@ -16,7 +16,7 @@ normally use `uk.nktnet.webviewkiosk`; Google Play/Aurora builds use
 - **Test DPC:** open **Lock Task → Manage lock task list** and enable {APP_NAME}.
 - **OwnDroid:** open **System → Lock Task Mode → Applications** and add the
   kiosk's installed package name.
-- **Your organisation's MDM:** use its dedicated-device or kiosk allowed-apps
+- **Your organisation's MDM/EMM:** use its dedicated-device or kiosk allowed-apps
   policy, or ask your administrator to configure it.
 
 Return to {APP_NAME}, lock it, and confirm it uses Lock Task rather than screen

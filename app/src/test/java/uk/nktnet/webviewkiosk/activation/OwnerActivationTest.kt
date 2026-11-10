@@ -129,8 +129,8 @@ class OwnerActivationTest {
     }
 
     @Test
-    fun olderAndroidUsesFullSystemUserAndRefusesHeadlessDevices() {
-        assertTrue(engine(23).activate(true, 0).success)
+    fun android12And13UseFullSystemUserAndRefuseHeadlessDevices() {
+        assertTrue(engine(31).activate(true, 0).success)
         assertFalse(commands.any { it.first() == "cmd" })
         commands.clear()
         headless = "1"
@@ -254,16 +254,15 @@ class OwnerActivationTest {
     }
 
     @Test
-    fun android6Through11NeverChangesSetupStateOrCallsHiddenRefresh() {
-        for (sdk in 23..30) {
+    fun androidBefore12CannotRunAnyActivationCommands() {
+        for (sdk in 21..30) {
             commands.clear()
             refreshed.clear()
-            assertTrue(engine(sdk).activate(false, 0).success)
-            assertFalse(commands.any { it.first() == "settings" })
+            val result = engine(sdk).activate(false, 0)
+            assertFalse(result.success)
+            assertTrue(result.output.contains("Android 12 or later"))
+            assertTrue(commands.isEmpty())
             assertTrue(refreshed.isEmpty())
-            assertTrue(
-                listOf("dpm", "set-device-owner", "--user", "0", admin) in commands
-            )
         }
     }
 
@@ -276,7 +275,7 @@ class OwnerActivationTest {
     }
 
     @Test
-    fun oldAndroidExplainsAccountRestrictionsWithoutStacktraceOrStateChanges() {
+    fun unsupportedAndroidDoesNotReadAccountStateOrInvokeDpm() {
         dpmResult =
             CommandResult(
                 1,
@@ -285,10 +284,10 @@ class OwnerActivationTest {
             )
         val result = engine(30).activate(false, 0)
         assertFalse(result.success)
-        assertTrue(result.output.contains("Remove conflicting accounts"))
+        assertTrue(result.output.contains("Android 12 or later"))
         assertFalse(result.output.contains("java.lang"))
         assertFalse(result.output.contains("DPM.java"))
-        assertTrue(result.diagnostics.contains("DPM.java"))
-        assertFalse(commands.any { it.first() == "settings" })
+        assertFalse(result.diagnostics.contains("DPM.java"))
+        assertTrue(commands.isEmpty())
     }
 }

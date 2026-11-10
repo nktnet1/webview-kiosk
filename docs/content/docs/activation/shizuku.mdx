@@ -3,21 +3,18 @@ title: Shizuku
 description: Activate Device Owner or main-user Profile Owner from the app.
 ---
 
-Use this method on an existing device without resetting it. Android may still
-block activation because of accounts, existing ownership, or other users.
-
 ## 1. Requirements [#requirements]
 
-- **Android 6+** supports Shizuku and standard owner activation, subject to
-  Android's normal restrictions.
-- **Android 6–10 without root:** start Shizuku using a computer and USB debugging.
-- **Android 11+ without root:** you can start Shizuku using wireless debugging.
-- **Rooted devices:** use Shizuku's root startup option.
-- **Android 12+:** the app can try an experimental workaround for account
-  restrictions. It is not guaranteed, and is not attempted on Android 6–11.
+Requires **Android 12+** with [Shizuku](https://shizuku.rikka.app/download/) running.
+Follow [Shizuku's startup guide](https://shizuku.rikka.app/guide/setup/) to start it.
+Use {APP_NAME} in the main Android user, usually ID `0`.
 
-See [Shizuku's startup guide](https://shizuku.rikka.app/guide/setup/).
-The in-app method targets the main user only, usually ID `0`.
+<Callout title="Activate without removing accounts" type="info">
+
+For activation with existing accounts, see the
+[XDA guide](https://xdaforums.com/t/how-i-got-device-owner-without-factory-reset.4745834/#post-90768446).
+
+</Callout>
 
 ## 2. Activate ownership [#activate]
 
@@ -25,20 +22,7 @@ The in-app method targets the main user only, usually ID `0`.
 
 <Step>
 
-Install [Shizuku](https://shizuku.rikka.app/download/), start it, and confirm
-it shows that the service is running.
-
-</Step>
-
-<Step>
-
-Open {APP_NAME} in the main user.
-
-</Step>
-
-<Step>
-
-Go to **Settings → Device → Manage Device Policies → Activate with Shizuku**.
+Open **Settings → Device → Manage Device Policies → Activate with Shizuku**.
 
 </Step>
 
@@ -50,28 +34,21 @@ Choose **Device Owner** or **Profile Owner**, then tap **Activate**.
 
 <Step>
 
-Allow {APP_NAME} access when Shizuku asks. Keep Shizuku running until the
-result appears.
+Allow {APP_NAME} access when Shizuku asks. Keep Shizuku running until the result appears.
 
 </Step>
 
 <Step>
 
-Check the Device Policies card for the owner role and available Lock Task
-policies.
+Check the Device Policies card for the owner role and available Lock Task policies.
 
 </Step>
 
 </Steps>
 
-Profile Owner here manages your existing main user; it does not create a work
-profile. After successful activation, policy operations use native ownership
-and do not need Shizuku to stay running.
+After activation, Shizuku can be stopped.
 
 ## 3. If activation fails [#activation-fails]
 
-The result explains what to check next. Start Shizuku if it stopped, allow the
-app if permission was denied, or review conflicting accounts and management.
-On Android 6–11, normal account restrictions still apply even when Shizuku is
-running. See [Troubleshooting](/docs/activation/troubleshooting) or choose
-[ADB](/docs/activation/adb) or [QR Code](/docs/activation/qr-code).
+Follow the result message, or select **Show details** to inspect Android's response.
+See [Troubleshooting](/docs/activation/troubleshooting) for help.
