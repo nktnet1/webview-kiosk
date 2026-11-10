@@ -1,3 +1,5 @@
+@file:Suppress("UsePropertyAccessSyntax")
+
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.content.RestrictionsManager

@@ -31,8 +31,8 @@ class LockTaskAvailabilityTest {
                     minimum - 1,
                     minimum,
                     nativeOwner,
-                    false,
-                    false,
+                    hasOwnerPermission = false,
+                    policyAccess = false,
                 ),
             )
         }
@@ -50,12 +50,20 @@ class LockTaskAvailabilityTest {
                         mode = DeviceOwnerMode.DeviceOwner,
                         owner = ManagementOwner.DeviceOwner,
                     ),
-                    true,
-                    true,
+                    hasOwnerPermission = true,
+                    policyAccess = true,
                 ),
             )
         }
-        assertNull(lockTaskPolicyUnavailableReason(30, 30, nativeOwner, true, true))
+        assertNull(
+            lockTaskPolicyUnavailableReason(
+                30,
+                30,
+                nativeOwner,
+                hasOwnerPermission = true,
+                policyAccess = true,
+            )
+        )
     }
 
     @Test
@@ -66,8 +74,8 @@ class LockTaskAvailabilityTest {
                 37,
                 28,
                 DeviceOwnerManager.Status(),
-                false,
-                false,
+                hasOwnerPermission = false,
+                policyAccess = false,
             ),
         )
         assertEquals(
@@ -79,8 +87,8 @@ class LockTaskAvailabilityTest {
                     mode = DeviceOwnerMode.Dhizuku,
                     owner = ManagementOwner.Unknown,
                 ),
-                false,
-                false,
+                hasOwnerPermission = false,
+                policyAccess = false,
             ),
         )
     }
@@ -97,8 +105,8 @@ class LockTaskAvailabilityTest {
                         mode = mode,
                         userType = ManagementUserType.ManagedProfile,
                     ),
-                    true,
-                    false,
+                    hasOwnerPermission = true,
+                    policyAccess = false,
                 ),
             )
         }
@@ -112,8 +120,8 @@ class LockTaskAvailabilityTest {
                     37,
                     28,
                     nativeOwner.copy(userType = scope),
-                    true,
-                    true,
+                    hasOwnerPermission = true,
+                    policyAccess = true,
                 )
             )
         }
@@ -123,7 +131,13 @@ class LockTaskAvailabilityTest {
     fun deniedFullUserAccessDoesNotAssumeProfileOwnerAuthority() {
         assertEquals(
             R.string.ui_lock_task_policy_access_denied,
-            lockTaskPolicyUnavailableReason(37, 28, nativeOwner, true, false),
+            lockTaskPolicyUnavailableReason(
+                37,
+                28,
+                nativeOwner,
+                hasOwnerPermission = true,
+                policyAccess = false,
+            ),
         )
         assertEquals(
             R.string.ui_lock_task_profile_unavailable,
@@ -131,8 +145,8 @@ class LockTaskAvailabilityTest {
                 37,
                 28,
                 nativeOwner.copy(userType = ManagementUserType.Profile),
-                true,
-                false,
+                hasOwnerPermission = true,
+                policyAccess = false,
             ),
         )
     }
@@ -145,8 +159,8 @@ class LockTaskAvailabilityTest {
                 37,
                 28,
                 nativeOwner.copy(mode = DeviceOwnerMode.Dhizuku),
-                false,
-                true,
+                hasOwnerPermission = false,
+                policyAccess = true,
             ),
         )
     }
