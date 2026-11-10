@@ -1,6 +1,6 @@
 ---
 title: About
-description: App details, management and kiosk permissions, Android version, and hardware
+description: App details, management and kiosk permissions, hardware information
 ---
 
 This page displays basic information about the app, including its package name,
@@ -13,7 +13,9 @@ clipboard.
 
 ### 1.1. App Name [#app-name]
 
-The display name of the application, e.g. <code>{APP_NAME}</code>
+The display name of the application.
+
+e.g. <code>{APP_NAME}</code>
 
 ### 1.2. Package Name [#package-name]
 
@@ -24,23 +26,33 @@ The unique identifier for the app on different platforms:
 
 ### 1.3. Version [#version]
 
-The version code and version name, e.g. `46 (0.18.0)`
+The version code and version name.
+
+e.g. `46 (0.18.0)`
 
 ### 1.4. Min SDK [#min-sdk]
 
-The minimum supported SDK - e.g. `21` (Android 5, Lollipop)
+The minimum supported SDK.
+
+e.g. `21` (Android 5, Lollipop)
 
 ### 1.5. Target SDK [#target-sdk]
 
-The Android SDK level the app targets, e.g. `36` (Android 16, Baklava)
+The Android SDK level the app targets.
+
+e.g. `36` (Android 16, Baklava)
 
 ### 1.6. Debug Build [#debug-build]
 
-Indicates whether the current build is a debug build, e.g. `true` / `false`
+Indicates whether the current build is a debug build.
+
+e.g. `true` / `false`
 
 ### 1.7. Installer Source [#installer-source]
 
-The package or store that installed the app, e.g.:
+The package or store that installed the app.
+
+e.g.
 
 - `dev.imranr.obtainium` → [Obtainium](https://obtainium.imranr.dev)
 - `org.fdroid.fdroid` → [F-Droid](https://f-droid.org)
@@ -55,159 +67,227 @@ The package or store that installed the app, e.g.:
 App Instance ID is a
 [UUID](https://developer.mozilla.org/en-US/docs/Glossary/UUID)
 generated when you first view the `Settings -> About`
-page, e.g. `c345e39c-accd-11f0-9ea0-5a93ec0e6f91`
+page.
+
+e.g. `c345e39c-accd-11f0-9ea0-5a93ec0e6f91`
 
 This value can be reset by clearing data or uninstalling the app.
 
 ### 1.9. Source Code URL [#source-code-url]
 
-The link to the application's source code, e.g. https://github.com/nktnet1/webview-kiosk
+The link to the application's source code.
+
+e.g. https://github.com/nktnet1/webview-kiosk
 
 ## 2. Management [#management-kiosk]
 
-Ownership, user scope, Dhizuku access, and kiosk policy permissions are grouped
-here, separately from app metadata and hardware details.
-
 ### 2.1. Device Owner [#device-owner]
 
-Whether this app itself is the native Device Owner, e.g. `true` / `false`. Shared
-Dhizuku ownership does not change this field.
+Whether this app itself is the native Device Owner (shared Dhizuku ownership
+does not change this field), as checked by
+[DevicePolicyManager.isDeviceOwnerApp](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#isDeviceOwnerApp(java.lang.String)).
 
-See [DevicePolicyManager.isDeviceOwnerApp](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#isDeviceOwnerApp(java.lang.String)).
+e.g. `true` / `false`
 
 ### 2.2. Profile Owner [#profile-owner]
 
-Whether this app itself is the native Profile Owner, e.g. `true` / `false`.
-Shared Dhizuku ownership does not change this field.
+Whether this app itself is the native Profile Owner (shared Dhizuku ownership
+does not change this field).
 
-### 2.3. Management Connection and Owner [#management-connection]
+e.g. `true` / `false`
 
-**Management Connection** (Device Owner, Profile Owner, Dhizuku, or None)
-identifies the connection. **Management Owner** identifies the actual Device
-Owner or Profile Owner behind it. Ungranted Dhizuku access reports Unknown.
-Remote API values retain their original names, such as `ProfileOwner`.
+### 2.3. Management Connection [#management-connection]
 
-### 2.4. Management User Type [#management-user-type]
+The connection used to access device policy management (Device Owner, Profile
+Owner, Dhizuku, or None).
+`ProfileOwner`.
 
-Displays Full User, Managed Work Profile, Android Profile, or Unknown when scope
-cannot be verified. Remote API names such as `FullUser` remain unchanged.
+e.g. `Dhizuku`
 
-### 2.5. Managed Profile [#managed-profile]
+### 2.4. Management Owner [#management-owner]
 
-Whether this app runs in a managed work profile (`true`) or a confirmed full
-user (`false`). `N/A` means the scope could not be classified using the available
-queries. This describes the Android user, not whether an owner manages it.
+The actual Device Owner or Profile Owner behind the management connection.
+Ungranted Dhizuku access reports Unknown.
 
-See [UserManager.isManagedProfile](https://developer.android.com/reference/android/os/UserManager#isManagedProfile()).
+e.g. `Profile Owner`
 
-### 2.6. Lock Task Permitted [#lock-task-permitted]
+### 2.5. Management User Type [#management-user-type]
 
-Whether the app is allowed to use [Lock Task Mode](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode) or not, e.g. `true` / `false`
-If no, [screen pinning](https://developer.android.com/about/versions/lollipop/android-5.0#ScreenPinning) will be the fallback.
+Displays Full User, Managed Work Profile, Android Profile, or Unknown when the
+scope cannot be verified.
 
-See [DevicePolicyManager.isLockTaskPermitted](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#isLockTaskPermitted(java.lang.String)).
+e.g. `Full User`
 
-### 2.7. Dhizuku Permission Granted [#dhizuku-permission-granted]
+### 2.6. Managed Profile [#managed-profile]
 
-Whether the app has been granted Device Owner or Profile Owner privileges by [Dhizuku](https://github.com/iamr0s/Dhizuku).
+Whether the app runs in a managed work profile (`true`) or a confirmed full
+user (`false`), not whether an owner manages it. `N/A` means the scope could
+not be classified using available queries. See
+[UserManager.isManagedProfile](https://developer.android.com/reference/android/os/UserManager#isManagedProfile()).
 
-This is done using the [Dhizuku API](https://github.com/iamr0s/Dhizuku-API).
+e.g. `true` / `false` / `N/A`
 
-### 2.8. Management Capabilities [#management-capabilities]
+### 2.7. Lock Task Permitted [#lock-task-permitted]
 
-**Can Manage Lock Task Packages**, **Can Manage Lock Task Features**, and
-**Can Lock Device** report the separately checked capabilities. Ownership alone
-does not imply permission for every device policy operation.
+Whether [Lock Task Mode](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode)
+is allowed for the app, as checked by
+[DevicePolicyManager.isLockTaskPermitted](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#isLockTaskPermitted(java.lang.String)).
+Otherwise, [screen pinning](https://developer.android.com/about/versions/lollipop/android-5.0#ScreenPinning)
+is used as a fallback.
 
-Lock State is not displayed in About. Remote clients can still read
-`data.app.lockState` in a `get_system_info` response: `LOCK_TASK`, `SCREEN_PINNING`, `NONE`, or
-`UNKNOWN`. This preserves the remote API independently of the About layout.
-See [system information responses](/docs/settings/mqtt/topics/response#get-system-info).
+e.g. `true` / `false`
+
+### 2.8. Dhizuku Permission Granted [#dhizuku-permission-granted]
+
+Whether [Dhizuku](https://github.com/iamr0s/Dhizuku) has granted the app Device
+Owner or Profile Owner privileges through the
+[Dhizuku API](https://github.com/iamr0s/Dhizuku-API).
+
+e.g. `true` / `false`
+
+### 2.9. Management Capabilities [#management-capabilities]
+
+Capabilities are checked separately. Ownership alone does not imply permission
+for every device policy operation.
+
+**Can Manage Lock Task Packages** indicates whether the app can configure Lock
+Task permitted packages.
+
+e.g. `true` / `false`
+
+**Can Manage Lock Task Features** indicates whether the app can configure Lock
+Task features.
+
+e.g. `true` / `false`
+
+**Can Lock Device** indicates whether the app can lock the device.
+
+e.g. `true` / `false`
 
 ## 3. Device [#device]
 
 ### 3.1. Android Version [#android-version]
 
-Your device's current android version and SDK, e.g. `15 (SDK 35)`
+Your device's current android version and SDK.
+
+e.g. `15 (SDK 35)`
 
 ### 3.2. WebView Version [#webview-version]
 
-Your device's WebView implementation's version, e.g. `141.0.7390.43`
+Your device's WebView implementation's version.
+
+e.g. `141.0.7390.43`
 
 ### 3.3. Screen / Display [#screen-display]
 
-Height, width and density of your display, e.g. `1080 x 2400 px, density: 3.0`
+Height, width and density of your display.
+
+e.g. `1080 x 2400 px, density: 3.0`
 
 ### 3.4. Time Zone [#time-zone]
 
-The user's default time zone, e.g. `Australia/Sydney`
+The user's default time zone.
+
+e.g. `Australia/Sydney`
 
 ### 3.5. Locale [#locale]
 
-The user's default locale, e.g. `en_US`
+The user's default locale.
+
+e.g. `en_US`
 
 ### 3.6. Total RAM [#total-ram]
 
-The total memory on the device, e.g. `8 GB`
+The total memory on the device.
+
+e.g. `8 GB`
 
 ### 3.7. Total Storage [#total-storage]
 
-The total disk space on the device, e.g. `128 GB`
+The total disk space on the device.
+
+e.g. `128 GB`
 
 ### 3.8. Model [#model]
 
-The end-user-visible name for the end product, e.g. `sdk_gphone64_arm64`
+The end-user-visible name for the end product.
+
+e.g. `sdk_gphone64_arm64`
 
 ### 3.9. Manufacturer [#manufacturer]
 
-The manufacturer of the product/hardware, e.g. `Google`
+The manufacturer of the product/hardware.
+
+e.g. `Google`
 
 ### 3.10. Brand [#brand]
 
-The consumer-visible brand with which the product/hardware will be associated, if any, e.g. `google`
+The consumer-visible brand with which the product/hardware will be associated, if any.
+
+e.g. `google`
 
 ### 3.11. Device [#device-identifier]
 
-The name of the industrial design, e.g. `emu64a`
+The name of the industrial design.
+
+e.g. `emu64a`
 
 ### 3.12. Product [#product]
 
-The name of the overall product, e.g. `sdk_gphone64_arm64`
+The name of the overall product.
+
+e.g. `sdk_gphone64_arm64`
 
 ### 3.13. Hardware [#hardware]
 
-The name of the hardware (from the kernel command line or /proc), e.g. `ranchu`
+The name of the hardware (from the kernel command line or /proc).
+
+e.g. `ranchu`
 
 ### 3.14. Board [#board]
 
-The name of the underlying board, e.g. `goldfish_arm64`
+The name of the underlying board.
+
+e.g. `goldfish_arm64`
 
 ### 3.15. Bootloader [#bootloader]
 
-The system bootloader version number, e.g. `X210XXS8DYH1`
+The system bootloader version number.
+
+e.g. `X210XXS8DYH1`
 
 ### 3.16. Security Patch [#security-patch]
 
-The security patch version, e.g. `2024-09-05`
+The security patch version.
+
+e.g. `2024-09-05`
 
 ### 3.17. Supported ABIs [#supported-abis]
 
 An ordered list of ABIs supported by this device. The most preferred ABI is the
-first element in the list. E.g. `arm64-v8a, armeabi-v7a, armeabi`
+first element in the list.
+
+e.g. `arm64-v8a, armeabi-v7a, armeabi`
 
 ### 3.18. Supported 32-bit ABIs [#supported-32-bit-abis]
 
 An ordered list of 32 bit ABIs supported by this device. The most preferred ABI
-is the first element in the list. E.g. `armeabi-v7a, armeabi`
+is the first element in the list.
+
+e.g. `armeabi-v7a, armeabi`
 
 ### 3.19. Supported 64-bit ABIs [#supported-64-bit-abis]
 
 An ordered list of 64 bit ABIs supported by this device. The most preferred ABI
-is the first element in the list. E.g. `arm64-v8a`
+is the first element in the list.
+
+e.g. `arm64-v8a`
 
 ### 3.20. Build Fingerprint [#build-fingerprint]
 
-A string that uniquely identifies your device build, e.g.
+A string that uniquely identifies your device build.
+
+e.g.
 
 ```
 generic_arm64/sdk_google_phone_arm64/generic_arm64:5.0.2/LSY66K/8789838:eng/test-keys
