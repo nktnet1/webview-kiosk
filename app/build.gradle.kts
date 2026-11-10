@@ -138,6 +138,9 @@ android {
     }
 }
 
+// AGP 9 exposes per-variant host-test enablement through this incubating API.
+// Keep both the debug Robolectric suite and the smokeRelease R8 probes active.
+@Suppress("UnstableApiUsage")
 androidComponents {
     // AGP 9 only creates host unit tests for testBuildType (smokeRelease) by
     // default. Restore the other variants so CI can run debug Robolectric
