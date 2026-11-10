@@ -46,7 +46,7 @@ If initial scale is greater than 0, WebView starts with this value as initial sc
 - TEXT_AUTOSIZING: boosts font size heuristically (API 19+)"</string>
     <string name="setting_info_load_with_overview_mode" formatted="false">"Load the WebView content fully zoomed out to fit the screen width."</string>
     <string name="setting_info_media_playback_requires_user_gesture" formatted="false">"Sets whether the WebView requires a user gesture (e.g. tap) to play media."</string>
-    <string name="setting_info_background_media_playback" formatted="false">"Continue playing HTML audio and video (including video sound) when the app is in the background or the screen is locked. Off by default. When enabled, a playback notification with a Stop action appears while supported media is playing. Websites may independently pause media in the background; picture-in-picture is not provided."</string>
+    <string name="setting_info_background_media_playback" formatted="false">"Continue playing HTML audio and video (including video sound) when the app is in the background or the screen is locked. Off by default. When enabled, a media notification provides Play, Pause and Stop controls for supported HTML media. Playback resumption depends on the website and may require returning to the page. Some websites (including YouTube) may independently restrict playback in the background, so results vary with the website and WebView version. Picture-in-picture is not provided."</string>
     <string name="setting_info_mixed_content_mode" formatted="false">"Configures the WebView\'s behavior when a secure origin attempts to load a resource from an insecure origin.
 
 The preferred and most secure mode of operation is \"Never Allow\".
