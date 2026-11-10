@@ -64,6 +64,7 @@ import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaPlaybackController
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
@@ -365,6 +366,7 @@ fun createCustomWebview(
         var cosmetics: WebViewCosmetics? = null
         var scriptlets: WebViewScriptlets? = null
         var requests: WebViewRequests? = null
+        var backgroundPlayback: BackgroundMediaPlaybackController? = null
 
         fun releaseWebView(view: WebView, rendererGone: Boolean): Boolean {
             val wasActive = navigation.isActive()
@@ -389,6 +391,8 @@ fun createCustomWebview(
                     scriptlets?.dispose(rendererGone)
                     requests?.dispose(rendererGone)
                     blobInterface?.dispose()
+                    backgroundPlayback?.dispose()
+                    view.setTag(R.id.background_media_playback_controller, null)
                     NfcBridgeManager.detachWebView(view)
                 }
             return released && wasActive
@@ -750,6 +754,7 @@ fun createCustomWebview(
                                     navigation.pageStarted(it)
                                 }
                                 startLoadingProgress()
+                                backgroundPlayback?.onNavigationStarted()
                                 awaitingPdfPageStart = false
                                 config.setLastErrorUrl("")
                                 config.onHttpAuthRequest(null)
@@ -838,6 +843,7 @@ fun createCustomWebview(
                                         )
                                 }
                                 cosmetics?.onPageFinished()
+                                backgroundPlayback?.onPageFinished()
 
                                 url?.let {
                                     /*
@@ -1837,6 +1843,15 @@ fun createCustomWebview(
                         }
                     }
                 }
+
+        if (userSettings.backgroundMediaPlayback && userSettings.enableJavaScript) {
+            backgroundPlayback =
+                BackgroundMediaPlaybackController(webView, config.isActive)
+            webView.setTag(
+                R.id.background_media_playback_controller,
+                backgroundPlayback,
+            )
+        }
 
         CookieManager.getInstance().apply {
             setAcceptCookie(userSettings.acceptCookies)

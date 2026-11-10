@@ -62,6 +62,7 @@ object UserSettingsKeys {
         const val ALLOW_FILE_DOWNLOAD = "web_engine.allow_file_download"
         const val MEDIA_PLAYBACK_REQUIRES_USER_GESTURE =
             "web_engine.media_playback_requires_user_gesture"
+        const val BACKGROUND_MEDIA_PLAYBACK = "web_engine.background_media_playback"
         const val MUTUAL_TLS = "web_engine.mutual_tls"
         const val SSL_ERROR_MODE = "web_engine.ssl_error_mode"
         const val MIXED_CONTENT_MODE = "web_engine.mixed_content_mode"

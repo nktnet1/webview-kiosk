@@ -6,4 +6,7 @@
     <string name="notification_mqtt_service_title">MQTT Service</string>
     <string name="notification_remote_notify_command_title">Remote Notify Command</string>
     <string name="notification_blob_download_title">Blob Download</string>
+    <string name="notification_background_media_title">Media playing</string>
+    <string name="notification_background_media_text">Audio or video playing in WebView Kiosk</string>
+    <string name="notification_background_media_stop">Stop playback</string>
 </resources>

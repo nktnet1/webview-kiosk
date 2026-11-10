@@ -22,6 +22,7 @@ object CustomNotificationType {
     const val MQTT_SERVICE = 1002
     const val REMOTE_NOTIFY_COMMAND = 1003
     const val BLOB_DOWNLOAD = 1004
+    const val BACKGROUND_MEDIA_PLAYBACK = 1005
 }
 
 object CustomNotificationChannel {
@@ -39,6 +40,10 @@ object CustomNotificationChannel {
 
     object BlobDownload {
         const val ID = "blob_download_channel"
+    }
+
+    object BackgroundMediaPlayback {
+        const val ID = "background_media_playback_channel"
     }
 }
 
@@ -76,6 +81,11 @@ object CustomNotificationManager {
                 NotificationChannel(
                     CustomNotificationChannel.BlobDownload.ID,
                     context.getString(R.string.notification_blob_download_title),
+                    NotificationManager.IMPORTANCE_LOW,
+                ),
+                NotificationChannel(
+                    CustomNotificationChannel.BackgroundMediaPlayback.ID,
+                    context.getString(R.string.notification_background_media_title),
                     NotificationManager.IMPORTANCE_LOW,
                 ),
             )
