@@ -3,18 +3,19 @@ title: Shizuku
 description: Activate Device Owner or main-user Profile Owner from the app.
 ---
 
-## 1. Requirements [#requirements]
+<Callout title="Activate without removing accounts or freezing apps" type="success">
 
-Requires **Android 12+** with [Shizuku](https://shizuku.rikka.app/download/) running.
-Follow [Shizuku's startup guide](https://shizuku.rikka.app/guide/setup/) to start it.
-Use {APP_NAME} in the main Android user, usually ID `0`.
-
-<Callout title="Activate without removing accounts" type="info">
-
-For activation with existing accounts, see the
+The activation method below automates the process outlined in the following
 [XDA guide](https://xdaforums.com/t/how-i-got-device-owner-without-factory-reset.4745834/#post-90768446).
 
 </Callout>
+
+## 1. Requirements [#requirements]
+
+Your device should be running **Android 12+** with
+[Shizuku](https://shizuku.rikka.app/download/)
+active. For more details, refer to
+[Shizuku's User Manual](https://shizuku.rikka.app/guide/setup/).
 
 ## 2. Activate ownership [#activate]
 
@@ -22,13 +23,13 @@ For activation with existing accounts, see the
 
 <Step>
 
-Open **Settings → Device → Manage Device Policies → Activate with Shizuku**.
+In {APP_NAME}, open **Settings → Device → Manage Device Policies → Activate with Shizuku**.
 
 </Step>
 
 <Step>
 
-Choose **Device Owner** or **Profile Owner**, then tap **Activate**.
+Select either **Device Owner** or **Profile Owner**, then tap **Activate**.
 
 </Step>
 
@@ -44,11 +45,11 @@ Check the Device Policies card for the owner role and available Lock Task polici
 
 </Step>
 
+<Step>
+
+Open the Shizuku app and revoke the permission granted to {APP_NAME} - it is no
+longer needed after activating device owner or profile owner.
+
+</Step>
+
 </Steps>
-
-After activation, Shizuku can be stopped.
-
-## 3. If activation fails [#activation-fails]
-
-Follow the result message, or select **Show details** to inspect Android's response.
-See [Troubleshooting](/docs/activation/troubleshooting) for help.

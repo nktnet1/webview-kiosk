@@ -1,12 +1,5 @@
 {
   "title": "Owner Activation",
   "defaultOpen": false,
-  "pages": [
-    "shizuku",
-    "adb",
-    "qr-code",
-    "dhizuku",
-    "external-dpc",
-    "troubleshooting"
-  ]
+  "pages": ["shizuku", "adb", "qr-code", "dhizuku", "mdm-emm-dpc"]
 }

@@ -15,37 +15,37 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 | --- | --- |
 | Device Owner | You are setting up a dedicated kiosk without a work profile. |
 | Profile Owner in the main user | You want kiosk policies in the personal user alongside a separate work profile. |
-| Shared owner through Dhizuku | You want Dhizuku to share its owner permissions with several apps. |
+| Shared owner through Dhizuku | You want Dhizuku to share its device or profile owner permissions with several apps. |
 | MDM/EMM | Your organisation already manages the device and can allowlist the kiosk. |
 
 ### 1.1. Profile Owner and work profiles [#profile-owner-work-profile]
 
-Choosing **Profile Owner for the main user** lets you keep or create a separate
-work profile. **Device Owner** prevents adding a work profile.
+Choosing **Profile Owner (Main User)** lets you keep or create a separate
+work profile, which is disallowed in **Device Owner** mode.
 
-First activate Profile Owner using [Shizuku](/docs/activation/shizuku) or
-[ADB](/docs/activation/adb). You can then create a work profile using your work-profile
-app or the optional ADB example below. The example uses main user `0`.
-
-<Accordions type="single">
-<Accordion title="Optional ADB example: add a work profile">
+For example, this can be done via ADB:
 
 <Steps>
 
 <Step>
 
-Create the work profile:
+Find the ID of your main user (typically `0`)
 
 ```sh
-adb shell pm create-user --profileOf 0 --managed Work
+adb shell pm list users
 ```
 
 </Step>
 
 <Step>
 
-Note the new profile ID printed by Android. The following examples use `10`.
-Replace every `10` with the actual new profile ID.
+Create the work profile based on the main user's ID (in this case, `0`):
+
+```sh
+adb shell pm create-user --profileOf 0 --managed Work
+```
+
+Note the new profile ID printed by Android. In this example, we will use `10`.
 
 </Step>
 
@@ -53,7 +53,7 @@ Replace every `10` with the actual new profile ID.
 
 Start the profile and install the work copy using the tab matching your app:
 
-<Tabs items={['GitHub / F-Droid / IzzyOnDroid', 'Google Play / Aurora', 'Debug APK']}>
+<Tabs items={['GitHub / F-Droid / IzzyOnDroid', 'Google Play / Aurora Store', 'Debug APK']}>
 <Tab value="GitHub / F-Droid / IzzyOnDroid">
 
 ```sh
@@ -64,7 +64,7 @@ adb shell am start --user 10 -n uk.nktnet.webviewkiosk/.MainActivity
 ```
 
 </Tab>
-<Tab value="Google Play / Aurora">
+<Tab value="Google Play / Aurora Store">
 
 ```sh
 adb shell am start-user 10
@@ -86,12 +86,11 @@ adb shell am start --user 10 -n uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewki
 </Tab>
 </Tabs>
 
+Make sure to replace `10` with the ID returned from the previous step.
+
 </Step>
 
 </Steps>
-
-</Accordion>
-</Accordions>
 
 ## 2. Choose an activation method [#choose-method]
 
@@ -101,8 +100,7 @@ adb shell am start --user 10 -n uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewki
 | [ADB](/docs/activation/adb) | A computer with Android Platform Tools | Setting Device Owner or main-user Profile Owner directly. |
 | [QR Code](/docs/activation/qr-code) | Android 7+ on a new or reset device | A fresh dedicated kiosk with Device Owner. |
 | [Dhizuku](/docs/activation/dhizuku) | Android 6+ with Dhizuku activated | Sharing an existing owner's permissions. |
-| [MDM/EMM](/docs/activation/external-dpc) | Access to your management platform | Allowlisting the kiosk without changing ownership. |
+| [MDM/EMM/DPC](/docs/activation/mdm-emm-dpc) | Access to your management platform | Allowlisting the kiosk without changing ownership. |
 
 After activation, open **Settings → Device → Manage Device Policies** and check
-the role and available Lock Task policies. If setup fails, see
-[Troubleshooting](/docs/activation/troubleshooting).
+the role and available Lock Task policies.

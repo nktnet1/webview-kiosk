@@ -148,10 +148,7 @@ internal class OwnerActivation(
                 } catch (e: Exception) {
                     diagnostics +=
                         "Restore setup for user $userId:\n${e.stackTraceToString()}"
-                    messages +=
-                        "Android could not restore the original setup state. " +
-                            "Keep Shizuku running and follow the recovery steps in " +
-                            "Owner Activation → Troubleshooting."
+                    messages += "Android could not restore the original setup state."
                 } finally {
                     refresh(restoring = true)
                 }
