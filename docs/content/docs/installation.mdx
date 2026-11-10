@@ -166,20 +166,3 @@ Scan the QR code with device and follow the setup wizard instructions.
 
 If you do not want to factory reset your device, refer to the
 [security](/docs/security#device-owner-mode) guide for a different method.
-
-
-## 4. Profile Owner (Main User) [#profile-owner-adb]
-
-For an eligible full-user Profile Owner, install the app normally, then use
-[the ADB setup steps](/docs/security#profile-owner-adb) for Webview Kiosk or
-Dhizuku.
-
-Android supports QR enrollment for a Profile Owner in a separate work profile,
-but it cannot assign a Profile Owner to the existing main user through the
-standard QR flow. See [why main-user setup uses ADB](/docs/security#profile-owner-qr).
-The QR option above provisions Device Owner on a fresh device. Managed
-work-profile enrollment creates a separate profile and does not grant ordinary
-work-profile owners full-user kiosk authority. Independent full-user Profile
-Owner Lock Task support requires Android 9+ and no Device Owner. Affiliated
-secondary-user package policies are supported from Android 8. See the
-[capability comparison](/docs/security#owner-capabilities) before choosing a mode.
