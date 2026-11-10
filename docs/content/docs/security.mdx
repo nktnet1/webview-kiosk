@@ -114,7 +114,15 @@ launch other apps in Lock Task Mode (kiosk).
 The easiest way is to factory reset your device and use the
 [QR Code installation method](/docs/installation#qr-code-provisioning).
 
-However, if this isn't possible, you can try the following:
+<Callout title="Alternative without removing accounts" type="info">
+
+The [XDA community guide](https://xdaforums.com/t/how-i-got-device-owner-without-factory-reset.4745834/#post-90768446)
+describes an alternative to removing accounts or freezing account apps.
+Compatibility depends on your Android version and device.
+
+</Callout>
+
+If you use the account-removal method instead, follow these steps:
 
 <Steps>
 
@@ -168,10 +176,33 @@ which includes helpful debugging steps when setting up a device owner applicatio
 
 ### 3.4. Main-user Profile Owner [#profile-owner-mode]
 
-Use Profile Owner to manage kiosk settings in your main Android user without
-creating a work profile.
+Main-user Profile Owner lets you manage kiosk settings while keeping your
+personal user and a separate work profile. Personal apps and work or testing
+apps can stay isolated.
 
-#### 3.4.1. ADB setup [#profile-owner-adb]
+#### 3.4.1. Create a work profile [#work-profile-setup]
+
+1. Before assigning the main-user Profile Owner, install
+   [Shelter](https://f-droid.org/packages/net.typeblog.shelter/) in your personal user.
+2. Open Shelter and complete its setup wizard. Accept Android's work-profile
+   setup prompt.
+3. In Shelter's **Main** tab, select an app and choose **Clone to Shelter**.
+   Open its work copy from the **Shelter** tab or the launcher icon with a
+   briefcase badge.
+4. Keep {APP_NAME} or Dhizuku in the personal user and follow the ADB setup below.
+   Shelter manages the separate work profile.
+
+If your organisation already manages a work profile, use its existing setup.
+
+<Callout title="Create the work profile first" type="info">
+
+Android's [standard setup](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/services/devicepolicy/java/com/android/server/devicepolicy/DevicePolicyManagerService.java#17273)
+blocks new work-profile provisioning once the personal user has a Profile Owner.
+An existing work profile can coexist with a main-user Profile Owner.
+
+</Callout>
+
+#### 3.4.2. ADB setup [#profile-owner-adb]
 
 <Callout title="Android user" type="info">
 
@@ -201,7 +232,7 @@ Do not use a work-profile ID. This also applies to the Dhizuku command below.
 Accounts or existing management may prevent setup. If enrollment fails, follow
 Android's reported `dpm` error.
 
-#### 3.4.2. QR provisioning [#profile-owner-qr]
+#### 3.4.3. QR provisioning [#profile-owner-qr]
 
 QR enrollment can set up Device Owner or create a Profile Owner in a **separate
 work profile**. It cannot assign Profile Owner to your existing main user.
@@ -212,26 +243,17 @@ Use a compatible DPC or MDM for work-profile enrollment.
 
 See [Google's provisioning modes](https://developers.google.com/android/work/play/emm-api/prov-devices).
 
-#### 3.4.3. Capabilities and limits [#owner-capabilities]
+#### 3.4.4. Capabilities and limits [#owner-capabilities]
 
 | Operation | Device Owner | Eligible full-user Profile Owner | Ordinary work-profile Profile Owner |
 | --- | --- | --- | --- |
 | Choose Lock Task apps | Yes | Android 9+ without a Device Owner, or Android 8+ for affiliated secondary users | Only with eligible affiliation/policy access |
 | Configure Lock Task features | Android 9+ | Android 9+ with policy access | Unavailable in ordinary unaffiliated work profiles |
-| Start genuine Lock Task | App must be allowlisted | App must be allowlisted | Ownership alone is insufficient |
-| Lock the whole device | Requires device-lock permission | Requires device-lock permission | Not available in this app |
+| Lock Task Mode | App must be allowlisted | App must be allowlisted | Ownership alone is insufficient |
 | Transfer native ownership | Android 9+ | Android 9+, retaining owner scope | Android 9+, retaining work-profile scope |
-| Deactivate native owner | Testing only | Android 7+ on full users, testing only | Not available |
+| Deactivate owner | Testing only | Android 7+ on full users, testing only | Not available |
 
-Orange messages explain why a control is unavailable. Red **Restricted** labels
-mean your administrator manages that setting. Block Activity Start in Task
-requires Android 11+.
-
-Adding or removing Lock Task apps preserves other allowlisted packages.
-Owner deactivation is for testing only and may leave policies or data behind.
-Use your organisation's reset or unenrollment process for production devices.
-
-#### 3.4.4. Dhizuku shared ownership [#dhizuku-profile-owner]
+#### 3.4.5. Dhizuku shared ownership [#dhizuku-profile-owner]
 
 Install [Dhizuku](https://github.com/iamr0s/Dhizuku) in the same full Android user
 as {APP_NAME}. Assign it Profile Owner:
@@ -246,7 +268,7 @@ Only that owner's permissions are shared. Native owner removal and transfer
 remain unavailable through Dhizuku. Revoking permission or disconnecting Dhizuku
 disables policy editing.
 
-#### 3.4.5. External DPC and lock state [#external-dpc-lock-state]
+#### 3.4.6. External DPC and lock state [#external-dpc-lock-state]
 
 An external DPC or MDM with Lock Task access can allowlist {APP_NAME} without
 sharing ownership. That DPC retains control of its policy.
