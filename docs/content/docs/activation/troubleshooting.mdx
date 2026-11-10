@@ -6,7 +6,11 @@ description: Resolve ownership, permission, and startup problems.
 Start with **Settings → Device → Manage Device Policies**. No owner permission
 is a normal state before activation; it does not mean the app is broken.
 
-## Common problems [#common-problems]
+Follow the short activation result first. If you need the original error or
+stacktrace, choose **Show details** in the result dialog. **Hide details**
+collapses it again.
+
+## 1. Common problems [#common-problems]
 
 | Problem | What to do |
 | --- | --- |
@@ -22,15 +26,33 @@ is a normal state before activation; it does not mean the app is broken.
 | Owner role appears but Lock Task controls are unavailable | Read the reason shown beside the control. Work-profile scope, Android version, or insufficient policy authority can prevent access. |
 | Activation timed out | Check Device Policies before retrying, because Android may already have granted ownership. Keep Shizuku running during activation. |
 
-## Setup-state recovery [#setup-state-recovery]
+## 2. Setup-state recovery [#setup-state-recovery]
+
+<Steps>
+
+<Step>
 
 If the result specifically says that the original setup state could not be
-restored, keep Shizuku running and stop retrying activation. Connect ADB and run
-the following command, replacing `0` with your main user ID if different:
+restored, keep Shizuku running and stop retrying activation.
+
+</Step>
+
+<Step>
+
+Connect ADB and run the following command, replacing `0` with your main user ID
+if different:
 
 ```sh
 adb shell settings --user 0 put secure user_setup_complete 1
 ```
 
+</Step>
+
+<Step>
+
 Restart the device, then check Device Policies. If Android refuses this recovery
 command, get help from your device administrator before continuing.
+
+</Step>
+
+</Steps>

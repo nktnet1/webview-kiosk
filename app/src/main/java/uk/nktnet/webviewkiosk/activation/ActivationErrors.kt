@@ -9,21 +9,23 @@ internal fun checkActivation(condition: Boolean, message: () -> String) {
     }
 }
 
-/** Shell/Binder exceptions often contain Java stacktraces; keep them in logs. */
+/** Keep the summary readable and preserve stacktraces for expandable details. */
 internal fun activationFailure(
     error: Throwable,
     fallback: String =
         "Could not activate ownership. Keep Shizuku running and try again. " +
             "If this continues, use ADB or factory reset and QR setup.",
 ): ActivationResult {
-    val diagnostics =
+    val diagnostics = error.stackTraceToString().take(32_768)
+    // Classify exception messages, not incidental method names in stack frames.
+    val reason =
         generateSequence(error) { it.cause }
             .take(6)
             .joinToString("\n") {
                 "${it.javaClass.simpleName}: ${it.message.orEmpty()}"
             }
             .take(32_768)
-    val reason = diagnostics.lowercase()
+            .lowercase()
     val message =
         when {
             error is ActivationException -> error.message ?: fallback

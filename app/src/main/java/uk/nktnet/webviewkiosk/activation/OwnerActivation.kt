@@ -38,7 +38,8 @@ internal class OwnerActivation(
             command(listOf("settings", "--user", userId.toString()) + args)
         fun refresh(restoring: Boolean = false) {
             fun failed(error: Throwable) {
-                diagnostics += "Device policy setup refresh: ${error.message}"
+                diagnostics +=
+                    "Device policy setup refresh:\n${error.stackTraceToString()}"
                 messages +=
                     if (restoring) {
                         "Android could not refresh the restored setup state. Restart " +
@@ -144,11 +145,12 @@ internal class OwnerActivation(
                         "Android did not restore the original setup flag"
                     }
                 } catch (e: Exception) {
-                    diagnostics += "Restore setup for user $userId: ${e.message}"
+                    diagnostics +=
+                        "Restore setup for user $userId:\n${e.stackTraceToString()}"
                     messages +=
                         "Android could not restore the original setup state. " +
                             "Keep Shizuku running and follow the recovery steps in " +
-                            "Activation → Troubleshooting."
+                            "Owner Activation → Troubleshooting."
                 } finally {
                     refresh(restoring = true)
                 }

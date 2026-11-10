@@ -1,8 +1,7 @@
 {
-  "title": "Device Activation",
+  "title": "Owner Activation",
   "defaultOpen": false,
   "pages": [
-    "index",
     "shizuku",
     "adb",
     "qr-code",

@@ -2,8 +2,8 @@
   "pages": [
     "index",
     "installation",
-    "activation",
     "security",
+    "activation",
     "setting-actions",
     "settings",
     "app-suggestions"

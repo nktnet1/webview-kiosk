@@ -1,5 +1,5 @@
 ---
-title: Factory Reset and QR Code
+title: QR Code
 description: Set up a fresh dedicated kiosk with Device Owner.
 ---
 
@@ -13,15 +13,48 @@ sure you can satisfy any account verification required after the reset.
 
 </Callout>
 
-## Set up the kiosk [#setup]
+## 1. Set up the kiosk [#setup]
 
-1. Start a new device, or factory-reset it using Android Settings.
-2. At the initial welcome screen, tap the same spot six times to open QR setup.
-3. Connect to Wi-Fi if asked. Some devices download a QR scanner first.
-4. Open the [QR Installation tool](/tools/qr-installation) on another screen.
-   Choose the download source and settings, then generate the QR code.
-5. Scan the code with the device and complete the setup wizard.
-6. Open **Settings → Device → Manage Device Policies** and confirm **Device Owner**.
+<Steps>
+
+<Step>
+
+Start a new device, or factory-reset it using Android Settings.
+
+</Step>
+
+<Step>
+
+At the initial welcome screen, tap the same spot six times to open QR setup.
+
+</Step>
+
+<Step>
+
+Connect to Wi-Fi if asked. Some devices download a QR scanner first.
+
+</Step>
+
+<Step>
+
+Open the [QR Installation tool](/tools/qr-installation) on another screen.
+Choose the download source and settings, then generate the QR code.
+
+</Step>
+
+<Step>
+
+Scan the code with the device and complete the setup wizard.
+
+</Step>
+
+<Step>
+
+Open **Settings → Device → Manage Device Policies** and confirm **Device Owner**.
+
+</Step>
+
+</Steps>
 
 The QR tool provisions Device Owner. It does not assign Profile Owner to your
 existing main user. For that role, use [Shizuku](/docs/activation/shizuku) or

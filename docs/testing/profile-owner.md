@@ -84,8 +84,8 @@ success, command failure, and exceptions. Client tests cover permission and
 service lifecycle failures; UI tests cover role selection and result display.
 `ShizukuActivationTest` also exercises the client on Android 6 and 11 runtimes
 with a fake transport. Android 6–11 activation must not change setup state;
-the optional workaround starts at Android 12. Error tests verify that raw
-Android stacktraces stay out of the result dialog. These tests do not provision
+the optional workaround starts at Android 12. Error tests verify that original Android stacktraces are collapsed in the
+result dialog until Show details is selected, and can be collapsed again. These tests do not provision
 an Android device or emulate the Shizuku server.
 
 On disposable devices, test both ownership choices with Shizuku running as

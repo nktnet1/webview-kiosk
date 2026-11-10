@@ -129,8 +129,9 @@ class ManagementSettingsUiTest {
         click("Activate with Shizuku")
         assertText("Device Owner")
         assertText("Profile Owner")
+        val pickerText = nodes().flatMap { text(it) }
         click("Profile Owner")
-        assertText(message(R.string.ui_shizuku_profile_owner_info))
+        assertEquals(pickerText, nodes().flatMap { text(it) })
         click("Activate")
         assertEquals(true, chosen)
         assertTrue(refreshed)
@@ -139,8 +140,40 @@ class ManagementSettingsUiTest {
         assertNoText(
             "java.lang.IllegalStateException: existing owner\n at android.app.admin.DevicePolicyManager.run(DPM.java:42)"
         )
+        click("Show details")
+        assertText(
+            "java.lang.IllegalStateException: existing owner\n at android.app.admin.DevicePolicyManager.run(DPM.java:42)"
+        )
+        click("Hide details")
+        assertNoText(
+            "java.lang.IllegalStateException: existing owner\n at android.app.admin.DevicePolicyManager.run(DPM.java:42)"
+        )
         click("Close")
         assertNoText("Activation failed")
+    }
+
+    @Test
+    fun activationDetailsStartCollapsedForEachResult() {
+        val details =
+            "java.lang.IllegalStateException: original failure\n at android.app.admin.DPM.run(DPM.java:42)"
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = false,
+                onActivated = {},
+                activate = {
+                    ActivationResult(false, "Activation was denied.", details)
+                },
+            )
+        }
+        repeat(2) {
+            click("Activate with Shizuku")
+            click("Activate")
+            assertNoText(details)
+            assertText("Show details")
+            click("Show details")
+            assertText(details)
+            click("Close")
+        }
     }
 
     @Test
@@ -162,6 +195,7 @@ class ManagementSettingsUiTest {
         assertEquals(false, chosen)
         assertText("Ownership activated")
         assertText("Success")
+        assertNoText("Show details")
         click("Close")
         assertNoText("Activate with Shizuku")
     }

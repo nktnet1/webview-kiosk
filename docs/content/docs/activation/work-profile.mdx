@@ -13,17 +13,33 @@ For a kiosk in your main user, follow [ADB](/docs/activation/adb) or
 [Shizuku](/docs/activation/shizuku) instead. The in-app Shizuku action does not
 create or activate a work profile.
 
-## Create a separate work copy [#create-work-profile]
+## 1. Create a separate work copy [#create-work-profile]
 
 Use this advanced ADB method only if your device permits another managed
 profile. The example uses main user `0`; substitute your main user ID if needed.
+
+<Steps>
+
+<Step>
+
+Create the work profile:
 
 ```sh
 adb shell pm create-user --profileOf 0 --managed Work
 ```
 
+</Step>
+
+<Step>
+
 Note the new profile ID printed by Android. The following examples use `10`;
 replace every `10` with the actual new profile ID.
+
+</Step>
+
+<Step>
+
+Start the profile and install the work copy using the tab matching your app:
 
 <Tabs items={['GitHub / F-Droid / IzzyOnDroid', 'Google Play / Aurora', 'Debug APK']}>
 <Tab value="GitHub / F-Droid / IzzyOnDroid">
@@ -57,6 +73,10 @@ adb shell am start --user 10 -n uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewki
 
 </Tab>
 </Tabs>
+
+</Step>
+
+</Steps>
 
 A compatible DPC or MDM can also provision a separate work profile. The
 [QR Installation tool](/tools/qr-installation) is for Device Owner enrollment,

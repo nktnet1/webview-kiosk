@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
@@ -110,12 +111,6 @@ internal fun ShizukuActivationSection(
                             }
                         }
                     }
-                    if (profileOwner) {
-                        Text(
-                            stringResource(R.string.ui_shizuku_profile_owner_info),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
                     if (running) {
                         Spacer(Modifier.height(12.dp))
                         CircularProgressIndicator()
@@ -161,6 +156,7 @@ internal fun ShizukuActivationSection(
     }
 
     result?.let { outcome ->
+        var detailsExpanded by remember(outcome) { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { result = null },
             title = {
@@ -175,12 +171,35 @@ internal fun ShizukuActivationSection(
                 )
             },
             text = {
-                SelectionContainer {
-                    Text(
-                        outcome.output,
-                        Modifier.heightIn(max = 400.dp)
-                            .verticalScroll(rememberScrollState()),
-                    )
+                Column(
+                    Modifier.heightIn(max = 400.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    SelectionContainer { Text(outcome.output) }
+                    if (outcome.diagnostics.isNotBlank()) {
+                        TextButton(
+                            onClick = { detailsExpanded = !detailsExpanded }
+                        ) {
+                            Text(
+                                stringResource(
+                                    if (detailsExpanded) {
+                                        R.string.ui_shizuku_hide_details
+                                    } else {
+                                        R.string.ui_shizuku_show_details
+                                    }
+                                )
+                            )
+                        }
+                        if (detailsExpanded) {
+                            SelectionContainer {
+                                Text(
+                                    outcome.diagnostics,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontFamily = FontFamily.Monospace,
+                                )
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {

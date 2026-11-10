@@ -5,21 +5,44 @@ description: Assign Device Owner or main-user Profile Owner using a computer.
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
-## Prepare the device [#prepare]
+## 1. Prepare the device [#prepare]
 
-1. Install {APP_NAME} from your chosen [download source](/docs/installation).
-2. Install [Android Platform Tools](https://developer.android.com/tools/releases/platform-tools)
-   on your computer and enable USB debugging on the device.
-3. Connect by USB, allow the debugging prompt, and run `adb devices` to confirm
-   the connection.
-4. Check the main user. The commands below use `0`, the main user on most devices.
-   On Android 14+, run `adb shell cmd user get-main-user`. If it reports another
-   ID, replace `0` below with that ID. Do not use a secondary or work-profile ID.
+<Steps>
+
+<Step>
+
+Install {APP_NAME} from your chosen [download source](/docs/installation).
+
+</Step>
+
+<Step>
+
+Install [Android Platform Tools](https://developer.android.com/tools/releases/platform-tools)
+on your computer and enable USB debugging on the device.
+
+</Step>
+
+<Step>
+
+Connect by USB, allow the debugging prompt, and run `adb devices` to confirm
+the connection.
+
+</Step>
+
+<Step>
+
+Check the main user. The commands below use `0`, the main user on most devices.
+On Android 14+, run `adb shell cmd user get-main-user`. If it reports another
+ID, replace `0` below with that ID. Do not use a secondary or work-profile ID.
+
+</Step>
+
+</Steps>
 
 Accounts, other users, or an existing owner can prevent activation. Review the
 [troubleshooting guide](/docs/activation/troubleshooting) before removing anything.
 
-## Choose the role and installed app [#assign-owner]
+## 2. Choose the role and installed app [#assign-owner]
 
 Run **one** of the two owner commands in the tab matching your installation.
 Device Owner is for a dedicated kiosk. Profile Owner manages the main user and
@@ -73,7 +96,7 @@ adb shell dpm set-profile-owner --user 0 uk.nktnet.webviewkiosk.debug/uk.nktnet.
 </Tab>
 </Tabs>
 
-## Check activation [#check-activation]
+## 3. Check activation [#check-activation]
 
 Open **Settings → Device → Manage Device Policies**. Confirm the expected owner
 role, full-user scope, and available policies. Android's `Success` response
@@ -81,4 +104,4 @@ alone does not guarantee every Lock Task feature is available.
 
 If Android rejects the command, follow [Troubleshooting](/docs/activation/troubleshooting).
 On Android 12+, [Shizuku](/docs/activation/shizuku) may help with account
-restrictions. For a fresh dedicated kiosk, use [factory reset and QR setup](/docs/activation/qr-code).
+restrictions. For a fresh dedicated kiosk, use [QR Code](/docs/activation/qr-code).

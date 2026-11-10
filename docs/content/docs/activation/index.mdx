@@ -1,5 +1,5 @@
 ---
-title: Device Activation
+title: Owner Activation
 description: Choose how to enable managed kiosk permissions.
 ---
 
@@ -7,7 +7,7 @@ Activation is optional. Without owner permissions, {APP_NAME} can still browse
 and use Android screen pinning. Activate ownership when you need managed Lock
 Task policies. See [Security](/docs/security) for the protection each mode offers.
 
-## Choose an owner role [#choose-owner-role]
+## 1. Choose an owner role [#choose-owner-role]
 
 | Role | Use it when |
 | --- | --- |
@@ -20,13 +20,13 @@ Main-user Profile Owner does not create a work profile. Available policies still
 depend on Android granting the required authority. Only one Device Owner can
 exist, and an existing owner may prevent another activation.
 
-## Choose an activation method [#choose-method]
+## 2. Choose an activation method [#choose-method]
 
 | Method | Requirements | Best for |
 | --- | --- | --- |
 | [Shizuku](/docs/activation/shizuku) | Android 6+; Shizuku running | In-app activation on an existing device. Wireless startup needs Android 11+. |
 | [ADB](/docs/activation/adb) | A computer with Android Platform Tools | Setting Device Owner or main-user Profile Owner directly. |
-| [Factory reset and QR code](/docs/activation/qr-code) | Android 7+; a new or reset device | A fresh dedicated kiosk with Device Owner. |
+| [QR Code](/docs/activation/qr-code) | Android 7+; a new or reset device | A fresh dedicated kiosk with Device Owner. |
 | [Dhizuku](/docs/activation/dhizuku) | Android 9+ for this app's integration; Dhizuku already activated | Sharing an existing owner's permissions. |
 | [External DPC](/docs/activation/external-dpc) | Access to your existing management app | Allowlisting the kiosk without changing ownership. |
 

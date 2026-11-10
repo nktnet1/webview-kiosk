@@ -143,8 +143,8 @@ internal object ShizukuActivation {
                     }
                     result
                 }
-            } catch (_: TimeoutCancellationException) {
-                activationFailure(java.util.concurrent.TimeoutException())
+            } catch (e: TimeoutCancellationException) {
+                activationFailure(e)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

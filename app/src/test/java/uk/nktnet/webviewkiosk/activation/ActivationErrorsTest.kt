@@ -56,6 +56,26 @@ class ActivationErrorsTest {
     }
 
     @Test
+    fun expandedDetailsRetainExceptionFramesAndCauses() {
+        val cause = IllegalStateException("Device owner does not exist")
+        val failure = IllegalStateException("Activation request failed", cause)
+        val result = activationFailure(failure)
+        assertTrue(result.output.contains("Activate Device Owner first"))
+        assertFalse(result.output.contains("java.lang"))
+        assertTrue(
+            result.diagnostics.contains(
+                "java.lang.IllegalStateException: Activation request failed"
+            )
+        )
+        assertTrue(
+            result.diagnostics.contains(
+                "Caused by: java.lang.IllegalStateException: Device owner does not exist"
+            )
+        )
+        assertTrue(result.diagnostics.contains("\tat "))
+    }
+
+    @Test
     fun onlyExplicitAppMessagesAreShownVerbatim() {
         val message = "Open the app in the main user (ID 10) and try again."
         assertTrue(activationFailure(ActivationException(message)).output == message)

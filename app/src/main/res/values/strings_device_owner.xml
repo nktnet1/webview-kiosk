@@ -4,7 +4,8 @@
     <string name="ui_shizuku_activate">Activate</string>
     <string name="ui_shizuku_activating">Activating ownership…</string>
     <string name="ui_shizuku_activation_info">Start Shizuku and allow access when prompted. Choose an owner role for this app in Android\'s main user (usually ID 0). Secondary users and work profiles are not supported.\n\nShizuku supports Android 6+. Wireless startup requires Android 11+; older devices need a computer or root. On Android 6–11, accounts or existing management may block activation. The optional Android 12+ account workaround may not work on every device. Keep Shizuku running until activation finishes.</string>
-    <string name="ui_shizuku_profile_owner_info">This activates Profile Owner in your existing main user. It does not create a work profile. Lock Task policies depend on Android granting the required authority or affiliation.</string>
+    <string name="ui_shizuku_show_details">Show details</string>
+    <string name="ui_shizuku_hide_details">Hide details</string>
     <string name="ui_shizuku_activation_success">Ownership activated</string>
     <string name="ui_shizuku_activation_failed">Activation failed</string>
     <string name="ui_add_lock_task_package" formatted="false">"Add Lock Task Package"</string>
