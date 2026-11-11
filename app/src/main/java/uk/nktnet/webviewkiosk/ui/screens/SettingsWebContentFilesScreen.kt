@@ -50,7 +50,6 @@ import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.bringSearchSettingIntoView
 import uk.nktnet.webviewkiosk.ui.components.setting.files.LocalFileList
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
@@ -197,13 +196,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Row(
-                modifier =
-                    Modifier.bringSearchSettingIntoView(
-                        stringResource(R.string.ui_legacy_file)
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = stringResource(R.string.ui_legacy_file),
                     fontSize = 12.sp,

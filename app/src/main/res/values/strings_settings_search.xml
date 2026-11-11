@@ -4,8 +4,6 @@
     <string name="settings_search_clear">Clear search</string>
     <string name="settings_search_no_results">No matching settings</string>
     <string name="settings_search_result_setting">Setting</string>
-    <string name="settings_search_result_page">Settings page</string>
     <string name="settings_search_result_information">Information</string>
     <string name="settings_search_result_action">Action</string>
-    <string name="settings_search_result_file">File</string>
 </resources>

@@ -279,18 +279,12 @@ private fun SettingsSearchResultRow(
             SettingsSearchResultKind.SETTING ->
                 R.drawable.baseline_settings_24 to
                     R.string.settings_search_result_setting
-            SettingsSearchResultKind.PAGE ->
-                R.drawable.baseline_arrow_forward_24 to
-                    R.string.settings_search_result_page
             SettingsSearchResultKind.INFORMATION ->
                 R.drawable.baseline_info_24 to
                     R.string.settings_search_result_information
             SettingsSearchResultKind.ACTION ->
                 R.drawable.baseline_build_24 to
                     R.string.settings_search_result_action
-            SettingsSearchResultKind.FILE ->
-                R.drawable.baseline_file_open_24 to
-                    R.string.settings_search_result_file
         }
     Row(
         modifier =
@@ -314,9 +308,7 @@ private fun SettingsSearchResultRow(
                 text = stringResource(result.titleRes),
                 style = MaterialTheme.typography.bodyLarge,
             )
-            val subtitle =
-                result.settingKey
-                    ?: result.descriptionRes?.let { stringResource(it) }
+            val subtitle = result.settingKey
             if (subtitle != null) {
                 Text(
                     text = subtitle,

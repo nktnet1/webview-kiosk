@@ -30,33 +30,22 @@ internal data class SettingsSearchResult(
     val route: String,
     @StringRes val sectionTitleRes: Int?,
     @StringRes val targetRes: Int? = null,
-    @StringRes val descriptionRes: Int? = null,
     val settingKey: String? = null,
 )
 
-/**
- * The leading icon identifies whether a result is a setting, page, or other item.
- */
+/** Search only actual settings, information items, and actions. */
 internal enum class SettingsSearchResultKind {
     SETTING,
-    PAGE,
     INFORMATION,
     ACTION,
-    FILE,
 }
 
 internal val SettingsSearchResult.kind: SettingsSearchResultKind
     get() =
-        when {
-            settingKey != null -> SettingsSearchResultKind.SETTING
-            targetRes == null -> SettingsSearchResultKind.PAGE
-            route == Screen.SettingsAbout.route ->
-                SettingsSearchResultKind.INFORMATION
-            route == Screen.SettingsMoreActions.route ->
-                SettingsSearchResultKind.ACTION
-            route == Screen.SettingsWebContentFiles.route ->
-                SettingsSearchResultKind.FILE
-            else -> SettingsSearchResultKind.PAGE
+        when (route) {
+            Screen.SettingsAbout.route -> SettingsSearchResultKind.INFORMATION
+            Screen.SettingsMoreActions.route -> SettingsSearchResultKind.ACTION
+            else -> SettingsSearchResultKind.SETTING
         }
 
 internal fun SettingsSearchSection.breadcrumb(context: Context): String =
@@ -83,7 +72,8 @@ internal val settingsSearchSections: List<SettingsSearchSection> =
             R.string.settings_files_title,
             Screen.SettingsWebContentFiles.route,
             descriptionRes = R.string.settings_web_content_files_description,
-            fields = listOf(R.string.ui_legacy_file),
+            // File-management controls (such as the legacy file:// switch) are
+            // contextual UI details, not searchable settings.
             parentTitleRes = listOf(R.string.settings_web_content_title),
         ),
         SettingsSearchSection(
@@ -522,52 +512,34 @@ internal fun searchSettings(
     return settingsSearchSections.flatMap { section ->
         val heading =
             section.breadcrumbTitleRes.joinToString(" ") { context.getString(it) }
-        val description = section.descriptionRes?.let(context::getString).orEmpty()
-        val sectionResult =
-            if (
-                words.all {
-                    heading.contains(it, ignoreCase = true) ||
-                        description.contains(it, ignoreCase = true)
-                }
-            ) {
-                listOf(
-                    SettingsSearchResult(
-                        titleRes = section.titleRes,
-                        route = section.route,
-                        sectionTitleRes = null,
-                        descriptionRes = section.descriptionRes,
-                    )
+        val isInformationOrAction =
+            section.route == Screen.SettingsAbout.route ||
+                section.route == Screen.SettingsMoreActions.route
+        section.fields.mapNotNull { titleRes ->
+            val label = context.getString(titleRes)
+            val settingKey = settingsSearchKeysByLabel[titleRes]
+            val matches =
+                words.all { word ->
+                    label.contains(word, ignoreCase = true) ||
+                        heading.contains(word, ignoreCase = true) ||
+                        settingKey?.contains(word, ignoreCase = true) == true
+                } &&
+                    words.any { word ->
+                        label.contains(word, ignoreCase = true) ||
+                            settingKey?.contains(word, ignoreCase = true) == true
+                    }
+            if (matches && (settingKey != null || isInformationOrAction)) {
+                SettingsSearchResult(
+                    titleRes = titleRes,
+                    route = section.route,
+                    sectionTitleRes = section.titleRes,
+                    targetRes = titleRes,
+                    settingKey = settingKey,
                 )
             } else {
-                emptyList()
+                null
             }
-        val fieldResults =
-            section.fields.mapNotNull { titleRes ->
-                val label = context.getString(titleRes)
-                val settingKey = settingsSearchKeysByLabel[titleRes]
-                val matches =
-                    words.all { word ->
-                        label.contains(word, ignoreCase = true) ||
-                            heading.contains(word, ignoreCase = true) ||
-                            settingKey?.contains(word, ignoreCase = true) == true
-                    } &&
-                        words.any { word ->
-                            label.contains(word, ignoreCase = true) ||
-                                settingKey?.contains(word, ignoreCase = true) == true
-                        }
-                if (matches) {
-                    SettingsSearchResult(
-                        titleRes = titleRes,
-                        route = section.route,
-                        sectionTitleRes = section.titleRes,
-                        targetRes = titleRes,
-                        settingKey = settingKey,
-                    )
-                } else {
-                    null
-                }
-            }
-        sectionResult + fieldResults
+        }
     }
 }
 

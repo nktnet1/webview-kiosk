@@ -64,16 +64,23 @@ class SettingsSearchIndexTest {
     }
 
     @Test
-    fun categoriesCanBeFoundWithoutSelectingAnArbitraryField() {
-        val result =
+    fun categorySearchOnlyReturnsActualSettingRows() {
+        val results =
             searchSettings(
-                    context,
-                    context.getString(R.string.settings_web_engine_title),
-                )
-                .single { it.titleRes == R.string.settings_web_engine_title }
-        assertEquals(Screen.SettingsWebEngine.route, result.route)
-        assertEquals(null, result.targetRes)
-        assertEquals(null, result.sectionTitleRes)
+                context,
+                context.getString(R.string.settings_web_engine_title),
+            )
+        assertTrue(
+            results.none { it.titleRes == R.string.settings_web_engine_title }
+        )
+        assertTrue(results.all { it.targetRes != null })
+        assertTrue(results.all { it.kind == SettingsSearchResultKind.SETTING })
+        assertEquals(
+            R.string.web_engine_ssl_error_mode_title,
+            searchSettings(context, UserSettingsKeys.WebEngine.SSL_ERROR_MODE)
+                .single()
+                .targetRes,
+        )
     }
 
     @Test
@@ -105,15 +112,31 @@ class SettingsSearchIndexTest {
     }
 
     @Test
-    fun searchesLegacyFileSettingOnItsActualScreen() {
-        val result =
-            searchSettings(context, context.getString(R.string.ui_legacy_file))
-                .single { it.targetRes == R.string.ui_legacy_file }
-        assertEquals(Screen.SettingsWebContentFiles.route, result.route)
+    fun excludesContextualFileControlsAndNavigationPages() {
+        assertTrue(searchSettings(context, "legacy").isEmpty())
+        assertTrue(searchSettings(context, "legacy file://").isEmpty())
+        val queries =
+            listOf(
+                context.getString(R.string.settings_files_title),
+                context.getString(R.string.settings_web_engine_title),
+                context.getString(R.string.settings_content_blocking_title),
+                context.getString(R.string.settings_mqtt_topics_title),
+            )
+        queries.forEach { query ->
+            val results = searchSettings(context, query)
+            assertTrue(results.none { it.targetRes == null })
+            assertTrue(
+                results.none { it.route == Screen.SettingsWebContentFiles.route }
+            )
+            assertTrue(results.none { it.titleRes == R.string.settings_files_title })
+            assertTrue(
+                results.none { it.titleRes == R.string.settings_web_engine_title }
+            )
+        }
     }
 
     @Test
-    fun resultsIdentifySettingsPagesAndOtherItemsWithDistinctKinds() {
+    fun resultsIdentifyOnlySettingsInformationAndActions() {
         fun resultFor(
             @androidx.annotation.StringRes titleRes: Int
         ): SettingsSearchResult =
@@ -126,10 +149,6 @@ class SettingsSearchIndexTest {
             resultFor(R.string.web_engine_ssl_error_mode_title).kind,
         )
         assertEquals(
-            SettingsSearchResultKind.PAGE,
-            resultFor(R.string.settings_web_engine_title).kind,
-        )
-        assertEquals(
             SettingsSearchResultKind.INFORMATION,
             resultFor(R.string.about_app_instance_id).kind,
         )
@@ -137,9 +156,13 @@ class SettingsSearchIndexTest {
             SettingsSearchResultKind.ACTION,
             resultFor(R.string.settings_more_action_clear_cache).kind,
         )
-        assertEquals(
-            SettingsSearchResultKind.FILE,
-            resultFor(R.string.ui_legacy_file).kind,
+        assertEquals(3, SettingsSearchResultKind.entries.size)
+        assertTrue(
+            settingsSearchSections
+                .flatMap { section ->
+                    searchSettings(context, context.getString(section.titleRes))
+                }
+                .all { it.targetRes != null }
         )
     }
 
@@ -271,11 +294,11 @@ class SettingsSearchIndexTest {
 
     @Test
     fun searchesAncestorsAsWellAsSettingLabelsAndKeys() {
-        val matches = searchSettings(context, "web content files legacy")
-        assertEquals(
-            Screen.SettingsWebContentFiles.route,
-            matches.single { it.targetRes == R.string.ui_legacy_file }.route,
-        )
+        val webContentResult =
+            searchSettings(context, "web content home").single {
+                it.targetRes == R.string.web_content_home_url_title
+            }
+        assertEquals(Screen.SettingsWebContent.route, webContentResult.route)
         val mqttResult =
             searchSettings(context, "mqtt topics publish response qos").single {
                 it.targetRes == R.string.mqtt_publish_response_qos_title
