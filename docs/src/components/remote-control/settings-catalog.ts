@@ -50,6 +50,7 @@ const KEYS = {
     "web_engine.allow_file_picker",
     "web_engine.allow_file_download",
     "web_engine.media_playback_requires_user_gesture",
+    "web_engine.background_media_playback",
     "web_engine.request_focus_on_page_start",
     "web_lifecycle.lock_on_launch",
     "web_lifecycle.reset_on_launch",

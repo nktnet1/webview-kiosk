@@ -336,7 +336,31 @@ describe("Android-managed settings catalogue", () => {
       );
       return attributes;
     });
-    expect(SETTINGS_CATALOG).toHaveLength(restrictions.length);
+    const restrictionKeys = restrictions.map((restriction) => restriction.key);
+    const catalogKeys = SETTINGS_CATALOG.map((setting) => setting.key);
+    const expectedKeys = new Set(restrictionKeys);
+    const actualKeys = new Set(catalogKeys);
+    const duplicateKeys = (keys: string[]) =>
+      [
+        ...new Set(keys.filter((key, index) => keys.indexOf(key) !== index)),
+      ].sort();
+
+    expect({
+      missingFromCatalog: [...expectedKeys]
+        .filter((key) => !actualKeys.has(key))
+        .sort(),
+      unexpectedInCatalog: [...actualKeys]
+        .filter((key) => !expectedKeys.has(key))
+        .sort(),
+      duplicateRestrictionKeys: duplicateKeys(restrictionKeys),
+      duplicateCatalogKeys: duplicateKeys(catalogKeys),
+    }).toEqual({
+      missingFromCatalog: [],
+      unexpectedInCatalog: [],
+      duplicateRestrictionKeys: [],
+      duplicateCatalogKeys: [],
+    });
+
     const byKey = new Map(
       SETTINGS_CATALOG.map((setting) => [setting.key, setting]),
     );
