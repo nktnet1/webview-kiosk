@@ -167,7 +167,7 @@ data class WebViewConfig(
     val isActive: () -> Boolean,
     val setLastErrorUrl: (errorUrl: String) -> Unit,
     val onLocalNetworkPermissionMissing: () -> Unit,
-    val finishSwipeRefresh: () -> Unit,
+    val finishSwipeRefresh: (WebView) -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
     val onLoadingStateChanged: (isLoading: Boolean) -> Unit,
     val updateAddressBarAndHistory: (url: String, originalUrl: String?) -> Unit,
@@ -817,7 +817,7 @@ fun createCustomWebview(
                                         this@apply.url,
                                     ) ?: return
                                 finishLoadingProgress()
-                                config.finishSwipeRefresh()
+                                config.finishSwipeRefresh(this@apply)
                                 // Document-start injection handles normal page
                                 // loads.
                                 // Also install on the completed document as a
