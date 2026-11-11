@@ -28,7 +28,7 @@ import uk.nktnet.webviewkiosk.utils.isValidVapidPublicKey
 fun UnifiedPushVapidPublicKeySetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val settingKey = UserSettingsKeys.UnifiedPush.MESSAGE_FOR_DISTRIBUTOR
+    val settingKey = UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY
     val restricted = userSettings.isRestricted(settingKey)
 
     val clipboard = LocalClipboard.current

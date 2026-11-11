@@ -45,6 +45,7 @@ import uk.nktnet.webviewkiosk.config.data.WebViewCreation
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.bringSearchSettingIntoView
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.AppLauncherDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.CreateShortcutDialog
 import uk.nktnet.webviewkiosk.ui.placeholders.WebViewUnavailable
@@ -385,7 +386,8 @@ private fun ActionButton(
         enabled = enabled,
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = color),
-        modifier = modifier.padding(vertical = 2.dp),
+        modifier =
+            modifier.bringSearchSettingIntoView(label).padding(vertical = 2.dp),
         contentPadding = PaddingValues(vertical = 4.dp, horizontal = 8.dp),
     ) {
         Text(label, style = MaterialTheme.typography.bodySmall)
