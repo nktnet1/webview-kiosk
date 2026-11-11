@@ -170,7 +170,6 @@ fun WebviewScreen(navController: NavController) {
     var isOpenFilesDialog by remember { mutableStateOf(false) }
     var isOpenAppsDialog by remember { mutableStateOf(false) }
 
-    var isSwipeRefreshing by remember { mutableStateOf(false) }
     var addressBarHasFocus by remember { mutableStateOf(false) }
 
     var linkToOpen by remember { mutableStateOf<String?>(null) }
@@ -348,8 +347,11 @@ fun WebviewScreen(navController: NavController) {
                     onLoadingStateChanged = { isLoading ->
                         isPageLoading = isLoading
                     },
-                    finishSwipeRefresh = {
-                        isSwipeRefreshing = false
+                    finishSwipeRefresh = { finishedWebView ->
+                        // A fast load can finish before Compose runs an update.
+                        // Complete the native gesture on its owning view.
+                        (finishedWebView.parent as? WebviewAwareSwipeRefreshLayout)
+                            ?.isRefreshing = false
                     },
                     updateAddressBarAndHistory = { url, _ -> updateAddressBar(url) },
                     onHttpAuthRequest = { request ->
@@ -697,7 +699,6 @@ fun WebviewScreen(navController: NavController) {
                                 userSettings.allowRefresh &&
                                     userSettings.allowPullToRefresh
                             setOnRefreshListener {
-                                isSwipeRefreshing = true
                                 WebViewNavigation.refresh(
                                     ::customLoadUrl,
                                     systemSettings,
@@ -710,9 +711,6 @@ fun WebviewScreen(navController: NavController) {
                                 }
                             )
                         }
-                    },
-                    update = { view ->
-                        view.isRefreshing = isSwipeRefreshing
                     },
                     modifier = Modifier.fillMaxSize(),
                 )
