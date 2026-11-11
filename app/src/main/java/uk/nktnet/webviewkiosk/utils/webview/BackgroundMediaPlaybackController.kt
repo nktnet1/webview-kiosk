@@ -22,6 +22,10 @@ internal class PlayingMediaFrames {
     val isPlaying: Boolean
         get() = frames.isNotEmpty()
 
+    fun contains(frameId: String): Boolean = frameId in frames
+
+    fun firstPlayingFrame(): String? = frames.firstOrNull()
+
     fun update(frameId: String, playing: Boolean): Boolean {
         if (frameId.isBlank() || frameId.length > 128) {
             return isPlaying
@@ -131,6 +135,36 @@ internal class BackgroundMediaPlaybackController(
             activeController?.get()?.resumeFromNotificationInternal()
         }
 
+        fun currentMediaInfo(): MediaPlaybackInfo? =
+            activeController?.get()?.currentMediaInfo
+
+        fun currentPageHost(): String? =
+            activeController?.get()?.webView?.url?.let { Uri.parse(it).host }
+
+        fun previousFromNotification() {
+            activeController?.get()?.sendMediaCommand("previous")
+        }
+
+        fun nextFromNotification() {
+            activeController?.get()?.sendMediaCommand("next")
+        }
+
+        fun seekFromNotification(positionMs: Long) {
+            activeController?.get()?.sendMediaCommand("seek", positionMs)
+        }
+
+        fun rewindFromNotification() {
+            activeController?.get()?.sendMediaCommand("rewind")
+        }
+
+        fun forwardFromNotification() {
+            activeController?.get()?.sendMediaCommand("forward")
+        }
+
+        fun speedFromNotification() {
+            activeController?.get()?.sendMediaCommand("speed")
+        }
+
         fun isPlaying(): Boolean =
             activeController?.get()?.let {
                 it.serviceRequested &&
@@ -149,7 +183,11 @@ internal class BackgroundMediaPlaybackController(
     private var wasYouTubePlaying = false
     private var hostInBackground = false
     private var pendingPauseStop: Runnable? = null
-    private val bridge = MediaStateBridge(webView, ::onPlaybackStateChanged)
+    private var activeFrameId: String? = null
+    private var currentMediaInfo: MediaPlaybackInfo? = null
+    private val mediaByFrame = mutableMapOf<String, MediaPlaybackInfo>()
+    private val bridge =
+        MediaStateBridge(webView, ::onPlaybackStateChanged, ::onMediaInfoChanged)
 
     /** Keep the renderer's last visible state only during an active FGS session. */
     fun shouldRetainWindowVisibility(): Boolean =
@@ -182,6 +220,11 @@ internal class BackgroundMediaPlaybackController(
                     YOUTUBE_BACKGROUND_RECOVERY_SCRIPT,
                     setOf("*"),
                 )
+                WebViewCompat.addDocumentStartJavaScript(
+                    webView,
+                    RICH_MEDIA_SCRIPT,
+                    setOf("*"),
+                )
             }
         }
     }
@@ -194,6 +237,9 @@ internal class BackgroundMediaPlaybackController(
             pausedByNotification = false
             awaitingResume = false
             frames.clear()
+            activeFrameId = null
+            currentMediaInfo = null
+            mediaByFrame.clear()
             stopService()
         }
     }
@@ -204,6 +250,7 @@ internal class BackgroundMediaPlaybackController(
             // scripts. This fallback covers media in the main document.
             webView.evaluateJavascript(DOCUMENT_START_SCRIPT, null)
             webView.evaluateJavascript(YOUTUBE_BACKGROUND_RECOVERY_SCRIPT, null)
+            webView.evaluateJavascript(RICH_MEDIA_SCRIPT, null)
             publishHostBackground()
         }
     }
@@ -247,6 +294,18 @@ internal class BackgroundMediaPlaybackController(
             return
         }
         val shouldPlay = frames.update(frameId, playing)
+        // Keep the first still-playing document selected; muted ad frames must
+        // not steal notification metadata or transport controls mid-video.
+        if (activeFrameId == null || !frames.contains(activeFrameId!!)) {
+            val preferred = frames.firstPlayingFrame()
+            if (activeFrameId != preferred) {
+                activeFrameId = preferred
+                currentMediaInfo = preferred?.let(mediaByFrame::get)
+                currentMediaInfo?.let(
+                    BackgroundMediaPlaybackService::updateMediaInfo
+                )
+            }
+        }
         if (playing && (frameId.startsWith("yt-") || isYouTubePage())) {
             wasYouTubePlaying = true
         }
@@ -298,6 +357,57 @@ internal class BackgroundMediaPlaybackController(
         }
     }
 
+    private fun onMediaInfoChanged(frameId: String, payload: String) {
+        if (disposed || !isActive() || frameId.isBlank() || frameId.length > 128) {
+            return
+        }
+        val info = MediaPlaybackInfo.parse(payload) ?: return
+        // Do not let inactive advertising frames replace the playing video's data.
+        mediaByFrame[frameId] = info
+        if (mediaByFrame.size > 24) {
+            mediaByFrame.keys
+                .firstOrNull { it != activeFrameId }
+                ?.let(mediaByFrame::remove)
+        }
+        if (activeFrameId == frameId) {
+            currentMediaInfo = info
+            if (serviceRequested) {
+                BackgroundMediaPlaybackService.updateMediaInfo(info)
+            }
+        }
+    }
+
+    private fun sendMediaCommand(command: String, positionMs: Long = 0L) {
+        if (disposed || !serviceRequested) {
+            return
+        }
+        val info = currentMediaInfo ?: return
+        val allowed =
+            when (command) {
+                "previous" -> info.canPrevious
+                "next" -> info.canNext
+                "seek",
+                "rewind",
+                "forward" -> info.canSeek
+                "speed" -> info.canChangeSpeed
+                else -> false
+            }
+        val frameId = activeFrameId ?: return
+        if (!allowed || !frameId.matches(Regex("[A-Za-z0-9.-]{1,128}"))) {
+            return
+        }
+        val point =
+            if (command == "seek") {
+                positionMs.coerceIn(0L, info.durationMs)
+            } else {
+                0L
+            }
+        webView.evaluateJavascript(
+            "window.__wvkControlRichMedia && window.__wvkControlRichMedia('$command','$frameId',$point);",
+            null,
+        )
+    }
+
     private fun isYouTubePage(): Boolean {
         val host =
             webView.url?.let { Uri.parse(it).host }?.lowercase() ?: return false
@@ -343,6 +453,7 @@ internal class BackgroundMediaPlaybackController(
         }
         serviceRequested = true
         activeController = WeakReference(this)
+        currentMediaInfo?.let(BackgroundMediaPlaybackService::updateMediaInfo)
         Log.d(TAG, "Starting foreground service for WebView media")
         try {
             ContextCompat.startForegroundService(
@@ -360,6 +471,9 @@ internal class BackgroundMediaPlaybackController(
     private fun stopService() {
         cancelPendingPauseStop()
         wasYouTubePlaying = false
+        activeFrameId = null
+        currentMediaInfo = null
+        mediaByFrame.clear()
         val wasRequested = serviceRequested
         serviceRequested = false
         if (activeController?.get() === this) {
@@ -399,14 +513,26 @@ internal class BackgroundMediaPlaybackController(
     }
 
     private fun resumeFromNotificationInternal() {
-        if (disposed || !serviceRequested || !pausedByNotification) {
+        if (
+            disposed ||
+                !serviceRequested ||
+                (!pausedByNotification && frames.isPlaying)
+        ) {
             return
         }
         pausedByNotification = false
         // Do not report playing before an HTMLMediaElement actually resumes.
         // Websites may reject script-initiated play() without a user gesture.
         awaitingResume = true
-        webView.evaluateJavascript(RESUME_MEDIA_SCRIPT, null)
+        val frame = activeFrameId
+        if (frame != null && frame.matches(Regex("[A-Za-z0-9.-]{1,128}"))) {
+            webView.evaluateJavascript(
+                "window.__wvkControlRichMedia && window.__wvkControlRichMedia('play','$frame',0);",
+                null,
+            )
+        } else {
+            webView.evaluateJavascript(RESUME_MEDIA_SCRIPT, null)
+        }
     }
 
     private fun stopPlayback(userInitiated: Boolean) {
@@ -500,6 +626,7 @@ internal const val DOCUMENT_START_SCRIPT =
       var host = window.location.hostname.toLowerCase();
       var isYouTube = /(^|\.)youtube(-nocookie)?\.com$/.test(host);
       var frameId = (isYouTube ? 'yt-' : '') + Date.now().toString(36) + '-' + Math.random().toString(36);
+      window.__wvkFrameId = frameId;
       var lastPlaying = null;
       var pausedForNotification = [];
       var resumingFromNotification = false;

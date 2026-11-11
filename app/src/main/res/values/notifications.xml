@@ -12,4 +12,10 @@
     <string name="notification_background_media_play">Play</string>
     <string name="notification_background_media_pause">Pause</string>
     <string name="notification_background_media_paused">Playback paused</string>
+    <string name="notification_background_media_previous">Previous</string>
+    <string name="notification_background_media_next">Next</string>
+    <string name="notification_background_media_rewind">Rewind 10 seconds</string>
+    <string name="notification_background_media_forward">Forward 30 seconds</string>
+    <string name="notification_background_media_speed">Speed (%1$s×)</string>
+    <string name="notification_background_media_speed_title">Playback speed</string>
 </resources>

@@ -15,6 +15,7 @@ import android.webkit.WebView
 internal class MediaStateBridge(
     private val webView: WebView,
     private val report: (String, Boolean) -> Unit,
+    private val reportInfo: (String, String) -> Unit,
 ) {
     private val audioManager =
         webView.context.applicationContext.getSystemService(Context.AUDIO_SERVICE)
@@ -32,6 +33,13 @@ internal class MediaStateBridge(
         } catch (_: RuntimeException) {
             false
         }
+
+    @JavascriptInterface
+    fun onMediaInfoChanged(frameId: String, json: String) {
+        if (frameId.length <= 128 && json.length <= 8_192) {
+            webView.post { reportInfo(frameId, json) }
+        }
+    }
 
     @JavascriptInterface
     fun onPlaybackStateChanged(frameId: String, playing: Boolean) {
