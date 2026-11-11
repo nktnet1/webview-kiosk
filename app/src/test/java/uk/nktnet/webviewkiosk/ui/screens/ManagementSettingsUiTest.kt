@@ -121,7 +121,7 @@ class ManagementSettingsUiTest {
                     chosen = it
                     ActivationResult(
                         false,
-                        "An owner is already configured. Check Device Policies.",
+                        "Device owner is already set.",
                         "java.lang.IllegalStateException: existing owner\n at android.app.admin.DevicePolicyManager.run(DPM.java:42)",
                     )
                 },
@@ -137,7 +137,7 @@ class ManagementSettingsUiTest {
         assertEquals(true, chosen)
         assertTrue(refreshed)
         assertText("Activation failed")
-        assertText("An owner is already configured. Check Device Policies.")
+        assertText("Device owner is already set.")
         assertNoText(
             "java.lang.IllegalStateException: existing owner\n at android.app.admin.DevicePolicyManager.run(DPM.java:42)"
         )
@@ -176,6 +176,59 @@ class ManagementSettingsUiTest {
             assertText(details)
             click("Close")
         }
+    }
+
+    @Test
+    @Config(sdk = [31])
+    fun scrollingTheStacktraceKeepsTheSummaryAndCollapseButtonFixed() {
+        val summary = "Android rejected activation."
+        val details =
+            "java.lang.IllegalStateException: rejected\n" +
+                (1..200).joinToString("\n") {
+                    "    at android.app.admin.DevicePolicyManager.run(DPM.java:$it)"
+                }
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = false,
+                onActivated = {},
+                activate = { ActivationResult(false, summary, details) },
+            )
+        }
+        click("Activate with Shizuku")
+        click("Activate")
+        click("Show details")
+        val summaryBounds = nodes().first { summary in text(it) }.boundsInRoot
+        val buttonBounds =
+            nodes(merged = true).first { "Hide details" in text(it) }.boundsInRoot
+        val scroller =
+            nodes().single {
+                it.config.getOrNull(SemanticsProperties.VerticalScrollAxisRange) !=
+                    null
+            }
+        val range = scroller.config[SemanticsProperties.VerticalScrollAxisRange]
+        assertTrue(range.maxValue() > 0f)
+        assertEquals(0f, range.value())
+        assertTrue(
+            scroller.config[SemanticsActions.ScrollBy].action!!.invoke(0f, 240f)
+        )
+        frames()
+        assertTrue(range.value() > 0f)
+        assertEquals(
+            summaryBounds,
+            nodes().first { summary in text(it) }.boundsInRoot,
+        )
+        assertEquals(
+            buttonBounds,
+            nodes(merged = true).first { "Hide details" in text(it) }.boundsInRoot,
+        )
+        click("Hide details")
+        assertNoText(details)
+        assertTrue(
+            nodes().none {
+                it.config.getOrNull(SemanticsProperties.VerticalScrollAxisRange) !=
+                    null
+            }
+        )
     }
 
     @Test
@@ -478,11 +531,22 @@ class ManagementSettingsUiTest {
     private fun openField(label: String) = click(label)
 
     private fun click(label: String) {
-        val node =
-            nodes(merged = true).first {
+        fun findButton() =
+            nodes(merged = true).firstOrNull {
                 label in text(it) &&
                     it.config.getOrNull(SemanticsActions.OnClick) != null
             }
+        // Dialog roots can attach on a later frame under CI load. Advance the
+        // test clock until the button exists instead of assuming eight frames.
+        var node = findButton()
+        var framesWaited = 0
+        while (node == null && framesWaited++ < 20) {
+            frames()
+            node = findButton()
+        }
+        checkNotNull(node) {
+            "No clickable '$label'. Visible text: ${nodes().flatMap(::text)}"
+        }
         assertTrue(node.config[SemanticsActions.OnClick].action!!.invoke())
         frames()
     }

@@ -12,9 +12,12 @@
 #   public *;
 #}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Activation failures are shown in-app in release builds. Retain frame names
+# and line information for this small package, including Shizuku's service,
+# without disabling shrinking or optimisation for the rest of the app.
+# https://developer.android.com/topic/performance/app-optimization/global-options#keep-attributes
+-keepattributes SourceFile,LineNumberTable
+-keep,allowshrinking class uk.nktnet.webviewkiosk.activation.** { *; }
 
 # If you keep the line number information, uncomment this to
 # hide the original source file name.

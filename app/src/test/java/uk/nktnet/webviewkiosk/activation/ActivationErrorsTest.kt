@@ -1,67 +1,39 @@
 package uk.nktnet.webviewkiosk.activation
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ActivationErrorsTest {
     @Test
-    fun androidFailuresBecomeActionableMessagesWithoutStacktraces() {
-        val cases =
-            mapOf(
-                "No device owner is configured" to "Activate Device Owner first",
-                "device owner is not set" to "Activate Device Owner first",
-                "device owner does not exist" to "Activate Device Owner first",
-                "device owner doesn't exist" to "Activate Device Owner first",
-                "DeviceOwner does not exist" to "Activate Device Owner first",
-                "There are already several users" to
-                    "Review them in Android Settings",
-                "Trying to set the device owner, but device owner is already set" to
-                    "An owner is already configured",
-                "Unknown admin: ComponentInfo{example/Admin}" to "Reinstall the app",
-                "java.lang.SecurityException: denied" to "Allow this app in Shizuku",
-                "android.os.DeadObjectException" to "restart its service",
-                "Shizuku is not running" to "start its service",
-                "unrecognised OEM exception" to
-                    "use ADB or factory reset and QR setup",
-            )
-        for ((error, expected) in cases) {
-            val raw =
-                "$error\n    at android.app.admin.DevicePolicyManager.run(DPM.java:42)"
-            val result = activationFailure(IllegalStateException(raw))
-            assertFalse(result.success)
-            assertTrue(error, result.output.contains(expected))
-            assertFalse(result.output.contains("DPM.java"))
-            assertFalse(result.output.contains("java.lang"))
-            assertTrue(result.diagnostics.contains(raw))
-        }
+    fun summaryUsesTheOriginalFirstNonblankLine() {
+        val raw =
+            "\n  Error: device owner is already set\n" +
+                "    at android.app.admin.DevicePolicyManager.run(DPM.java:42)"
+        val result = activationFailure(IllegalStateException(raw))
+        assertFalse(result.success)
+        assertEquals("Error: device owner is already set", result.output)
+        assertFalse(result.output.contains("DPM.java"))
+        assertTrue(result.diagnostics.contains(raw))
     }
 
     @Test
-    fun alreadyInAnAndroidRestrictionDoesNotImplyAnExistingOwner() {
-        val accounts =
-            activationFailure(
-                IllegalStateException(
-                    "Not allowed to set the device owner because there are already some accounts on the device"
-                )
-            )
-        val users =
-            activationFailure(
-                IllegalStateException(
-                    "Not allowed to set the device owner because there are already several users"
-                )
-            )
-        assertTrue(accounts.output.contains("Remove conflicting accounts"))
-        assertTrue(users.output.contains("Review them in Android Settings"))
+    fun platformMessagesAreNotReplacedWithTroubleshootingAdvice() {
+        val message = "Not allowed to set the device owner: accounts on the device"
+        assertEquals(
+            message,
+            activationFailure(IllegalStateException(message)).output,
+        )
     }
 
     @Test
-    fun expandedDetailsRetainExceptionFramesAndCauses() {
+    fun expandedDetailsRetainExceptionFramesCausesAndSuppressedErrors() {
         val cause = IllegalStateException("Device owner does not exist")
         val failure = IllegalStateException("Activation request failed", cause)
+        failure.addSuppressed(IllegalStateException("Cleanup failed"))
         val result = activationFailure(failure)
-        assertTrue(result.output.contains("Activate Device Owner first"))
-        assertFalse(result.output.contains("java.lang"))
+        assertEquals("Activation request failed", result.output)
         assertTrue(
             result.diagnostics.contains(
                 "java.lang.IllegalStateException: Activation request failed"
@@ -72,17 +44,37 @@ class ActivationErrorsTest {
                 "Caused by: java.lang.IllegalStateException: Device owner does not exist"
             )
         )
+        assertTrue(
+            result.diagnostics.contains(
+                "Suppressed: java.lang.IllegalStateException: Cleanup failed"
+            )
+        )
         assertTrue(result.diagnostics.contains("\tat "))
     }
 
     @Test
-    fun onlyExplicitAppMessagesAreShownVerbatim() {
+    fun appPreconditionsKeepTheirMessage() {
         val message = "Open the app in the main user (ID 10) and try again."
-        assertTrue(activationFailure(ActivationException(message)).output == message)
-        assertFalse(
-            activationFailure(IllegalStateException("Internal error: secret detail"))
-                .output
-                .contains("secret detail")
-        )
+        assertEquals(message, activationFailure(ActivationException(message)).output)
+    }
+
+    @Test
+    fun absentOrBlankMessagesUseAShortFallbackAndKeepTheException() {
+        for (message in listOf(null, "", " \n\t")) {
+            val result = activationFailure(IllegalStateException(message))
+            assertEquals("Could not activate ownership.", result.output)
+            assertTrue(
+                result.diagnostics.contains("java.lang.IllegalStateException")
+            )
+        }
+    }
+
+    @Test
+    fun longMessagesStayInDetailsRatherThanFillingTheSummary() {
+        val raw = "Android rejected activation: " + "detail ".repeat(1000)
+        val result = activationFailure(IllegalStateException(raw))
+        assertTrue(result.output.startsWith("Android rejected activation:"))
+        assertTrue(result.output.length <= 300)
+        assertTrue(result.diagnostics.contains(raw))
     }
 }

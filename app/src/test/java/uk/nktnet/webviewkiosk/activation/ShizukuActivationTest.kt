@@ -123,7 +123,7 @@ class ShizukuActivationTest {
     fun serviceBindingFailureStillUnbindsAndCleansListeners() {
         access.binding = { error("Binding failed") }
         val result = complete(start())
-        assertTrue(result.output.contains("Could not activate ownership"))
+        assertEquals("Binding failed", result.output)
         assertTrue(result.diagnostics.contains("Binding failed"))
         assertEquals(1, access.unbinds)
         assertClean()
@@ -200,7 +200,7 @@ class ShizukuActivationTest {
         serviceFailure = true
         val result = complete(start())
         assertFalse(result.success)
-        assertFalse(result.output.contains("Service failed"))
+        assertEquals("Service failed", result.output)
         assertTrue(result.diagnostics.contains("Service failed"))
         assertEquals(1, access.unbinds)
         assertClean()
@@ -216,8 +216,10 @@ class ShizukuActivationTest {
                 "    at android.app.admin.DevicePolicyManager.setDeviceOwner(DPM.java:12)"
         val result = complete(start())
         assertFalse(result.success)
-        assertTrue(result.output.contains("Remove conflicting accounts"))
-        assertFalse(result.output.contains("java.lang"))
+        assertEquals(
+            "java.lang.IllegalStateException: accounts on the device",
+            result.output,
+        )
         assertFalse(result.output.contains("DPM.java"))
         assertTrue(result.diagnostics.contains("DPM.java"))
         assertClean()

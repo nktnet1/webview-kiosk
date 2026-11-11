@@ -161,7 +161,7 @@ class OwnerActivationTest {
         dpmResult = CommandResult(1, "Error: another owner already exists")
         val result = engine().activate(true, 0)
         assertFalse(result.success)
-        assertTrue(result.output.contains("An owner is already configured"))
+        assertEquals("Error: another owner already exists", result.output)
         assertTrue(result.diagnostics.contains("another owner already exists"))
         assertTrue(commands.any { it.first() == "settings" && it.last() == "1" })
         assertEquals(listOf(0, 0), refreshed)

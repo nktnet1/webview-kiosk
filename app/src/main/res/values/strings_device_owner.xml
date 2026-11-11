@@ -3,7 +3,7 @@
     <string name="ui_activate_with_shizuku">Activate with Shizuku</string>
     <string name="ui_shizuku_activate">Activate</string>
     <string name="ui_shizuku_activating">Activating ownership…</string>
-    <string name="ui_shizuku_activation_info">Requires Android 12+ with Shizuku running. Choose an owner role for this app in Android\'s main user (usually ID 0), and allow access when prompted. Keep Shizuku running until activation finishes.</string>
+    <string name="ui_shizuku_activation_info">Select your desired ownership mode:</string>
     <string name="ui_shizuku_show_details">Show details</string>
     <string name="ui_shizuku_hide_details">Hide details</string>
     <string name="ui_shizuku_activation_success">Ownership activated</string>

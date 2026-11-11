@@ -2,6 +2,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -16,8 +19,11 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,8 +36,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -113,8 +123,36 @@ internal fun ShizukuActivationSection(
                     }
                     if (running) {
                         Spacer(Modifier.height(12.dp))
-                        CircularProgressIndicator()
-                        Text(stringResource(R.string.ui_shizuku_activating))
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor =
+                                MaterialTheme.colorScheme.onPrimaryContainer,
+                        ) {
+                            Row(
+                                modifier =
+                                    Modifier.padding(16.dp).semantics {
+                                        liveRegion = LiveRegionMode.Polite
+                                    },
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    trackColor =
+                                        MaterialTheme.colorScheme.primary.copy(
+                                            alpha = 0.15f
+                                        ),
+                                )
+                                Text(
+                                    stringResource(R.string.ui_shizuku_activating),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
                     }
                 }
             },
@@ -171,32 +209,69 @@ internal fun ShizukuActivationSection(
                 )
             },
             text = {
-                Column(
-                    Modifier.heightIn(max = 400.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
+                Column(Modifier.heightIn(max = 400.dp)) {
                     SelectionContainer { Text(outcome.output) }
                     if (outcome.diagnostics.isNotBlank()) {
-                        TextButton(
-                            onClick = { detailsExpanded = !detailsExpanded }
+                        Spacer(Modifier.height(16.dp))
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium,
+                            onClick = { detailsExpanded = !detailsExpanded },
                         ) {
-                            Text(
-                                stringResource(
-                                    if (detailsExpanded) {
-                                        R.string.ui_shizuku_hide_details
-                                    } else {
-                                        R.string.ui_shizuku_show_details
-                                    }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    stringResource(
+                                        if (detailsExpanded) {
+                                            R.string.ui_shizuku_hide_details
+                                        } else {
+                                            R.string.ui_shizuku_show_details
+                                        }
+                                    )
                                 )
-                            )
+                                Icon(
+                                    painterResource(
+                                        if (detailsExpanded) {
+                                            R.drawable.keyboard_arrow_up_24
+                                        } else {
+                                            R.drawable.keyboard_arrow_down_24
+                                        }
+                                    ),
+                                    contentDescription = null,
+                                )
+                            }
                         }
                         if (detailsExpanded) {
-                            SelectionContainer {
-                                Text(
-                                    outcome.diagnostics,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontFamily = FontFamily.Monospace,
-                                )
+                            Spacer(Modifier.height(8.dp))
+                            Surface(
+                                modifier =
+                                    Modifier.fillMaxWidth().weight(1f, fill = false),
+                                shape = MaterialTheme.shapes.medium,
+                                color =
+                                    MaterialTheme.colorScheme.surfaceContainerLow,
+                                border =
+                                    BorderStroke(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.outlineVariant,
+                                    ),
+                            ) {
+                                // Only the trace scrolls. Keep the summary and
+                                // collapse button visible above it.
+                                SelectionContainer(
+                                    modifier =
+                                        Modifier.heightIn(max = 280.dp)
+                                            .verticalScroll(rememberScrollState())
+                                            .padding(12.dp)
+                                ) {
+                                    Text(
+                                        outcome.diagnostics.trim(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontFamily = FontFamily.Monospace,
+                                    )
+                                }
                             }
                         }
                     }
