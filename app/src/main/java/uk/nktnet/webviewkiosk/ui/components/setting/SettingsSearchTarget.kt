@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.setting
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -10,33 +12,38 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.delay
 
-/** Only the destination of a settings-search navigation receives this label. */
-val LocalSettingsSearchTarget = compositionLocalOf<String?> { null }
+/** A one-shot request consumed once the destination has scrolled and flashed. */
+data class SettingsSearchTarget(val label: String, val onConsumed: () -> Unit)
+
+val LocalSettingsSearchTarget = compositionLocalOf<SettingsSearchTarget?> { null }
 
 /**
- * Find the actual rendered row, even when preceding settings have variable heights.
+ * Scroll to the actual rendered row, then briefly flash it and clear the request.
  */
 @Composable
 fun Modifier.bringSearchSettingIntoView(label: String): Modifier {
-    val isTarget = LocalSettingsSearchTarget.current == label
+    val target = LocalSettingsSearchTarget.current
+    val isTarget = target?.label == label
     val requester = remember { BringIntoViewRequester() }
+    val flashAlpha = remember { Animatable(0f) }
 
     LaunchedEffect(isTarget) {
         if (isTarget) {
-            // The destination may have just entered composition; wait for its first
-            // layout.
+            // The destination may have just entered composition; wait for layout.
             withFrameNanos {}
             requester.bringIntoView()
+            delay(250)
+            flashAlpha.snapTo(0.8f)
+            delay(150)
+            flashAlpha.animateTo(0f, tween(durationMillis = 650))
+            target.onConsumed()
         }
     }
 
     return this.bringIntoViewRequester(requester)
-        .then(
-            if (isTarget) {
-                Modifier.background(MaterialTheme.colorScheme.primaryContainer)
-            } else {
-                Modifier
-            }
+        .background(
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = flashAlpha.value)
         )
 }

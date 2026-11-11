@@ -22,6 +22,7 @@ import androidx.navigation.createGraph
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.LocalSettingsSearchTarget
+import uk.nktnet.webviewkiosk.ui.components.setting.SettingsSearchTarget
 import uk.nktnet.webviewkiosk.ui.components.webview.ContentBlockingGate
 import uk.nktnet.webviewkiosk.utils.NonPredictiveNavigationBackHandler
 import uk.nktnet.webviewkiosk.utils.WEBVIEW_RECREATION_REQUEST_KEY
@@ -191,7 +192,17 @@ internal fun SetupNavHost(
                                         .collectAsState()
                                 CompositionLocalProvider(
                                     LocalSettingsSearchTarget provides
-                                        targetRes?.let { stringResource(it) }
+                                        targetRes?.let { res ->
+                                            SettingsSearchTarget(
+                                                label = stringResource(res),
+                                                onConsumed = {
+                                                    entry.savedStateHandle.set<Int?>(
+                                                        SETTINGS_SEARCH_TARGET_KEY,
+                                                        null,
+                                                    )
+                                                },
+                                            )
+                                        }
                                 ) {
                                     content()
                                 }

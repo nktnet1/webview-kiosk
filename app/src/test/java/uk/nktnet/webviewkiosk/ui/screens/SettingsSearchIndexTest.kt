@@ -16,6 +16,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -122,6 +123,92 @@ class SettingsSearchIndexTest {
     }
 
     @Test
+    fun findsSettingByFullOrPartialKeyAndShowsTheActualKey() {
+        val key = UserSettingsKeys.WebEngine.SSL_ERROR_MODE
+        val matches = searchSettings(context, "  ${key.uppercase()}  ")
+        val result = matches.single()
+
+        assertEquals(R.string.web_engine_ssl_error_mode_title, result.titleRes)
+        assertEquals(Screen.SettingsWebEngine.route, result.route)
+        assertEquals(key, result.settingKey)
+        assertEquals(R.string.web_engine_ssl_error_mode_title, result.targetRes)
+        assertEquals(
+            result,
+            searchSettings(context, "ssl_error_mode").single {
+                it.targetRes == R.string.web_engine_ssl_error_mode_title
+            },
+        )
+    }
+
+    @Test
+    fun vapidKeyIsNotConfusedWithDistributorMessage() {
+        val result =
+            searchSettings(context, UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY)
+                .single()
+        assertEquals(R.string.unifiedpush_vapid_public_key_title, result.titleRes)
+        assertEquals(
+            UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY,
+            result.settingKey,
+        )
+    }
+
+    @Test
+    fun searchesNestedKeysUsingWordsAcrossLabelsSectionsAndKeys() {
+        val key = UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_HANDLING
+        val result = searchSettings(context, key).single()
+
+        assertEquals(Screen.SettingsMqttTopicsSubscribeRequest.route, result.route)
+        assertEquals(
+            R.string.mqtt_subscribe_request_retain_handling_title,
+            result.targetRes,
+        )
+        assertEquals(key, result.settingKey)
+        assertEquals(
+            result,
+            searchSettings(context, "MQTT  request  retain_handling").single {
+                it.targetRes == result.targetRes
+            },
+        )
+    }
+
+    @Test
+    fun everyIndexedUserSettingHasARealKeyAndOnlyNonSettingsLackOne() {
+        val nonUserSettings =
+            setOf(
+                Screen.SettingsAbout.route,
+                Screen.SettingsMoreActions.route,
+                Screen.SettingsWebContentFiles.route,
+            )
+        val expectedKeys =
+            settingsSearchSections
+                .filterNot { it.route in nonUserSettings }
+                .flatMap { it.fields }
+                .toSet()
+        assertEquals(expectedKeys, settingsSearchKeysByLabel.keys)
+        assertEquals(
+            settingsSearchKeysByLabel.size,
+            settingsSearchKeysByLabel.values.toSet().size,
+        )
+        settingsSearchSections
+            .filter { it.route in nonUserSettings }
+            .flatMap { it.fields }
+            .forEach { assertFalse(it in settingsSearchKeysByLabel) }
+    }
+
+    @Test
+    fun searchResultsAreGroupedInSettingsOrder() {
+        val results = searchSettings(context, "enabled")
+        val grouped = groupSettingsSearchResults(results)
+
+        assertTrue(grouped.size > 1)
+        assertEquals(results, grouped.flatMap { it.second })
+        grouped.forEach { (section, entries) ->
+            assertTrue(entries.isNotEmpty())
+            assertTrue(entries.all { it.route == section.route })
+        }
+    }
+
+    @Test
     fun selectingAResultStoresItsTargetOnTheDestinationOnly() {
         val controller = NavHostController(context)
         controller.navigatorProvider.addNavigator(ComposeNavigator())
@@ -155,6 +242,14 @@ class SettingsSearchIndexTest {
                 ?.savedStateHandle
                 ?.get<Int>(SETTINGS_SEARCH_TARGET_KEY),
         )
+        val entry = requireNotNull(controller.currentBackStackEntry)
+        val selectedTarget =
+            entry.savedStateHandle.getStateFlow<Int?>(
+                SETTINGS_SEARCH_TARGET_KEY,
+                null,
+            )
+        entry.savedStateHandle.set<Int?>(SETTINGS_SEARCH_TARGET_KEY, null)
+        assertEquals(null, selectedTarget.value)
         controller.popBackStack()
         assertEquals(
             null,

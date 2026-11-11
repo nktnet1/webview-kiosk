@@ -14,12 +14,14 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
 import androidx.navigation.NavController
+import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -32,6 +34,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.ui.components.setting.LocalSettingsSearchTarget
+import uk.nktnet.webviewkiosk.ui.components.setting.SettingsSearchTarget
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], qualifiers = "w400dp-h480dp")
@@ -76,25 +79,15 @@ class SettingsSearchScrollTest {
             activity.getString(R.string.appearance_show_loading_progress_bar_title)
         view.setContent {
             MaterialTheme {
-                CompositionLocalProvider(LocalSettingsSearchTarget provides title) {
+                CompositionLocalProvider(
+                    LocalSettingsSearchTarget provides
+                        SettingsSearchTarget(title, {})
+                ) {
                     SettingsAppearanceScreen(NavController(activity))
                 }
             }
         }
-        repeat(30) { frame ->
-            Snapshot.sendApplyNotifications()
-            shadowOf(Looper.getMainLooper()).idle()
-            clock.sendFrame((frame + 1) * 16_000_000L)
-            shadowOf(Looper.getMainLooper()).idle()
-            view.measure(
-                View.MeasureSpec.makeMeasureSpec(400, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(480, View.MeasureSpec.EXACTLY),
-            )
-            view.layout(0, 0, 400, 480)
-            roots
-                .filter { it.view.isAttachedToWindow }
-                .forEach { it.measureAndLayoutForTest() }
-        }
+        repeat(30) { frame -> renderFrame(frame, advanceTime = false) }
 
         val nodes =
             roots
@@ -122,5 +115,55 @@ class SettingsSearchScrollTest {
             "The target should be within the screen: ${label.boundsInRoot}",
             label.boundsInRoot.bottom <= 480f && label.boundsInRoot.top >= 0f,
         )
+    }
+
+    @Test
+    fun flashesOnlyOnceAfterScrollingAndWaiting() {
+        val activity = controller.get()
+        val title =
+            activity.getString(R.string.appearance_show_loading_progress_bar_title)
+        var consumed = 0
+        view.setContent {
+            MaterialTheme {
+                CompositionLocalProvider(
+                    LocalSettingsSearchTarget provides
+                        SettingsSearchTarget(title) { consumed++ }
+                ) {
+                    SettingsAppearanceScreen(NavController(activity))
+                }
+            }
+        }
+
+        repeat(15) { frame -> renderFrame(frame, advanceTime = true) }
+        assertEquals("Do not flash before the scroll and delay", 0, consumed)
+
+        repeat(130) { frame -> renderFrame(frame + 15, advanceTime = true) }
+        assertEquals(
+            "The highlight must finish and consume its request",
+            1,
+            consumed,
+        )
+
+        repeat(20) { frame -> renderFrame(frame + 145, advanceTime = true) }
+        assertEquals("The same selection must not flash again", 1, consumed)
+    }
+
+    private fun renderFrame(frame: Int, advanceTime: Boolean) {
+        Snapshot.sendApplyNotifications()
+        if (advanceTime) {
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(16))
+        } else {
+            shadowOf(Looper.getMainLooper()).idle()
+        }
+        clock.sendFrame((frame + 1) * 16_000_000L)
+        shadowOf(Looper.getMainLooper()).idle()
+        view.measure(
+            View.MeasureSpec.makeMeasureSpec(400, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(480, View.MeasureSpec.EXACTLY),
+        )
+        view.layout(0, 0, 400, 480)
+        roots
+            .filter { it.view.isAttachedToWindow }
+            .forEach { it.measureAndLayoutForTest() }
     }
 }

@@ -23,6 +23,7 @@ internal data class SettingsSearchResult(
     @StringRes val sectionTitleRes: Int?,
     @StringRes val targetRes: Int? = null,
     @StringRes val descriptionRes: Int? = null,
+    val settingKey: String? = null,
 )
 
 internal val settingsSearchSections: List<SettingsSearchSection> =
@@ -467,17 +468,24 @@ internal fun searchSettings(
         val fieldResults =
             section.fields.mapNotNull { titleRes ->
                 val label = context.getString(titleRes)
+                val settingKey = settingsSearchKeysByLabel[titleRes]
                 val matches =
                     words.all { word ->
                         label.contains(word, ignoreCase = true) ||
-                            heading.contains(word, ignoreCase = true)
-                    } && words.any { label.contains(it, ignoreCase = true) }
+                            heading.contains(word, ignoreCase = true) ||
+                            settingKey?.contains(word, ignoreCase = true) == true
+                    } &&
+                        words.any { word ->
+                            label.contains(word, ignoreCase = true) ||
+                                settingKey?.contains(word, ignoreCase = true) == true
+                        }
                 if (matches) {
                     SettingsSearchResult(
                         titleRes = titleRes,
                         route = section.route,
                         sectionTitleRes = section.titleRes,
                         targetRes = titleRes,
+                        settingKey = settingKey,
                     )
                 } else {
                     null
@@ -486,3 +494,16 @@ internal fun searchSettings(
         sectionResult + fieldResults
     }
 }
+
+/** Preserve the same section order as the settings screens. */
+internal fun groupSettingsSearchResults(
+    results: List<SettingsSearchResult>
+): List<Pair<SettingsSearchSection, List<SettingsSearchResult>>> =
+    settingsSearchSections.mapNotNull { section ->
+        val matches = results.filter { it.route == section.route }
+        if (matches.isEmpty()) {
+            null
+        } else {
+            section to matches
+        }
+    }
