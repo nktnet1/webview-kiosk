@@ -131,7 +131,11 @@ fun SettingsListScreen(navController: NavController) {
         SettingsHeaderMenu(navController)
         SettingDivider()
 
-        SettingsSearchField(query, onQueryChange = { query = it })
+        SettingsSearchField(
+            query,
+            onQueryChange = { query = it },
+            modifier = Modifier.padding(top = 2.dp, bottom = 12.dp),
+        )
 
         LazyColumn(
             modifier = Modifier.weight(1f),
@@ -213,7 +217,11 @@ fun SettingsListScreen(navController: NavController) {
  * Tonal, pill-shaped search field matching the Android Settings search affordance.
  */
 @Composable
-private fun SettingsSearchField(query: String, onQueryChange: (String) -> Unit) {
+private fun SettingsSearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     BasicTextField(
         value = query,
         onValueChange = onQueryChange,
@@ -225,10 +233,7 @@ private fun SettingsSearchField(query: String, onQueryChange: (String) -> Unit) 
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         modifier =
-            Modifier.fillMaxWidth()
-                .padding(top = 10.dp, bottom = 14.dp)
-                .height(56.dp)
-                .testTag("settings_search_field"),
+            modifier.fillMaxWidth().height(48.dp).testTag("settings_search_field"),
         decorationBox = { innerTextField ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
