@@ -6,11 +6,13 @@ import android.os.Build
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -19,6 +21,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.createGraph
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.config.Screen
+import uk.nktnet.webviewkiosk.ui.components.setting.LocalSettingsSearchTarget
 import uk.nktnet.webviewkiosk.ui.components.webview.ContentBlockingGate
 import uk.nktnet.webviewkiosk.utils.NonPredictiveNavigationBackHandler
 import uk.nktnet.webviewkiosk.utils.WEBVIEW_RECREATION_REQUEST_KEY
@@ -178,8 +181,20 @@ internal fun SetupNavHost(
                         route = "settings_list",
                     ) {
                         for ((route, content) in settingsScreens) {
-                            authComposable(route, navController) {
-                                content()
+                            authComposable(route, navController) { entry ->
+                                val targetRes by
+                                    entry.savedStateHandle
+                                        .getStateFlow<Int?>(
+                                            SETTINGS_SEARCH_TARGET_KEY,
+                                            null,
+                                        )
+                                        .collectAsState()
+                                CompositionLocalProvider(
+                                    LocalSettingsSearchTarget provides
+                                        targetRes?.let { stringResource(it) }
+                                ) {
+                                    content()
+                                }
                             }
                         }
                     }
