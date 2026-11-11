@@ -800,12 +800,38 @@ internal const val YOUTUBE_BACKGROUND_RECOVERY_SCRIPT =
       var maxAudioBusyTicks = 8;
 
       function isBackground() { return window.__wvkHostBackground === true; }
-      function player() { return document.getElementById('movie_player'); }
+      function isShorts() { return /^\/shorts(?:\/|$)/.test(window.location.pathname || ''); }
+      function shortsVideo() {
+        if (!isShorts()) return null;
+        var active = document.querySelector('ytd-reel-video-renderer[is-active] video') ||
+          document.querySelector('#shorts-player video');
+        if (active) return active;
+        // Mobile YouTube uses shorts-video and may preload neighbouring clips.
+        var candidates = document.querySelectorAll('shorts-video video');
+        for (var i = 0; i < candidates.length; i++) {
+          if (!candidates[i].paused && !candidates[i].ended) return candidates[i];
+        }
+        return candidates[0] || null;
+      }
+      function player() {
+        var active = shortsVideo();
+        if (active && typeof active.closest === 'function') {
+          var root = active.closest('#movie_player, #shorts-player, .html5-video-player');
+          if (root) return root;
+        }
+        return document.getElementById('movie_player');
+      }
       function video() {
+        var active = shortsVideo();
+        if (active) return active;
         var root = player();
         return (root && root.querySelector('video')) || document.querySelector('video');
       }
       function state() {
+        if (isShorts()) {
+          var short = video();
+          if (short) return short.ended ? 0 : (short.paused ? 2 : 1);
+        }
         var element = player();
         try {
           if (element && typeof element.getPlayerState === 'function') {
@@ -832,7 +858,8 @@ internal const val YOUTUBE_BACKGROUND_RECOVERY_SCRIPT =
           attemptCount < maxAttempts && audioBusyTicks < maxAudioBusyTicks;
       };
 
-      function trackPlay() {
+      function trackPlay(event) {
+        if (isShorts() && event && event.target !== video()) return;
         wasPlaying = true;
         explicitlyPaused = false;
         attemptCount = 0;

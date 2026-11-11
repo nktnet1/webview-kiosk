@@ -17,6 +17,7 @@ function script(name) {
 
 function createFrame(hostname, {
   playing = true, children = [], rejectResume = false, requireVisibleOnResume = false,
+  pathname = '/watch',
 } = {}) {
   const reports = [];
   const documentHandlers = new Map();
@@ -48,11 +49,22 @@ function createFrame(hostname, {
     getPlayerState() { return media.paused ? (media.ended ? 0 : 2) : 1; },
     playVideo() { const result = media.play(); if (result?.catch) result.catch(() => {}); },
   };
+  const isShorts = pathname.startsWith('/shorts/');
+  const mobileShorts = isShorts && hostname.startsWith('m.youtube.com');
+  media.closest = () => youtubePlayer;
+  const stalePlayer = {
+    getPlayerState() { return 2; },
+    playVideo() { throw new Error('Inactive Shorts player used'); },
+  };
   const document = {
-    getElementById(id) { return id === 'movie_player' ? youtubePlayer : null; },
-    querySelector(selector) { return selector === 'video' ? media : null; },
+    getElementById(id) { return id === 'movie_player' ? (isShorts ? stalePlayer : youtubePlayer) : null; },
+    querySelector(selector) {
+      if (isShorts && !mobileShorts && selector === 'ytd-reel-video-renderer[is-active] video') return media;
+      return selector === 'video' ? media : null;
+    },
     querySelectorAll(selector) {
       if (selector === 'audio,video') return [media];
+      if (selector === 'shorts-video video') return mobileShorts ? [media] : [];
       if (selector === 'iframe') return children.map((child) => ({ contentWindow: child.window }));
       return [];
     },
@@ -66,7 +78,7 @@ function createFrame(hostname, {
     visibilityState: { configurable: true, get() { return nativeHidden ? 'hidden' : 'visible'; } },
   });
   const window = {
-    location: { hostname },
+    location: { hostname, pathname },
     WebviewKioskBackgroundMedia: {
       onPlaybackStateChanged(id, isPlaying) { reports.push([id, isPlaying]); },
       canAutoResume() { return true; },
@@ -287,4 +299,29 @@ test('an active music interruption prevents automatic YouTube resume', () => {
   assert.equal(frame.media.paused, true);
   frame.hideNative();
   assert.equal(frame.document.hidden, true);
+});
+
+test('YouTube Shorts recover the active reel after Home without resuming the inactive player', () => {
+  const frame = createFrame('www.youtube.com', { pathname: '/shorts/zyxwvutsrqp' });
+  frame.window.__wvkSetHostBackground(true);
+  frame.media.pause();
+  frame.tick();
+  assert.equal(frame.media.paused, false);
+  assert.equal(frame.reports.at(-1)[1], true);
+});
+
+test('YouTube Shorts paused intentionally before Home stay paused', () => {
+  const frame = createFrame('www.youtube.com', { pathname: '/shorts/zyxwvutsrqp' });
+  frame.media.pause();
+  frame.window.__wvkSetHostBackground(true);
+  frame.tick();
+  assert.equal(frame.media.paused, true);
+});
+
+test('mobile YouTube Shorts recover the selected shorts-video after Home', () => {
+  const frame = createFrame('m.youtube.com', { pathname: '/shorts/zyxwvutsrqp' });
+  frame.window.__wvkSetHostBackground(true);
+  frame.media.pause();
+  frame.tick();
+  assert.equal(frame.media.paused, false);
 });

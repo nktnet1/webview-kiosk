@@ -19,8 +19,36 @@ internal const val RICH_MEDIA_SCRIPT =
       var lastPlayedMedia = null;
       var lastMediaActive = false;
 
-      function player() { return document.getElementById('movie_player'); }
+      function isShorts() {
+        return youtube && /^\/shorts(?:\/|$)/.test(location.pathname || '');
+      }
+      function shortsVideo() {
+        if (!isShorts()) return null;
+        var active = document.querySelector('ytd-reel-video-renderer[is-active] video') ||
+          document.querySelector('#shorts-player video');
+        if (active) return active;
+        // Mobile YouTube uses shorts-video and may preload neighbouring clips.
+        var candidates = document.querySelectorAll('shorts-video video');
+        for (var i = 0; i < candidates.length; i++) {
+          if (!candidates[i].paused && !candidates[i].ended) return candidates[i];
+        }
+        return candidates[0] || null;
+      }
+      function player() {
+        if (isShorts()) {
+          var active = shortsVideo();
+          if (active && typeof active.closest === 'function') {
+            var root = active.closest('#movie_player, #shorts-player, .html5-video-player');
+            if (root) return root;
+          }
+          return document.querySelector('ytd-reel-video-renderer[is-active] #movie_player') ||
+            document.querySelector('#shorts-player') || document.getElementById('movie_player');
+        }
+        return document.getElementById('movie_player');
+      }
       function media() {
+        var activeShort = shortsVideo();
+        if (activeShort) return activeShort;
         var root = youtube && player();
         if (root && root.querySelector) {
           var video = root.querySelector('video');
@@ -52,6 +80,11 @@ internal const val RICH_MEDIA_SCRIPT =
       }
       function transportButton(action) {
         var type = action === 'next' ? 'next' : 'previous';
+        if (isShorts()) {
+          var id = type === 'next' ? 'navigation-button-down' : 'navigation-button-up';
+          return document.querySelector('#' + id + ' button') ||
+            document.querySelector('#' + id);
+        }
         var button = document.querySelector('.ytp-' + (type === 'next' ? 'next' : 'prev') + '-button') ||
           document.querySelector('ytmusic-player-bar .' + type + '-button') ||
           document.querySelector('ytmusic-player-controls .' + type + '-button');
@@ -61,18 +94,26 @@ internal const val RICH_MEDIA_SCRIPT =
         if (buttons.length > 1) return buttons[type === 'next' ? buttons.length - 1 : 0];
         return null;
       }
+      function shortsText(selector) {
+        var active = isShorts() && document.querySelector('ytd-reel-video-renderer[is-active]');
+        var node = active && active.querySelector(selector);
+        return node && node.textContent ? node.textContent.trim() : '';
+      }
       function snapshot() {
         var element = media();
         var root = youtube && player();
         if (!element && !root) return null;
         var data = call(root, 'getVideoData', null) || {};
         var sessionMeta = (navigator.mediaSession && navigator.mediaSession.metadata) || {};
-        var title = (youtube && data.title) || sessionMeta.title ||
-          meta('og:title') || document.title || '';
+        var title = (youtube && data.title) ||
+          shortsText('yt-shorts-video-title-view-model h2, #video-title') ||
+          sessionMeta.title || meta('og:title') || document.title || '';
         var artist = (youtube && (data.author || data.channelName)) ||
+          shortsText('#channel-name, yt-reel-channel-bar-view-model a') ||
           sessionMeta.artist || meta('og:site_name') || '';
         var art = '';
-        var videoId = youtube && (data.video_id || data.videoId);
+        var shortsId = isShorts() && /^\/shorts\/([a-zA-Z0-9_-]{11})(?:\/|$)/.exec(location.pathname || '');
+        var videoId = (shortsId && shortsId[1]) || (youtube && (data.video_id || data.videoId));
         if (videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
           art = 'https://i.ytimg.com/vi/' + videoId + '/hqdefault.jpg';
         } else if (sessionMeta.artwork && sessionMeta.artwork.length) {
@@ -87,12 +128,14 @@ internal const val RICH_MEDIA_SCRIPT =
         var playlist = call(root, 'getPlaylist', null);
         var index = call(root, 'getPlaylistIndex', -1);
         var hasList = playlist && playlist.length > 1 && index >= 0;
-        var previous = !!handlers.previoustrack ||
-          !!(youtube && ((hasList && index > 0 && typeof root.previousVideo === 'function') ||
-            enabledButton(transportButton('previous'))));
-        var next = !!handlers.nexttrack ||
-          !!(youtube && ((hasList && index < playlist.length - 1 && typeof root.nextVideo === 'function') ||
-            enabledButton(transportButton('next'))));
+        var previous = !!(!youtube && handlers.previoustrack) ||
+          !!(youtube && ((isShorts() && enabledButton(transportButton('previous'))) ||
+            (!isShorts() && ((hasList && index > 0 && typeof root.previousVideo === 'function') ||
+              enabledButton(transportButton('previous'))))));
+        var next = !!(!youtube && handlers.nexttrack) ||
+          !!(youtube && ((isShorts() && enabledButton(transportButton('next'))) ||
+            (!isShorts() && ((hasList && index < playlist.length - 1 && typeof root.nextVideo === 'function') ||
+              enabledButton(transportButton('next'))))));
         var live = data.isLive === true ||
           !!(element && element.duration === Infinity) ||
           !!(root && root.classList && root.classList.contains('ytp-live'));
@@ -169,7 +212,10 @@ internal const val RICH_MEDIA_SCRIPT =
             }
           }
         } else if (action === 'next' && data && data.canNext) {
-          if (handlers.nexttrack && !youtube) handlers.nexttrack({action: 'nexttrack'});
+          if (isShorts()) {
+            var nextShort = transportButton('next');
+            if (enabledButton(nextShort)) nextShort.click();
+          } else if (handlers.nexttrack && !youtube) handlers.nexttrack({action: 'nexttrack'});
           else if (root && typeof root.nextVideo === 'function' &&
                    call(root, 'getPlaylist', null) && call(root, 'getPlaylist', null).length > 1) {
             root.nextVideo();
@@ -178,7 +224,10 @@ internal const val RICH_MEDIA_SCRIPT =
             if (enabledButton(next)) next.click();
           }
         } else if (action === 'previous' && data && data.canPrevious) {
-          if (handlers.previoustrack && !youtube) handlers.previoustrack({action: 'previoustrack'});
+          if (isShorts()) {
+            var previousShort = transportButton('previous');
+            if (enabledButton(previousShort)) previousShort.click();
+          } else if (handlers.previoustrack && !youtube) handlers.previoustrack({action: 'previoustrack'});
           else if (root && typeof root.previousVideo === 'function' &&
                    call(root, 'getPlaylist', null) && call(root, 'getPlaylist', null).length > 1) {
             root.previousVideo();
@@ -238,6 +287,7 @@ internal const val RICH_MEDIA_SCRIPT =
         }
       }, true);
       document.addEventListener('DOMContentLoaded', function () { report(true); });
+      document.addEventListener('yt-navigate-finish', function () { report(true); });
       window.setInterval(function () {
         var element = media();
         if (element && !element.paused && !element.ended) {

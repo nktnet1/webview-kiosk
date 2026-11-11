@@ -15,7 +15,7 @@ new vm.Script(richScript);
 function frame({
   host = 'www.youtube.com', playing = true, title = 'Test song',
   channel = 'Test channel', videoId = 'abcdefghijk', playlist = ['abcdefghijk', 'noprstuvwxy'],
-  index = 0, children = [],
+  index = 0, children = [], pathname = '/watch', shortsPreviousEnabled = true,
 } = {}) {
   const snapshots = [];
   const events = new Map();
@@ -28,6 +28,8 @@ function frame({
     play() { this.paused = false; commands.push('play'); return Promise.resolve(); },
     pause() { this.paused = true; commands.push('pause'); },
   };
+  const isShorts = pathname.startsWith('/shorts/');
+  const mobileShorts = isShorts && host.startsWith('m.youtube.com');
   const root = {
     querySelector(selector) { return selector === 'video' ? media : null; },
     getVideoData() { return { title, author: channel, video_id: videoId }; },
@@ -42,12 +44,24 @@ function frame({
     playVideo() { media.play(); },
   };
   function controlButton(name) {
-    return { getAttribute() { return null; }, disabled: false, hasAttribute() { return false; }, click() { commands.push(`${name}-click`); } };
+    return {
+      getAttribute() { return null; },
+      disabled: name === 'previous-short' && !shortsPreviousEnabled,
+      hasAttribute() { return false; },
+      click() { commands.push(`${name}-click`); },
+    };
   }
+  media.closest = () => root;
+  const staleRoot = { getVideoData() { return { title: 'Wrong inactive Short', video_id: 'oldoldold12' }; } };
   const document = {
     title: `${title} - YouTube`,
-    getElementById(id) { return host.includes('youtube') && id === 'movie_player' ? root : null; },
+    getElementById(id) {
+      return host.includes('youtube') && id === 'movie_player' ? (isShorts ? staleRoot : root) : null;
+    },
     querySelector(selector) {
+      if (isShorts && !mobileShorts && selector === 'ytd-reel-video-renderer[is-active] video') return media;
+      if (isShorts && !mobileShorts && selector === '#navigation-button-down button') return controlButton('next-short');
+      if (isShorts && !mobileShorts && selector === '#navigation-button-up button') return controlButton('previous-short');
       if (host === 'music.youtube.com' && selector === 'ytmusic-player-bar .next-button') return controlButton('next');
       if (host === 'music.youtube.com' && selector === 'ytmusic-player-bar .previous-button') return controlButton('previous');
       if (host.startsWith('m.youtube.com')) return null;
@@ -56,6 +70,7 @@ function frame({
     },
     querySelectorAll(selector) {
       if (selector === 'audio,video') return [media];
+      if (selector === 'shorts-video video') return mobileShorts ? [media] : [];
       if (selector === '.player-controls-middle .player-middle-controls-prev-next-button') {
         return host === 'm.youtube.com' ? [controlButton('previous'), controlButton('next')] : [];
       }
@@ -83,7 +98,7 @@ function frame({
   };
   window.parent = window;
   for (const child of children) child.window.parent = window;
-  vm.runInNewContext(richScript, { window, document, navigator: window.navigator, location: { hostname: host }, setTimeout, isFinite });
+  vm.runInNewContext(richScript, { window, document, navigator: window.navigator, location: { hostname: host, pathname }, setTimeout, isFinite });
   return {
     window, snapshots, commands, media, mediaSession, frameId: window.__wvkFrameId,
     tick() { for (const fn of timers) fn(); },
@@ -179,4 +194,38 @@ test('mobile YouTube identifies separate next and previous buttons by order', ()
   f.window.__wvkControlRichMedia('next', f.frameId, 0);
   f.window.__wvkControlRichMedia('previous', f.frameId, 0);
   assert.deepEqual(f.commands, ['next-click', 'previous-click']);
+});
+
+test('YouTube Shorts metadata and controls use the active reel, not an inactive movie_player', () => {
+  const f = frame({
+    pathname: '/shorts/zyxwvutsrqp', title: 'Active Short', channel: 'Short creator',
+    videoId: '', playlist: ['first-video', 'second-video'], index: 1,
+  });
+  const info = f.snapshots.at(-1)[1];
+  assert.equal(info.title, 'Active Short');
+  assert.equal(info.artist, 'Short creator');
+  assert.equal(info.artworkUrl, 'https://i.ytimg.com/vi/zyxwvutsrqp/hqdefault.jpg');
+  assert.equal(info.positionMs, 40_000);
+  assert.equal(info.canNext, true);
+  assert.equal(info.canPrevious, true);
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  f.window.__wvkControlRichMedia('previous', f.frameId, 0);
+  f.window.__wvkControlRichMedia('seek', f.frameId, 90_000);
+  assert.deepEqual(f.commands, ['next-short-click', 'previous-short-click', ['seek', 90]]);
+});
+
+test('Shorts hides unavailable Previous controls instead of invoking playlist methods', () => {
+  const f = frame({ pathname: '/shorts/zyxwvutsrqp', shortsPreviousEnabled: false });
+  assert.equal(f.snapshots.at(-1)[1].canPrevious, false);
+  f.window.__wvkControlRichMedia('previous', f.frameId, 0);
+  assert.deepEqual(f.commands, []);
+});
+
+test('mobile YouTube Shorts selects the playing shorts-video without advertising missing arrows', () => {
+  const f = frame({ host: 'm.youtube.com', pathname: '/shorts/zyxwvutsrqp' });
+  const info = f.snapshots.at(-1)[1];
+  assert.equal(info.title, 'Test song');
+  assert.equal(info.artworkUrl, 'https://i.ytimg.com/vi/zyxwvutsrqp/hqdefault.jpg');
+  assert.equal(info.canPrevious, false);
+  assert.equal(info.canNext, false);
 });

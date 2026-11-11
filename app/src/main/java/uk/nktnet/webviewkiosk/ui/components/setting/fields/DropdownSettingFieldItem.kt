@@ -26,6 +26,7 @@ fun <T> DropdownSettingFieldItem(
     restricted: Boolean,
     disabledReason: String? = null,
     extraContent: (@Composable ((setValue: (T) -> Unit) -> Unit))? = null,
+    extraContentForValue: (@Composable (T) -> Unit)? = null,
     validator: (value: T) -> Boolean = { true },
     validationMessage: String? = null,
     onSave: (T) -> Unit,
@@ -107,6 +108,7 @@ fun <T> DropdownSettingFieldItem(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 )
             }
+            extraContentForValue?.invoke(draftValue)
             extraContent?.invoke {
                 if (canEdit) {
                     draftValue = it
