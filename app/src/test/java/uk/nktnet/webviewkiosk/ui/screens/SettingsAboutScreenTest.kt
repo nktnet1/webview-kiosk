@@ -40,6 +40,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.utils.BaseJson
@@ -112,35 +113,46 @@ class SettingsAboutScreenTest {
                 .filter { it.config.getOrNull(SemanticsProperties.Heading) != null }
                 .sortedBy { it.positionInRoot.y }
         assertEquals(
-            listOf("App", "Management", "Device"),
+            listOf(
+                message(R.string.about_section_app),
+                message(R.string.about_section_management),
+                message(R.string.about_section_device),
+            ),
             headings.map { text(it).single() },
         )
         val appTop = headings[0].positionInRoot.y
         val managementTop = headings[1].positionInRoot.y
         val deviceTop = headings[2].positionInRoot.y
 
-        for (label in listOf("Instance ID", "Source Code URL")) {
+        for (label in
+            listOf(
+                message(R.string.about_app_instance_id),
+                message(R.string.about_source_code_url),
+            )) {
             val y = node(label).positionInRoot.y
             assertTrue(label, y > appTop && y < managementTop)
         }
         for (label in
             listOf(
-                "Device Owner",
-                "Profile Owner",
-                "Management Connection",
-                "Management Owner",
-                "Management User Type",
-                "Managed Profile",
-                "Lock Task Permitted",
-                "Dhizuku Permission Granted",
-                "Can Manage Lock Task Packages",
-                "Can Manage Lock Task Features",
-                "Can Lock Device",
+                message(R.string.about_app_device_owner),
+                message(R.string.about_app_profile_owner),
+                message(R.string.about_app_management_mode),
+                message(R.string.about_app_management_owner),
+                message(R.string.about_app_management_user_type),
+                message(R.string.about_device_managed_profile),
+                message(R.string.about_app_lock_task_permitted),
+                message(R.string.about_app_dhizuku_permission_granted),
+                message(R.string.about_app_manage_lock_task_packages),
+                message(R.string.about_app_manage_lock_task_features),
+                message(R.string.about_app_lock_device),
             )) {
             val y = node(label).positionInRoot.y
             assertTrue(label, y > managementTop && y < deviceTop)
         }
-        assertTrue(node("Android Version").positionInRoot.y > deviceTop)
+        assertTrue(
+            node(message(R.string.about_device_android_version)).positionInRoot.y >
+                deviceTop
+        )
     }
 
     @Test
@@ -148,8 +160,13 @@ class SettingsAboutScreenTest {
         assertFalse(
             nodes().any { "ProfileOwner" in text(it) || "FullUser" in text(it) }
         )
-        assertTrue(nodes().any { "Full User" in text(it) })
-        assertEquals(3, nodes().count { "Profile Owner" in text(it) })
+        assertTrue(
+            nodes().any { message(R.string.ui_management_full_user) in text(it) }
+        )
+        assertEquals(
+            3,
+            nodes().count { message(R.string.about_app_profile_owner) in text(it) },
+        )
         val app =
             BaseJson.encodeToJsonElement(getSystemInfo(controller.get()))
                 .jsonObject["app"]!!
@@ -171,6 +188,8 @@ class SettingsAboutScreenTest {
                 .content,
         )
     }
+
+    private fun message(id: Int) = controller.get().getString(id)
 
     private fun nodes() =
         roots

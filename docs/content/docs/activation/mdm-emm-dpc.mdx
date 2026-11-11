@@ -1,0 +1,107 @@
+---
+title: MDM/EMM/DPC
+description: Allowlist the kiosk using an existing management app.
+---
+
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+## 1. MDM/EMM [#mdm-emm]
+
+If your organisation already manages the device using an MDM (Mobile Device
+Management) or EMM (Enterprise Mobility Management) platform, ask your IT
+administrator to add {APP_NAME} to the allowlist for Lock Task Packages.
+
+The package name to allowlist is visible in [Settings →
+About](/docs/settings/about#package-name). Typically, it is:
+
+<Tabs items={['GitHub / F-Droid / IzzyOnDroid', 'Google Play / Aurora Store', 'Debug APK']}>
+<Tab value="GitHub / F-Droid / IzzyOnDroid">
+
+```sh
+uk.nktnet.webviewkiosk
+```
+
+</Tab>
+<Tab value="Google Play / Aurora Store">
+
+```sh
+com.nktnet.webview_kiosk
+```
+
+</Tab>
+<Tab value="Debug APK">
+
+```sh
+uk.nktnet.webviewkiosk.debug
+```
+
+</Tab>
+</Tabs>
+
+Below are documentation links for configuring Android lock task mode and kiosk applications with common MDM/EMM providers.
+
+<Accordions type="multiple">
+
+<Accordion title="Microsoft Intune" id="microsoft-intune">
+
+- [Android Enterprise kiosk mode and allowed applications](https://learn.microsoft.com/en-us/intune/intune-service/configuration/device-restrictions-android-for-work)
+- [Managed Home Screen - Allowlisted app package names](https://learn.microsoft.com/en-us/intune/app-management/configuration/configure-managed-home-screen)
+
+</Accordion>
+<Accordion title="Miradore" id="miradore">
+
+- [Kiosk mode - Application package names and additional allowed apps](https://www.miradore.com/knowledge/android/kiosk-mode-configuration-profile-for-android/)
+- [Home Screen & Kiosk configuration](https://www.miradore.com/knowledge/android/configuring-home-screen-apps-for-the-kiosk-mode-with-1-app-or-kiosk-mode-with-multiple-apps-configuration-type/)
+
+</Accordion>
+<Accordion title="ManageEngine" id="manageengine">
+
+- [Android kiosk mode - Single-app and multi-app configurations](https://www.manageengine.com/mobile-device-management/help/profile_management/android/android_kiosk.html)
+
+</Accordion>
+<Accordion title="Scalefusion" id="scalefusion">
+
+- [Android device profiles - Application Policy and Allow Lock Task](https://help.scalefusion.com/docs/android-device-profile-for-company-owned-devices)
+
+</Accordion>
+<Accordion title="Hexnode" id="hexnode">
+
+- [Enable Lock Task Mode and configure kiosk applications](https://www.hexnode.com/mobile-device-management/help/how-to-enable-lock-task-mode-on-android-devices-with-hexnode/)
+
+</Accordion>
+</Accordions>
+
+## 2. DPC - Standalone Apps [#dpc-standalone-apps]
+
+Below are two popular local DPC applications that can add {APP_NAME}
+to the allowlist for Lock Task Packages:
+
+1. [Test DPC](https://github.com/googlesamples/android-testdpc) (maintained by Google/Android)
+
+   - Go to `Lock Task -> Manage lock task list`
+
+2. [OwnDroid](https://github.com/BinTianqi/OwnDroid) (maintained by BinTianqi)
+
+   - Go to `System -> Lock Task Mode -> Applications`
+
+## 3. DPC - Custom Apps [#dpc-custom-apps]
+
+If you are writing your own DPC, the kotlin code to achieve this would be:
+
+```kt
+val APP_PACKAGES = arrayOf(
+  // Choose one depending on your installation method:
+  "uk.nktnet.webviewkiosk",       // GitHub, F-Droid, IzzyOnDroid, etc
+  "com.nktnet.webview_kiosk",     // Aurora Store, Google Play Store
+  "uk.nktnet.webviewkiosk.debug", // Debug APK
+)
+
+val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+val adminName = getComponentName(context)
+// Android 8+ (API 26+): preserve packages already allowed by the DPC.
+val packages = (dpm.getLockTaskPackages(adminName).toList() + APP_PACKAGES).distinct()
+dpm.setLockTaskPackages(adminName, packages.toTypedArray())
+```
+
+For more information, see
+[Android's official documentation](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#allowlist_apps).

@@ -3,8 +3,6 @@ title: Device
 description: Rotation, camera, microphone, location, unlock controls
 ---
 
-import { APP_NAME } from '#/config/app'
-
 ## 1. Keep Screen On [#keep-screen-on]
 
 Enable this option to keep your device awake (no screen timeout).
@@ -207,8 +205,8 @@ Native owner transfer is available on Android 9+. Deactivate Owner uses the
 correct Device Owner or full-user Profile Owner removal API. Work-profile
 removal and shared-owner removal are not offered. Android intends clear-owner
 actions for testing: policies and user data can remain, so use your managed reset
-process for production unenrollment. Handle Dhizuku ownership in Dhizuku itself. See [Security](/docs/security#profile-owner-mode) for setup,
-capabilities, and restrictions.
+process for production unenrollment. Handle Dhizuku ownership in Dhizuku itself. See [Owner Activation](/docs/activation) for setup and
+[Security](/docs/security#owner-capabilities) for capabilities and restrictions.
 
 ### 15.1. Lock Task Features [#lock-task-features]
 

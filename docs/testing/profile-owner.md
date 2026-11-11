@@ -73,7 +73,34 @@ For each eligible owner mode:
     unavailable. Apply an app restriction and confirm it cannot be edited.
 
 Primary references and setup instructions are linked in
-`docs/content/docs/security.mdx`.
+`docs/content/docs/activation/` and `docs/content/docs/security.mdx`.
+
+## Shizuku activation
+
+`OwnerActivationTest` covers explicit user targeting, both ownership commands,
+nonzero main-user IDs, secondary/work-profile rejection, unknown main-user
+responses, pre-Android-14 full-system-user detection, and setup restoration on
+success, command failure, and exceptions. Client tests cover permission and
+service lifecycle failures. UI tests cover role selection and result display.
+`ShizukuActivationTest` exercises activation on Android 12 with a fake transport.
+Earlier Android versions must reject the request before permission prompts,
+service binding, or setup-state changes. Error tests cover collapsed stacktraces
+and their original exception causes. These tests do not provision a device or
+emulate the Shizuku server.
+
+On disposable devices, test both owner choices with Shizuku running as ADB/shell
+and root. Record the original and final setup state, the result dialog, and
+`dumpsys device_policy`. Include Android 12+ and Android 14+ with a nonzero main
+user where available. Test existing accounts, conflicting ownership, denied
+permission, disconnects, and navigation during activation. Confirm setup
+restoration after failed commands. Before Android 12, verify that the provider
+is disabled and the activation action is absent.
+
+`DhizukuVersionCompatibilityTest` covers Android 6 and 9 transport gates,
+permission callbacks, and native-owner priority. Test the real Dhizuku service
+on both versions before claiming device-level compatibility.
+
+The real-device Shizuku matrix must not be reported as passed without running it.
 
 For authentication regression checks, test both the personal and work copies
 with unified and separate work-profile screen locks. A successful biometric or

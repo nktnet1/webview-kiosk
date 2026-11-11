@@ -30,6 +30,7 @@ android {
     }
 
     buildFeatures {
+        aidl = true
         buildConfig = true
         compose = true
     }
@@ -41,6 +42,12 @@ android {
         unitTests {
             isIncludeAndroidResources = true
             all {
+                // Robolectric retains SDK sandboxes and graphics state between
+                // classes. Size the test JVM separately from Gradle's daemon,
+                // and recycle it before the full CI suite exhausts its heap.
+                it.maxHeapSize = "2g"
+                it.maxParallelForks = 1
+                it.forkEvery = 20
                 // Retrofix rewrites app classes, but host-test dependencies stay on
                 // JVM APIs. Use the matching original classes for real HiveMQ calls.
                 val testedVariant =
@@ -190,6 +197,8 @@ dependencies {
     retrofix(libs.android.retrostreams)
     retrofix(libs.android.retrofuture)
     implementation(libs.dhizuku.api)
+    implementation(libs.shizuku.api)
+    implementation(libs.shizuku.provider)
     implementation(libs.hiddenapibypass)
     implementation(libs.reorderable)
     debugImplementation(libs.androidx.ui.tooling)
