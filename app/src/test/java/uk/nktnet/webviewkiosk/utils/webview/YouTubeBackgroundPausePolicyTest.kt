@@ -9,7 +9,12 @@ class YouTubeBackgroundPausePolicyTest {
     fun youtubePauseBeforeHomeGetsShortGraceInsteadOfImmediateSessionStop() {
         assertEquals(
             YouTubeBackgroundPausePolicy.FOREGROUND_GRACE_MS,
-            YouTubeBackgroundPausePolicy.gracePeriod(true, true, false, false),
+            YouTubeBackgroundPausePolicy.gracePeriod(
+                wasYouTubePlaying = true,
+                serviceRequested = true,
+                userStopped = false,
+                background = false,
+            ),
         )
     }
 
@@ -17,18 +22,40 @@ class YouTubeBackgroundPausePolicyTest {
     fun youtubePauseAfterHomeKeepsServiceLongEnoughToRetry() {
         assertEquals(
             YouTubeBackgroundPausePolicy.BACKGROUND_GRACE_MS,
-            YouTubeBackgroundPausePolicy.gracePeriod(true, true, false, true),
+            YouTubeBackgroundPausePolicy.gracePeriod(
+                wasYouTubePlaying = true,
+                serviceRequested = true,
+                userStopped = false,
+                background = true,
+            ),
         )
     }
 
     @Test
     fun noSessionOrUserStopNeverTriggersAutomaticRecovery() {
         assertNull(
-            YouTubeBackgroundPausePolicy.gracePeriod(true, false, false, true)
+            YouTubeBackgroundPausePolicy.gracePeriod(
+                wasYouTubePlaying = true,
+                serviceRequested = false,
+                userStopped = false,
+                background = true,
+            )
         )
-        assertNull(YouTubeBackgroundPausePolicy.gracePeriod(true, true, true, true))
         assertNull(
-            YouTubeBackgroundPausePolicy.gracePeriod(false, true, false, true)
+            YouTubeBackgroundPausePolicy.gracePeriod(
+                wasYouTubePlaying = true,
+                serviceRequested = true,
+                userStopped = true,
+                background = true,
+            )
+        )
+        assertNull(
+            YouTubeBackgroundPausePolicy.gracePeriod(
+                wasYouTubePlaying = false,
+                serviceRequested = true,
+                userStopped = false,
+                background = true,
+            )
         )
     }
 }

@@ -15,6 +15,10 @@ import uk.nktnet.webviewkiosk.utils.webview.MediaPlaybackInfo
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
 class BackgroundMediaNotificationTest {
+    // Notification has no non-deprecated API to inspect the RemoteViews selected
+    // by setCustomContentView/setCustomBigContentView. Keep the assertion rather
+    // than weakening coverage of the actual built notification.
+    @Suppress("DEPRECATION")
     @Test
     fun flatNotificationUsesCustomControlsInsteadOfSystemMediaStyle() {
         val controller =

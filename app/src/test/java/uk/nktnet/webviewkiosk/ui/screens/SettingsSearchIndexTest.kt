@@ -195,6 +195,28 @@ class SettingsSearchIndexTest {
     }
 
     @Test
+    fun backgroundMediaPlaybackIsSearchableByTitleAndKey() {
+        val key = UserSettingsKeys.WebEngine.BACKGROUND_MEDIA_PLAYBACK
+        val titleRes = R.string.web_engine_background_media_playback_title
+        val expected =
+            SettingsSearchResult(
+                titleRes = titleRes,
+                route = Screen.SettingsWebEngine.route,
+                sectionTitleRes = R.string.settings_web_engine_title,
+                targetRes = titleRes,
+                settingKey = key,
+            )
+
+        assertEquals(expected, searchSettings(context, key).single())
+        assertEquals(
+            expected,
+            searchSettings(context, context.getString(titleRes)).single {
+                it.settingKey == key
+            },
+        )
+    }
+
+    @Test
     fun vapidKeyIsNotConfusedWithDistributorMessage() {
         val result =
             searchSettings(context, UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY)

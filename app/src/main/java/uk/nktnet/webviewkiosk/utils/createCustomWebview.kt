@@ -450,7 +450,7 @@ fun createCustomWebview(
                         // The raw host window state is distinct from an
                         // ancestor hiding this WebView for fullscreen video.
                         backgroundPlayback?.onHostBackgroundChanged(
-                            windowVisibility != View.VISIBLE
+                            windowVisibility != VISIBLE
                         )
                         val deferred =
                             mediaWindowVisibility.dispatch(
@@ -461,7 +461,7 @@ fun createCustomWebview(
                                 super.onWindowVisibilityChanged(updated)
                             }
                         if (
-                            visibility != View.VISIBLE &&
+                            visibility != VISIBLE &&
                                 userSettings.backgroundMediaPlayback
                         ) {
                             Log.d(

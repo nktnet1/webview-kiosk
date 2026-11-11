@@ -77,7 +77,7 @@ internal data class MediaPlaybackInfo(
                     artworkUrl = string("artworkUrl", 1_024),
                     durationMs = duration,
                     positionMs =
-                        if (duration > 0 && position > duration) {
+                        if (duration in 1..<position) {
                             duration
                         } else {
                             position

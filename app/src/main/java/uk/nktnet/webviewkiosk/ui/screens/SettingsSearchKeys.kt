@@ -94,6 +94,8 @@ internal val settingsSearchKeysByLabel: Map<Int, String> =
             UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD,
         R.string.web_engine_media_playback_requires_user_gesture_title to
             UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE,
+        R.string.web_engine_background_media_playback_title to
+            UserSettingsKeys.WebEngine.BACKGROUND_MEDIA_PLAYBACK,
         R.string.web_engine_mutual_tls_title to
             UserSettingsKeys.WebEngine.MUTUAL_TLS,
         R.string.web_engine_ssl_error_mode_title to

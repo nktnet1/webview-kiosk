@@ -2,9 +2,9 @@ package uk.nktnet.webviewkiosk.services
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import androidx.core.net.toUri
 import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -50,7 +50,7 @@ internal class MediaArtworkLoader {
             if (value.length > 1_024) {
                 return false
             }
-            val uri = Uri.parse(value)
+            val uri = value.toUri()
             if (
                 uri.scheme != "https" || uri.userInfo != null || uri.port !in -1..443
             ) {

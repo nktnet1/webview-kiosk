@@ -1,11 +1,11 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
-import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.view.View
 import android.webkit.WebView
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
@@ -139,7 +139,7 @@ internal class BackgroundMediaPlaybackController(
             activeController?.get()?.currentMediaInfo
 
         fun currentPageHost(): String? =
-            activeController?.get()?.webView?.url?.let { Uri.parse(it).host }
+            activeController?.get()?.webView?.url?.toUri()?.host
 
         fun previousFromNotification() {
             activeController?.get()?.sendMediaCommand("previous")
@@ -409,8 +409,7 @@ internal class BackgroundMediaPlaybackController(
     }
 
     private fun isYouTubePage(): Boolean {
-        val host =
-            webView.url?.let { Uri.parse(it).host }?.lowercase() ?: return false
+        val host = webView.url?.toUri()?.host?.lowercase() ?: return false
         return host == "youtube.com" ||
             host.endsWith(".youtube.com") ||
             host == "youtube-nocookie.com" ||

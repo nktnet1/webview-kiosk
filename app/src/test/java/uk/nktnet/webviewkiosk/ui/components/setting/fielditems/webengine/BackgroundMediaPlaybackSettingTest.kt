@@ -7,9 +7,29 @@ import org.junit.Test
 class BackgroundMediaPlaybackSettingTest {
     @Test
     fun warnsOnlyWhenPlaybackEnabledAndNotificationsUnavailable() {
-        assertTrue(shouldShowMediaNotificationWarning(true, false))
-        assertFalse(shouldShowMediaNotificationWarning(true, true))
-        assertFalse(shouldShowMediaNotificationWarning(false, false))
-        assertFalse(shouldShowMediaNotificationWarning(false, true))
+        assertTrue(
+            shouldShowMediaNotificationWarning(
+                playbackEnabled = true,
+                notificationsAvailable = false,
+            )
+        )
+        assertFalse(
+            shouldShowMediaNotificationWarning(
+                playbackEnabled = true,
+                notificationsAvailable = true,
+            )
+        )
+        assertFalse(
+            shouldShowMediaNotificationWarning(
+                playbackEnabled = false,
+                notificationsAvailable = false,
+            )
+        )
+        assertFalse(
+            shouldShowMediaNotificationWarning(
+                playbackEnabled = false,
+                notificationsAvailable = true,
+            )
+        )
     }
 }

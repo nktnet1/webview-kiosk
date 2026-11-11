@@ -136,6 +136,7 @@ internal val settingsSearchSections: List<SettingsSearchSection> =
                     R.string.web_engine_allow_file_picker_title,
                     R.string.web_engine_allow_file_download_title,
                     R.string.web_engine_media_playback_requires_user_gesture_title,
+                    R.string.web_engine_background_media_playback_title,
                     R.string.web_engine_mutual_tls_title,
                     R.string.web_engine_ssl_error_mode_title,
                     R.string.web_engine_mixed_content_mode_title,
