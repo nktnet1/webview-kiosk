@@ -147,16 +147,16 @@ class ManagementSettingsUiTest {
                 },
             )
         }
-        click("Activate with Shizuku")
-        assertText("Device Owner")
-        assertText("Profile Owner")
+        click(message(R.string.ui_activate_with_shizuku))
+        assertText(message(R.string.about_app_device_owner))
+        assertText(message(R.string.about_app_profile_owner))
         val pickerText = nodes().flatMap { text(it) }
-        click("Profile Owner")
+        click(message(R.string.about_app_profile_owner))
         assertEquals(pickerText, nodes().flatMap { text(it) })
-        click("Activate")
+        click(message(R.string.ui_shizuku_activate))
         assertEquals(true, chosen)
         assertTrue(refreshed)
-        assertText("Failed to set profile owner")
+        assertText(message(R.string.ui_shizuku_profile_owner_failed))
         assertText(
             "java.lang.IllegalStateException: existing owner\n at android.app.admin.DevicePolicyManager.run(DPM.java:42)"
         )
@@ -168,16 +168,20 @@ class ManagementSettingsUiTest {
                     "shizuku-activation-scrollbar"
             }
         )
-        assertTextColor("Copy", lightColorScheme().tertiary)
-        assertTextColor("Close", lightColorScheme().primary)
+        assertTextColor(message(R.string.ui_copy), lightColorScheme().tertiary)
+        assertTextColor(message(R.string.ui_close), lightColorScheme().primary)
         val copyBounds =
-            nodes(merged = true).first { "Copy" in text(it) }.boundsInRoot
+            nodes(merged = true)
+                .first { message(R.string.ui_copy) in text(it) }
+                .boundsInRoot
         val closeBounds =
-            nodes(merged = true).first { "Close" in text(it) }.boundsInRoot
+            nodes(merged = true)
+                .first { message(R.string.ui_close) in text(it) }
+                .boundsInRoot
         assertTrue(copyBounds.left < closeBounds.left)
         assertEquals(copyBounds.center.y, closeBounds.center.y, 0.5f)
-        click("Close")
-        assertNoText("Failed to set profile owner")
+        click(message(R.string.ui_close))
+        assertNoText(message(R.string.ui_shizuku_profile_owner_failed))
     }
 
     @Test
@@ -195,13 +199,13 @@ class ManagementSettingsUiTest {
             )
         }
         repeat(2) {
-            click("Activate with Shizuku")
-            click("Activate")
-            assertText(details)
+            click(message(R.string.ui_activate_with_shizuku))
+            click(message(R.string.ui_shizuku_activate))
+            assertText(details.trim())
             assertNoText("Show details")
             assertNoText("Hide details")
-            assertText("Failed to set device owner")
-            click("Close")
+            assertText(message(R.string.ui_shizuku_device_owner_failed))
+            click(message(R.string.ui_close))
         }
     }
 
@@ -221,14 +225,18 @@ class ManagementSettingsUiTest {
                 activate = { ActivationResult(false, summary, details) },
             )
         }
-        click("Activate with Shizuku")
-        click("Activate")
-        val heading = "Failed to set device owner"
+        click(message(R.string.ui_activate_with_shizuku))
+        click(message(R.string.ui_shizuku_activate))
+        val heading = message(R.string.ui_shizuku_device_owner_failed)
         val summaryBounds = nodes().first { heading in text(it) }.boundsInRoot
         val copyBounds =
-            nodes(merged = true).first { "Copy" in text(it) }.boundsInRoot
+            nodes(merged = true)
+                .first { message(R.string.ui_copy) in text(it) }
+                .boundsInRoot
         val closeBounds =
-            nodes(merged = true).first { "Close" in text(it) }.boundsInRoot
+            nodes(merged = true)
+                .first { message(R.string.ui_close) in text(it) }
+                .boundsInRoot
         assertTrue(
             nodes().any {
                 it.config.getOrNull(SemanticsProperties.TestTag) ==
@@ -254,13 +262,17 @@ class ManagementSettingsUiTest {
         )
         assertEquals(
             copyBounds,
-            nodes(merged = true).first { "Copy" in text(it) }.boundsInRoot,
+            nodes(merged = true)
+                .first { message(R.string.ui_copy) in text(it) }
+                .boundsInRoot,
         )
         assertEquals(
             closeBounds,
-            nodes(merged = true).first { "Close" in text(it) }.boundsInRoot,
+            nodes(merged = true)
+                .first { message(R.string.ui_close) in text(it) }
+                .boundsInRoot,
         )
-        click("Copy")
+        click(message(R.string.ui_copy))
         val clipboard =
             controller.get().getSystemService(Context.CLIPBOARD_SERVICE)
                 as ClipboardManager
@@ -283,14 +295,14 @@ class ManagementSettingsUiTest {
                 },
             )
         }
-        click("Activate with Shizuku")
-        click("Activate")
+        click(message(R.string.ui_activate_with_shizuku))
+        click(message(R.string.ui_shizuku_activate))
         assertEquals(false, chosen)
-        assertText("Ownership activated")
+        assertText(message(R.string.ui_shizuku_activation_success))
         assertText("Success")
         assertNoText("Show details")
-        click("Close")
-        assertNoText("Activate with Shizuku")
+        click(message(R.string.ui_close))
+        assertNoText(message(R.string.ui_activate_with_shizuku))
     }
 
     @Test
@@ -308,12 +320,17 @@ class ManagementSettingsUiTest {
                 },
             )
         }
-        click("Activate with Shizuku")
-        click("Activate")
+        click(message(R.string.ui_activate_with_shizuku))
+        click(message(R.string.ui_shizuku_activate))
         assertEquals(1, calls)
-        assertText("Activating ownership…")
+        assertText(message(R.string.ui_shizuku_activating))
         for (label in
-            listOf("Device Owner", "Profile Owner", "Activate", "Cancel")) {
+            listOf(
+                message(R.string.about_app_device_owner),
+                message(R.string.about_app_profile_owner),
+                message(R.string.ui_shizuku_activate),
+                message(R.string.ui_cancel),
+            )) {
             assertTrue(
                 label,
                 nodes(merged = true).any {
@@ -324,7 +341,7 @@ class ManagementSettingsUiTest {
         }
         result.complete(ActivationResult(false, "Rejected"))
         frames()
-        assertText("Failed to set device owner")
+        assertText(message(R.string.ui_shizuku_device_owner_failed))
         assertEquals(1, calls)
     }
 
@@ -340,17 +357,17 @@ class ManagementSettingsUiTest {
                 onActivated = {},
             )
         }
-        assertText("Activate with Shizuku")
+        assertText(message(R.string.ui_activate_with_shizuku))
         native.value = true
         frames()
-        assertNoText("Activate with Shizuku")
+        assertNoText(message(R.string.ui_activate_with_shizuku))
         native.value = false
         shared.value = true
         frames()
-        assertNoText("Activate with Shizuku")
+        assertNoText(message(R.string.ui_activate_with_shizuku))
         shared.value = false
         frames()
-        assertText("Activate with Shizuku")
+        assertText(message(R.string.ui_activate_with_shizuku))
     }
 
     @Test
@@ -362,19 +379,19 @@ class ManagementSettingsUiTest {
         render {
             ShizukuActivationSection(hasNativeOwner = false, onActivated = {})
         }
-        assertNoText("Activate with Shizuku")
+        assertNoText(message(R.string.ui_activate_with_shizuku))
         installShizuku()
         context.sendBroadcast(
             Intent(Intent.ACTION_PACKAGE_ADDED, Uri.parse("package:$packageName"))
         )
         frames()
-        assertText("Activate with Shizuku")
+        assertText(message(R.string.ui_activate_with_shizuku))
         shadowOf(context.packageManager).removePackage(packageName)
         context.sendBroadcast(
             Intent(Intent.ACTION_PACKAGE_REMOVED, Uri.parse("package:$packageName"))
         )
         frames()
-        assertNoText("Activate with Shizuku")
+        assertNoText(message(R.string.ui_activate_with_shizuku))
     }
 
     @Test
@@ -405,10 +422,10 @@ class ManagementSettingsUiTest {
                 },
             )
         }
-        click("Activate with Shizuku")
-        click("Activate")
+        click(message(R.string.ui_activate_with_shizuku))
+        click(message(R.string.ui_shizuku_activate))
         assertText("Android rejected activation.")
-        click("Copy")
+        click(message(R.string.ui_copy))
         val clipboard =
             controller.get().getSystemService(Context.CLIPBOARD_SERVICE)
                 as ClipboardManager
@@ -439,19 +456,19 @@ class ManagementSettingsUiTest {
             }
             assertText(
                 if (owner == ManagementOwner.ProfileOwner) {
-                    "Profile Owner"
+                    message(R.string.about_app_profile_owner)
                 } else {
-                    "Device Owner"
+                    message(R.string.about_app_device_owner)
                 }
             )
             assertText(
                 if (mode == DeviceOwnerMode.Dhizuku) {
-                    "Dhizuku"
+                    message(R.string.ui_dhizuku)
                 } else {
-                    "Native"
+                    message(R.string.ui_management_native)
                 }
             )
-            assertText("Full User")
+            assertText(message(R.string.ui_management_full_user))
             assertText(message(R.string.ui_management_lock_task_available))
         }
     }
@@ -465,8 +482,8 @@ class ManagementSettingsUiTest {
                 ManagementCapabilities(),
             )
         }
-        assertText("Profile Owner")
-        assertText("Managed Work Profile")
+        assertText(message(R.string.about_app_profile_owner))
+        assertText(message(R.string.ui_management_work_profile))
         assertText(message(R.string.ui_lock_task_work_profile_unavailable))
         assertNoText(message(R.string.ui_management_lock_task_available))
         assertNoText(message(R.string.ui_restricted))
@@ -484,10 +501,10 @@ class ManagementSettingsUiTest {
                 ManagementCapabilities(),
             )
         }
-        assertText("Dhizuku")
-        assertText("Unknown")
+        assertText(message(R.string.ui_dhizuku))
+        assertText(message(R.string.ui_management_unknown))
         assertText(message(R.string.ui_lock_task_dhizuku_permission_required))
-        assertNoText("Profile Owner")
+        assertNoText(message(R.string.about_app_profile_owner))
         assertNoText(message(R.string.ui_restricted))
     }
 
@@ -541,7 +558,7 @@ class ManagementSettingsUiTest {
         val reason = mutableStateOf<String?>(null)
         render { LockTaskFeatureHomeSetting(reason.value) }
         openField(message(R.string.device_owner_lock_task_feature_home_title))
-        assertText("Save")
+        assertText(message(R.string.ui_save))
         reason.value = message(R.string.ui_lock_task_dhizuku_permission_required)
         frames()
         assertReadOnlyDialog()
@@ -549,7 +566,7 @@ class ManagementSettingsUiTest {
         assertNoText(message(R.string.ui_restricted))
         reason.value = null
         frames()
-        assertText("Save")
+        assertText(message(R.string.ui_save))
     }
 
     @Test
@@ -567,7 +584,7 @@ class ManagementSettingsUiTest {
                 colors.error,
             )
             assertReadOnlyDialog()
-            click("Close")
+            click(message(R.string.ui_close))
         }
     }
 
@@ -606,9 +623,9 @@ class ManagementSettingsUiTest {
             )
         }
         openField("Editable feature")
-        click("Save")
+        click(message(R.string.ui_save))
         assertEquals(true, saved)
-        assertNoText("Save")
+        assertNoText(message(R.string.ui_save))
     }
 
     private fun restrictHome() {
@@ -647,8 +664,8 @@ class ManagementSettingsUiTest {
     }
 
     private fun assertReadOnlyDialog() {
-        assertNoText("Save")
-        assertText("Close")
+        assertNoText(message(R.string.ui_save))
+        assertText(message(R.string.ui_close))
         assertTrue(
             nodes().any { it.config.getOrNull(SemanticsProperties.Disabled) != null }
         )

@@ -36,6 +36,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 
 @RunWith(RobolectricTestRunner::class)
@@ -101,10 +102,18 @@ class SettingsMoreActionsScreenTest {
 
     @Test
     fun manageActionsAppearInTheRequestedTwoByTwoOrder() {
-        val localFiles = textNode("Local Files").boundsInWindow
-        val contentBlocking = textNode("Content Blocking").boundsInWindow
-        val sitePermissions = textNode("Site Permissions").boundsInWindow
-        val deviceOwner = textNode("Device Policies").boundsInWindow
+        val localFiles =
+            textNode(message(R.string.settings_more_action_local_files))
+                .boundsInWindow
+        val contentBlocking =
+            textNode(message(R.string.settings_more_action_content_blocking))
+                .boundsInWindow
+        val sitePermissions =
+            textNode(message(R.string.settings_more_action_site_permissions))
+                .boundsInWindow
+        val deviceOwner =
+            textNode(message(R.string.settings_more_action_device_owner))
+                .boundsInWindow
 
         assertEquals(localFiles.top, contentBlocking.top, 1f)
         assertTrue(localFiles.left < contentBlocking.left)
@@ -117,10 +126,14 @@ class SettingsMoreActionsScreenTest {
     @Test
     fun manageActionsNavigateToTheirMatchingSettingsScreens() {
         listOf(
-                "Local Files" to Screen.SettingsWebContentFiles,
-                "Content Blocking" to Screen.SettingsContentBlocking,
-                "Site Permissions" to Screen.SettingsWebBrowsingSitePermissions,
-                "Device Policies" to Screen.SettingsDeviceOwner,
+                message(R.string.settings_more_action_local_files) to
+                    Screen.SettingsWebContentFiles,
+                message(R.string.settings_more_action_content_blocking) to
+                    Screen.SettingsContentBlocking,
+                message(R.string.settings_more_action_site_permissions) to
+                    Screen.SettingsWebBrowsingSitePermissions,
+                message(R.string.settings_more_action_device_owner) to
+                    Screen.SettingsDeviceOwner,
             )
             .forEach { (label, screen) ->
                 val button =
@@ -135,6 +148,8 @@ class SettingsMoreActionsScreenTest {
                 frames()
             }
     }
+
+    private fun message(id: Int) = activityController.get().getString(id)
 
     private fun textNode(text: String): SemanticsNode =
         roots

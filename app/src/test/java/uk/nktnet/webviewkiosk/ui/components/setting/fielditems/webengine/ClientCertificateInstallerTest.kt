@@ -27,6 +27,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import uk.nktnet.webviewkiosk.R
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -104,7 +105,10 @@ class ClientCertificateInstallerTest {
         assertTrue(messages.isEmpty())
 
         owner.send(Lifecycle.Event.ON_START)
-        assertEquals(listOf("Client certificate installed."), messages)
+        assertEquals(
+            listOf(context.getString(R.string.ui_client_certificate_installed)),
+            messages,
+        )
         // A completed transaction is not left permanently locked against new
         // requests.
         installer.openPicker()
@@ -198,7 +202,12 @@ class ClientCertificateInstallerTest {
         val installer = newInstaller { bytes }
         startActivity()
         installer.openPicker()
-        assertEquals(listOf("Unable to open certificate file picker."), messages)
+        assertEquals(
+            listOf(
+                context.getString(R.string.ui_unable_to_open_certificate_file_picker)
+            ),
+            messages,
+        )
         assertTrue(registry.launches.isEmpty())
 
         registry.failPickerLaunch = false
