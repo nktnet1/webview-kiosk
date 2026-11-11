@@ -68,6 +68,26 @@ class ShizukuActivationTest {
     }
 
     @Test
+    @Config(sdk = [23, 31])
+    fun anotherAppsProfileOwnerDoesNotBlockTheAttemptOrReplaceAndroidsError() {
+        shadowOf(dpm)
+            .setProfileOwner(ComponentName("another.owner", "another.owner.Admin"))
+        grantNativeOwner = false
+        remoteSuccess = false
+        remoteMessage = null
+        remoteOutput =
+            "Exception occurred while executing 'set-device-owner':\n" +
+                "java.lang.IllegalStateException: user already has a profile owner\n" +
+                "\tat com.android.server.devicepolicy.DevicePolicyManagerService.setDeviceOwner(DevicePolicyManagerService.java:9967)"
+        val result = complete(start())
+        assertFalse(result.success)
+        assertEquals(1, access.binds)
+        assertEquals(listOf(false to 0), calls)
+        assertEquals(remoteOutput, result.diagnostics)
+        assertClean()
+    }
+
+    @Test
     fun unavailableServerDoesNotPromptOrBind() {
         access.available = false
         val result = complete(start())

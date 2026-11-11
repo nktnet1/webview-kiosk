@@ -114,8 +114,9 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                                 DeviceOwnerMode.DeviceOwner,
                                 DeviceOwnerMode.ProfileOwner,
                             ),
-                    hasSharedOwner =
-                        deviceOwnerStatus.mode == DeviceOwnerMode.Dhizuku,
+                    hasSharedOwnerPermission =
+                        deviceOwnerStatus.mode == DeviceOwnerMode.Dhizuku &&
+                            hasOwnerPermission,
                     onActivated = {
                         DeviceOwnerManager.init(context)
                         hasOwnerPermission =

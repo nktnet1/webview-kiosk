@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
@@ -63,6 +64,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
+import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuProvider
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.activation.ActivationResult
 import uk.nktnet.webviewkiosk.activation.ShizukuActivation
@@ -75,7 +78,7 @@ internal fun ShizukuActivationSection(
     hasNativeOwner: Boolean,
     onActivated: () -> Unit,
     activate: (suspend (Boolean) -> ActivationResult)? = null,
-    hasSharedOwner: Boolean = false,
+    hasSharedOwnerPermission: Boolean = false,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -84,8 +87,9 @@ internal fun ShizukuActivationSection(
     var running by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<ActivationResult?>(null) }
     var resultProfileOwner by remember { mutableStateOf(false) }
-    val shizukuInstalled = rememberShizukuInstalled()
-    val canActivate = shizukuInstalled && !hasNativeOwner && !hasSharedOwner
+    val shizukuAvailable = rememberShizukuAvailable()
+    val canActivate =
+        shizukuAvailable && !hasNativeOwner && !hasSharedOwnerPermission
 
     if (canActivate) {
         Button(
@@ -224,7 +228,7 @@ internal fun ShizukuActivationSection(
                 if (outcome.success) {
                     ""
                 } else {
-                    outcome.output
+                    outcome.output.trim()
                 }
             }
         AlertDialog(
@@ -262,7 +266,7 @@ internal fun ShizukuActivationSection(
                                     MaterialTheme.colorScheme.outlineVariant,
                                 ),
                         ) {
-                            ActivationStacktrace(diagnostics.trim())
+                            ActivationStacktrace(diagnostics)
                         }
                     }
                 }
@@ -362,17 +366,16 @@ private fun ActivationStacktrace(diagnostics: String) {
 }
 
 @Composable
-private fun rememberShizukuInstalled(): Boolean {
+private fun rememberShizukuAvailable(): Boolean {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val packageName = "moe.shizuku.privileged.api"
-    var installed by
+    var available by
         remember(context) {
-            mutableStateOf(isPackageInstalled(context, packageName))
+            mutableStateOf(isShizukuAvailable(context))
         }
     DisposableEffect(context, lifecycleOwner) {
         fun refresh() {
-            installed = isPackageInstalled(context, packageName)
+            available = isShizukuAvailable(context)
         }
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -382,11 +385,11 @@ private fun rememberShizukuInstalled(): Boolean {
         val receiver =
             object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
-                    if (intent.data?.schemeSpecificPart == packageName) {
-                        refresh()
-                    }
+                    refresh()
                 }
             }
+        val received = Shizuku.OnBinderReceivedListener { refresh() }
+        val died = Shizuku.OnBinderDeadListener { refresh() }
         val filter =
             IntentFilter().apply {
                 addAction(Intent.ACTION_PACKAGE_ADDED)
@@ -401,11 +404,32 @@ private fun rememberShizukuInstalled(): Boolean {
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
         lifecycleOwner.lifecycle.addObserver(observer)
+        Shizuku.addBinderReceivedListenerSticky(received)
+        Shizuku.addBinderDeadListener(died)
         refresh()
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+            Shizuku.removeBinderReceivedListener(received)
+            Shizuku.removeBinderDeadListener(died)
             context.unregisterReceiver(receiver)
         }
     }
-    return installed
+    return available
+}
+
+internal fun isShizukuAvailable(context: Context): Boolean {
+    if (Shizuku.pingBinder()) {
+        return true
+    }
+    // Discover the app providing the SDK permission, including compatible
+    // forks. A stopped manager remains discoverable, without a package allowlist.
+    return try {
+        val manager =
+            context.packageManager
+                .getPermissionInfo(ShizukuProvider.PERMISSION, 0)
+                .packageName
+        manager != null && isPackageInstalled(context, manager)
+    } catch (_: PackageManager.NameNotFoundException) {
+        false
+    }
 }

@@ -8,7 +8,9 @@ import android.content.Intent
 import android.content.RestrictionsManager
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
+import android.content.pm.PermissionInfo
 import android.net.Uri
+import android.os.Binder
 import android.os.Bundle
 import android.os.Looper
 import android.view.View
@@ -53,6 +55,9 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import org.robolectric.util.ReflectionHelpers
+import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuProvider
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.activation.ActivationResult
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -71,6 +76,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.components.setting.isShizukuAvailable
 import uk.nktnet.webviewkiosk.ui.theme.warning
 
 @RunWith(RobolectricTestRunner::class)
@@ -150,7 +156,7 @@ class ManagementSettingsUiTest {
         click("Activate")
         assertEquals(true, chosen)
         assertTrue(refreshed)
-        assertText("Failed to set profile owner:")
+        assertText("Failed to set profile owner")
         assertText(
             "java.lang.IllegalStateException: existing owner\n at android.app.admin.DevicePolicyManager.run(DPM.java:42)"
         )
@@ -171,14 +177,14 @@ class ManagementSettingsUiTest {
         assertTrue(copyBounds.left < closeBounds.left)
         assertEquals(copyBounds.center.y, closeBounds.center.y, 0.5f)
         click("Close")
-        assertNoText("Failed to set profile owner:")
+        assertNoText("Failed to set profile owner")
     }
 
     @Test
     @Config(sdk = [31])
     fun activationStacktraceIsVisibleImmediatelyForEachResult() {
         val details =
-            "java.lang.IllegalStateException: original failure\n at android.app.admin.DPM.run(DPM.java:42)"
+            "\n  java.lang.IllegalStateException: original failure\n at android.app.admin.DPM.run(DPM.java:42)\n"
         render {
             ShizukuActivationSection(
                 hasNativeOwner = false,
@@ -194,7 +200,7 @@ class ManagementSettingsUiTest {
             assertText(details)
             assertNoText("Show details")
             assertNoText("Hide details")
-            assertText("Failed to set device owner:")
+            assertText("Failed to set device owner")
             click("Close")
         }
     }
@@ -217,7 +223,7 @@ class ManagementSettingsUiTest {
         }
         click("Activate with Shizuku")
         click("Activate")
-        val heading = "Failed to set device owner:"
+        val heading = "Failed to set device owner"
         val summaryBounds = nodes().first { heading in text(it) }.boundsInRoot
         val copyBounds =
             nodes(merged = true).first { "Copy" in text(it) }.boundsInRoot
@@ -318,19 +324,19 @@ class ManagementSettingsUiTest {
         }
         result.complete(ActivationResult(false, "Rejected"))
         frames()
-        assertText("Failed to set device owner:")
+        assertText("Failed to set device owner")
         assertEquals(1, calls)
     }
 
     @Test
     @Config(sdk = [23, 30])
-    fun shizukuActivationIsHiddenForNativeOrSharedOwnersOnOlderAndroid() {
+    fun onlyThisAppsNativeOwnershipOrGrantedSharedPermissionHidesActivation() {
         val native = mutableStateOf(false)
         val shared = mutableStateOf(false)
         render {
             ShizukuActivationSection(
                 hasNativeOwner = native.value,
-                hasSharedOwner = shared.value,
+                hasSharedOwnerPermission = shared.value,
                 onActivated = {},
             )
         }
@@ -349,8 +355,8 @@ class ManagementSettingsUiTest {
 
     @Test
     @Config(sdk = [23, 31])
-    fun shizukuInstallationChangesRefreshTheActivationButton() {
-        val packageName = "moe.shizuku.privileged.api"
+    fun aStoppedShizukuForkIsDiscoveredThroughItsApiPermission() {
+        val packageName = "example.shizuku.fork"
         val context = controller.get()
         shadowOf(context.packageManager).removePackage(packageName)
         render {
@@ -369,6 +375,47 @@ class ManagementSettingsUiTest {
         )
         frames()
         assertNoText("Activate with Shizuku")
+    }
+
+    @Test
+    @Config(sdk = [23, 31])
+    fun aConnectedBinderIsDiscoverableWithoutAnyManagerPackage() {
+        val context = controller.get()
+        shadowOf(context.packageManager).removePackage("example.shizuku.fork")
+        val original = Shizuku.getBinder()
+        try {
+            ReflectionHelpers.setStaticField(Shizuku::class.java, "binder", null)
+            assertFalse(isShizukuAvailable(context))
+            ReflectionHelpers.setStaticField(Shizuku::class.java, "binder", Binder())
+            assertTrue(isShizukuAvailable(context))
+        } finally {
+            ReflectionHelpers.setStaticField(Shizuku::class.java, "binder", original)
+        }
+    }
+
+    @Test
+    @Config(sdk = [31])
+    fun missingDiagnosticsUseTheTrimmedErrorForDisplayAndCopying() {
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = false,
+                onActivated = {},
+                activate = {
+                    ActivationResult(false, "\n  Android rejected activation. \n")
+                },
+            )
+        }
+        click("Activate with Shizuku")
+        click("Activate")
+        assertText("Android rejected activation.")
+        click("Copy")
+        val clipboard =
+            controller.get().getSystemService(Context.CLIPBOARD_SERVICE)
+                as ClipboardManager
+        assertEquals(
+            "Android rejected activation.",
+            clipboard.primaryClip?.getItemAt(0)?.text?.toString(),
+        )
     }
 
     @Test
@@ -577,7 +624,7 @@ class ManagementSettingsUiTest {
     }
 
     private fun installShizuku() {
-        val shizukuPackageName = "moe.shizuku.privileged.api"
+        val shizukuPackageName = "example.shizuku.fork"
         shadowOf(controller.get().packageManager)
             .installPackage(
                 PackageInfo().apply {
@@ -587,6 +634,14 @@ class ManagementSettingsUiTest {
                             packageName = shizukuPackageName
                             flags = ApplicationInfo.FLAG_INSTALLED
                         }
+                }
+            )
+        shadowOf(controller.get().packageManager)
+            .addPermissionInfo(
+                PermissionInfo().apply {
+                    name = ShizukuProvider.PERMISSION
+                    packageName = shizukuPackageName
+                    protectionLevel = PermissionInfo.PROTECTION_NORMAL
                 }
             )
     }

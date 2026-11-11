@@ -40,10 +40,6 @@
     <uses-permission android:name="com.rosan.dhizuku.permission.API" />
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
 
-    <queries>
-        <package android:name="moe.shizuku.privileged.api" />
-    </queries>
-
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
