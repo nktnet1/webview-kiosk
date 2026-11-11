@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
 import android.content.Context
+import android.util.AttributeSet
 import android.view.View
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -37,6 +38,42 @@ class BackgroundMediaFullscreenContainerTest {
         retainForPlayback = false
         container.releaseMediaWindowVisibility()
         assertEquals(listOf(View.GONE), observed)
+    }
+
+    @Test
+    fun exposesAndroidLayoutEditorConstructorsToJavaTools() {
+        val type = BackgroundMediaFullscreenContainer::class.java
+        type.getConstructor(Context::class.java)
+        type.getConstructor(Context::class.java, AttributeSet::class.java)
+        type.getConstructor(
+            Context::class.java,
+            AttributeSet::class.java,
+            Int::class.javaPrimitiveType!!,
+        )
+    }
+
+    @Test
+    fun layoutToolConstructorsForwardVisibilityWithoutActivePlayback() {
+        val context = RuntimeEnvironment.getApplication()
+        val containers =
+            listOf(
+                BackgroundMediaFullscreenContainer(context),
+                BackgroundMediaFullscreenContainer(context, null),
+                BackgroundMediaFullscreenContainer(context, null, 0),
+            )
+        for (container in containers) {
+            val observed = mutableListOf<Int>()
+            container.addView(
+                object : View(context) {
+                    override fun onWindowVisibilityChanged(visibility: Int) {
+                        observed.add(visibility)
+                        super.onWindowVisibilityChanged(visibility)
+                    }
+                }
+            )
+            container.dispatchWindowVisibilityChanged(View.GONE)
+            assertEquals(listOf(View.GONE), observed)
+        }
     }
 
     @Test
