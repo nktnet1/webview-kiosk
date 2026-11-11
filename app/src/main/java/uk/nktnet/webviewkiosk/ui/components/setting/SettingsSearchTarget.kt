@@ -12,6 +12,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 
 internal const val SETTINGS_SEARCH_FLASH_DELAY_MS = 1_000L
@@ -39,9 +40,9 @@ fun Modifier.bringSearchSettingIntoView(label: String): Modifier {
             requester.bringIntoView()
             // Let navigation settle first, then pulse neutral contrast instead of
             // using the blue primary selection colour.
-            delay(SETTINGS_SEARCH_FLASH_DELAY_MS)
+            delay(SETTINGS_SEARCH_FLASH_DELAY_MS.milliseconds)
             flashAlpha.snapTo(SETTINGS_SEARCH_FLASH_ALPHA)
-            delay(100)
+            delay(100.milliseconds)
             flashAlpha.animateTo(0f, tween(durationMillis = 750))
             target.onConsumed()
         }

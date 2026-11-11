@@ -226,7 +226,7 @@ private fun SettingsSearchField(query: String, onQueryChange: (String) -> Unit) 
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         modifier =
             Modifier.fillMaxWidth()
-                .padding(top = 12.dp, bottom = 14.dp)
+                .padding(top = 10.dp, bottom = 14.dp)
                 .height(56.dp)
                 .testTag("settings_search_field"),
         decorationBox = { innerTextField ->

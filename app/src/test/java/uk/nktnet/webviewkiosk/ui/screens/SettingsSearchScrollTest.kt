@@ -81,8 +81,7 @@ class SettingsSearchScrollTest {
         view.setContent {
             MaterialTheme {
                 CompositionLocalProvider(
-                    LocalSettingsSearchTarget provides
-                        SettingsSearchTarget(title, {})
+                    LocalSettingsSearchTarget provides SettingsSearchTarget(title) {}
                 ) {
                     SettingsAppearanceScreen(NavController(activity))
                 }
