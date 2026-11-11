@@ -14,7 +14,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
 
-internal const val SETTINGS_SEARCH_FLASH_DELAY_MS = 500L
+internal const val SETTINGS_SEARCH_FLASH_DELAY_MS = 1_000L
 private const val SETTINGS_SEARCH_FLASH_ALPHA = 0.10f
 
 /** A one-shot request consumed once the destination has scrolled and flashed. */

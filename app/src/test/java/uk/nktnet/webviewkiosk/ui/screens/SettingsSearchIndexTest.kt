@@ -113,6 +113,37 @@ class SettingsSearchIndexTest {
     }
 
     @Test
+    fun resultsIdentifySettingsPagesAndOtherItemsWithDistinctKinds() {
+        fun resultFor(
+            @androidx.annotation.StringRes titleRes: Int
+        ): SettingsSearchResult =
+            searchSettings(context, context.getString(titleRes)).single {
+                it.titleRes == titleRes
+            }
+
+        assertEquals(
+            SettingsSearchResultKind.SETTING,
+            resultFor(R.string.web_engine_ssl_error_mode_title).kind,
+        )
+        assertEquals(
+            SettingsSearchResultKind.PAGE,
+            resultFor(R.string.settings_web_engine_title).kind,
+        )
+        assertEquals(
+            SettingsSearchResultKind.INFORMATION,
+            resultFor(R.string.about_app_instance_id).kind,
+        )
+        assertEquals(
+            SettingsSearchResultKind.ACTION,
+            resultFor(R.string.settings_more_action_clear_cache).kind,
+        )
+        assertEquals(
+            SettingsSearchResultKind.FILE,
+            resultFor(R.string.ui_legacy_file).kind,
+        )
+    }
+
+    @Test
     fun everyIndexedFieldHasAUniqueDestinationAndNonEmptyResourceTitle() {
         assertFalse(settingsSearchSections.isEmpty())
         settingsSearchSections.forEach { section ->

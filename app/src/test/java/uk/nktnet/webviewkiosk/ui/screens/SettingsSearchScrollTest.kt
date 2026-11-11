@@ -120,9 +120,10 @@ class SettingsSearchScrollTest {
 
     @Test
     fun flashesOnlyOnceAfterScrollingAndWaiting() {
-        assertTrue(
-            "Give navigation time to settle before flashing",
-            SETTINGS_SEARCH_FLASH_DELAY_MS >= 450,
+        assertEquals(
+            "Wait a full second before flashing",
+            1_000L,
+            SETTINGS_SEARCH_FLASH_DELAY_MS,
         )
         val activity = controller.get()
         val title =

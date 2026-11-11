@@ -34,6 +34,31 @@ internal data class SettingsSearchResult(
     val settingKey: String? = null,
 )
 
+/**
+ * The leading icon identifies whether a result is a setting, page, or other item.
+ */
+internal enum class SettingsSearchResultKind {
+    SETTING,
+    PAGE,
+    INFORMATION,
+    ACTION,
+    FILE,
+}
+
+internal val SettingsSearchResult.kind: SettingsSearchResultKind
+    get() =
+        when {
+            settingKey != null -> SettingsSearchResultKind.SETTING
+            targetRes == null -> SettingsSearchResultKind.PAGE
+            route == Screen.SettingsAbout.route ->
+                SettingsSearchResultKind.INFORMATION
+            route == Screen.SettingsMoreActions.route ->
+                SettingsSearchResultKind.ACTION
+            route == Screen.SettingsWebContentFiles.route ->
+                SettingsSearchResultKind.FILE
+            else -> SettingsSearchResultKind.PAGE
+        }
+
 internal fun SettingsSearchSection.breadcrumb(context: Context): String =
     breadcrumbTitleRes.joinToString(" \u203a ") { context.getString(it) }
 

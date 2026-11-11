@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -185,8 +186,8 @@ fun SettingsListScreen(navController: NavController) {
                             }
                             Text(
                                 text = section.breadcrumb(context),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier =
                                     Modifier.padding(start = 16.dp, bottom = 8.dp)
                                         .semantics { heading() },
@@ -273,27 +274,58 @@ private fun SettingsSearchResultRow(
     result: SettingsSearchResult,
     onClick: () -> Unit,
 ) {
-    Column(
+    val (iconRes, iconDescriptionRes) =
+        when (result.kind) {
+            SettingsSearchResultKind.SETTING ->
+                R.drawable.baseline_settings_24 to
+                    R.string.settings_search_result_setting
+            SettingsSearchResultKind.PAGE ->
+                R.drawable.baseline_arrow_forward_24 to
+                    R.string.settings_search_result_page
+            SettingsSearchResultKind.INFORMATION ->
+                R.drawable.baseline_info_24 to
+                    R.string.settings_search_result_information
+            SettingsSearchResultKind.ACTION ->
+                R.drawable.baseline_build_24 to
+                    R.string.settings_search_result_action
+            SettingsSearchResultKind.FILE ->
+                R.drawable.baseline_file_open_24 to
+                    R.string.settings_search_result_file
+        }
+    Row(
         modifier =
             Modifier.fillMaxWidth()
                 .clickable(onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(
-            text = stringResource(result.titleRes),
-            style = MaterialTheme.typography.bodyLarge,
+        Icon(
+            painter = painterResource(iconRes),
+            contentDescription = stringResource(iconDescriptionRes),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(24.dp),
         )
-        val subtitle =
-            result.settingKey ?: result.descriptionRes?.let { stringResource(it) }
-        if (subtitle != null) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+                text = stringResource(result.titleRes),
+                style = MaterialTheme.typography.bodyLarge,
             )
+            val subtitle =
+                result.settingKey
+                    ?: result.descriptionRes?.let { stringResource(it) }
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
