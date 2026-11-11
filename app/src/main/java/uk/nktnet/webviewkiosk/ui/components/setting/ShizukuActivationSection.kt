@@ -224,13 +224,15 @@ internal fun ShizukuActivationSection(
 
     result?.let { outcome ->
         val diagnostics =
-            outcome.diagnostics.ifBlank {
-                if (outcome.success) {
-                    ""
-                } else {
-                    outcome.output.trim()
+            outcome.diagnostics
+                .ifBlank {
+                    if (outcome.success) {
+                        ""
+                    } else {
+                        outcome.output
+                    }
                 }
-            }
+                .trim()
         AlertDialog(
             onDismissRequest = { result = null },
             title = {
@@ -418,18 +420,17 @@ private fun rememberShizukuAvailable(): Boolean {
 }
 
 internal fun isShizukuAvailable(context: Context): Boolean {
-    if (Shizuku.pingBinder()) {
-        return true
-    }
-    // Discover the app providing the SDK permission, including compatible
-    // forks. A stopped manager remains discoverable, without a package allowlist.
-    return try {
-        val manager =
-            context.packageManager
-                .getPermissionInfo(ShizukuProvider.PERMISSION, 0)
-                .packageName
-        manager != null && isPackageInstalled(context, manager)
-    } catch (_: PackageManager.NameNotFoundException) {
-        false
-    }
+    return Shizuku.pingBinder() ||
+        try {
+            // Discover the app providing the SDK permission, including compatible
+            // forks. A stopped manager remains discoverable, without a package
+            // allowlist.
+            val manager =
+                context.packageManager
+                    .getPermissionInfo(ShizukuProvider.PERMISSION, 0)
+                    .packageName
+            manager != null && isPackageInstalled(context, manager)
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        }
 }

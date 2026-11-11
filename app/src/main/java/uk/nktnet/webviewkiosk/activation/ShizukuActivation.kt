@@ -13,6 +13,7 @@ import androidx.annotation.RequiresApi
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -108,9 +109,6 @@ internal object ShizukuActivation {
     ): ActivationResult = mutex.withLock {
         withContext(Dispatchers.Main.immediate) {
             try {
-                checkActivation(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    "Shizuku activation requires Android 6 or later."
-                }
                 val dpm =
                     context.getSystemService(Context.DEVICE_POLICY_SERVICE)
                         as DevicePolicyManager
@@ -194,7 +192,7 @@ internal object ShizukuActivation {
         try {
             access.addPermissionListener(listener)
             access.addDeathListener(died)
-            withTimeout(120_000) {
+            withTimeout(120_000.milliseconds) {
                 suspendCancellableCoroutine { continuation ->
                     pending = continuation
                     access.checkAvailable()
@@ -260,7 +258,7 @@ internal object ShizukuActivation {
         try {
             access.addDeathListener(died)
             val binder =
-                withTimeout(20_000) {
+                withTimeout(20_000.milliseconds) {
                     suspendCancellableCoroutine { continuation ->
                         pending = continuation
                         access.checkAvailable()

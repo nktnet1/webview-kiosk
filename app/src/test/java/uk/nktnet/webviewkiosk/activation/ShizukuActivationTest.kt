@@ -1,3 +1,5 @@
+@file:Suppress("UsePropertyAccessSyntax")
+
 package uk.nktnet.webviewkiosk.activation
 
 import android.app.Application
@@ -326,8 +328,8 @@ class ShizukuActivationTest {
         val permissions = mutableListOf<Shizuku.OnRequestPermissionResultListener>()
         val deaths = mutableListOf<Shizuku.OnBinderDeadListener>()
         var request: (Int) -> Unit = { reply(it, PackageManager.PERMISSION_GRANTED) }
-        var binding: (ServiceConnection) -> Unit = {
-            it.onServiceConnected(
+        var binding: (ServiceConnection) -> Unit = { s ->
+            s.onServiceConnected(
                 null,
                 object : IActivationService.Stub() {
                     override fun activate(
@@ -353,7 +355,7 @@ class ShizukuActivationTest {
                         return Bundle().apply {
                             putBoolean("success", remoteSuccess)
                             putString("output", remoteOutput)
-                            remoteMessage?.let { putString("message", it) }
+                            remoteMessage?.let { m -> putString("message", m) }
                         }
                     }
 
