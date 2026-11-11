@@ -37,6 +37,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.bringSearchSettingIntoView
 import uk.nktnet.webviewkiosk.ui.resources.managementModeLabelRes
 import uk.nktnet.webviewkiosk.ui.resources.managementOwnerLabelRes
 import uk.nktnet.webviewkiosk.ui.resources.managementUserTypeLabelRes
@@ -53,6 +54,7 @@ fun InfoItem(label: String, value: String) {
     Column(
         modifier =
             Modifier.fillMaxWidth()
+                .bringSearchSettingIntoView(label)
                 .padding(vertical = 12.dp)
                 .combinedClickable(
                     onClick = {
