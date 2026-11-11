@@ -21,6 +21,7 @@ function createFrame(hostname, {
   const reports = [];
   const documentHandlers = new Map();
   const windowHandlers = new Map();
+  const intervals = [];
   const media = {
     paused: !playing,
     ended: false,
@@ -39,9 +40,17 @@ function createFrame(hostname, {
     },
   };
   function emit(name) {
-    for (const listener of documentHandlers.get(name) ?? []) listener();
+    for (const listener of documentHandlers.get(name) ?? []) listener({ target: media });
   }
+  const youtubePlayer = {
+    contains(target) { return target === media; },
+    querySelector(selector) { return selector === 'video' ? media : null; },
+    getPlayerState() { return media.paused ? (media.ended ? 0 : 2) : 1; },
+    playVideo() { const result = media.play(); if (result?.catch) result.catch(() => {}); },
+  };
   const document = {
+    getElementById(id) { return id === 'movie_player' ? youtubePlayer : null; },
+    querySelector(selector) { return selector === 'video' ? media : null; },
     querySelectorAll(selector) {
       if (selector === 'audio,video') return [media];
       if (selector === 'iframe') return children.map((child) => ({ contentWindow: child.window }));
@@ -60,10 +69,13 @@ function createFrame(hostname, {
     location: { hostname },
     WebviewKioskBackgroundMedia: {
       onPlaybackStateChanged(id, isPlaying) { reports.push([id, isPlaying]); },
+      canAutoResume() { return true; },
     },
     addEventListener(name, fn) {
       windowHandlers.set(name, [...(windowHandlers.get(name) ?? []), fn]);
     },
+    navigator: { mediaSession: { handlers: {}, setActionHandler(name, handler) { this.handlers[name] = handler; } } },
+    setInterval(fn) { intervals.push(fn); },
     postMessage(data) {
       for (const listener of windowHandlers.get('message') ?? []) {
         listener({ data, source: window.parent });
@@ -74,6 +86,7 @@ function createFrame(hostname, {
   for (const child of children) child.window.parent = window;
   const sandbox = { window, document };
   vm.runInNewContext(script('DOCUMENT_START_SCRIPT'), sandbox);
+  vm.runInNewContext(script('YOUTUBE_BACKGROUND_RECOVERY_SCRIPT'), sandbox);
   function visibilityChange() {
     const event = {
       blocked: false,
@@ -91,6 +104,7 @@ function createFrame(hostname, {
   }
   return {
     window, document, media, reports, sandbox, visibilityChange,
+    tick() { for (const fn of intervals) fn(); },
     hideNative() { nativeHidden = true; },
   };
 }
@@ -188,4 +202,89 @@ test('a rejected resume does not generate a false playing report', async () => {
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(frame.media.paused, true);
   assert.equal(frame.reports.at(-1)[1], false);
+});
+
+
+test('Home-triggered YouTube pause is recovered without losing playback visibility', () => {
+  const frame = createFrame('m.youtube.com');
+  frame.tick();
+  frame.window.__wvkSetHostBackground(true);
+  frame.hideNative();
+  frame.media.pause();
+  assert.equal(frame.reports.at(-1)[1], false);
+  assert.equal(frame.document.hidden, false);
+  frame.tick();
+  assert.equal(frame.media.paused, false);
+  assert.equal(frame.reports.at(-1)[1], true);
+});
+
+test('YouTube deliberately paused before Home stays paused', () => {
+  const frame = createFrame('music.youtube.com');
+  frame.media.pause();
+  frame.window.__wvkSetHostBackground(true);
+  frame.tick();
+  frame.tick();
+  assert.equal(frame.media.paused, true);
+});
+
+test('notification and media-session Pause must not trigger YouTube auto-resume', () => {
+  const frame = createFrame('www.youtube.com');
+  frame.window.__wvkSetHostBackground(true);
+  vm.runInNewContext(script('PAUSE_FOR_NOTIFICATION_SCRIPT'), frame.sandbox);
+  frame.tick();
+  assert.equal(frame.media.paused, true);
+
+  const alternate = createFrame('m.youtube.com');
+  const session = alternate.window.navigator.mediaSession;
+  let called = false;
+  session.setActionHandler('pause', () => { called = true; alternate.media.pause(); });
+  alternate.window.__wvkSetHostBackground(true);
+  session.handlers.pause({});
+  alternate.tick();
+  assert.equal(called, true);
+  assert.equal(alternate.media.paused, true);
+});
+
+test('YouTube never auto-restarts an ended video or a video that was never playing', () => {
+  const ended = createFrame('youtube.com');
+  ended.window.__wvkSetHostBackground(true);
+  ended.media.ended = true;
+  ended.media.pause();
+  ended.tick();
+  assert.equal(ended.media.paused, true);
+  const idle = createFrame('m.youtube.com', { playing: false });
+  idle.window.__wvkSetHostBackground(true);
+  idle.tick();
+  assert.equal(idle.media.paused, true);
+});
+
+test('background status is forwarded into an embedded YouTube frame', () => {
+  const embed = createFrame('www.youtube-nocookie.com');
+  const parent = createFrame('example.com', { playing: false, children: [embed] });
+  parent.window.__wvkSetHostBackground(true);
+  embed.media.pause();
+  embed.tick();
+  assert.equal(embed.media.paused, false);
+});
+
+test('YouTube recovery ends after finite attempts rather than looping endlessly', () => {
+  const frame = createFrame('music.youtube.com', { rejectResume: true });
+  frame.window.__wvkSetHostBackground(true);
+  frame.media.pause();
+  for (let i = 0; i < 12; i++) frame.tick();
+  assert.equal(frame.media.paused, true);
+  frame.hideNative();
+  assert.equal(frame.document.hidden, true);
+});
+
+
+test('an active music interruption prevents automatic YouTube resume', () => {
+  const frame = createFrame('music.youtube.com');
+  frame.window.WebviewKioskBackgroundMedia.canAutoResume = () => false;
+  frame.window.__wvkSetHostBackground(true);
+  frame.media.pause();
+  for (let i = 0; i < 10; i++) frame.tick();
+  assert.equal(frame.media.paused, true);
+  frame.hideNative();
+  assert.equal(frame.document.hidden, true);
 });

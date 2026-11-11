@@ -404,10 +404,20 @@ fun WebviewScreen(navController: NavController) {
         val activityLifecycle = (activity as? LifecycleOwner)?.lifecycle
         val observer = LifecycleEventObserver { _, event ->
             if (userSettings.backgroundMediaPlayback) {
-                if (event == Lifecycle.Event.ON_START) {
-                    (webView.getTag(R.id.background_media_playback_controller)
-                            as? BackgroundMediaPlaybackController)
-                        ?.onActivityStarted()
+                val controller =
+                    webView.getTag(R.id.background_media_playback_controller)
+                        as? BackgroundMediaPlaybackController
+                if (
+                    event == Lifecycle.Event.ON_PAUSE ||
+                        event == Lifecycle.Event.ON_STOP
+                ) {
+                    controller?.onHostBackgroundChanged(true)
+                }
+                if (
+                    event == Lifecycle.Event.ON_START ||
+                        event == Lifecycle.Event.ON_RESUME
+                ) {
+                    controller?.onActivityStarted()
                 }
             } else {
                 when (event) {

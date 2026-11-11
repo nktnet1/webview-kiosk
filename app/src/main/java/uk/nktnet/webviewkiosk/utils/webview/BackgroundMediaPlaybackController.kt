@@ -1,6 +1,9 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
+import android.net.Uri
+import android.os.Build
 import android.util.Log
+import android.view.View
 import android.webkit.WebView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -35,6 +38,68 @@ internal class PlayingMediaFrames {
 }
 
 /**
+ * A YouTube pause when Home is pressed must not immediately tear down the media
+ * foreground service: that would expose Chromium to the hidden-window signal before
+ * the page has a chance to recover. Keep a bounded grace period, also for foreground
+ * pauses so an immediate Home gesture cannot race the bridge.
+ */
+internal object YouTubeBackgroundPausePolicy {
+    const val FOREGROUND_GRACE_MS = 1_500L
+    const val BACKGROUND_GRACE_MS = 32_000L
+
+    fun gracePeriod(
+        wasYouTubePlaying: Boolean,
+        serviceRequested: Boolean,
+        userStopped: Boolean,
+        background: Boolean,
+    ): Long? =
+        if (wasYouTubePlaying && serviceRequested && !userStopped) {
+            if (background) {
+                BACKGROUND_GRACE_MS
+            } else {
+                FOREGROUND_GRACE_MS
+            }
+        } else {
+            null
+        }
+}
+
+/**
+ * WebView receives window visibility separately from onPause(). Chromium may suspend
+ * video as soon as the host window becomes GONE/INVISIBLE, even if WebView.onPause()
+ * is never called. Defer that signal for an active media session and replay it when
+ * the session ends while the Activity is hidden.
+ *
+ * See https://issues.chromium.org/issues/494455605.
+ */
+internal class BackgroundMediaWindowVisibility {
+    private var deferredVisibility: Int? = null
+
+    /** Returns true if Chromium's window-visibility update was deferred. */
+    fun dispatch(
+        visibility: Int,
+        retainForMedia: Boolean,
+        notifyWebView: (Int) -> Unit,
+    ): Boolean {
+        if (retainForMedia && visibility != View.VISIBLE) {
+            deferredVisibility = visibility
+            return true
+        }
+        deferredVisibility = null
+        notifyWebView(visibility)
+        return false
+    }
+
+    /** Restores the actual hidden state after Stop, navigation, or media end. */
+    fun release(notifyWebView: (Int) -> Unit): Boolean {
+        val visibility = deferredVisibility ?: return false
+        deferredVisibility = null
+        notifyWebView(visibility)
+        return true
+    }
+}
+
+/**
  * Keeps the existing WebView as the media player. The foreground service only
  * supplies process priority and a user-visible way to stop background playback; it
  * cannot recreate a website's player if Android destroys its Activity.
@@ -42,6 +107,7 @@ internal class PlayingMediaFrames {
 internal class BackgroundMediaPlaybackController(
     private val webView: WebView,
     private val isActive: () -> Boolean,
+    private val releaseWindowVisibility: () -> Unit,
 ) {
     companion object {
         private const val BRIDGE_NAME = "WebviewKioskBackgroundMedia"
@@ -80,9 +146,25 @@ internal class BackgroundMediaPlaybackController(
     private var stoppedByUser = false
     private var pausedByNotification = false
     private var awaitingResume = false
+    private var wasYouTubePlaying = false
+    private var hostInBackground = false
+    private var pendingPauseStop: Runnable? = null
     private val bridge = MediaStateBridge(webView, ::onPlaybackStateChanged)
 
+    /** Keep the renderer's last visible state only during an active FGS session. */
+    fun shouldRetainWindowVisibility(): Boolean =
+        !disposed && serviceRequested && isActive()
+
     init {
+        // Keep Chromium's renderer at important priority after Home. The
+        // WebView default waives its renderer priority while not visible,
+        // which can terminate background audio even with a media FGS.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            webView.setRendererPriorityPolicy(
+                WebView.RENDERER_PRIORITY_IMPORTANT,
+                false,
+            )
+        }
         webView.addJavascriptInterface(bridge, BRIDGE_NAME)
         withOptionalWebViewFeature(WebViewFeature.DOCUMENT_START_SCRIPT) {
             if (
@@ -95,12 +177,19 @@ internal class BackgroundMediaPlaybackController(
                     DOCUMENT_START_SCRIPT,
                     setOf("*"),
                 )
+                WebViewCompat.addDocumentStartJavaScript(
+                    webView,
+                    YOUTUBE_BACKGROUND_RECOVERY_SCRIPT,
+                    setOf("*"),
+                )
             }
         }
     }
 
     fun onNavigationStarted() {
         if (!disposed) {
+            cancelPendingPauseStop()
+            wasYouTubePlaying = false
             stoppedByUser = false
             pausedByNotification = false
             awaitingResume = false
@@ -114,11 +203,37 @@ internal class BackgroundMediaPlaybackController(
             // Older Android WebView providers do not support document-start
             // scripts. This fallback covers media in the main document.
             webView.evaluateJavascript(DOCUMENT_START_SCRIPT, null)
+            webView.evaluateJavascript(YOUTUBE_BACKGROUND_RECOVERY_SCRIPT, null)
+            publishHostBackground()
         }
+    }
+
+    /**
+     * Called before the Activity's window is hidden, not after WebView is paused.
+     */
+    fun onHostBackgroundChanged(background: Boolean) {
+        if (disposed || hostInBackground == background) {
+            return
+        }
+        hostInBackground = background
+        Log.d(TAG, "Host background=$background, mediaSession=$serviceRequested")
+        publishHostBackground()
+        // A pause reported just before Home must get the longer recovery window.
+        if (pendingPauseStop != null) {
+            scheduleYouTubePauseStop(forceReschedule = true)
+        }
+    }
+
+    private fun publishHostBackground() {
+        webView.evaluateJavascript(
+            "window.__wvkSetHostBackground && window.__wvkSetHostBackground($hostInBackground);",
+            null,
+        )
     }
 
     fun onActivityStarted() {
         if (!disposed) {
+            onHostBackgroundChanged(false)
             stoppedByUser = false
             webView.evaluateJavascript(
                 "window.__wvkReportMediaPlayback && window.__wvkReportMediaPlayback();",
@@ -132,6 +247,12 @@ internal class BackgroundMediaPlaybackController(
             return
         }
         val shouldPlay = frames.update(frameId, playing)
+        if (playing && (frameId.startsWith("yt-") || isYouTubePage())) {
+            wasYouTubePlaying = true
+        }
+        if (shouldPlay) {
+            cancelPendingPauseStop()
+        }
         if (shouldPlay && (stoppedByUser || pausedByNotification)) {
             // A page may immediately try to restart media after the user
             // paused it from the notification; honour the explicit action.
@@ -154,15 +275,65 @@ internal class BackgroundMediaPlaybackController(
                 }
             }
         } else if (!pausedByNotification && !awaitingResume) {
-            // An ordinary website pause ends the session. Keep the session
-            // only for a user-requested pause, so Play can resume it.
-            stopService()
+            // YouTube may issue its own pause as Home hides the Activity.
+            // Keep the FGS and Chromium visibility until the injected player
+            // guard can try recovering. Normal websites still stop promptly.
+            if (
+                YouTubeBackgroundPausePolicy.gracePeriod(
+                    wasYouTubePlaying,
+                    serviceRequested,
+                    stoppedByUser,
+                    hostInBackground,
+                ) != null
+            ) {
+                scheduleYouTubePauseStop()
+            } else {
+                stopService()
+            }
         }
         if (serviceRequested) {
             BackgroundMediaPlaybackService.updatePlaying(
                 shouldPlay && !pausedByNotification
             )
         }
+    }
+
+    private fun isYouTubePage(): Boolean {
+        val host =
+            webView.url?.let { Uri.parse(it).host }?.lowercase() ?: return false
+        return host == "youtube.com" ||
+            host.endsWith(".youtube.com") ||
+            host == "youtube-nocookie.com" ||
+            host.endsWith(".youtube-nocookie.com")
+    }
+
+    private fun cancelPendingPauseStop() {
+        pendingPauseStop?.let(webView::removeCallbacks)
+        pendingPauseStop = null
+    }
+
+    private fun scheduleYouTubePauseStop(forceReschedule: Boolean = false) {
+        if (pendingPauseStop != null && !forceReschedule) {
+            return
+        }
+        cancelPendingPauseStop()
+        val delay =
+            YouTubeBackgroundPausePolicy.gracePeriod(
+                wasYouTubePlaying,
+                serviceRequested,
+                stoppedByUser,
+                hostInBackground,
+            ) ?: return
+        Log.d(TAG, "YouTube paused, preserving media session for ${delay}ms")
+        val task = Runnable {
+            pendingPauseStop = null
+            if (!frames.isPlaying && !pausedByNotification && !awaitingResume) {
+                Log.d(TAG, "YouTube did not resume; ending background media session")
+                stopService()
+            }
+        }
+        pendingPauseStop = task
+        webView.postDelayed(task, delay)
     }
 
     private fun startService() {
@@ -172,6 +343,7 @@ internal class BackgroundMediaPlaybackController(
         }
         serviceRequested = true
         activeController = WeakReference(this)
+        Log.d(TAG, "Starting foreground service for WebView media")
         try {
             ContextCompat.startForegroundService(
                 context,
@@ -186,10 +358,18 @@ internal class BackgroundMediaPlaybackController(
     }
 
     private fun stopService() {
+        cancelPendingPauseStop()
+        wasYouTubePlaying = false
+        val wasRequested = serviceRequested
         serviceRequested = false
         if (activeController?.get() === this) {
             activeController = null
             context.stopService(BackgroundMediaPlaybackService.startIntent(context))
+        }
+        if (wasRequested) {
+            // If Home already hid the Activity, deliver the deferred visibility
+            // change now so an idle WebView does not stay artificially visible.
+            releaseWindowVisibility()
         }
     }
 
@@ -210,6 +390,7 @@ internal class BackgroundMediaPlaybackController(
         if (disposed || !serviceRequested) {
             return
         }
+        cancelPendingPauseStop()
         pausedByNotification = true
         awaitingResume = false
         frames.clear()
@@ -229,6 +410,7 @@ internal class BackgroundMediaPlaybackController(
     }
 
     private fun stopPlayback(userInitiated: Boolean) {
+        cancelPendingPauseStop()
         stoppedByUser = userInitiated
         pausedByNotification = false
         awaitingResume = false
@@ -244,6 +426,13 @@ internal class BackgroundMediaPlaybackController(
         stopPlayback(userInitiated = false)
         disposed = true
         webView.removeJavascriptInterface(BRIDGE_NAME)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Restore the framework policy if background playback is turned off.
+            webView.setRendererPriorityPolicy(
+                WebView.RENDERER_PRIORITY_IMPORTANT,
+                true,
+            )
+        }
     }
 }
 
@@ -310,12 +499,24 @@ internal const val DOCUMENT_START_SCRIPT =
       window.__wvkBackgroundMediaInstalled = true;
       var host = window.location.hostname.toLowerCase();
       var isYouTube = /(^|\.)youtube(-nocookie)?\.com$/.test(host);
-      var frameId = Date.now().toString(36) + '-' + Math.random().toString(36);
+      var frameId = (isYouTube ? 'yt-' : '') + Date.now().toString(36) + '-' + Math.random().toString(36);
       var lastPlaying = null;
       var pausedForNotification = [];
       var resumingFromNotification = false;
+      window.__wvkHostBackground = false;
+      function setHostBackground(hidden) {
+        window.__wvkHostBackground = hidden === true;
+        document.querySelectorAll('iframe').forEach(function (frame) {
+          try {
+            frame.contentWindow.postMessage({ __wvkMediaHostHidden: hidden }, '*');
+          } catch (ignored) {}
+        });
+      }
+      window.__wvkSetHostBackground = setHostBackground;
       function keepPlaybackVisible() {
-        return lastPlaying === true || resumingFromNotification;
+        return lastPlaying === true || resumingFromNotification ||
+          (isYouTube && typeof window.__wvkKeepYoutubeVisible === 'function' &&
+           window.__wvkKeepYoutubeVisible());
       }
 
       if (isYouTube) {
@@ -374,6 +575,9 @@ internal const val DOCUMENT_START_SCRIPT =
         });
       }
       window.__wvkControlMedia = function (action) {
+        if (isYouTube && typeof window.__wvkYoutubeExplicitAction === 'function') {
+          window.__wvkYoutubeExplicitAction(action);
+        }
         if (action === 'pause') {
           resumingFromNotification = false;
           document.querySelectorAll('audio,video').forEach(function (media) {
@@ -432,11 +636,155 @@ internal const val DOCUMENT_START_SCRIPT =
       window.addEventListener('message', function (event) {
         // Only accept commands sent by the embedding parent, never messages
         // from arbitrary ads, sibling frames, or external windows.
-        if (window.parent !== window && event.source === window.parent &&
-            event.data && typeof event.data.__wvkMediaAction === 'string') {
-          window.__wvkControlMedia(event.data.__wvkMediaAction);
+        if (window.parent !== window && event.source === window.parent && event.data) {
+          if (typeof event.data.__wvkMediaHostHidden === 'boolean') {
+            setHostBackground(event.data.__wvkMediaHostHidden);
+          }
+          if (typeof event.data.__wvkMediaAction === 'string') {
+            window.__wvkControlMedia(event.data.__wvkMediaAction);
+          }
         }
       });
       report();
+    })();
+    """
+
+/**
+ * YouTube-specific safety net. A normal HTML media pause is not proof that the user
+ * paused: YouTube can pause its own player when Android backgrounds the WebView.
+ * Recover only playback already observed before Home, never a player paused by the
+ * user or from a notification. Keep attempts finite.
+ *
+ * Inspired by the behaviour documented in NouTube (AGPL-3.0), implemented
+ * independently so no NouTube source is incorporated into the application.
+ */
+internal const val YOUTUBE_BACKGROUND_RECOVERY_SCRIPT =
+    """
+    (function () {
+      if (window.__wvkYoutubeRecoveryInstalled) return;
+      var host = window.location.hostname.toLowerCase();
+      if (!/(^|\.)youtube(-nocookie)?\.com$/.test(host)) return;
+      window.__wvkYoutubeRecoveryInstalled = true;
+      var wasPlaying = false;
+      var explicitlyPaused = false;
+      var attemptCount = 0;
+      var audioBusyTicks = 0;
+      var maxAttempts = 4;
+      var maxAudioBusyTicks = 8;
+
+      function isBackground() { return window.__wvkHostBackground === true; }
+      function player() { return document.getElementById('movie_player'); }
+      function video() {
+        var root = player();
+        return (root && root.querySelector('video')) || document.querySelector('video');
+      }
+      function state() {
+        var element = player();
+        try {
+          if (element && typeof element.getPlayerState === 'function') {
+            return element.getPlayerState();
+          }
+        } catch (ignored) {}
+        var media = video();
+        return media && !media.paused && !media.ended ? 1 : 2;
+      }
+      // Our native notification commands and the page's Media Session handlers
+      // express intentional transport controls and must never be undone.
+      window.__wvkYoutubeExplicitAction = function (action) {
+        if (action === 'pause' || action === 'stop') {
+          explicitlyPaused = true;
+        } else if (action === 'resume') {
+          explicitlyPaused = false;
+          attemptCount = 0;
+          audioBusyTicks = 0;
+          wasPlaying = true;
+        }
+      };
+      window.__wvkKeepYoutubeVisible = function () {
+        return isBackground() && wasPlaying && !explicitlyPaused &&
+          attemptCount < maxAttempts && audioBusyTicks < maxAudioBusyTicks;
+      };
+
+      function trackPlay() {
+        wasPlaying = true;
+        explicitlyPaused = false;
+        attemptCount = 0;
+        audioBusyTicks = 0;
+      }
+      document.addEventListener('playing', trackPlay, true);
+      document.addEventListener('play', trackPlay, true);
+      document.addEventListener('pause', function (event) {
+        if (isBackground()) return;
+        var root = player();
+        if (event.target && (event.target === video() || (root && root.contains(event.target)))) {
+          explicitlyPaused = true;
+        }
+      }, true);
+
+      // Install before YouTube registers these callbacks. A headset or system
+      // media-control Pause may otherwise be mistaken for a site-initiated pause.
+      try {
+        var mediaSession = window.navigator && window.navigator.mediaSession;
+        if (mediaSession && typeof mediaSession.setActionHandler === 'function') {
+          window.__wvkYoutubeMediaSession = mediaSession;
+          var originalSetActionHandler = mediaSession.setActionHandler.bind(mediaSession);
+          mediaSession.setActionHandler = function (action, handler) {
+            if (typeof handler !== 'function' || (action !== 'play' && action !== 'pause')) {
+              return originalSetActionHandler(action, handler);
+            }
+            return originalSetActionHandler(action, function (details) {
+              window.__wvkYoutubeExplicitAction(action === 'pause' ? 'pause' : 'resume');
+              return handler(details);
+            });
+          };
+        }
+      } catch (ignored) {}
+
+      if (state() === 1) trackPlay();
+      window.setInterval(function () {
+        var current = state();
+        if (current === 1) {
+          // A delayed pause from a notification must not be cancelled by a
+          // final playing-state sample before the media element actually stops.
+          if (!explicitlyPaused) {
+            wasPlaying = true;
+            attemptCount = 0;
+          }
+          return;
+        }
+        if (!isBackground()) {
+          if (current === 2) wasPlaying = false;
+          attemptCount = 0;
+          audioBusyTicks = 0;
+          return;
+        }
+        if (current !== 2 || !wasPlaying || explicitlyPaused || attemptCount >= maxAttempts) {
+          return;
+        }
+        var media = video();
+        if (!media || media.ended) return;
+        // A focus loss may have paused the stream. Wait for any existing
+        // music activity to clear instead of fighting phone calls or another
+        // application. Android can report our own just-paused stream as active
+        // briefly, hence the bounded wait before abandoning recovery.
+        try {
+          if (window.WebviewKioskBackgroundMedia &&
+              !window.WebviewKioskBackgroundMedia.canAutoResume()) {
+            audioBusyTicks++;
+            return;
+          }
+        } catch (ignored) { return; }
+        audioBusyTicks = 0;
+        attemptCount++;
+        try {
+          var element = player();
+          if (element && typeof element.playVideo === 'function') {
+            element.playVideo();
+          } else if (typeof media.play === 'function') {
+            var promise = media.play();
+            if (promise && typeof promise.catch === 'function') promise.catch(function () {});
+          }
+        } catch (ignored) {}
+      }, 2500);
     })();
     """

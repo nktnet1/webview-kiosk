@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parents[2]
 BRIDGES = {
     "uk.nktnet.webviewkiosk.utils.webview.MediaStateBridge": {
         ("onPlaybackStateChanged", "(Ljava/lang/String;Z)V"),
+        ("canAutoResume", "()Z"),
     },
     "uk.nktnet.webviewkiosk.blocking.WebViewRequests$Rules": {
         ("shouldBlock", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z"),
