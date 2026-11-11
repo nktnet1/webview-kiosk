@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="settings_search_label">Search settings</string>
+    <string name="settings_search_label">Search</string>
     <string name="settings_search_clear">Clear search</string>
     <string name="settings_search_no_results">No matching settings</string>
     <string name="settings_search_result_setting">Setting</string>
