@@ -387,13 +387,14 @@ class BackgroundMediaPlaybackService : Service() {
             )
             .setContentText(
                 info.artist.ifBlank {
-                    getString(
-                        if (playing) {
-                            R.string.notification_background_media_text
-                        } else {
-                            R.string.notification_background_media_paused
-                        }
-                    )
+                    if (playing) {
+                        getString(
+                            R.string.notification_background_media_text,
+                            getString(R.string.app_name),
+                        )
+                    } else {
+                        getString(R.string.notification_background_media_paused)
+                    }
                 }
             )
             .setContentIntent(openPendingIntent)
