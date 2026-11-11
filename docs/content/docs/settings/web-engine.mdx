@@ -241,7 +241,12 @@ While media is active, Android displays a playback notification. It provides
 Play/Pause and Stop, and shows a title, artist/channel, artwork, progress,
 and Previous/Next or seeking controls when the website exposes them. The
 notification controls the existing website player rather than opening a
-separate native player. If Android notification permission is denied or
+separate native player. On Android 13+, the notification uses a straight,
+read-only progress bar instead of the system media card's animated seekbar.
+Rewind and fast-forward controls remain available when supported; the bar
+itself is not draggable. This replaces the Android Quick Settings media card
+on those versions, but headset controls still use the native media session.
+If Android notification permission is denied or
 notifications are disabled, the setting shows a warning when enabled.
 On YouTube Shorts, metadata follows the active clip and Previous/Next is
 available only when the page exposes those controls.
