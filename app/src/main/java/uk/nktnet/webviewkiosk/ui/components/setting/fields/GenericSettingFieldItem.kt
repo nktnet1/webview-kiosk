@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.ui.components.setting.bringSearchSettingIntoView
 import uk.nktnet.webviewkiosk.ui.theme.warning
 
 @Composable
@@ -42,6 +43,7 @@ fun <T> GenericSettingFieldItem(
     Column(
         modifier =
             Modifier.fillMaxWidth()
+                .bringSearchSettingIntoView(label)
                 .combinedClickable(
                     onClick = { onClick() },
                     onLongClick = {
