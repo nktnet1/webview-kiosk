@@ -10,6 +10,8 @@ import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
+import android.util.Log
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
@@ -113,6 +115,10 @@ open class MainActivity : AppCompatActivity() {
     private var lastOnStartTime = 0L
     private var pendingAndroid6HomeRedirect = false
     private var pendingAndroid6LockRequest = false
+    private var pendingLockOnLaunch = false
+    private var resumedForLockTask = false
+    private var hasFocusedWindow = false
+    private var activityCreatedAtMillis = 0L
     private var pendingDhizukuPermissionRequest = false
     private var deviceOwnerInitJob: Job? = null
     private var unregisterMqttCommandHost: (() -> Unit)? = null
@@ -187,6 +193,7 @@ open class MainActivity : AppCompatActivity() {
             shouldBeImmersed(this, userSettings)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        activityCreatedAtMillis = SystemClock.uptimeMillis()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         // Register both KeyChain-related activity results before STARTED, even when
@@ -271,8 +278,10 @@ open class MainActivity : AppCompatActivity() {
             pendingAndroid6LockRequest =
                 !pendingAndroid6HomeRedirect &&
                     (userSettings.lockOnLaunch || lockRequested)
-        } else if (userSettings.lockOnLaunch) {
-            tryLockTask(this)
+        } else {
+            // startLockTask() requires a foreground activity. Wait for a focused
+            // window as well so locking cannot interfere with initial focus.
+            pendingLockOnLaunch = userSettings.lockOnLaunch
         }
 
         if (intent != null) {
@@ -547,6 +556,7 @@ open class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        logWindowLifecycle("onCreate completed")
     }
 
     internal fun openClientCertificatePicker() =
@@ -665,10 +675,12 @@ open class MainActivity : AppCompatActivity() {
                 MqttManager.publishAppForegroundEvent()
             }
         }
+        logWindowLifecycle("onStart completed")
     }
 
     override fun onResume() {
         super.onResume()
+        resumedForLockTask = true
         if (
             this in startedHosts &&
                 !pendingAndroid6HomeRedirect &&
@@ -697,12 +709,46 @@ open class MainActivity : AppCompatActivity() {
                 pendingAndroid6LockRequest = false
                 tryLockTask(this)
             }
+        } else {
+            startPendingLaunchLockIfFocused()
         }
         immersiveModeRecovery?.resume()
+        logWindowLifecycle("onResume completed")
+    }
+
+    private fun startPendingLaunchLockIfFocused() {
+        if (
+            !pendingLockOnLaunch ||
+                !resumedForLockTask ||
+                !hasFocusedWindow ||
+                !isApplicationEventHost() ||
+                isFinishing ||
+                isDestroyed
+        ) {
+            return
+        }
+        // Consume once: focus may toggle repeatedly and unlocking must not
+        // immediately relock this task.
+        pendingLockOnLaunch = false
+        tryLockTask(this)
+    }
+
+    private fun logWindowLifecycle(event: String) {
+        Log.i(
+            "MainActivityWindow",
+            "${javaClass.simpleName} task=$taskId $event " +
+                "elapsed=${SystemClock.uptimeMillis() - activityCreatedAtMillis}ms " +
+                "eventHost=${isApplicationEventHost()}",
+        )
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
+        hasFocusedWindow = hasFocus
+        logWindowLifecycle("windowFocus=$hasFocus")
+        if (hasFocus) {
+            startPendingLaunchLockIfFocused()
+        }
         // Focus can return without onResume (e.g. after the notification shade).
         immersiveModeRecovery?.onWindowFocusChanged(hasFocus)
         if (hasFocus && isApplicationEventHost()) {
@@ -714,6 +760,8 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        resumedForLockTask = false
+        hasFocusedWindow = false
         immersiveModeRecovery?.pause()
         nfcForegroundDispatch.onPause()
         super.onPause()
