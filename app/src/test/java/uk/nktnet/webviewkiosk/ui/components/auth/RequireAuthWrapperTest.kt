@@ -48,6 +48,7 @@ import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 import org.robolectric.util.ReflectionHelpers
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -146,9 +147,12 @@ class RequireAuthWrapperTest {
 
         assertEquals(1, prompts.size)
         assertEquals(1, prompts.single().authenticateCalls)
-        assertEquals("Authentication Required", prompts.single().info.title)
         assertEquals(
-            "Please authenticate to access settings",
+            message(R.string.ui_authentication_required),
+            prompts.single().info.title,
+        )
+        assertEquals(
+            message(R.string.ui_please_authenticate_to_access_settings),
             prompts.single().info.description,
         )
         assertFalse(manager.hasValidSession())
@@ -342,12 +346,19 @@ class RequireAuthWrapperTest {
             revision.value++
             pumpFrames()
         }
-        assertTrue(texts().contains("Error: cancelled by user"))
-        assertTrue(texts().containsAll(listOf("Retry", "Cancel")))
+        assertTrue(
+            texts().contains(message(R.string.ui_error_value, "cancelled by user"))
+        )
+        assertTrue(
+            texts()
+                .containsAll(
+                    listOf(message(R.string.ui_retry), message(R.string.ui_cancel))
+                )
+        )
         assertNoProtectedContent()
         assertEquals(1, prompts.size)
 
-        click("Retry")
+        click(message(R.string.ui_retry))
         assertLoading()
         assertEquals(2, prompts.size)
         prompts.last().succeed()
@@ -365,7 +376,7 @@ class RequireAuthWrapperTest {
             .onAuthenticationError(BiometricPrompt.ERROR_USER_CANCELED, "cancelled")
         pumpFrames()
 
-        click("Cancel")
+        click(message(R.string.ui_cancel))
 
         assertEquals(Screen.WebView.route, navController.currentDestination?.route)
         assertNoProtectedContent()
@@ -390,10 +401,12 @@ class RequireAuthWrapperTest {
         owner.registry.currentState = Lifecycle.State.RESUMED
         pumpFrames()
 
-        assertTrue(texts().contains("Error: cancelled by user"))
+        assertTrue(
+            texts().contains(message(R.string.ui_error_value, "cancelled by user"))
+        )
         assertNoProtectedContent()
         assertEquals(1, prompts.size)
-        click("Retry")
+        click(message(R.string.ui_retry))
         assertLoading()
         assertEquals(2, prompts.size)
     }
@@ -492,7 +505,9 @@ class RequireAuthWrapperTest {
         assertTrue(manager.hasValidSession())
         assertEquals(1, protectedMounts - protectedDisposals)
         assertTrue(texts().any { it.startsWith("Protected settings ") })
-        assertFalse(texts().contains("Waiting for authentication..."))
+        assertFalse(
+            texts().contains(message(R.string.ui_waiting_for_authentication))
+        )
     }
 
     private fun assertNoProtectedContent() {
@@ -502,8 +517,10 @@ class RequireAuthWrapperTest {
 
     private fun assertLoading() {
         assertNoProtectedContent()
-        assertTrue(texts().contains("Waiting for authentication..."))
+        assertTrue(texts().contains(message(R.string.ui_waiting_for_authentication)))
     }
+
+    private fun message(id: Int, vararg args: Any) = activity.getString(id, *args)
 
     private fun texts(): List<String> =
         nodes().mapNotNull { node ->

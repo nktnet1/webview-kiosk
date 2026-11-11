@@ -20,6 +20,7 @@ robolectric = "4.17"
 swiperefreshlayout = "1.2.0"
 spotless = "8.11.0"
 slf4j = "2.0.20"
+shizuku = "13.1.5"
 
 #noinspection GradleDependency
 activityCompose = "1.11.0"
@@ -69,6 +70,8 @@ okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+shizuku-api = { module = "dev.rikka.shizuku:api", version.ref = "shizuku" }
+shizuku-provider = { module = "dev.rikka.shizuku:provider", version.ref = "shizuku" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

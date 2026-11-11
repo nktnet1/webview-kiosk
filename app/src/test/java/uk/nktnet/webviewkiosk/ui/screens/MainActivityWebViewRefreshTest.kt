@@ -54,6 +54,7 @@ import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 import uk.nktnet.webviewkiosk.MainActivity
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.FilterListStore
@@ -321,7 +322,7 @@ class MainActivityWebViewRefreshTest {
             nodes.any {
                 it.config
                     .getOrNull(SemanticsProperties.ContentDescription)
-                    ?.contains("Copy full URL") == true
+                    ?.contains(activity.getString(R.string.ui_copy_full_url)) == true
             },
         )
         assertTrue(
@@ -346,7 +347,7 @@ class MainActivityWebViewRefreshTest {
         val copyNode = nodes.first {
             it.config
                 .getOrNull(SemanticsProperties.ContentDescription)
-                ?.contains("Copy full URL") == true &&
+                ?.contains(activity.getString(R.string.ui_copy_full_url)) == true &&
                 it.config.getOrNull(SemanticsActions.OnClick) != null
         }
         assertTrue(
@@ -362,7 +363,7 @@ class MainActivityWebViewRefreshTest {
         // CoreTextField that would immediately repeat the expensive measurement.
         val preview = nodes.first {
             it.config.getOrNull(SemanticsActions.OnClick)?.label ==
-                "Enter a replacement URL"
+                activity.getString(R.string.ui_enter_a_replacement_url)
         }
         assertTrue(
             preview.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke() ==
@@ -475,9 +476,8 @@ class MainActivityWebViewRefreshTest {
         val search = nodes.first {
             it.config
                 .getOrNull(SemanticsProperties.ContentDescription)
-                ?.contains(
-                    activity.getString(uk.nktnet.webviewkiosk.R.string.ui_search)
-                ) == true && it.config.getOrNull(SemanticsActions.OnClick) != null
+                ?.contains(activity.getString(R.string.ui_search)) == true &&
+                it.config.getOrNull(SemanticsActions.OnClick) != null
         }
         assertTrue(
             search.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke() ==
@@ -672,8 +672,7 @@ class MainActivityWebViewRefreshTest {
     @Test
     fun focusedAddressBarShowsSearchInsteadOfSpinnerAndRestoresSpinnerOnSubmit() {
         val webView = webView()
-        val searchDescription =
-            activity.getString(uk.nktnet.webviewkiosk.R.string.ui_search)
+        val searchDescription = activity.getString(R.string.ui_search)
         val url = "http://192.168.4.163:3000"
         webView.loadUrl(url)
         webView.webViewClient.onPageStarted(webView, url, null)
@@ -1258,7 +1257,7 @@ class MainActivityWebViewRefreshTest {
         activityController.newIntent(Intent(Intent.ACTION_VIEW, Uri.parse(wrapper)))
         frames()
         assertBlockedDocument(webView(), source)
-        assertNull(webView().getTag(uk.nktnet.webviewkiosk.R.id.pdf_source_token))
+        assertNull(webView().getTag(R.id.pdf_source_token))
     }
 
     @Test
@@ -1646,9 +1645,7 @@ class MainActivityWebViewRefreshTest {
     }
 
     private fun hasLoadingIcon(): Boolean =
-        addressBarIconHasDescription(
-            activity.getString(uk.nktnet.webviewkiosk.R.string.ui_loading_page)
-        )
+        addressBarIconHasDescription(activity.getString(R.string.ui_loading_page))
 
     private fun addressBarIconHasDescription(description: String): Boolean =
         findAddressBarIconOrNull(description) != null

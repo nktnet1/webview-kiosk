@@ -2,7 +2,15 @@
 
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
 import android.content.RestrictionsManager
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
+import android.content.pm.PermissionInfo
+import android.net.Uri
+import android.os.Binder
 import android.os.Bundle
 import android.os.Looper
 import android.view.View
@@ -27,6 +35,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -41,11 +50,16 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import org.robolectric.util.ReflectionHelpers
+import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuProvider
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.activation.ActivationResult
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.config.data.ManagementCapabilities
@@ -53,6 +67,7 @@ import uk.nktnet.webviewkiosk.config.data.ManagementOwner
 import uk.nktnet.webviewkiosk.config.data.ManagementUserType
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.ui.components.setting.ManagementStatusCard
+import uk.nktnet.webviewkiosk.ui.components.setting.ShizukuActivationSection
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureHomeSetting
@@ -61,6 +76,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.components.setting.isShizukuAvailable
 import uk.nktnet.webviewkiosk.ui.theme.warning
 
 @RunWith(RobolectricTestRunner::class)
@@ -84,11 +100,18 @@ class ManagementSettingsUiTest {
 
     @Before
     fun setUp() {
+        val context = RuntimeEnvironment.getApplication()
+        // Android grants the app's declared signature permission to its UID.
+        shadowOf(context)
+            .grantPermissions(
+                "${context.packageName}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+            )
         ViewRootForTest.onViewCreatedCallback = { roots += it }
         controller =
             Robolectric.buildActivity(AppCompatActivity::class.java)
                 .setup()
                 .visible()
+        installShizuku()
         recomposer = Recomposer(scope.coroutineContext)
         scope.launch { recomposer.runRecomposeAndApplyChanges() }
         view = ComposeView(controller.get())
@@ -103,6 +126,313 @@ class ManagementSettingsUiTest {
         scope.cancel()
         controller.pause().stop().destroy()
         ViewRootForTest.onViewCreatedCallback = null
+    }
+
+    @Test
+    @Config(sdk = [31])
+    fun shizukuActivationLetsUserPickProfileOwnerAndShowsAndroidFailure() {
+        var chosen: Boolean? = null
+        var refreshed = false
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = false,
+                onActivated = { refreshed = true },
+                activate = {
+                    chosen = it
+                    ActivationResult(
+                        false,
+                        "Device owner is already set.",
+                        "java.lang.IllegalStateException: existing owner\n at android.app.admin.DevicePolicyManager.run(DPM.java:42)",
+                    )
+                },
+            )
+        }
+        click(message(R.string.ui_activate_with_shizuku))
+        assertText(message(R.string.about_app_device_owner))
+        assertText(message(R.string.about_app_profile_owner))
+        val pickerText = nodes().flatMap { text(it) }
+        click(message(R.string.about_app_profile_owner))
+        assertEquals(pickerText, nodes().flatMap { text(it) })
+        click(message(R.string.ui_shizuku_activate))
+        assertEquals(true, chosen)
+        assertTrue(refreshed)
+        assertText(message(R.string.ui_shizuku_profile_owner_failed))
+        assertText(
+            "java.lang.IllegalStateException: existing owner\n at android.app.admin.DevicePolicyManager.run(DPM.java:42)"
+        )
+        assertNoText("Show details")
+        assertNoText("Hide details")
+        assertFalse(
+            nodes().any {
+                it.config.getOrNull(SemanticsProperties.TestTag) ==
+                    "shizuku-activation-scrollbar"
+            }
+        )
+        assertTextColor(message(R.string.ui_copy), lightColorScheme().tertiary)
+        assertTextColor(message(R.string.ui_close), lightColorScheme().primary)
+        val copyBounds =
+            nodes(merged = true)
+                .first { message(R.string.ui_copy) in text(it) }
+                .boundsInRoot
+        val closeBounds =
+            nodes(merged = true)
+                .first { message(R.string.ui_close) in text(it) }
+                .boundsInRoot
+        assertTrue(copyBounds.left < closeBounds.left)
+        assertEquals(copyBounds.center.y, closeBounds.center.y, 0.5f)
+        click(message(R.string.ui_close))
+        assertNoText(message(R.string.ui_shizuku_profile_owner_failed))
+    }
+
+    @Test
+    @Config(sdk = [31])
+    fun activationStacktraceIsVisibleImmediatelyForEachResult() {
+        val details =
+            "\n  java.lang.IllegalStateException: original failure\n at android.app.admin.DPM.run(DPM.java:42)\n"
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = false,
+                onActivated = {},
+                activate = {
+                    ActivationResult(false, "Activation was denied.", details)
+                },
+            )
+        }
+        repeat(2) {
+            click(message(R.string.ui_activate_with_shizuku))
+            click(message(R.string.ui_shizuku_activate))
+            assertText(details.trim())
+            assertNoText("Show details")
+            assertNoText("Hide details")
+            assertText(message(R.string.ui_shizuku_device_owner_failed))
+            click(message(R.string.ui_close))
+        }
+    }
+
+    @Test
+    @Config(sdk = [31])
+    fun scrollingTheStacktraceKeepsTheHeadingAndActionButtonsFixedAndCopiesAllFrames() {
+        val summary = "Android rejected activation."
+        val details =
+            "java.lang.IllegalStateException: rejected\n" +
+                (1..200).joinToString("\n") {
+                    "    at android.app.admin.DevicePolicyManager.run(DPM.java:$it)"
+                }
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = false,
+                onActivated = {},
+                activate = { ActivationResult(false, summary, details) },
+            )
+        }
+        click(message(R.string.ui_activate_with_shizuku))
+        click(message(R.string.ui_shizuku_activate))
+        val heading = message(R.string.ui_shizuku_device_owner_failed)
+        val summaryBounds = nodes().first { heading in text(it) }.boundsInRoot
+        val copyBounds =
+            nodes(merged = true)
+                .first { message(R.string.ui_copy) in text(it) }
+                .boundsInRoot
+        val closeBounds =
+            nodes(merged = true)
+                .first { message(R.string.ui_close) in text(it) }
+                .boundsInRoot
+        assertTrue(
+            nodes().any {
+                it.config.getOrNull(SemanticsProperties.TestTag) ==
+                    "shizuku-activation-scrollbar"
+            }
+        )
+        val scroller =
+            nodes().single {
+                it.config.getOrNull(SemanticsProperties.VerticalScrollAxisRange) !=
+                    null
+            }
+        val range = scroller.config[SemanticsProperties.VerticalScrollAxisRange]
+        assertTrue(range.maxValue() > 0f)
+        val initialScroll = range.value()
+        assertTrue(
+            scroller.config[SemanticsActions.ScrollBy].action!!.invoke(0f, 240f)
+        )
+        frames()
+        assertTrue(range.value() > initialScroll)
+        assertEquals(
+            summaryBounds,
+            nodes().first { heading in text(it) }.boundsInRoot,
+        )
+        assertEquals(
+            copyBounds,
+            nodes(merged = true)
+                .first { message(R.string.ui_copy) in text(it) }
+                .boundsInRoot,
+        )
+        assertEquals(
+            closeBounds,
+            nodes(merged = true)
+                .first { message(R.string.ui_close) in text(it) }
+                .boundsInRoot,
+        )
+        click(message(R.string.ui_copy))
+        val clipboard =
+            controller.get().getSystemService(Context.CLIPBOARD_SERVICE)
+                as ClipboardManager
+        assertEquals(details, clipboard.primaryClip?.getItemAt(0)?.text?.toString())
+        assertText(heading)
+    }
+
+    @Test
+    @Config(sdk = [31])
+    fun shizukuDeviceOwnerSuccessRemainsVisibleWhenNativeStatusChanges() {
+        val native = mutableStateOf(false)
+        var chosen: Boolean? = null
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = native.value,
+                onActivated = { native.value = true },
+                activate = {
+                    chosen = it
+                    ActivationResult(true, "Success")
+                },
+            )
+        }
+        click(message(R.string.ui_activate_with_shizuku))
+        click(message(R.string.ui_shizuku_activate))
+        assertEquals(false, chosen)
+        assertText(message(R.string.ui_shizuku_activation_success))
+        assertText("Success")
+        assertNoText("Show details")
+        click(message(R.string.ui_close))
+        assertNoText(message(R.string.ui_activate_with_shizuku))
+    }
+
+    @Test
+    @Config(sdk = [31])
+    fun pendingShizukuActivationDisablesRoleChangesAndDuplicateSubmission() {
+        val result = CompletableDeferred<ActivationResult>()
+        var calls = 0
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = false,
+                onActivated = {},
+                activate = {
+                    calls++
+                    result.await()
+                },
+            )
+        }
+        click(message(R.string.ui_activate_with_shizuku))
+        click(message(R.string.ui_shizuku_activate))
+        assertEquals(1, calls)
+        assertText(message(R.string.ui_shizuku_activating))
+        for (label in
+            listOf(
+                message(R.string.about_app_device_owner),
+                message(R.string.about_app_profile_owner),
+                message(R.string.ui_shizuku_activate),
+                message(R.string.ui_cancel),
+            )) {
+            assertTrue(
+                label,
+                nodes(merged = true).any {
+                    label in text(it) &&
+                        it.config.getOrNull(SemanticsProperties.Disabled) != null
+                },
+            )
+        }
+        result.complete(ActivationResult(false, "Rejected"))
+        frames()
+        assertText(message(R.string.ui_shizuku_device_owner_failed))
+        assertEquals(1, calls)
+    }
+
+    @Test
+    @Config(sdk = [23, 30])
+    fun onlyThisAppsNativeOwnershipOrGrantedSharedPermissionHidesActivation() {
+        val native = mutableStateOf(false)
+        val shared = mutableStateOf(false)
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = native.value,
+                hasSharedOwnerPermission = shared.value,
+                onActivated = {},
+            )
+        }
+        assertText(message(R.string.ui_activate_with_shizuku))
+        native.value = true
+        frames()
+        assertNoText(message(R.string.ui_activate_with_shizuku))
+        native.value = false
+        shared.value = true
+        frames()
+        assertNoText(message(R.string.ui_activate_with_shizuku))
+        shared.value = false
+        frames()
+        assertText(message(R.string.ui_activate_with_shizuku))
+    }
+
+    @Test
+    @Config(sdk = [23, 31])
+    fun aStoppedShizukuForkIsDiscoveredThroughItsApiPermission() {
+        val packageName = "example.shizuku.fork"
+        val context = controller.get()
+        shadowOf(context.packageManager).removePackage(packageName)
+        render {
+            ShizukuActivationSection(hasNativeOwner = false, onActivated = {})
+        }
+        assertNoText(message(R.string.ui_activate_with_shizuku))
+        installShizuku()
+        context.sendBroadcast(
+            Intent(Intent.ACTION_PACKAGE_ADDED, Uri.parse("package:$packageName"))
+        )
+        frames()
+        assertText(message(R.string.ui_activate_with_shizuku))
+        shadowOf(context.packageManager).removePackage(packageName)
+        context.sendBroadcast(
+            Intent(Intent.ACTION_PACKAGE_REMOVED, Uri.parse("package:$packageName"))
+        )
+        frames()
+        assertNoText(message(R.string.ui_activate_with_shizuku))
+    }
+
+    @Test
+    @Config(sdk = [23, 31])
+    fun aConnectedBinderIsDiscoverableWithoutAnyManagerPackage() {
+        val context = controller.get()
+        shadowOf(context.packageManager).removePackage("example.shizuku.fork")
+        val original = Shizuku.getBinder()
+        try {
+            ReflectionHelpers.setStaticField(Shizuku::class.java, "binder", null)
+            assertFalse(isShizukuAvailable(context))
+            ReflectionHelpers.setStaticField(Shizuku::class.java, "binder", Binder())
+            assertTrue(isShizukuAvailable(context))
+        } finally {
+            ReflectionHelpers.setStaticField(Shizuku::class.java, "binder", original)
+        }
+    }
+
+    @Test
+    @Config(sdk = [31])
+    fun missingDiagnosticsUseTheTrimmedErrorForDisplayAndCopying() {
+        render {
+            ShizukuActivationSection(
+                hasNativeOwner = false,
+                onActivated = {},
+                activate = {
+                    ActivationResult(false, "\n  Android rejected activation. \n")
+                },
+            )
+        }
+        click(message(R.string.ui_activate_with_shizuku))
+        click(message(R.string.ui_shizuku_activate))
+        assertText("Android rejected activation.")
+        click(message(R.string.ui_copy))
+        val clipboard =
+            controller.get().getSystemService(Context.CLIPBOARD_SERVICE)
+                as ClipboardManager
+        assertEquals(
+            "Android rejected activation.",
+            clipboard.primaryClip?.getItemAt(0)?.text?.toString(),
+        )
     }
 
     @Test
@@ -126,19 +456,19 @@ class ManagementSettingsUiTest {
             }
             assertText(
                 if (owner == ManagementOwner.ProfileOwner) {
-                    "Profile Owner"
+                    message(R.string.about_app_profile_owner)
                 } else {
-                    "Device Owner"
+                    message(R.string.about_app_device_owner)
                 }
             )
             assertText(
                 if (mode == DeviceOwnerMode.Dhizuku) {
-                    "Dhizuku"
+                    message(R.string.ui_dhizuku)
                 } else {
-                    "Native"
+                    message(R.string.ui_management_native)
                 }
             )
-            assertText("Full User")
+            assertText(message(R.string.ui_management_full_user))
             assertText(message(R.string.ui_management_lock_task_available))
         }
     }
@@ -152,8 +482,8 @@ class ManagementSettingsUiTest {
                 ManagementCapabilities(),
             )
         }
-        assertText("Profile Owner")
-        assertText("Managed Work Profile")
+        assertText(message(R.string.about_app_profile_owner))
+        assertText(message(R.string.ui_management_work_profile))
         assertText(message(R.string.ui_lock_task_work_profile_unavailable))
         assertNoText(message(R.string.ui_management_lock_task_available))
         assertNoText(message(R.string.ui_restricted))
@@ -171,10 +501,10 @@ class ManagementSettingsUiTest {
                 ManagementCapabilities(),
             )
         }
-        assertText("Dhizuku")
-        assertText("Unknown")
+        assertText(message(R.string.ui_dhizuku))
+        assertText(message(R.string.ui_management_unknown))
         assertText(message(R.string.ui_lock_task_dhizuku_permission_required))
-        assertNoText("Profile Owner")
+        assertNoText(message(R.string.about_app_profile_owner))
         assertNoText(message(R.string.ui_restricted))
     }
 
@@ -228,7 +558,7 @@ class ManagementSettingsUiTest {
         val reason = mutableStateOf<String?>(null)
         render { LockTaskFeatureHomeSetting(reason.value) }
         openField(message(R.string.device_owner_lock_task_feature_home_title))
-        assertText("Save")
+        assertText(message(R.string.ui_save))
         reason.value = message(R.string.ui_lock_task_dhizuku_permission_required)
         frames()
         assertReadOnlyDialog()
@@ -236,7 +566,7 @@ class ManagementSettingsUiTest {
         assertNoText(message(R.string.ui_restricted))
         reason.value = null
         frames()
-        assertText("Save")
+        assertText(message(R.string.ui_save))
     }
 
     @Test
@@ -254,7 +584,7 @@ class ManagementSettingsUiTest {
                 colors.error,
             )
             assertReadOnlyDialog()
-            click("Close")
+            click(message(R.string.ui_close))
         }
     }
 
@@ -293,9 +623,9 @@ class ManagementSettingsUiTest {
             )
         }
         openField("Editable feature")
-        click("Save")
+        click(message(R.string.ui_save))
         assertEquals(true, saved)
-        assertNoText("Save")
+        assertNoText(message(R.string.ui_save))
     }
 
     private fun restrictHome() {
@@ -310,9 +640,32 @@ class ManagementSettingsUiTest {
             )
     }
 
+    private fun installShizuku() {
+        val shizukuPackageName = "example.shizuku.fork"
+        shadowOf(controller.get().packageManager)
+            .installPackage(
+                PackageInfo().apply {
+                    packageName = shizukuPackageName
+                    applicationInfo =
+                        ApplicationInfo().apply {
+                            packageName = shizukuPackageName
+                            flags = ApplicationInfo.FLAG_INSTALLED
+                        }
+                }
+            )
+        shadowOf(controller.get().packageManager)
+            .addPermissionInfo(
+                PermissionInfo().apply {
+                    name = ShizukuProvider.PERMISSION
+                    packageName = shizukuPackageName
+                    protectionLevel = PermissionInfo.PROTECTION_NORMAL
+                }
+            )
+    }
+
     private fun assertReadOnlyDialog() {
-        assertNoText("Save")
-        assertText("Close")
+        assertNoText(message(R.string.ui_save))
+        assertText(message(R.string.ui_close))
         assertTrue(
             nodes().any { it.config.getOrNull(SemanticsProperties.Disabled) != null }
         )
@@ -345,11 +698,22 @@ class ManagementSettingsUiTest {
     private fun openField(label: String) = click(label)
 
     private fun click(label: String) {
-        val node =
-            nodes(merged = true).first {
+        fun findButton() =
+            nodes(merged = true).firstOrNull {
                 label in text(it) &&
                     it.config.getOrNull(SemanticsActions.OnClick) != null
             }
+        // Dialog roots can attach on a later frame under CI load. Advance the
+        // test clock until the button exists instead of assuming eight frames.
+        var node = findButton()
+        var framesWaited = 0
+        while (node == null && framesWaited++ < 20) {
+            frames()
+            node = findButton()
+        }
+        checkNotNull(node) {
+            "No clickable '$label'. Visible text: ${nodes().flatMap(::text)}"
+        }
         assertTrue(node.config[SemanticsActions.OnClick].action!!.invoke())
         frames()
     }

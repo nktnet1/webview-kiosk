@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="ui_activate_with_shizuku">Activate with Shizuku</string>
+    <string name="ui_shizuku_activate">Activate</string>
+    <string name="ui_shizuku_activating">Activating ownership…</string>
+    <string name="ui_shizuku_activation_info">Select your desired ownership mode:</string>
+    <string name="ui_shizuku_activation_success">Ownership activated</string>
+    <string name="ui_shizuku_device_owner_failed">Device Owner Error</string>
+    <string name="ui_shizuku_profile_owner_failed">Profile Owner Error</string>
     <string name="ui_add_lock_task_package" formatted="false">"Add Lock Task Package"</string>
     <string name="ui_app" formatted="false">"App"</string>
     <string name="ui_are_you_sure_you_want_to_transfer_ownership_to_value">"Are you sure you want to transfer ownership to %1$s?"</string>

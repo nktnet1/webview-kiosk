@@ -36,6 +36,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.blocking.FilterListStore
 import uk.nktnet.webviewkiosk.blocking.FilterListType
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterLists
@@ -110,15 +111,16 @@ class SettingsContentBlockingScreenTest {
     @Test
     fun listInfoExplainsSkippedRulesWithoutChangingTheList() {
         val saved = store.list()
-        clickDescription("Options for First")
-        click("Info")
+        clickDescription(message(R.string.ui_options_for_value, "First"))
+        click(message(R.string.ui_info))
         awaitCondition {
-            hasText("Popup rules") && hasText("Content Security Policy rules")
+            hasText(message(R.string.option_display_filter_skip_reason_popup)) &&
+                hasText(message(R.string.option_display_filter_skip_reason_csp))
         }
-        assertTrue(hasText("Skipped rules"))
+        assertTrue(hasText(message(R.string.ui_skipped_rules)))
         assertEquals(2, store.info(saved.first().id).skipReasons.values.sum())
         assertEquals(saved, store.list())
-        click("Close")
+        click(message(R.string.ui_close))
     }
 
     @Test
@@ -133,57 +135,57 @@ class SettingsContentBlockingScreenTest {
         val saved = store.list()
         view.disposeComposition()
         renderScreen()
-        click("Actions")
-        click("Add Default")
-        assertTrue(hasText("Add default lists"))
-        assertTrue(hasText("The following lists will be added:"))
-        assertTrue(hasText("•"))
+        click(message(R.string.ui_actions))
+        click(message(R.string.ui_add_default))
+        assertTrue(hasText(message(R.string.ui_add_default_lists)))
+        assertTrue(hasText(message(R.string.ui_the_following_lists_will_be_added)))
+        assertTrue(hasText(message(R.string.ui_bullet)))
         assertFalse(hasText(preset.name))
         SuggestedFilterLists.defaults.drop(1).forEach {
             assertTrue(hasText(it.name))
         }
         assertEquals(saved, store.list())
-        click("Cancel")
-        assertFalse(hasText("Add default lists"))
+        click(message(R.string.ui_cancel))
+        assertFalse(hasText(message(R.string.ui_add_default_lists)))
         assertEquals(saved, store.list())
     }
 
     @Test
     fun emptyListsOfferAddDefaultAndBothEntryPointsUseTheSameConfirmation() {
         enterManage()
-        clickDescription("Select all filter lists")
-        click("Actions")
-        click("Remove selected")
-        click("Remove")
+        clickDescription(message(R.string.ui_select_all_filter_lists))
+        click(message(R.string.ui_actions))
+        click(message(R.string.ui_remove_selected))
+        click(message(R.string.ui_remove))
         awaitCondition {
             store.list().isEmpty() &&
-                hasText("No filter lists have been added") &&
-                !disabled(textNode("Done"))
+                hasText(message(R.string.ui_no_filter_lists_have_been_added)) &&
+                !disabled(textNode(message(R.string.ui_done)))
         }
-        click("Done")
+        click(message(R.string.ui_done))
         repeat(2) { entry ->
             if (entry == 1) {
-                click("Actions")
+                click(message(R.string.ui_actions))
             }
-            click("Add Default")
-            assertTrue(hasText("Add default lists"))
+            click(message(R.string.ui_add_default))
+            assertTrue(hasText(message(R.string.ui_add_default_lists)))
             SuggestedFilterLists.defaults.forEach { assertTrue(hasText(it.name)) }
             assertTrue(store.list().isEmpty())
-            click("Cancel")
+            click(message(R.string.ui_cancel))
             assertTrue(store.list().isEmpty())
         }
     }
 
     @Test
     fun defaultActionsPutManageFirstAndAddDefaultLast() {
-        click("Actions")
+        click(message(R.string.ui_actions))
         val expected =
             listOf(
-                "Manage",
-                "Enable all",
-                "Disable all",
-                "Refresh all",
-                "Add Default",
+                message(R.string.ui_manage),
+                message(R.string.ui_enable_all),
+                message(R.string.ui_disable_all),
+                message(R.string.ui_refresh_all),
+                message(R.string.ui_add_default),
             )
         val menu =
             nodes()
@@ -195,63 +197,81 @@ class SettingsContentBlockingScreenTest {
                 .sortedBy { it.boundsInWindow.top }
                 .map { it.config[SemanticsProperties.Text].single().text }
         assertEquals(expected, menu)
-        click("Manage")
-        assertTrue(hasText("0 selected"))
-        assertTrue(disabled(textNode("Actions")))
-        assertEquals(ToggleableState.Off, selectionState("Select First"))
+        click(message(R.string.ui_manage))
+        assertTrue(hasText(message(R.string.ui_value_selected, "0")))
+        assertTrue(disabled(textNode(message(R.string.ui_actions))))
+        assertEquals(
+            ToggleableState.Off,
+            selectionState(message(R.string.ui_select_value, "First")),
+        )
     }
 
     @Test
     fun selectedActionsOnlyChangeTheCheckedListsAndRemovalNeedsConfirmation() {
         enterManage()
-        clickDescription("Select First")
-        click("Actions")
-        click("Disable selected")
+        clickDescription(message(R.string.ui_select_value, "First"))
+        click(message(R.string.ui_actions))
+        click(message(R.string.ui_disable_selected))
         awaitCondition { !store.list().first().enabled && actionsReady() }
         assertEquals(listOf(false, true, true), store.list().map { it.enabled })
-        assertTrue(hasText("1 selected"))
-        assertEquals(ToggleableState.On, selectionState("Select First"))
+        assertTrue(hasText(message(R.string.ui_value_selected, "1")))
+        assertEquals(
+            ToggleableState.On,
+            selectionState(message(R.string.ui_select_value, "First")),
+        )
 
-        click("Actions")
-        click("Enable selected")
+        click(message(R.string.ui_actions))
+        click(message(R.string.ui_enable_selected))
         awaitCondition { store.list().all { it.enabled } && actionsReady() }
-        clickDescription("Select Second")
-        assertTrue(hasText("2 selected"))
-        click("Actions")
-        click("Remove selected")
-        assertTrue(hasText("Remove 2 filter lists?"))
-        assertTrue(hasText("•"))
+        clickDescription(message(R.string.ui_select_value, "Second"))
+        assertTrue(hasText(message(R.string.ui_value_selected, "2")))
+        click(message(R.string.ui_actions))
+        click(message(R.string.ui_remove_selected))
+        assertTrue(hasText(message(R.string.ui_remove_value_filter_lists, "2")))
+        assertTrue(hasText(message(R.string.ui_bullet)))
         assertEquals(3, store.list().size)
-        click("Cancel")
+        click(message(R.string.ui_cancel))
         assertEquals(3, store.list().size)
-        assertTrue(hasText("2 selected"))
+        assertTrue(hasText(message(R.string.ui_value_selected, "2")))
 
-        click("Actions")
-        click("Remove selected")
-        click("Remove")
-        awaitCondition { store.list().size == 1 && hasText("0 selected") }
+        click(message(R.string.ui_actions))
+        click(message(R.string.ui_remove_selected))
+        click(message(R.string.ui_remove))
+        awaitCondition {
+            store.list().size == 1 &&
+                hasText(message(R.string.ui_value_selected, "0"))
+        }
         assertEquals("Other", store.list().single().name)
-        assertEquals(ToggleableState.Off, selectionState("Select Other"))
-        assertTrue(disabled(textNode("Actions")))
+        assertEquals(
+            ToggleableState.Off,
+            selectionState(message(R.string.ui_select_value, "Other")),
+        )
+        assertTrue(disabled(textNode(message(R.string.ui_actions))))
     }
 
     @Test
     fun togglingOneListDoesNotDisableTheOtherSwitches() {
-        assertTrue(hasText("3/3 enabled"))
-        clickDescription("Filter First")
-        assertFalse(disabled(descriptionNode("Filter Second")))
-        assertFalse(disabled(descriptionNode("Filter Other")))
+        assertTrue(hasText(message(R.string.ui_lists_enabled_count, "3", "3")))
+        clickDescription(message(R.string.ui_filter_value, "First"))
+        assertFalse(
+            disabled(descriptionNode(message(R.string.ui_filter_value, "Second")))
+        )
+        assertFalse(
+            disabled(descriptionNode(message(R.string.ui_filter_value, "Other")))
+        )
         awaitCondition {
             !store.list().first().enabled &&
-                selectionState("Filter First") == ToggleableState.Off &&
-                hasText("2/3 enabled")
+                selectionState(message(R.string.ui_filter_value, "First")) ==
+                    ToggleableState.Off &&
+                hasText(message(R.string.ui_lists_enabled_count, "2", "3"))
         }
 
-        clickDescription("Filter Second")
+        clickDescription(message(R.string.ui_filter_value, "Second"))
         awaitCondition {
             !store.list()[1].enabled &&
-                selectionState("Filter Second") == ToggleableState.Off &&
-                hasText("1/3 enabled")
+                selectionState(message(R.string.ui_filter_value, "Second")) ==
+                    ToggleableState.Off &&
+                hasText(message(R.string.ui_lists_enabled_count, "1", "3"))
         }
         assertTrue(store.list()[2].enabled)
     }
@@ -262,19 +282,19 @@ class SettingsContentBlockingScreenTest {
         store.importFrom("Remote", "||ads.example^".byteInputStream(), url)
         view.disposeComposition()
         renderScreen()
-        clickDescription("Options for Remote")
-        click("Info")
-        awaitCondition { hasText("Source URL") && hasText(url) }
+        clickDescription(message(R.string.ui_options_for_value, "Remote"))
+        click(message(R.string.ui_info))
+        awaitCondition { hasText(message(R.string.ui_source_url)) && hasText(url) }
 
         assertTrue(
-            textNode("Source URL").boundsInWindow.top <
-                textNode("List details").boundsInWindow.top
+            textNode(message(R.string.ui_source_url)).boundsInWindow.top <
+                textNode(message(R.string.ui_list_details)).boundsInWindow.top
         )
-        assertTrue(hasText("Last updated"))
+        assertTrue(hasText(message(R.string.ui_last_updated)))
         assertFalse(hasText("Refreshed"))
         assertTrue(
-            textNode("File size").boundsInWindow.top <
-                textNode("Last updated").boundsInWindow.top
+            textNode(message(R.string.ui_file_size)).boundsInWindow.top <
+                textNode(message(R.string.ui_last_updated)).boundsInWindow.top
         )
         assertTrue(
             nodes().any { node ->
@@ -287,14 +307,16 @@ class SettingsContentBlockingScreenTest {
 
     @Test
     fun listInfoSignalsMoreContentUntilScrolledToBottom() {
-        clickDescription("Options for First")
-        click("Info")
-        awaitCondition { hasText("Scroll for more \u2193") }
+        clickDescription(message(R.string.ui_options_for_value, "First"))
+        click(message(R.string.ui_info))
+        awaitCondition { hasText(message(R.string.ui_scroll_for_more)) }
 
         val scrollable =
-            generateSequence(textNode("List details")) { it.parent }
+            generateSequence(textNode(message(R.string.ui_list_details))) {
+                    it.parent
+                }
                 .first { it.config.getOrNull(SemanticsActions.ScrollBy) != null }
-        val hint = textNode("Scroll for more \u2193")
+        val hint = textNode(message(R.string.ui_scroll_for_more))
         assertTrue(
             "Scroll hint should overlay the bottom of the details",
             hint.boundsInWindow.top < scrollable.boundsInWindow.bottom,
@@ -305,16 +327,18 @@ class SettingsContentBlockingScreenTest {
         )
         assertTrue(
             "Scroll hint overlaps Close",
-            hint.boundsInWindow.bottom <= textNode("Close").boundsInWindow.top,
+            hint.boundsInWindow.bottom <=
+                textNode(message(R.string.ui_close)).boundsInWindow.top,
         )
 
         assertTrue(
             scrollable.config[SemanticsActions.ScrollBy].action!!.invoke(0f, 10000f)
         )
-        awaitCondition { !hasText("Scroll for more \u2193") }
-        assertTrue(hasText("Skipped rules"))
+        awaitCondition { !hasText(message(R.string.ui_scroll_for_more)) }
+        assertTrue(hasText(message(R.string.ui_skipped_rules)))
         val gap =
-            textNode("Close").boundsInWindow.top - scrollable.boundsInWindow.bottom
+            textNode(message(R.string.ui_close)).boundsInWindow.top -
+                scrollable.boundsInWindow.bottom
         val density = activityController.get().resources.displayMetrics.density
         assertTrue(
             "Too much space above Close: ${gap / density}dp",
@@ -325,9 +349,12 @@ class SettingsContentBlockingScreenTest {
     @Test
     @Config(qualifiers = "w480dp-h640dp")
     fun listInfoDialogLeavesSpaceAroundSystemBarsOnShortScreens() {
-        clickDescription("Options for First")
-        click("Info")
-        awaitCondition { hasText("List details") && hasText("Close") }
+        clickDescription(message(R.string.ui_options_for_value, "First"))
+        click(message(R.string.ui_info))
+        awaitCondition {
+            hasText(message(R.string.ui_list_details)) &&
+                hasText(message(R.string.ui_close))
+        }
         val density = activityController.get().resources.displayMetrics.density
         val height = activityController.get().resources.displayMetrics.heightPixels
         val dialog =
@@ -340,7 +367,7 @@ class SettingsContentBlockingScreenTest {
                     } == true
                 }
                 .minBy { it.boundsInWindow.top }
-        val close = textNode("Close")
+        val close = textNode(message(R.string.ui_close))
         assertTrue(
             title.boundsInWindow.top - dialog.boundsInWindow.top >= 24f * density
         )
@@ -354,31 +381,40 @@ class SettingsContentBlockingScreenTest {
     @Test
     fun selectAllTogglesTheSelectionAndDoneClearsIt() {
         enterManage()
-        clickDescription("Select First")
+        clickDescription(message(R.string.ui_select_value, "First"))
         assertEquals(
             ToggleableState.Indeterminate,
-            selectionState("Select all filter lists"),
+            selectionState(message(R.string.ui_select_all_filter_lists)),
         )
-        clickDescription("Select all filter lists")
-        assertTrue(hasText("3 selected"))
-        assertEquals(ToggleableState.On, selectionState("Select Other"))
-        clickDescription("Select all filter lists")
-        assertTrue(hasText("0 selected"))
-        clickDescription("Select Second")
-        click("Done")
-        assertFalse(hasText("1 selected"))
+        clickDescription(message(R.string.ui_select_all_filter_lists))
+        assertTrue(hasText(message(R.string.ui_value_selected, "3")))
+        assertEquals(
+            ToggleableState.On,
+            selectionState(message(R.string.ui_select_value, "Other")),
+        )
+        clickDescription(message(R.string.ui_select_all_filter_lists))
+        assertTrue(hasText(message(R.string.ui_value_selected, "0")))
+        clickDescription(message(R.string.ui_select_value, "Second"))
+        click(message(R.string.ui_done))
+        assertFalse(hasText(message(R.string.ui_value_selected, "1")))
         assertTrue(store.list().all { it.enabled })
         enterManage()
-        assertTrue(hasText("0 selected"))
-        assertEquals(ToggleableState.Off, selectionState("Select Second"))
-        clickDescription("Back")
-        assertTrue(hasText("Add list"))
+        assertTrue(hasText(message(R.string.ui_value_selected, "0")))
+        assertEquals(
+            ToggleableState.Off,
+            selectionState(message(R.string.ui_select_value, "Second")),
+        )
+        clickDescription(message(R.string.ui_back))
+        assertTrue(hasText(message(R.string.ui_add_list)))
     }
 
     private fun enterManage() {
-        click("Actions")
-        click("Manage")
+        click(message(R.string.ui_actions))
+        click(message(R.string.ui_manage))
     }
+
+    private fun message(id: Int, vararg args: Any) =
+        activityController.get().getString(id, *args)
 
     private fun nodes(): List<SemanticsNode> =
         roots
@@ -417,7 +453,8 @@ class SettingsContentBlockingScreenTest {
                 it.config.contains(SemanticsProperties.Disabled)
             }
 
-    private fun actionsReady(): Boolean = !disabled(textNode("Actions"))
+    private fun actionsReady(): Boolean =
+        !disabled(textNode(message(R.string.ui_actions)))
 
     private fun click(text: String) = clickNode(textNode(text))
 

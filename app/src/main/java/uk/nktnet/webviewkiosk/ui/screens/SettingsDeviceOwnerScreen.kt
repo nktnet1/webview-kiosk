@@ -44,6 +44,7 @@ import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as Aler
 import uk.nktnet.webviewkiosk.ui.components.setting.ManagementStatusCard
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.ShizukuActivationSection
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.DeviceAdminReceiverListDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.LockTaskPackagesDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunchSetting
@@ -104,6 +105,26 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
             ManagementStatusCard(deviceOwnerStatus, hasOwnerPermission, capabilities)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                ShizukuActivationSection(
+                    hasNativeOwner =
+                        deviceOwnerStatus.mode in
+                            setOf(
+                                DeviceOwnerMode.DeviceOwner,
+                                DeviceOwnerMode.ProfileOwner,
+                            ),
+                    hasSharedOwnerPermission =
+                        deviceOwnerStatus.mode == DeviceOwnerMode.Dhizuku &&
+                            hasOwnerPermission,
+                    onActivated = {
+                        DeviceOwnerManager.init(context)
+                        hasOwnerPermission =
+                            DeviceOwnerManager.hasOwnerPermission(context)
+                        capabilities = DeviceOwnerManager.getCapabilities(context)
+                    },
+                )
+            }
 
             val featureReason =
                 lockTaskPolicyUnavailableReason(

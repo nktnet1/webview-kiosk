@@ -1,0 +1,111 @@
+---
+title: ADB
+description: Assign Device Owner or main-user Profile Owner using a computer.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+<Callout title="Requirements" type="warning">
+
+This activation method requires your device to not have multiple users or any accounts registered.
+
+For **Android 12+**, you can avoid removing users/accounts and freezing apps by
+following this [XDA guide](https://xdaforums.com/t/how-i-got-device-owner-without-factory-reset.4745834/#post-90768446).
+Alternatively, consider the automated [Shizuku Activation Method](/docs/activation/shizuku) (recommended).
+
+</Callout>
+
+## 1. Prepare the device [#prepare]
+
+<Steps>
+
+<Step>
+
+Install {APP_NAME} from your chosen [download source](/docs/installation).
+
+</Step>
+
+<Step>
+
+Install [Android Platform Tools](https://developer.android.com/tools/releases/platform-tools)
+on your computer and enable USB debugging on the device.
+
+</Step>
+
+<Step>
+
+Connect by USB, allow the debugging prompt, and run `adb devices` to confirm
+the connection.
+
+</Step>
+
+<Step>
+
+Check the main user. The ID is typically `0` on most devices.
+
+```sh
+adb shell pm list users
+```
+
+</Step>
+
+</Steps>
+
+## 2. Choose the role and installed app [#assign-owner]
+
+Run **one** of the two owner commands in the tab matching your installation.
+Choose [Profile Owner (Main User)](/docs/activation#profile-owner-work-profile)
+if you also want to use a work profile. Choose Device Owner for a dedicated kiosk.
+
+<Tabs items={['GitHub / F-Droid / IzzyOnDroid', 'Google Play / Aurora Store', 'Debug APK']}>
+<Tab value="GitHub / F-Droid / IzzyOnDroid">
+
+Device Owner:
+
+```sh
+adb shell dpm set-device-owner --user 0 uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
+```
+
+Profile Owner:
+
+```sh
+adb shell dpm set-profile-owner --user 0 uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
+```
+
+</Tab>
+<Tab value="Google Play / Aurora Store">
+
+Device Owner:
+
+```sh
+adb shell dpm set-device-owner --user 0 com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+```
+
+Profile Owner:
+
+```sh
+adb shell dpm set-profile-owner --user 0 com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+```
+
+</Tab>
+<Tab value="Debug APK">
+
+Device Owner:
+
+```sh
+adb shell dpm set-device-owner --user 0 uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+```
+
+Profile Owner:
+
+```sh
+adb shell dpm set-profile-owner --user 0 uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+```
+
+</Tab>
+</Tabs>
+
+## 3. Check activation [#check-activation]
+
+Open **Settings → Device → Manage Device Policies**. Confirm the expected owner
+role, full-user scope, and available policies.
