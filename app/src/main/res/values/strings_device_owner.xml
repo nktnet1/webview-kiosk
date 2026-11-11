@@ -4,10 +4,9 @@
     <string name="ui_shizuku_activate">Activate</string>
     <string name="ui_shizuku_activating">Activating ownership…</string>
     <string name="ui_shizuku_activation_info">Select your desired ownership mode:</string>
-    <string name="ui_shizuku_show_details">Show details</string>
-    <string name="ui_shizuku_hide_details">Hide details</string>
     <string name="ui_shizuku_activation_success">Ownership activated</string>
-    <string name="ui_shizuku_activation_failed">Activation failed</string>
+    <string name="ui_shizuku_device_owner_failed">Failed to set device owner:</string>
+    <string name="ui_shizuku_profile_owner_failed">Failed to set profile owner:</string>
     <string name="ui_add_lock_task_package" formatted="false">"Add Lock Task Package"</string>
     <string name="ui_app" formatted="false">"App"</string>
     <string name="ui_are_you_sure_you_want_to_transfer_ownership_to_value">"Are you sure you want to transfer ownership to %1$s?"</string>

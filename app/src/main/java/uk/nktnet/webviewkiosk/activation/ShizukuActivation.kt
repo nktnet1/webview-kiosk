@@ -50,7 +50,7 @@ internal interface ShizukuAccess {
     fun unbind(args: Shizuku.UserServiceArgs, connection: ServiceConnection)
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
+@RequiresApi(Build.VERSION_CODES.M)
 private object PlatformShizukuAccess : ShizukuAccess {
     override fun checkAvailable() {
         checkActivation(Shizuku.pingBinder()) {
@@ -100,7 +100,7 @@ internal object ShizukuActivation {
     private val mutex = Mutex()
     private val permissionRequests = AtomicInteger(7241)
 
-    @RequiresApi(Build.VERSION_CODES.S)
+    @RequiresApi(Build.VERSION_CODES.M)
     suspend fun activate(
         context: Context,
         profileOwner: Boolean,
@@ -108,8 +108,8 @@ internal object ShizukuActivation {
     ): ActivationResult = mutex.withLock {
         withContext(Dispatchers.Main.immediate) {
             try {
-                checkActivation(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    "Shizuku activation requires Android 12 or later. Use ADB or QR Code setup."
+                checkActivation(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    "Shizuku activation requires Android 6 or later."
                 }
                 val dpm =
                     context.getSystemService(Context.DEVICE_POLICY_SERVICE)

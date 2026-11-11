@@ -254,15 +254,41 @@ class OwnerActivationTest {
     }
 
     @Test
-    fun androidBefore12CannotRunAnyActivationCommands() {
-        for (sdk in 21..30) {
+    fun androidBefore6CannotRunAnyActivationCommands() {
+        for (sdk in 21..22) {
             commands.clear()
             refreshed.clear()
             val result = engine(sdk).activate(false, 0)
             assertFalse(result.success)
-            assertTrue(result.output.contains("Android 12 or later"))
+            assertTrue(result.output.contains("Android 6 or later"))
             assertTrue(commands.isEmpty())
             assertTrue(refreshed.isEmpty())
+        }
+    }
+
+    @Test
+    fun android6Through11UsesDpmWithoutReadingOrChangingSetupState() {
+        for (sdk in 23..30) {
+            for (profileOwner in listOf(false, true)) {
+                commands.clear()
+                refreshed.clear()
+                assertTrue(engine(sdk).activate(profileOwner, 0).success)
+                assertFalse(commands.any { it.first() == "settings" })
+                assertTrue(refreshed.isEmpty())
+                assertTrue(
+                    listOf(
+                        "dpm",
+                        if (profileOwner) {
+                            "set-profile-owner"
+                        } else {
+                            "set-device-owner"
+                        },
+                        "--user",
+                        "0",
+                        admin,
+                    ) in commands
+                )
+            }
         }
     }
 
@@ -275,7 +301,7 @@ class OwnerActivationTest {
     }
 
     @Test
-    fun unsupportedAndroidDoesNotReadAccountStateOrInvokeDpm() {
+    fun olderAndroidPreservesTheSystemStacktraceWithoutTheSetupWorkaround() {
         dpmResult =
             CommandResult(
                 1,
@@ -284,10 +310,14 @@ class OwnerActivationTest {
             )
         val result = engine(30).activate(false, 0)
         assertFalse(result.success)
-        assertTrue(result.output.contains("Android 12 or later"))
-        assertFalse(result.output.contains("java.lang"))
+        assertEquals(
+            "java.lang.IllegalStateException: accounts on the device",
+            result.output,
+        )
         assertFalse(result.output.contains("DPM.java"))
-        assertFalse(result.diagnostics.contains("DPM.java"))
-        assertTrue(commands.isEmpty())
+        assertEquals(dpmResult.output, result.diagnostics)
+        assertTrue(commands.any { it.first() == "dpm" })
+        assertFalse(commands.any { it.first() == "settings" })
+        assertTrue(refreshed.isEmpty())
     }
 }

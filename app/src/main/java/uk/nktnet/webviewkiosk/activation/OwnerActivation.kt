@@ -21,7 +21,7 @@ internal data class CommandResult(val code: Int, val output: String) {
  * - https://github.com/iamr0s/Dhizuku/issues/347
  *
  * Before Android 12, forceUpdateUserSetupComplete is absent or does nothing on
- * production builds. This Shizuku method therefore requires Android 12+.
+ * production builds. Only the setup-state workaround needs Android 12+.
  */
 internal class OwnerActivation(
     private val sdkInt: Int,
@@ -59,8 +59,8 @@ internal class OwnerActivation(
         }
 
         try {
-            checkActivation(sdkInt >= 31) {
-                "Shizuku activation requires Android 12 or later. Use ADB or QR Code setup."
+            checkActivation(sdkInt >= 23) {
+                "Shizuku activation requires Android 6 or later."
             }
             val mainUser =
                 if (sdkInt >= 34) {
@@ -90,18 +90,20 @@ internal class OwnerActivation(
                     "Open the app in that user and try again."
             }
 
-            val original =
-                settings("get", "secure", "user_setup_complete").requireSuccess()
-            checkActivation(original in setOf("0", "1", "null")) {
-                "Android could not read its setup state safely. Use the ADB " +
-                    "activation guide instead."
-            }
-            if (original == "1") {
-                // Restore even if a command throws after changing the setting.
-                restoreSetup = true
-                settings("put", "secure", "user_setup_complete", "0")
-                    .requireSuccess()
-                refresh()
+            if (sdkInt >= 31) {
+                val original =
+                    settings("get", "secure", "user_setup_complete").requireSuccess()
+                checkActivation(original in setOf("0", "1", "null")) {
+                    "Android could not read its setup state safely. Use the ADB " +
+                        "activation guide instead."
+                }
+                if (original == "1") {
+                    // Restore even if a command throws after changing the setting.
+                    restoreSetup = true
+                    settings("put", "secure", "user_setup_complete", "0")
+                        .requireSuccess()
+                    refresh()
+                }
             }
 
             val result =

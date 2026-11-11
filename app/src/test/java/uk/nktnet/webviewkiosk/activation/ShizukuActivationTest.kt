@@ -151,14 +151,13 @@ class ShizukuActivationTest {
 
     @Test
     @Config(sdk = [23, 30])
-    fun olderAndroidCannotStartShizukuActivation() {
+    fun android6And11CanStartShizukuActivation() {
         val result = complete(start())
-        assertFalse(result.success)
-        assertTrue(result.output.contains("Android 12 or later"))
+        assertTrue(result.success)
         assertEquals(0, access.requests)
-        assertEquals(0, access.binds)
-        assertTrue(calls.isEmpty())
-        assertFalse(
+        assertEquals(1, access.binds)
+        assertEquals(listOf(false to 0), calls)
+        assertTrue(
             app.resources.getBoolean(uk.nktnet.webviewkiosk.R.bool.shizuku_supported)
         )
         assertClean()

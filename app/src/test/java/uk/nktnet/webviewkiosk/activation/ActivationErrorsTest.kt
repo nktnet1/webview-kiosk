@@ -28,7 +28,7 @@ class ActivationErrorsTest {
     }
 
     @Test
-    fun expandedDetailsRetainExceptionFramesCausesAndSuppressedErrors() {
+    fun diagnosticsRetainExceptionFramesCausesAndSuppressedErrors() {
         val cause = IllegalStateException("Device owner does not exist")
         val failure = IllegalStateException("Activation request failed", cause)
         failure.addSuppressed(IllegalStateException("Cleanup failed"))

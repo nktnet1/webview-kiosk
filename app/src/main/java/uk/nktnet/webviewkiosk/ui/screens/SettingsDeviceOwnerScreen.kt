@@ -106,7 +106,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
         ) {
             ManagementStatusCard(deviceOwnerStatus, hasOwnerPermission, capabilities)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 ShizukuActivationSection(
                     hasNativeOwner =
                         deviceOwnerStatus.mode in
@@ -114,6 +114,8 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                                 DeviceOwnerMode.DeviceOwner,
                                 DeviceOwnerMode.ProfileOwner,
                             ),
+                    hasSharedOwner =
+                        deviceOwnerStatus.mode == DeviceOwnerMode.Dhizuku,
                     onActivated = {
                         DeviceOwnerManager.init(context)
                         hasOwnerPermission =

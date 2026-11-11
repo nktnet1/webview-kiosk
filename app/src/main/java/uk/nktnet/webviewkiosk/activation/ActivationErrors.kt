@@ -9,7 +9,7 @@ internal fun checkActivation(condition: Boolean, message: () -> String) {
     }
 }
 
-/** Keep the summary readable and preserve stacktraces for expandable details. */
+/** Keep the summary short and preserve the original exception diagnostics. */
 internal fun activationFailure(error: Throwable): ActivationResult {
     val message =
         error.message
