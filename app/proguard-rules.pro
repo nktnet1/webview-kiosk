@@ -12,9 +12,13 @@
 #   public *;
 #}
 
-# Android's dpm process supplies its stacktrace as text, so app minification
-# cannot obfuscate it. ActivationService keeps its existing @Keep annotation
-# because Shizuku instantiates the service by name.
+# Uncomment this to preserve the line number information for
+# debugging stack traces.
+#-keepattributes SourceFile,LineNumberTable
+
+# If you keep the line number information, uncomment this to
+# hide the original source file name.
+#-renamesourcefileattribute SourceFile
 
 # android-retrostreams ThreadLocalRandom extends java.util.Random. Random's
 # constructor invokes its virtual setSeed() before initialized becomes true.
