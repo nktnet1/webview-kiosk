@@ -24,13 +24,17 @@ internal const val RICH_MEDIA_SCRIPT =
       var navigationState = null;
       var changingVolume = false;
       var pendingTrack = null;
+      var requestedPlayback = null;
       var waitingMedia = new WeakSet();
       var explicitlyPaused = false;
 
       window.__wvkRichMediaExplicitAction = function (action) {
         if (action === 'pause' || action === 'stop') {
           explicitlyPaused = true;
-          pendingTrack = null;
+          if (action === 'stop') {
+            pendingTrack = null;
+            requestedPlayback = null;
+          }
           waitingMedia = new WeakSet();
         } else if (action === 'resume') explicitlyPaused = false;
       };
@@ -181,9 +185,9 @@ internal const val RICH_MEDIA_SCRIPT =
         return navigationState;
       }
       function loadingState(root, element) {
-        if (explicitlyPaused) return false;
         if (element && element.error) {
           pendingTrack = null;
+          requestedPlayback = null;
           waitingMedia.delete(element);
           return false;
         }
@@ -202,6 +206,13 @@ internal const val RICH_MEDIA_SCRIPT =
           var playable = (!loading && ready >= 3 && state !== -1) || pausedReady || cued;
           if (playable && (changed || pendingTrack.readyEvent ||
               (cued && videoIdentity(root) !== pendingTrack.videoId))) {
+            // A requested replacement may finish loading while intentionally
+            // paused/cued. A later notification Play may start this exact item.
+            var resolvedVideoId = videoIdentity(root);
+            requestedPlayback = {
+              identity: mediaIdentity.capture(element), previousVideoId: pendingTrack.videoId,
+              videoId: resolvedVideoId !== pendingTrack.videoId ? resolvedVideoId : ''
+            };
             pendingTrack = null;
             if (pausedReady || cued) {
               waitingMedia.delete(element);
@@ -212,16 +223,19 @@ internal const val RICH_MEDIA_SCRIPT =
             pendingTrack = null;
           }
         }
-        return loading || pendingTrack !== null;
+        // Continue resolving a paused track change without showing a spinner
+        // or allowing readiness events to undo the user's Pause.
+        return !explicitlyPaused && (loading || pendingTrack !== null);
       }
       function changeTrack(root, element, action) {
+        requestedPlayback = null;
         pendingTrack = {
           identity: mediaIdentity.capture(element), videoId: videoIdentity(root),
           requestedAt: Date.now(), sawLoading: false, readyEvent: false
         };
         report(true);
         try { action(); }
-        catch (ignored) { pendingTrack = null; }
+        catch (ignored) { pendingTrack = null; requestedPlayback = null; }
       }
       function snapshot() {
         var element = media();
@@ -274,6 +288,13 @@ internal const val RICH_MEDIA_SCRIPT =
           !!(element || (root && typeof root.seekTo === 'function') || handlers.seekto);
         var speed = element && element.playbackRate > 0 ? element.playbackRate : 1;
         var buffering = loadingState(root, element);
+        if (requestedPlayback && !mediaIdentity.matches(requestedPlayback.identity, element)) {
+          requestedPlayback = null;
+        } else if (requestedPlayback && !requestedPlayback.videoId && videoId &&
+                   videoId !== requestedPlayback.previousVideoId) {
+          // YouTube's video metadata can lag behind the HTML source readiness.
+          requestedPlayback.videoId = videoId;
+        }
         var changingTrack = pendingTrack !== null;
         return {
           title: String(title), artist: String(artist), artworkUrl: String(art),
@@ -345,8 +366,12 @@ internal const val RICH_MEDIA_SCRIPT =
         } else if (action === 'play') {
           window.__wvkControlMedia('resume', true);
           // The page may have paused itself on Home, rather than our pause list.
-          // Never start an unrelated, never-played video from a notification.
-          if (mediaIdentity.matches(lastPlayback, element) && element.paused && !element.ended) {
+          // Only resume previously played media or the confirmed result of an
+          // explicit track command, never an unrelated replacement.
+          var requested = requestedPlayback &&
+            mediaIdentity.matches(requestedPlayback.identity, element) &&
+            (!requestedPlayback.videoId || requestedPlayback.videoId === videoIdentity(root));
+          if ((mediaIdentity.matches(lastPlayback, element) || requested) && element.paused && !element.ended) {
             if (root && typeof root.playVideo === 'function') root.playVideo();
             else if (typeof element.play === 'function') {
               var pending = element.play();

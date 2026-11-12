@@ -602,6 +602,97 @@ test('cued and paused replacement tracks stop loading without starting playback'
   assert.deepEqual(f.commands, ['next']);
 });
 
+test('Play can resume an explicitly requested track paused while it was loading', () => {
+  const f = frame();
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  f.media.paused = true;
+  f.media.readyState = 1;
+  f.emit('loadstart');
+  f.window.__wvkControlRichMedia('pause', f.frameId, 0);
+  f.finishTrack({ playing: false });
+  assert.equal(f.snapshots.at(-1)[1].buffering, false);
+  assert.equal(f.snapshots.at(-1)[1].durationMs, 180_000);
+  assert.equal(f.media.paused, true, 'loading the requested track must not undo Pause');
+  f.window.__wvkControlRichMedia('play', f.frameId, 0);
+  assert.equal(f.media.paused, false);
+  assert.deepEqual(f.commands, ['next', 'play']);
+});
+
+test('Play can start a requested replacement that the site left cued', () => {
+  const f = frame();
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  f.player.getPlayerState = () => 5;
+  f.finishTrack({ playing: false });
+  f.window.__wvkControlRichMedia('play', f.frameId, 0);
+  assert.equal(f.media.paused, false);
+  assert.deepEqual(f.commands, ['next', 'play']);
+});
+
+test('Close cancels a track load before or after its paused replacement becomes ready', () => {
+  for (const closeBeforeReady of [true, false]) {
+    const f = frame();
+    f.window.__wvkControlRichMedia('next', f.frameId, 0);
+    f.media.paused = true;
+    f.media.readyState = 1;
+    f.emit('loadstart');
+    f.window.__wvkControlRichMedia('pause', f.frameId, 0);
+    if (closeBeforeReady) f.window.__wvkControlMedia('stop');
+    f.finishTrack({ playing: false });
+    if (!closeBeforeReady) f.window.__wvkControlMedia('stop');
+    f.window.__wvkControlRichMedia('play', f.frameId, 0);
+    assert.equal(f.media.paused, true);
+    assert.ok(!f.commands.includes('play'));
+  }
+});
+
+test('requested-track Play eligibility cannot transfer to a different source or YouTube item', () => {
+  for (const replace of [
+    (f) => { f.media.src = 'https://media.example.test/unrelated.mp4'; },
+    (f) => { f.emit('emptied'); },
+    (f) => { f.setVideoId('newnewnew12'); },
+  ]) {
+    const f = frame();
+    f.window.__wvkControlRichMedia('next', f.frameId, 0);
+    f.finishTrack({ playing: false });
+    replace(f);
+    f.window.__wvkControlRichMedia('play', f.frameId, 0);
+    assert.equal(f.media.paused, true);
+    assert.deepEqual(f.commands, ['next']);
+  }
+});
+
+test('late YouTube video metadata does not prevent Play after the requested source becomes ready', () => {
+  const f = frame();
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  f.media.paused = true;
+  f.media.readyState = 1;
+  f.emit('loadstart');
+  f.window.__wvkControlRichMedia('pause', f.frameId, 0);
+  const currentVideoData = f.player.getVideoData;
+  f.player.getVideoData = () => ({ video_id: 'abcdefghijk' });
+  f.finishTrack({ playing: false });
+  f.player.getVideoData = currentVideoData;
+  f.window.__wvkControlRichMedia('play', f.frameId, 0);
+  assert.equal(f.media.paused, false);
+  assert.deepEqual(f.commands, ['next', 'play']);
+});
+
+test('requested HTML playlist replacements can remain paused until notification Play', () => {
+  const f = frame({ host: 'music.example.test' });
+  f.mediaSession.setActionHandler('nexttrack', () => {});
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  f.media.paused = true;
+  f.media.readyState = 1;
+  f.emit('loadstart');
+  f.window.__wvkControlRichMedia('pause', f.frameId, 0);
+  f.finishTrack({ playing: false });
+  assert.equal(f.media.paused, true);
+  assert.equal(f.snapshots.at(-1)[1].buffering, false);
+  f.window.__wvkControlRichMedia('play', f.frameId, 0);
+  assert.equal(f.media.paused, false);
+  assert.deepEqual(f.commands, ['play']);
+});
+
 test('muting cannot erase known playlist navigation when YouTube temporarily clears its getters', () => {
   for (const unavailable of [null, []]) {
     const f = frame({ nextButtonEnabled: false });
