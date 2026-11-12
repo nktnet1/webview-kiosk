@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
@@ -18,8 +17,6 @@ fun AddressBarPositionSetting() {
     val settingKey = UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION
 
     DropdownSettingFieldItem(
-        label = stringResource(R.string.appearance_address_bar_position_title),
-        infoText = stringResource(R.string.setting_info_address_bar_position),
         options = AddressBarPositionOption.entries,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

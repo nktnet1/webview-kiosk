@@ -17,11 +17,6 @@ fun MqttHomeAssistantDiscoveryPrefixSetting() {
     val settingKey = UserSettingsKeys.Mqtt.HomeAssistant.DISCOVERY_PREFIX
 
     TextSettingFieldItem(
-        label = stringResource(R.string.mqtt_home_assistant_discovery_prefix_title),
-        infoText =
-            stringResource(
-                R.string.setting_info_mqtt_home_assistant_discovery_prefix
-            ),
         placeholder = stringResource(R.string.ui_homeassistant),
         initialValue = userSettings.mqttHomeAssistantDiscoveryPrefix,
         validator = HomeAssistantDiscovery::isValidPrefix,

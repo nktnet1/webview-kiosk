@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun MqttAutomaticReconnectSetting() {
@@ -17,10 +18,9 @@ fun MqttAutomaticReconnectSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.mqtt_connection_automatic_reconnect_title),
         infoText =
             stringResource(
-                R.string.setting_info_mqtt_automatic_reconnect,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
                 Constants.MQTT_AUTO_RECONNECT_INTERVAL_SECONDS,
             ),

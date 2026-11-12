@@ -12,7 +12,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -48,118 +47,6 @@ internal fun SetupNavHost(
 ) {
     KeepLegacyInsetsListenerAttached()
 
-    val settingsScreens: List<Pair<String, @Composable () -> Unit>> =
-        remember(navController) {
-            listOf(
-                Screen.Settings.route to { SettingsListScreen(navController) },
-                Screen.SettingsMoreActions.route to
-                    {
-                        SettingsMoreActionsScreen(navController)
-                    },
-                Screen.SettingsWebContent.route to
-                    {
-                        SettingsWebContentScreen(navController)
-                    },
-                Screen.SettingsWebContentFiles.route to
-                    {
-                        SettingsWebContentFilesScreen(navController)
-                    },
-                Screen.SettingsWebBrowsing.route to
-                    {
-                        SettingsWebBrowsingScreen(navController)
-                    },
-                Screen.SettingsWebBrowsingSitePermissions.route to
-                    {
-                        SettingsWebBrowsingSitePermissionsScreen(navController)
-                    },
-                Screen.SettingsWebEngine.route to
-                    {
-                        SettingsWebEngineScreen(navController)
-                    },
-                Screen.SettingsContentBlocking.route to
-                    {
-                        SettingsContentBlockingScreen(navController)
-                    },
-                Screen.SettingsWebLifecycle.route to
-                    {
-                        SettingsWebLifecycleScreen(navController)
-                    },
-                Screen.SettingsAppearance.route to
-                    {
-                        SettingsAppearanceScreen(navController)
-                    },
-                Screen.SettingsDevice.route to
-                    {
-                        SettingsDeviceScreen(navController)
-                    },
-                Screen.SettingsDeviceOwner.route to
-                    {
-                        SettingsDeviceOwnerScreen(navController)
-                    },
-                Screen.SettingsJsScript.route to
-                    {
-                        SettingsJsScriptsScreen(navController)
-                    },
-                Screen.SettingsMqtt.route to { SettingsMqttScreen(navController) },
-                Screen.SettingsMqttHomeAssistant.route to
-                    {
-                        SettingsMqttHomeAssistantScreen(navController)
-                    },
-                Screen.SettingsMqttConnection.route to
-                    {
-                        SettingsMqttConnectionScreen(navController)
-                    },
-                Screen.SettingsMqttWill.route to
-                    {
-                        SettingsMqttWillScreen(navController)
-                    },
-                Screen.SettingsMqttRestrictions.route to
-                    {
-                        SettingsMqttRestrictionsScreen(navController)
-                    },
-                Screen.SettingsMqttDebug.route to
-                    {
-                        SettingsMqttDebugScreen(navController)
-                    },
-                Screen.SettingsMqttTopics.route to
-                    {
-                        SettingsMqttTopicsScreen(navController)
-                    },
-                Screen.SettingsMqttTopicsPublishEvent.route to
-                    {
-                        SettingsMqttTopicsPublishEventScreen(navController)
-                    },
-                Screen.SettingsMqttTopicsPublishResponse.route to
-                    {
-                        SettingsMqttTopicsPublishResponseScreen(navController)
-                    },
-                Screen.SettingsMqttTopicsSubscribeCommand.route to
-                    {
-                        SettingsMqttTopicsSubscribeCommandScreen(navController)
-                    },
-                Screen.SettingsMqttTopicsSubscribeSettings.route to
-                    {
-                        SettingsMqttTopicsSubscribeSettingsScreen(navController)
-                    },
-                Screen.SettingsMqttTopicsSubscribeRequest.route to
-                    {
-                        SettingsMqttTopicsSubscribeRequestScreen(navController)
-                    },
-                Screen.SettingsUnifiedPush.route to
-                    {
-                        SettingsUnifiedPushScreen(navController)
-                    },
-                Screen.SettingsUnifiedPushDebug.route to
-                    {
-                        SettingsUnifiedPushDebugScreen(navController)
-                    },
-                Screen.SettingsAbout.route to
-                    {
-                        SettingsAboutScreen(navController)
-                    },
-            )
-        }
-
     // Preserve the graph across recomposition and when the NavHost temporarily
     // leaves
     // composition (for example while a shared file is being imported). Replacing the
@@ -181,22 +68,24 @@ internal fun SetupNavHost(
                         startDestination = Screen.Settings.route,
                         route = "settings_list",
                     ) {
-                        for ((route, content) in settingsScreens) {
-                            authComposable(route, navController) { entry ->
-                                val targetRes by
+                        for (page in settingsPages) {
+                            authComposable(page.route, navController) { entry ->
+                                val targetId by
                                     entry.savedStateHandle
-                                        .getStateFlow<Int?>(
+                                        .getStateFlow<String?>(
                                             SETTINGS_SEARCH_TARGET_KEY,
                                             null,
                                         )
                                         .collectAsState()
                                 CompositionLocalProvider(
                                     LocalSettingsSearchTarget provides
-                                        targetRes?.let { res ->
+                                        targetId?.let { id ->
                                             SettingsSearchTarget(
-                                                label = stringResource(res),
+                                                id = id,
                                                 onConsumed = {
-                                                    entry.savedStateHandle.set<Int?>(
+                                                    entry.savedStateHandle.set<
+                                                        String?
+                                                    >(
                                                         SETTINGS_SEARCH_TARGET_KEY,
                                                         null,
                                                     )
@@ -204,7 +93,7 @@ internal fun SetupNavHost(
                                             )
                                         }
                                 ) {
-                                    content()
+                                    page.content(navController)
                                 }
                             }
                         }

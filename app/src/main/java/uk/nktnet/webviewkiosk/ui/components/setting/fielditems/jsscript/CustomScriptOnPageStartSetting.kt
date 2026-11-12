@@ -16,9 +16,6 @@ fun CustomScriptOnPageStartSetting() {
     val settingKey = UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START
 
     TextSettingFieldItem(
-        label =
-            stringResource(R.string.js_scripts_custom_script_on_page_start_title),
-        infoText = stringResource(R.string.setting_info_custom_script_on_page_start),
         placeholder =
             stringResource(
                 R.string.ui_e_g_document_body_style_backgroundcolor_green

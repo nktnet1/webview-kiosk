@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
@@ -18,8 +17,6 @@ fun SslErrorModeSetting() {
     val settingKey = UserSettingsKeys.WebEngine.SSL_ERROR_MODE
 
     DropdownSettingFieldItem(
-        label = stringResource(R.string.web_engine_ssl_error_mode_title),
-        infoText = stringResource(R.string.setting_info_ssl_error_mode),
         options = SslErrorModeOption.entries,
         initialValue = userSettings.sslErrorMode,
         settingKey = settingKey,

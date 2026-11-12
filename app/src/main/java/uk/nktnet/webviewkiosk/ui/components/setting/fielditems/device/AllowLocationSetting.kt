@@ -62,8 +62,6 @@ fun AllowLocationSetting() {
         }
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.device_allow_location_title),
-        infoText = stringResource(R.string.setting_info_allow_location),
         initialValue = userSettings.allowLocation,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

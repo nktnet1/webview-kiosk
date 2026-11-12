@@ -38,8 +38,6 @@ fun UserAgentSetting() {
     val restricted = userSettings.isRestricted(settingKey)
 
     TextSettingFieldItem(
-        label = stringResource(R.string.web_engine_user_agent_title),
-        infoText = stringResource(R.string.setting_info_user_agent),
         placeholder = stringResource(R.string.ui_leave_blank_for_system_default),
         initialValue = userSettings.userAgent,
         settingKey = settingKey,

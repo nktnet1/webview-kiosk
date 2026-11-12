@@ -35,16 +35,17 @@ import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun TextSettingFieldItem(
-    label: String,
-    infoText: String,
+    settingKey: String,
+    modifier: Modifier = Modifier,
+    label: String = stringResource(settingDefinition(settingKey).titleRes),
+    infoText: String = stringResource(settingDefinition(settingKey).descriptionRes),
     placeholder: String,
     initialValue: String,
     isMultiline: Boolean,
-    modifier: Modifier = Modifier,
-    settingKey: String,
     restricted: Boolean,
     onLongClick: ((value: String) -> Unit)? = null,
     validator: (String) -> Boolean = { true },
@@ -79,6 +80,7 @@ fun TextSettingFieldItem(
     var draftError by remember { mutableStateOf(false) }
 
     GenericSettingFieldItem(
+        settingKey = settingKey,
         label = label,
         value = value,
         restricted = restricted,

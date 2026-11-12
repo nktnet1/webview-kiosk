@@ -30,6 +30,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushVariableName
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 import uk.nktnet.webviewkiosk.utils.replaceVariables
 
 @Composable
@@ -47,10 +48,9 @@ fun UnifiedPushInstanceSetting() {
         $$"wk-${$${UnifiedPushVariableName.APP_INSTANCE_ID.name}}"
 
     TextSettingFieldItem(
-        label = stringResource(R.string.unifiedpush_instance_title),
         infoText =
             stringResource(
-                R.string.setting_info_unified_push_instance,
+                settingDefinition(settingKey).descriptionRes,
                 UnifiedPushVariableName.APP_INSTANCE_ID.name,
                 recommendedClientId,
                 INSTANCE_DEFAULT,

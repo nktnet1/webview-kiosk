@@ -2,8 +2,6 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -15,8 +13,6 @@ fun DisplayZoomControlsSetting() {
     val settingKey = UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.web_engine_display_zoom_controls_title),
-        infoText = stringResource(R.string.setting_info_display_zoom_controls),
         initialValue = userSettings.displayZoomControls,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

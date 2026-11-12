@@ -25,8 +25,6 @@ fun BrightnessSetting() {
     val restricted = userSettings.isRestricted(settingKey)
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.device_brightness_title),
-        infoText = stringResource(R.string.setting_info_brightness),
         initialValue = userSettings.brightness,
         settingKey = settingKey,
         restricted = restricted,

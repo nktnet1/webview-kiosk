@@ -30,6 +30,7 @@ import uk.nktnet.webviewkiosk.ui.theme.warning
 
 @Composable
 fun <T> GenericSettingFieldItem(
+    settingKey: String?,
     label: String,
     value: T,
     onClick: () -> Unit,
@@ -43,7 +44,7 @@ fun <T> GenericSettingFieldItem(
     Column(
         modifier =
             Modifier.fillMaxWidth()
-                .bringSearchSettingIntoView(label)
+                .bringSearchSettingIntoView(settingKey)
                 .combinedClickable(
                     onClick = { onClick() },
                     onLongClick = {

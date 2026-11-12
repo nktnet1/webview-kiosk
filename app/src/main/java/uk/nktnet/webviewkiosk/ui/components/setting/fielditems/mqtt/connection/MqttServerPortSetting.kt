@@ -38,8 +38,6 @@ fun MqttServerPortSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Connection.SERVER_PORT
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.mqtt_connection_server_port_title),
-        infoText = stringResource(R.string.setting_info_mqtt_server_port),
         initialValue = userSettings.mqttServerPort,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

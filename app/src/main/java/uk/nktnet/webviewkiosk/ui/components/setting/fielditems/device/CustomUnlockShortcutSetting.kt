@@ -90,8 +90,6 @@ fun CustomUnlockShortcutSetting() {
     }
 
     CustomSettingFieldItem(
-        label = stringResource(R.string.device_custom_unlock_shortcut_title),
-        infoText = stringResource(R.string.setting_info_custom_unlock_shortcut),
         value = currentValue,
         settingKey = settingKey,
         restricted = restricted,

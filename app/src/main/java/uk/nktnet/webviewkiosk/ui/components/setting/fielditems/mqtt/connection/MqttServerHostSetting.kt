@@ -16,8 +16,6 @@ fun MqttServerHostSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Connection.SERVER_HOST
 
     TextSettingFieldItem(
-        label = stringResource(R.string.mqtt_connection_server_host_title),
-        infoText = stringResource(R.string.setting_info_mqtt_server_host),
         placeholder = stringResource(R.string.ui_e_g_broker_example_com),
         initialValue = userSettings.mqttServerHost,
         settingKey = settingKey,

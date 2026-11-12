@@ -3,8 +3,6 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -17,8 +15,6 @@ fun BlockScreenCaptureSetting() {
     val settingKey = UserSettingsKeys.Device.BLOCK_SCREEN_CAPTURE
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.device_block_screen_capture_title),
-        infoText = stringResource(R.string.setting_info_block_screen_capture),
         initialValue = userSettings.blockScreenCapture,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

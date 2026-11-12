@@ -34,6 +34,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 import uk.nktnet.webviewkiosk.utils.requestFocusWhenPlaced
 
@@ -63,10 +64,9 @@ fun CustomAuthPasswordSetting() {
     val blankCredentialsLabel = stringResource(R.string.ui_blank_device_credentials)
 
     TextSettingFieldItem(
-        label = stringResource(R.string.device_custom_auth_password_title),
         infoText =
             stringResource(
-                R.string.setting_info_custom_auth_password,
+                settingDefinition(settingKey).descriptionRes,
                 Constants.DOCUMENTATION_URL,
             ),
         placeholder = stringResource(R.string.ui_blank_device_credentials),

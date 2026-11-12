@@ -17,9 +17,6 @@ fun MqttWillMessageExpiryIntervalSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.mqtt_will_message_expiry_interval_title),
-        infoText =
-            stringResource(R.string.setting_info_mqtt_will_message_expiry_interval),
         placeholder = stringResource(R.string.ui_e_g_0),
         initialValue = userSettings.mqttWillMessageExpiryInterval,
         settingKey = settingKey,
