@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun ResetOnInactivitySecondsSetting() {
@@ -17,11 +18,9 @@ fun ResetOnInactivitySecondsSetting() {
     val settingKey = UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS
 
     NumberSettingFieldItem(
-        label =
-            stringResource(R.string.web_lifecycle_reset_on_inactivity_seconds_title),
         infoText =
             stringResource(
-                R.string.setting_info_reset_on_inactivity_seconds,
+                settingDefinition(settingKey).descriptionRes,
                 Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,
             ),
         placeholder = stringResource(R.string.ui_e_g_3600_for_1_hour),

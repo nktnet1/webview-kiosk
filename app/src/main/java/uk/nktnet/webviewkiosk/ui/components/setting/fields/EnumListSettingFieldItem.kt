@@ -34,16 +34,17 @@ import androidx.compose.ui.unit.dp
 import org.json.JSONArray
 import sh.calvin.reorderable.ReorderableColumn
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun <T : Enum<T>> EnumListSettingFieldItem(
-    label: String,
-    infoText: String,
+    settingKey: String,
+    label: String = stringResource(settingDefinition(settingKey).titleRes),
+    infoText: String = stringResource(settingDefinition(settingKey).descriptionRes),
     entries: List<T>,
     getLabel: @Composable (T) -> String,
     getDefault: () -> List<T>,
     initialValue: List<T>,
-    settingKey: String,
     restricted: Boolean,
     onSave: (List<T>) -> Unit,
 ) {

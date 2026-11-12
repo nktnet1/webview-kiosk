@@ -16,11 +16,6 @@ fun MqttRestrictionsTopicAliasMaximumSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Restrictions.TOPIC_ALIAS_MAXIMUM
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.mqtt_restrictions_topic_alias_maximum_title),
-        infoText =
-            stringResource(
-                R.string.setting_info_mqtt_restrictions_topic_alias_maximum
-            ),
         placeholder = stringResource(R.string.ui_e_g_0),
         initialValue = userSettings.mqttRestrictionsTopicAliasMaximum,
         settingKey = settingKey,

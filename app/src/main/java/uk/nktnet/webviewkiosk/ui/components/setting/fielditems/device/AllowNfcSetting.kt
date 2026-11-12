@@ -66,8 +66,6 @@ fun AllowNfcSetting() {
     }
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.device_allow_nfc_title),
-        infoText = stringResource(R.string.setting_info_allow_nfc),
         initialValue = userSettings.allowNfc,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

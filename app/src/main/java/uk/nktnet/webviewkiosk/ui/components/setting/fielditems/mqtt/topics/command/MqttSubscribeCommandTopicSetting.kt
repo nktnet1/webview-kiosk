@@ -10,6 +10,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
 import uk.nktnet.webviewkiosk.managers.MqttManager.mqttVariableReplacement
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
 
 @Composable
@@ -19,10 +20,9 @@ fun MqttSubscribeCommandTopicSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC
 
     TextSettingFieldItem(
-        label = stringResource(R.string.mqtt_subscribe_command_topic_title),
         infoText =
             stringResource(
-                R.string.setting_info_mqtt_subscribe_command_topic,
+                settingDefinition(settingKey).descriptionRes,
                 MqttVariableName.APP_INSTANCE_ID.name,
                 MqttVariableName.USERNAME.name,
             ),

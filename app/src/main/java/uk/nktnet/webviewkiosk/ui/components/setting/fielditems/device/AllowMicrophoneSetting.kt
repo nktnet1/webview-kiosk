@@ -28,8 +28,6 @@ fun AllowMicrophoneSetting() {
         rememberPermissionState(Manifest.permission.RECORD_AUDIO)
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.device_allow_microphone_title),
-        infoText = stringResource(R.string.setting_info_allow_microphone),
         initialValue = userSettings.allowMicrophone,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

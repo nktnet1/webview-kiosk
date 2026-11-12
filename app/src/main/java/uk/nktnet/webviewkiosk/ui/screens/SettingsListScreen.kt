@@ -30,11 +30,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -47,7 +49,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingsHeaderMenu
@@ -59,66 +60,15 @@ fun SettingsListScreen(navController: NavController) {
     var query by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
     LaunchedEffect(query) { listState.scrollToItem(0) }
+    val configuration = LocalConfiguration.current
+    val searchIndex =
+        remember(context, configuration) { SettingsSearchIndex(context) }
     val results =
         if (query.isBlank()) {
             emptyList()
         } else {
-            searchSettings(context, query)
+            searchIndex.search(query)
         }
-
-    val settingsItems =
-        listOf(
-            Triple(
-                stringResource(R.string.settings_web_content_title),
-                stringResource(R.string.settings_web_content_description),
-                Screen.SettingsWebContent.route,
-            ),
-            Triple(
-                stringResource(R.string.settings_web_browsing_title),
-                stringResource(R.string.settings_web_browsing_description),
-                Screen.SettingsWebBrowsing.route,
-            ),
-            Triple(
-                stringResource(R.string.settings_web_engine_title),
-                stringResource(R.string.settings_web_engine_description),
-                Screen.SettingsWebEngine.route,
-            ),
-            Triple(
-                stringResource(R.string.settings_web_lifecycle_title),
-                stringResource(R.string.settings_web_lifecycle_description),
-                Screen.SettingsWebLifecycle.route,
-            ),
-            Triple(
-                stringResource(R.string.settings_appearance_title),
-                stringResource(R.string.settings_appearance_description),
-                Screen.SettingsAppearance.route,
-            ),
-            Triple(
-                stringResource(R.string.settings_device_title),
-                stringResource(R.string.settings_device_description),
-                Screen.SettingsDevice.route,
-            ),
-            Triple(
-                stringResource(R.string.settings_js_scripts_title),
-                stringResource(R.string.settings_js_scripts_description),
-                Screen.SettingsJsScript.route,
-            ),
-            Triple(
-                stringResource(R.string.settings_mqtt_title),
-                stringResource(R.string.settings_mqtt_description),
-                Screen.SettingsMqtt.route,
-            ),
-            Triple(
-                stringResource(R.string.settings_unifiedpush_title),
-                stringResource(R.string.settings_unifiedpush_description),
-                Screen.SettingsUnifiedPush.route,
-            ),
-            Triple(
-                stringResource(R.string.settings_about_title),
-                stringResource(R.string.settings_about_description),
-                Screen.SettingsAbout.route,
-            ),
-        )
 
     Column(
         modifier =
@@ -151,12 +101,15 @@ fun SettingsListScreen(navController: NavController) {
                 ),
         ) {
             if (query.isBlank()) {
-                items(settingsItems, key = { it.third }) {
-                    (title, description, route) ->
+                items(settingsPages.filter { it.showOnHome }, key = { it.route }) {
+                    page ->
                     SettingListItem(
-                        title = title,
-                        description = description,
-                        onClick = { navController.navigate(route) },
+                        title = stringResource(page.titleRes),
+                        description =
+                            page.descriptionRes
+                                ?.let { stringResource(it) }
+                                .orEmpty(),
+                        onClick = { navController.navigate(page.route) },
                     )
                 }
             } else if (results.isEmpty()) {
@@ -200,7 +153,7 @@ fun SettingsListScreen(navController: NavController) {
                     }
                     items(
                         matches,
-                        key = { "${it.route}:${it.targetRes ?: "section"}" },
+                        key = { "${it.route}:${it.targetId ?: "page"}" },
                     ) { result ->
                         SettingsSearchResultRow(result) {
                             keyboard?.hide()
@@ -279,11 +232,12 @@ private fun SettingsSearchResultRow(
     result: SettingsSearchResult,
     onClick: () -> Unit,
 ) {
-    val (iconRes, iconDescriptionRes) =
+    val icon =
         when (result.kind) {
-            SettingsSearchResultKind.SETTING ->
-                R.drawable.baseline_settings_24 to
-                    R.string.settings_search_result_setting
+            SettingsSearchResultKind.SETTING -> null
+            SettingsSearchResultKind.PAGE ->
+                R.drawable.baseline_arrow_forward_24 to
+                    R.string.settings_search_result_page
             SettingsSearchResultKind.INFORMATION ->
                 R.drawable.baseline_info_24 to
                     R.string.settings_search_result_information
@@ -299,12 +253,14 @@ private fun SettingsSearchResultRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Icon(
-            painter = painterResource(iconRes),
-            contentDescription = stringResource(iconDescriptionRes),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(24.dp),
-        )
+        icon?.let { (iconRes, descriptionRes) ->
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = stringResource(descriptionRes),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp),
+            )
+        }
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -313,7 +269,7 @@ private fun SettingsSearchResultRow(
                 text = stringResource(result.titleRes),
                 style = MaterialTheme.typography.bodyLarge,
             )
-            val subtitle = result.settingKey
+            val subtitle = result.settingKey.takeIf { result.showKey }
             if (subtitle != null) {
                 Text(
                     text = subtitle,

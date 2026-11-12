@@ -5,6 +5,7 @@ import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.WebStorage
 import android.webkit.WebView
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -119,13 +120,13 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
-                    stringResource(R.string.settings_more_action_app_info),
+                    R.string.settings_more_action_app_info,
                     modifier = Modifier.weight(1f),
                 ) {
                     openAppDetailsSettings(context)
                 }
                 ActionButton(
-                    stringResource(R.string.settings_more_action_device_settings),
+                    R.string.settings_more_action_device_settings,
                     modifier = Modifier.weight(1f),
                 ) {
                     openSettings(context)
@@ -137,13 +138,13 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
-                    stringResource(R.string.settings_more_action_default_launcher),
+                    R.string.settings_more_action_default_launcher,
                     modifier = Modifier.weight(1f),
                 ) {
                     openDefaultLauncherSettings(context)
                 }
                 ActionButton(
-                    stringResource(R.string.settings_more_action_default_apps),
+                    R.string.settings_more_action_default_apps,
                     modifier = Modifier.weight(1f),
                 ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -167,13 +168,13 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
-                    stringResource(R.string.settings_more_action_wifi_settings),
+                    R.string.settings_more_action_wifi_settings,
                     modifier = Modifier.weight(1f),
                 ) {
                     openWifiSettings(context)
                 }
                 ActionButton(
-                    stringResource(R.string.settings_more_action_data_usage),
+                    R.string.settings_more_action_data_usage,
                     modifier = Modifier.weight(1f),
                 ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -202,13 +203,13 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
-                    stringResource(R.string.settings_more_action_create_shortcut),
+                    R.string.settings_more_action_create_shortcut,
                     modifier = Modifier.weight(1f),
                 ) {
                     showCreateShortcutDialog = true
                 }
                 ActionButton(
-                    stringResource(R.string.settings_more_action_app_launcher),
+                    R.string.settings_more_action_app_launcher,
                     modifier = Modifier.weight(1f),
                 ) {
                     showAppLauncherDialog = true
@@ -224,13 +225,13 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
-                    stringResource(R.string.settings_more_action_local_files),
+                    R.string.settings_more_action_local_files,
                     modifier = Modifier.weight(1f),
                 ) {
                     navController.navigate(Screen.SettingsWebContentFiles.route)
                 }
                 ActionButton(
-                    stringResource(R.string.settings_more_action_content_blocking),
+                    R.string.settings_more_action_content_blocking,
                     modifier = Modifier.weight(1f),
                 ) {
                     navController.navigate(Screen.SettingsContentBlocking.route)
@@ -241,7 +242,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
-                    stringResource(R.string.settings_more_action_site_permissions),
+                    R.string.settings_more_action_site_permissions,
                     modifier = Modifier.weight(1f),
                 ) {
                     navController.navigate(
@@ -249,7 +250,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                     )
                 }
                 ActionButton(
-                    stringResource(R.string.settings_more_action_device_owner),
+                    R.string.settings_more_action_device_owner,
                     modifier = Modifier.weight(1f),
                 ) {
                     navController.navigate(Screen.SettingsDeviceOwner.route)
@@ -265,7 +266,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
-                    stringResource(R.string.settings_more_action_clear_cookies),
+                    R.string.settings_more_action_clear_cookies,
                     modifier = Modifier.weight(1f),
                 ) {
                     CookieManager.getInstance().removeAllCookies(null)
@@ -278,7 +279,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                     )
                 }
                 ActionButton(
-                    stringResource(R.string.settings_more_action_clear_cache),
+                    R.string.settings_more_action_clear_cache,
                     modifier = Modifier.weight(1f),
                 ) {
                     webView.clearCache(true)
@@ -296,7 +297,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
-                    stringResource(R.string.settings_more_action_clear_form_data),
+                    R.string.settings_more_action_clear_form_data,
                     modifier = Modifier.weight(1f),
                 ) {
                     webView.clearFormData()
@@ -308,7 +309,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                     )
                 }
                 ActionButton(
-                    stringResource(R.string.settings_more_action_clear_history),
+                    R.string.settings_more_action_clear_history,
                     modifier = Modifier.weight(1f),
                 ) {
                     webView.clearHistory()
@@ -327,9 +328,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
-                    stringResource(
-                        R.string.settings_more_action_clear_ssl_preferences
-                    ),
+                    R.string.settings_more_action_clear_ssl_preferences,
                     modifier = Modifier.weight(1f),
                 ) {
                     webView.clearSslPreferences()
@@ -342,7 +341,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                     )
                 }
                 ActionButton(
-                    stringResource(R.string.settings_more_action_clear_web_storage),
+                    R.string.settings_more_action_clear_web_storage,
                     modifier = Modifier.weight(1f),
                 ) {
                     WebStorage.getInstance().deleteAllData()
@@ -376,18 +375,28 @@ fun SettingsMoreActionsScreen(navController: NavController) {
 
 @Composable
 private fun ActionButton(
-    label: String,
+    @StringRes labelRes: Int,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     color: Color = MaterialTheme.colorScheme.primary,
     onClick: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val label = stringResource(labelRes)
     Button(
         enabled = enabled,
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = color),
         modifier =
-            modifier.bringSearchSettingIntoView(label).padding(vertical = 2.dp),
+            modifier
+                .bringSearchSettingIntoView(
+                    settingsItemTargetId(
+                        context,
+                        SettingsSearchResultKind.ACTION,
+                        labelRes,
+                    )
+                )
+                .padding(vertical = 2.dp),
         contentPadding = PaddingValues(vertical = 4.dp, horizontal = 8.dp),
     ) {
         Text(label, style = MaterialTheme.typography.bodySmall)

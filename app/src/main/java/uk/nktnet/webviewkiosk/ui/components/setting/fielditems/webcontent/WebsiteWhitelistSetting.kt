@@ -17,8 +17,6 @@ fun WebsiteWhitelistSetting() {
     val settingKey = UserSettingsKeys.WebContent.WEBSITE_WHITELIST
 
     TextSettingFieldItem(
-        label = stringResource(R.string.web_content_website_whitelist_title),
-        infoText = stringResource(R.string.setting_info_website_whitelist),
         placeholder = stringResource(R.string.ui_website_whitelist_example),
         initialValue = userSettings.websiteWhitelist,
         settingKey = settingKey,

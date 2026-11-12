@@ -26,6 +26,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 import uk.nktnet.webviewkiosk.utils.PermissionState
 import uk.nktnet.webviewkiosk.utils.openAppNotificationsSettings
 import uk.nktnet.webviewkiosk.utils.rememberPermissionState
@@ -53,10 +54,9 @@ fun AllowNotificationsSetting() {
         }
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.device_allow_notifications_title),
         infoText =
             stringResource(
-                R.string.setting_info_allow_notifications,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
             ),
         initialValue = userSettings.allowNotifications,

@@ -2,8 +2,6 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.loc
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
@@ -16,12 +14,6 @@ fun LockTaskFeatureGlobalActionsSetting(disabledReason: String?) {
     val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS
 
     BooleanSettingFieldItem(
-        label =
-            stringResource(
-                R.string.device_owner_lock_task_feature_global_actions_title
-            ),
-        infoText =
-            stringResource(R.string.setting_info_lock_task_feature_global_actions),
         initialValue = userSettings.lockTaskFeatureGlobalActions,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

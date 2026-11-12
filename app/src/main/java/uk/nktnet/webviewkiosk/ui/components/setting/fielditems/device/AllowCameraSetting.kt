@@ -28,8 +28,6 @@ fun AllowCameraSetting() {
         rememberPermissionState(Manifest.permission.CAMERA)
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.device_allow_camera_title),
-        infoText = stringResource(R.string.setting_info_allow_camera),
         initialValue = userSettings.allowCamera,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

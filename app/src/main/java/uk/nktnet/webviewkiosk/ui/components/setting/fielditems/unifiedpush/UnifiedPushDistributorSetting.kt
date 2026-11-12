@@ -21,6 +21,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.UnifiedPushSelectorDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 import uk.nktnet.webviewkiosk.utils.isPackageInstalled
 
 @Composable
@@ -33,10 +34,9 @@ fun UnifiedPushDistributorSetting() {
     var showSelectDialog by remember { mutableStateOf(false) }
 
     TextSettingFieldItem(
-        label = stringResource(R.string.unifiedpush_distributor_title),
         infoText =
             stringResource(
-                R.string.setting_info_unified_push_distributor,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
             ),
         placeholder = stringResource(R.string.ui_e_g_io_heckel_ntfy),

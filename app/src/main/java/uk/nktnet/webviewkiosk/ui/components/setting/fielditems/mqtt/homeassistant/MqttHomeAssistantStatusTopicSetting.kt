@@ -17,9 +17,6 @@ fun MqttHomeAssistantStatusTopicSetting() {
     val settingKey = UserSettingsKeys.Mqtt.HomeAssistant.STATUS_TOPIC
 
     TextSettingFieldItem(
-        label = stringResource(R.string.mqtt_home_assistant_status_topic_title),
-        infoText =
-            stringResource(R.string.setting_info_mqtt_home_assistant_status_topic),
         placeholder = stringResource(R.string.ui_homeassistant_status),
         initialValue = userSettings.mqttHomeAssistantStatusTopic,
         validator = ::isValidMqttPublishTopic,

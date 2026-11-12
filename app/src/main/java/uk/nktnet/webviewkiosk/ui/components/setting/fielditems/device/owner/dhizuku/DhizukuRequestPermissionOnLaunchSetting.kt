@@ -7,6 +7,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun DhizukuRequestPermissionOnLaunchSetting() {
@@ -16,10 +17,9 @@ fun DhizukuRequestPermissionOnLaunchSetting() {
         UserSettingsKeys.Device.Owner.Dhizuku.REQUEST_PERMISSION_ON_LAUNCH
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.ui_request_permission_on_launch),
         infoText =
             stringResource(
-                R.string.setting_info_dhizuku_request_permission_on_launch,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
             ),
         initialValue = userSettings.dhizukuRequestPermissionOnLaunch,

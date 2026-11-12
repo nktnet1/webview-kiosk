@@ -3,13 +3,14 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fields
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun BooleanSettingFieldItem(
-    label: String,
-    infoText: String,
-    initialValue: Boolean,
     settingKey: String,
+    label: String = stringResource(settingDefinition(settingKey).titleRes),
+    infoText: String = stringResource(settingDefinition(settingKey).descriptionRes),
+    initialValue: Boolean,
     restricted: Boolean,
     onSave: (Boolean) -> Unit,
     disabledReason: String? = null,

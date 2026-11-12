@@ -10,6 +10,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
 import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun UnlockAuthRequirementSetting() {
@@ -18,10 +19,9 @@ fun UnlockAuthRequirementSetting() {
     val settingKey = UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT
 
     DropdownSettingFieldItem(
-        label = stringResource(R.string.device_unlock_auth_requirement_title),
         infoText =
             stringResource(
-                R.string.setting_info_unlock_auth_requirement,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
             ),
         options = UnlockAuthRequirementOption.entries,

@@ -4,10 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun AllowLinkLongPressContextMenuSetting() {
@@ -16,13 +16,9 @@ fun AllowLinkLongPressContextMenuSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU
 
     BooleanSettingFieldItem(
-        label =
-            stringResource(
-                R.string.web_browsing_allow_link_long_press_context_menu_title
-            ),
         infoText =
             stringResource(
-                R.string.setting_info_allow_link_long_press_context_menu,
+                settingDefinition(settingKey).descriptionRes,
                 UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD,
             ),
         initialValue = userSettings.allowLinkLongPressContextMenu,

@@ -10,6 +10,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.MqttRetainHandlingOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
 import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun MqttSubscribeSettingsRetainHandlingSetting() {
@@ -18,11 +19,9 @@ fun MqttSubscribeSettingsRetainHandlingSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING
 
     DropdownSettingFieldItem(
-        label =
-            stringResource(R.string.mqtt_subscribe_settings_retain_handling_title),
         infoText =
             stringResource(
-                R.string.setting_info_mqtt_subscribe_settings_retain_handling,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
             ),
         options = MqttRetainHandlingOption.entries,

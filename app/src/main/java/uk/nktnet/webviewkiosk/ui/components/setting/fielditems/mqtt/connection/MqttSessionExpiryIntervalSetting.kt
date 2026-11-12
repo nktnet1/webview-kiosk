@@ -17,10 +17,6 @@ fun MqttSessionExpiryIntervalSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Connection.SESSION_EXPIRY_INTERVAL
 
     NumberSettingFieldItem(
-        label =
-            stringResource(R.string.mqtt_connection_session_expiry_interval_title),
-        infoText =
-            stringResource(R.string.setting_info_mqtt_session_expiry_interval),
         placeholder = stringResource(R.string.ui_e_g_60),
         initialValue = userSettings.mqttSessionExpiryInterval,
         settingKey = settingKey,

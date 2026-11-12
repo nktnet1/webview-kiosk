@@ -2,8 +2,6 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -15,14 +13,6 @@ fun MediaPlaybackRequiresUserGestureSetting() {
     val settingKey = UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE
 
     BooleanSettingFieldItem(
-        label =
-            stringResource(
-                R.string.web_engine_media_playback_requires_user_gesture_title
-            ),
-        infoText =
-            stringResource(
-                R.string.setting_info_media_playback_requires_user_gesture
-            ),
         initialValue = userSettings.mediaPlaybackRequiresUserGesture,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

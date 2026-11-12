@@ -16,9 +16,6 @@ fun MqttRestrictionsReceiveMaximumSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Restrictions.RECEIVE_MAXIMUM
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.mqtt_restrictions_receive_maximum_title),
-        infoText =
-            stringResource(R.string.setting_info_mqtt_restrictions_receive_maximum),
         placeholder = stringResource(R.string.ui_e_g_16),
         initialValue = userSettings.mqttRestrictionsReceiveMaximum,
         settingKey = settingKey,

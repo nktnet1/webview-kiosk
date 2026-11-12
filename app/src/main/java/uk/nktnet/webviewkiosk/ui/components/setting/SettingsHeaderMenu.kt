@@ -12,6 +12,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +29,8 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
+import uk.nktnet.webviewkiosk.ui.screens.SettingsSearchResultKind
+import uk.nktnet.webviewkiosk.ui.screens.settingsItemTargetId
 import uk.nktnet.webviewkiosk.utils.openDefaultLauncherSettings
 import uk.nktnet.webviewkiosk.utils.openSettings
 import uk.nktnet.webviewkiosk.utils.safeStartActivity
@@ -41,6 +44,43 @@ fun SettingsHeaderMenu(navController: NavController) {
     var showMenu by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
+
+    fun openHelp() {
+        safeStartActivity(
+            context,
+            Intent(Intent.ACTION_VIEW, Constants.DOCUMENTATION_URL.toUri()),
+        )
+    }
+
+    val searchTarget = LocalSettingsSearchTarget.current
+    LaunchedEffect(searchTarget?.id) {
+        when (searchTarget?.id) {
+            settingsItemTargetId(
+                context,
+                SettingsSearchResultKind.ACTION,
+                R.string.ui_import,
+            ) -> {
+                showImportDialog = true
+                searchTarget.onConsumed()
+            }
+            settingsItemTargetId(
+                context,
+                SettingsSearchResultKind.ACTION,
+                R.string.ui_export,
+            ) -> {
+                showExportDialog = true
+                searchTarget.onConsumed()
+            }
+            settingsItemTargetId(
+                context,
+                SettingsSearchResultKind.ACTION,
+                R.string.ui_help,
+            ) -> {
+                openHelp()
+                searchTarget.onConsumed()
+            }
+        }
+    }
 
     ImportSettingsDialog(
         showDialog = showImportDialog,
@@ -171,12 +211,7 @@ fun SettingsHeaderMenu(navController: NavController) {
                             },
                             onClick = {
                                 showMenu = false
-                                val intent =
-                                    Intent(
-                                        Intent.ACTION_VIEW,
-                                        Constants.DOCUMENTATION_URL.toUri(),
-                                    )
-                                safeStartActivity(context, intent)
+                                openHelp()
                             },
                             leadingIcon = {
                                 Icon(

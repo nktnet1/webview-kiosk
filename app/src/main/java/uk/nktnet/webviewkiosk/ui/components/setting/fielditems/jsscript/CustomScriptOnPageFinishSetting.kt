@@ -16,10 +16,6 @@ fun CustomScriptOnPageFinishSetting() {
     val settingKey = UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH
 
     TextSettingFieldItem(
-        label =
-            stringResource(R.string.js_scripts_custom_script_on_page_finish_title),
-        infoText =
-            stringResource(R.string.setting_info_custom_script_on_page_finish),
         placeholder =
             stringResource(
                 R.string.ui_e_g_document_body_style_backgroundcolor_green

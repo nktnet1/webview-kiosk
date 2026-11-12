@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.OverScrollModeOption
@@ -18,8 +17,6 @@ fun OverScrollModeSetting() {
     val settingKey = UserSettingsKeys.WebEngine.OVER_SCROLL_MODE
 
     DropdownSettingFieldItem(
-        label = stringResource(R.string.web_engine_over_scroll_mode_title),
-        infoText = stringResource(R.string.setting_info_over_scroll_mode),
         options = OverScrollModeOption.entries,
         initialValue = userSettings.overScrollMode,
         settingKey = settingKey,

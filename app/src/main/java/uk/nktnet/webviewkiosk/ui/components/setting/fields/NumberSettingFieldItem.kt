@@ -21,14 +21,15 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun NumberSettingFieldItem(
-    label: String,
-    infoText: String,
+    settingKey: String,
+    label: String = stringResource(settingDefinition(settingKey).titleRes),
+    infoText: String = stringResource(settingDefinition(settingKey).descriptionRes),
     placeholder: String,
     initialValue: Int,
-    settingKey: String,
     restricted: Boolean,
     min: Int? = null,
     max: Int? = null,
@@ -61,6 +62,7 @@ fun NumberSettingFieldItem(
     }
 
     GenericSettingFieldItem(
+        settingKey = settingKey,
         label = label,
         value = value.toString(),
         restricted = restricted,

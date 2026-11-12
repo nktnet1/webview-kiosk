@@ -12,6 +12,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 
@@ -19,7 +20,7 @@ internal const val SETTINGS_SEARCH_FLASH_DELAY_MS = 1_000L
 private const val SETTINGS_SEARCH_FLASH_ALPHA = 0.10f
 
 /** A one-shot request consumed once the destination has scrolled and flashed. */
-data class SettingsSearchTarget(val label: String, val onConsumed: () -> Unit)
+data class SettingsSearchTarget(val id: String, val onConsumed: () -> Unit)
 
 val LocalSettingsSearchTarget = compositionLocalOf<SettingsSearchTarget?> { null }
 
@@ -27,9 +28,9 @@ val LocalSettingsSearchTarget = compositionLocalOf<SettingsSearchTarget?> { null
  * Scroll to the actual rendered row, then briefly flash it and clear the request.
  */
 @Composable
-fun Modifier.bringSearchSettingIntoView(label: String): Modifier {
+fun Modifier.bringSearchSettingIntoView(id: String?): Modifier {
     val target = LocalSettingsSearchTarget.current
-    val isTarget = target?.label == label
+    val isTarget = target != null && target.id == id
     val requester = remember { BringIntoViewRequester() }
     val flashAlpha = remember { Animatable(0f) }
 
@@ -48,7 +49,14 @@ fun Modifier.bringSearchSettingIntoView(label: String): Modifier {
         }
     }
 
-    return this.bringIntoViewRequester(requester)
+    return this.then(
+            if (id != null) {
+                Modifier.testTag("settings_target:$id")
+            } else {
+                Modifier
+            }
+        )
+        .bringIntoViewRequester(requester)
         .background(
             MaterialTheme.colorScheme.onSurface.copy(alpha = flashAlpha.value)
         )
