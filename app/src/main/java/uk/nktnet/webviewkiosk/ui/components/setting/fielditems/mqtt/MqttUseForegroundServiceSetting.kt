@@ -7,6 +7,7 @@ import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.ui.components.setting.ForegroundServiceNotificationPermissionContent
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.initMqttForegroundService
 
@@ -35,6 +36,13 @@ fun MqttUseForegroundServiceSetting() {
                     userSettings.mqttEnabled && isEnabled,
                 )
             }
+        },
+        extraContentForValue = { enabled ->
+            ForegroundServiceNotificationPermissionContent(
+                serviceEnabled = enabled,
+                warningResId =
+                    R.string.ui_mqtt_foreground_notification_permission_warning,
+            )
         },
     )
 }
