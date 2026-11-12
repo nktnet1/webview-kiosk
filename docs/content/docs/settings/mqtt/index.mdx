@@ -137,10 +137,8 @@ This will maintain the connection even when {APP_NAME} goes to the background
 [PowerManager.PARTIAL_WAKE_LOCK](https://developer.android.com/reference/android/os/PowerManager.html#PARTIAL_WAKE_LOCK)).
 
 Grant Android notification permission to see the MQTT status notification
-updated by the foreground service every second. The setting provides a
-permission button and warns when notifications are unavailable. This is
-independent of **Device → Allow Notifications**, which controls app-generated
-alerts; turning that preference off does not disable the foreground service.
+updated by the foreground service every second. This is independent from the
+**Device → Allow Notifications** setting which controls app-generated alerts.
 
 Also, it is highly recommended that you disable battery optimisation for
 {APP_NAME} to stop the service from being killed.
