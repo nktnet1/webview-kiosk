@@ -19,9 +19,15 @@ internal data class MediaPlaybackInfo(
     val canPrevious: Boolean = false,
     val canNext: Boolean = false,
     val canSeek: Boolean = false,
+    val canMute: Boolean = false,
+    val muted: Boolean = false,
     val canChangeSpeed: Boolean = false,
     val speed: Float = 1f,
 ) {
+    /** Previous can restart a seekable item even without a previous track. */
+    val canPreviousOrRestart: Boolean
+        get() = canPrevious || (canSeek && positionMs > 0)
+
     /** Do not repaint the notification for each progress tick. */
     fun presentationChanged(other: MediaPlaybackInfo): Boolean =
         title != other.title ||
@@ -29,8 +35,11 @@ internal data class MediaPlaybackInfo(
             artworkUrl != other.artworkUrl ||
             durationMs != other.durationMs ||
             canPrevious != other.canPrevious ||
+            canPreviousOrRestart != other.canPreviousOrRestart ||
             canNext != other.canNext ||
             canSeek != other.canSeek ||
+            canMute != other.canMute ||
+            muted != other.muted ||
             canChangeSpeed != other.canChangeSpeed ||
             speed != other.speed
 
@@ -85,6 +94,8 @@ internal data class MediaPlaybackInfo(
                     canPrevious = flag("canPrevious"),
                     canNext = flag("canNext"),
                     canSeek = flag("canSeek") && duration > 0,
+                    canMute = flag("canMute"),
+                    muted = flag("muted"),
                     canChangeSpeed = flag("canChangeSpeed"),
                     speed = rate,
                 )

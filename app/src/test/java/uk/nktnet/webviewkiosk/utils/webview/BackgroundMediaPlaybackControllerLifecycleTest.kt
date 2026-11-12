@@ -29,6 +29,57 @@ import uk.nktnet.webviewkiosk.states.LockStateSingleton
 @LooperMode(LooperMode.Mode.PAUSED)
 class BackgroundMediaPlaybackControllerLifecycleTest {
     @Test
+    fun nativeCommandsAllowRestartAndMuteOnlyForSupportedPlayers() {
+        val webView = WebView(RuntimeEnvironment.getApplication())
+        val controller = BackgroundMediaPlaybackController(webView, { true }, {})
+        try {
+            field(controller, "serviceRequested").setBoolean(controller, true)
+            field(controller, "activeFrameId").set(controller, "active-player")
+            val command =
+                controller.javaClass
+                    .getDeclaredMethod(
+                        "sendMediaCommand",
+                        String::class.java,
+                        Long::class.javaPrimitiveType,
+                    )
+                    .apply { isAccessible = true }
+            val start =
+                MediaPlaybackInfo(
+                    durationMs = 60_000,
+                    positionMs = 0,
+                    canSeek = true,
+                )
+            field(controller, "currentMediaInfo").set(controller, start)
+            command.invoke(controller, "previous", 0L)
+            command.invoke(controller, "mute", 0L)
+            assertNull(shadowOf(webView).lastEvaluatedJavascript)
+
+            field(controller, "currentMediaInfo")
+                .set(controller, start.copy(positionMs = 500, canMute = true))
+            command.invoke(controller, "previous", 0L)
+            assertEquals(
+                "window.__wvkControlRichMedia && window.__wvkControlRichMedia('previous','active-player',0);",
+                shadowOf(webView).lastEvaluatedJavascript,
+            )
+            command.invoke(controller, "mute", 0L)
+            val muteScript = shadowOf(webView).lastEvaluatedJavascript
+            assertEquals(
+                "window.__wvkControlRichMedia && window.__wvkControlRichMedia('mute','active-player',0);",
+                muteScript,
+            )
+
+            field(controller, "currentMediaInfo")
+                .set(controller, start.copy(positionMs = 500, canSeek = false))
+            command.invoke(controller, "previous", 0L)
+            command.invoke(controller, "mute", 0L)
+            assertEquals(muteScript, shadowOf(webView).lastEvaluatedJavascript)
+        } finally {
+            controller.dispose()
+            webView.destroy()
+        }
+    }
+
+    @Test
     fun foregroundPlaybackStartsNotificationAndPagePauseKeepsIt() {
         val app = RuntimeEnvironment.getApplication()
         UserSettings(app).apply {
@@ -73,7 +124,7 @@ class BackgroundMediaPlaybackControllerLifecycleTest {
             assertTrue(foreground.isLastForegroundNotificationAttached)
             assertEquals(
                 app.getString(R.string.notification_background_media_pause),
-                foreground.lastForegroundNotification.actions[1].title,
+                foreground.lastForegroundNotification.actions[2].title,
             )
 
             report(controller, "foreground-player", false)
@@ -86,7 +137,7 @@ class BackgroundMediaPlaybackControllerLifecycleTest {
                     .getNotification(
                         CustomNotificationType.BACKGROUND_MEDIA_PLAYBACK
                     )
-                    .actions[1]
+                    .actions[2]
                     .title,
             )
 
@@ -312,7 +363,7 @@ class BackgroundMediaPlaybackControllerLifecycleTest {
                 service.getString(R.string.notification_background_media_title),
                 notification.extras.getString(Notification.EXTRA_TITLE),
             )
-            assertNull(notification.actions[0].actionIntent)
+            assertNull(notification.actions[1].actionIntent)
         } finally {
             controller.dispose()
             serviceController.destroy()

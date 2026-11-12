@@ -3,7 +3,6 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Path alpha survives System UI's icon tint. -->
     <path
         android:fillColor="@android:color/white"
         android:fillAlpha="0.38"

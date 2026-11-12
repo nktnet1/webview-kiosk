@@ -11,7 +11,7 @@ class MediaPlaybackInfoTest {
     fun parsesPlayableMetadataAndTransportCapabilities() {
         val info =
             MediaPlaybackInfo.parse(
-                """{"title":"A video","artist":"A channel","artworkUrl":"https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg","durationMs":200000,"positionMs":125000,"canNext":true,"canPrevious":false,"canSeek":true,"canChangeSpeed":true,"speed":1.25}"""
+                """{"title":"A video","artist":"A channel","artworkUrl":"https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg","durationMs":200000,"positionMs":125000,"canNext":true,"canPrevious":false,"canSeek":true,"canMute":true,"muted":true,"canChangeSpeed":true,"speed":1.25}"""
             )!!
         assertEquals("A video", info.title)
         assertEquals("A channel", info.artist)
@@ -20,6 +20,8 @@ class MediaPlaybackInfoTest {
         assertTrue(info.canNext)
         assertFalse(info.canPrevious)
         assertTrue(info.canSeek)
+        assertTrue(info.canMute)
+        assertTrue(info.muted)
         assertEquals(1.25f, info.speed)
     }
 
@@ -39,10 +41,31 @@ class MediaPlaybackInfoTest {
     }
 
     @Test
+    fun previousBecomesAvailableForProgressWithoutAPlaylist() {
+        val start =
+            MediaPlaybackInfo(durationMs = 60_000, positionMs = 0, canSeek = true)
+        assertFalse(start.canPreviousOrRestart)
+        val progressed = start.copy(positionMs = 500)
+        assertTrue(progressed.canPreviousOrRestart)
+        assertTrue(start.presentationChanged(progressed))
+        assertFalse(
+            progressed.presentationChanged(progressed.copy(positionMs = 1_000))
+        )
+        assertTrue(progressed.presentationChanged(start))
+        assertFalse(progressed.copy(canSeek = false).canPreviousOrRestart)
+        assertFalse(progressed.copy(positionMs = -1).canPreviousOrRestart)
+        assertTrue(
+            start.copy(canPrevious = true, canSeek = false).canPreviousOrRestart
+        )
+    }
+
+    @Test
     fun progressOnlyDoesNotRequireNotificationRebuild() {
         val first = MediaPlaybackInfo(title = "Video", positionMs = 1_000)
         assertFalse(first.presentationChanged(first.copy(positionMs = 2_000)))
         assertTrue(first.presentationChanged(first.copy(canNext = true)))
         assertTrue(first.presentationChanged(first.copy(title = "Another video")))
+        assertTrue(first.presentationChanged(first.copy(canMute = true)))
+        assertTrue(first.presentationChanged(first.copy(muted = true)))
     }
 }

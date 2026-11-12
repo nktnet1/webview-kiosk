@@ -152,6 +152,10 @@ internal const val RICH_MEDIA_SCRIPT =
           durationMs: duration >= 0 ? Math.round(duration * 1000) : -1,
           positionMs: position >= 0 ? Math.round(position * 1000) : -1,
           canPrevious: previous, canNext: next, canSeek: seek,
+          canMute: !!(element && typeof element.muted === 'boolean') ||
+            !!(root && typeof root.isMuted === 'function' &&
+              typeof root.mute === 'function' && typeof root.unMute === 'function'),
+          muted: !!(element && element.muted === true) || call(root, 'isMuted', false) === true,
           canChangeSpeed: !!(element && typeof element.playbackRate === 'number') ||
             !!(root && typeof root.setPlaybackRate === 'function'),
           speed: speed
@@ -229,8 +233,15 @@ internal const val RICH_MEDIA_SCRIPT =
             var next = transportButton('next');
             if (enabledButton(next)) next.click();
           }
-        } else if (action === 'previous' && data && data.canPrevious) {
-          if (isShorts()) {
+        } else if (action === 'previous' && data) {
+          // Use the current player position, not a potentially stale native tick.
+          // Near the start, a second press can still select the previous track.
+          if (data.canSeek && data.positionMs > 0 &&
+              (data.positionMs > 3000 || !data.canPrevious)) {
+            seekTo(0);
+          } else if (!data.canPrevious) {
+            return;
+          } else if (isShorts()) {
             var previousShort = transportButton('previous');
             if (enabledButton(previousShort)) previousShort.click();
           } else if (handlers.previoustrack && !youtube) handlers.previoustrack({action: 'previoustrack'});
@@ -241,6 +252,16 @@ internal const val RICH_MEDIA_SCRIPT =
             var previous = transportButton('previous');
             if (enabledButton(previous)) previous.click();
           }
+        } else if (action === 'mute' && data && data.canMute) {
+          var muted = !data.muted;
+          if (root && typeof root.isMuted === 'function' &&
+              typeof root.mute === 'function' && typeof root.unMute === 'function') {
+            try {
+              if (muted) root.mute(); else root.unMute();
+            } catch (ignored) {}
+          }
+          // Sites may mute either the HTML element or their own player API.
+          if (element && typeof element.muted === 'boolean') element.muted = muted;
         } else if (action === 'seek' && typeof value === 'number') {
           seekTo(value / 1000);
         } else if (action === 'rewind' || action === 'forward') {
@@ -277,7 +298,7 @@ internal const val RICH_MEDIA_SCRIPT =
           dispatch(event.data.__wvkRichMediaCommand, event.data.target, event.data.value);
         }
       });
-      ['play','playing','pause','ended','loadedmetadata','durationchange','ratechange'].forEach(function (name) {
+      ['play','playing','pause','ended','loadedmetadata','durationchange','ratechange','volumechange'].forEach(function (name) {
         document.addEventListener(name, function (event) {
           if (name === 'play' || name === 'playing') {
             rememberPlaying(event.target);

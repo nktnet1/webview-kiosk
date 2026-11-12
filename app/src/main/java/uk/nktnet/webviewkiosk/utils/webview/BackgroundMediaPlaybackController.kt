@@ -122,6 +122,10 @@ internal class BackgroundMediaPlaybackController(
             activeController?.get()?.sendMediaCommand("next")
         }
 
+        fun toggleMuteFromNotification() {
+            activeController?.get()?.sendMediaCommand("mute")
+        }
+
         fun seekFromNotification(positionMs: Long) {
             activeController?.get()?.sendMediaCommand("seek", positionMs)
         }
@@ -351,8 +355,9 @@ internal class BackgroundMediaPlaybackController(
         val info = currentMediaInfo ?: return
         val allowed =
             when (command) {
-                "previous" -> info.canPrevious
+                "previous" -> info.canPreviousOrRestart
                 "next" -> info.canNext
+                "mute" -> info.canMute
                 "seek",
                 "rewind",
                 "forward" -> info.canSeek

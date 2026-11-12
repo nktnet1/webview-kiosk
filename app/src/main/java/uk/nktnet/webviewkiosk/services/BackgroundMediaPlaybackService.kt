@@ -38,6 +38,7 @@ class BackgroundMediaPlaybackService : Service() {
         private const val ACTION_NEXT = "uk.nktnet.webviewkiosk.action.MEDIA_NEXT"
         private const val ACTION_PREVIOUS =
             "uk.nktnet.webviewkiosk.action.MEDIA_PREVIOUS"
+        private const val ACTION_MUTE = "uk.nktnet.webviewkiosk.action.MEDIA_MUTE"
         private const val ACTION_PREVIOUS_UNAVAILABLE =
             "uk.nktnet.webviewkiosk.action.MEDIA_PREVIOUS_UNAVAILABLE"
         private const val ACTION_NEXT_UNAVAILABLE =
@@ -95,7 +96,7 @@ class BackgroundMediaPlaybackService : Service() {
                         }
 
                         override fun onSkipToPrevious() {
-                            if (info.canPrevious) {
+                            if (info.canPreviousOrRestart) {
                                 BackgroundMediaPlaybackController
                                     .previousFromNotification()
                             }
@@ -135,6 +136,12 @@ class BackgroundMediaPlaybackService : Service() {
                         ) {
                             when (action) {
                                 ACTION_STOP -> onStop()
+                                ACTION_MUTE -> {
+                                    if (info.canMute) {
+                                        BackgroundMediaPlaybackController
+                                            .toggleMuteFromNotification()
+                                    }
+                                }
                                 // Android's semantic media controls have no
                                 // disabled custom-action state. These dimmed
                                 // placeholders are deliberately inert.
@@ -169,6 +176,8 @@ class BackgroundMediaPlaybackService : Service() {
             ACTION_PLAY -> BackgroundMediaPlaybackController.resumeFromNotification()
             ACTION_PAUSE -> BackgroundMediaPlaybackController.pauseFromNotification()
             ACTION_NEXT -> BackgroundMediaPlaybackController.nextFromNotification()
+            ACTION_MUTE ->
+                BackgroundMediaPlaybackController.toggleMuteFromNotification()
             ACTION_PREVIOUS ->
                 BackgroundMediaPlaybackController.previousFromNotification()
             ACTION_START -> Unit
@@ -265,7 +274,7 @@ class BackgroundMediaPlaybackService : Service() {
                 PlaybackState.ACTION_PLAY_PAUSE or
                 PlaybackState.ACTION_STOP
         val builder = PlaybackState.Builder()
-        if (info.canPrevious) {
+        if (info.canPreviousOrRestart) {
             actions = actions or PlaybackState.ACTION_SKIP_TO_PREVIOUS
         }
         if (info.canNext) {
@@ -278,8 +287,8 @@ class BackgroundMediaPlaybackService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             // Android 13+ derives controls from PlaybackState, rather than the
             // notification action list. Fill unavailable skip slots first so
-            // Close stays after Previous/Next instead of replacing either one.
-            if (!info.canPrevious) {
+            // both extra slots remain available for Mute and Close, in that order.
+            if (!info.canPreviousOrRestart) {
                 builder.addCustomAction(
                     ACTION_PREVIOUS_UNAVAILABLE,
                     getString(
@@ -298,9 +307,14 @@ class BackgroundMediaPlaybackService : Service() {
                 )
             }
             builder.addCustomAction(
+                ACTION_MUTE,
+                getString(muteLabel()),
+                muteIcon(),
+            )
+            builder.addCustomAction(
                 ACTION_STOP,
                 getString(R.string.notification_background_media_stop),
-                android.R.drawable.ic_menu_close_clear_cancel,
+                R.drawable.media_close,
             )
         }
         mediaSession.setPlaybackState(
@@ -332,6 +346,24 @@ class BackgroundMediaPlaybackService : Service() {
                 .setAction(action),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+
+    private fun muteIcon(): Int =
+        if (!info.canMute) {
+            R.drawable.media_volume_disabled
+        } else if (info.muted) {
+            R.drawable.media_volume_off
+        } else {
+            R.drawable.media_volume_on
+        }
+
+    private fun muteLabel(): Int =
+        if (!info.canMute) {
+            R.string.notification_background_media_mute_unavailable
+        } else if (info.muted) {
+            R.string.notification_background_media_unmute
+        } else {
+            R.string.notification_background_media_mute
+        }
 
     @Suppress("DEPRECATION")
     internal fun buildNotification(): Notification {
@@ -374,7 +406,7 @@ class BackgroundMediaPlaybackService : Service() {
                 }
             )
             .setContentIntent(openPendingIntent)
-            .setDeleteIntent(actionIntent(ACTION_STOP, 4))
+            .setDeleteIntent(actionIntent(ACTION_STOP, 5))
             .setCategory(Notification.CATEGORY_TRANSPORT)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
@@ -400,25 +432,26 @@ class BackgroundMediaPlaybackService : Service() {
             )
             nextIndex++
         }
+        button(muteIcon(), muteLabel(), ACTION_MUTE, enabled = info.canMute)
         button(
-            if (info.canPrevious) {
-                android.R.drawable.ic_media_previous
+            if (info.canPreviousOrRestart) {
+                R.drawable.media_previous
             } else {
                 R.drawable.media_previous_disabled
             },
-            if (info.canPrevious) {
+            if (info.canPreviousOrRestart) {
                 R.string.notification_background_media_previous
             } else {
                 R.string.notification_background_media_previous_unavailable
             },
             ACTION_PREVIOUS,
-            enabled = info.canPrevious,
+            enabled = info.canPreviousOrRestart,
         )
         button(
             if (playing) {
-                android.R.drawable.ic_media_pause
+                R.drawable.media_pause
             } else {
-                android.R.drawable.ic_media_play
+                R.drawable.media_play
             },
             if (playing) {
                 R.string.notification_background_media_pause
@@ -433,7 +466,7 @@ class BackgroundMediaPlaybackService : Service() {
         )
         button(
             if (info.canNext) {
-                android.R.drawable.ic_media_next
+                R.drawable.media_next
             } else {
                 R.drawable.media_next_disabled
             },
@@ -446,14 +479,14 @@ class BackgroundMediaPlaybackService : Service() {
             enabled = info.canNext,
         )
         button(
-            android.R.drawable.ic_menu_close_clear_cancel,
+            R.drawable.media_close,
             R.string.notification_background_media_stop,
             ACTION_STOP,
         )
         builder.setStyle(
             Notification.MediaStyle()
                 .setMediaSession(mediaSession.sessionToken)
-                .setShowActionsInCompactView(0, 1, 2)
+                .setShowActionsInCompactView(1, 2, 3)
         )
         return builder.build()
     }

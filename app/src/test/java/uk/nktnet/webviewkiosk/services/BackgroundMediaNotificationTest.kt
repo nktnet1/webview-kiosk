@@ -6,6 +6,7 @@ import android.media.session.PlaybackState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,7 +25,7 @@ import uk.nktnet.webviewkiosk.utils.webview.MediaPlaybackInfo
 class BackgroundMediaNotificationTest {
     @Test
     @Config(sdk = [23, 28])
-    fun notificationKeepsTrackSlotsAndCloseLastForEveryCapabilityCombination() {
+    fun notificationKeepsFiveSlotsWithMuteFirstAndCloseLast() {
         val controller =
             Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
                 .create()
@@ -32,38 +33,46 @@ class BackgroundMediaNotificationTest {
             val service = controller.get()
             for (previous in listOf(false, true)) {
                 for (next in listOf(false, true)) {
-                    BackgroundMediaPlaybackService.updateMediaInfo(
-                        MediaPlaybackInfo(
-                            title = "Test video",
-                            artist = "Test channel",
-                            durationMs = 20_000L,
-                            positionMs = 10_000L,
-                            canSeek = true,
-                            canChangeSpeed = true,
-                            canPrevious = previous,
-                            canNext = next,
+                    for (position in listOf(0L, 10_000L)) {
+                        BackgroundMediaPlaybackService.updateMediaInfo(
+                            MediaPlaybackInfo(
+                                title = "Test video",
+                                artist = "Test channel",
+                                durationMs = 20_000L,
+                                positionMs = position,
+                                canSeek = true,
+                                canChangeSpeed = true,
+                                canMute = true,
+                                canPrevious = previous,
+                                canNext = next,
+                            )
                         )
-                    )
-                    for (playing in listOf(false, true)) {
-                        BackgroundMediaPlaybackService.updatePlaying(playing)
-                        val notification = service.buildNotification()
-                        assertEquals(
-                            Notification.MediaStyle::class.java.name,
-                            notification.extras.getString(
-                                Notification.EXTRA_TEMPLATE
-                            ),
-                        )
-                        assertEquals(
-                            "Test video",
-                            notification.extras.getString(Notification.EXTRA_TITLE),
-                        )
-                        assertEquals(
-                            "Test channel",
-                            notification.extras.getString(Notification.EXTRA_TEXT),
-                        )
-                        assertEquals(
-                            listOf(
-                                    if (previous) {
+                        val previousEnabled = previous || position > 0
+                        for (playing in listOf(false, true)) {
+                            BackgroundMediaPlaybackService.updatePlaying(playing)
+                            val notification = service.buildNotification()
+                            assertEquals(
+                                Notification.MediaStyle::class.java.name,
+                                notification.extras.getString(
+                                    Notification.EXTRA_TEMPLATE
+                                ),
+                            )
+                            assertEquals(
+                                "Test video",
+                                notification.extras.getString(
+                                    Notification.EXTRA_TITLE
+                                ),
+                            )
+                            assertEquals(
+                                "Test channel",
+                                notification.extras.getString(
+                                    Notification.EXTRA_TEXT
+                                ),
+                            )
+                            val labels =
+                                listOf(
+                                    R.string.notification_background_media_mute,
+                                    if (previousEnabled) {
                                         R.string
                                             .notification_background_media_previous
                                     } else {
@@ -83,27 +92,25 @@ class BackgroundMediaNotificationTest {
                                     },
                                     R.string.notification_background_media_stop,
                                 )
-                                .map(service::getString),
-                            notification.actions.map { it.title.toString() },
-                        )
-                        assertEquals(
-                            previous,
-                            notification.actions[0].actionIntent != null,
-                        )
-                        assertNotNull(notification.actions[1].actionIntent)
-                        assertEquals(
-                            next,
-                            notification.actions[2].actionIntent != null,
-                        )
-                        assertNotNull(notification.actions[3].actionIntent)
-                        assertEquals(
-                            listOf(0, 1, 2),
-                            notification.extras
-                                .getIntArray(Notification.EXTRA_COMPACT_ACTIONS)!!
-                                .toList(),
-                        )
-                        assertNotNull(notification.contentIntent)
-                        assertNotNull(notification.deleteIntent)
+                            assertEquals(
+                                labels.map(service::getString),
+                                notification.actions.map { it.title.toString() },
+                            )
+                            assertEquals(
+                                listOf(true, previousEnabled, true, next, true),
+                                notification.actions.map { it.actionIntent != null },
+                            )
+                            assertEquals(
+                                listOf(1, 2, 3),
+                                notification.extras
+                                    .getIntArray(
+                                        Notification.EXTRA_COMPACT_ACTIONS
+                                    )!!
+                                    .toList(),
+                            )
+                            assertNotNull(notification.contentIntent)
+                            assertNotNull(notification.deleteIntent)
+                        }
                     }
                 }
             }
@@ -113,77 +120,129 @@ class BackgroundMediaNotificationTest {
     }
 
     @Test
-    @Config(sdk = [33])
-    fun semanticControlsKeepUnavailableSkipPlaceholdersBeforeClose() {
+    @Config(sdk = [33, 37])
+    fun semanticControlsFillBothExtraSlotsWithMuteThenClose() {
         val controller =
             Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
                 .create()
         try {
             val service = controller.get()
-            val session =
-                service.javaClass
-                    .getDeclaredField("mediaSession")
-                    .apply { isAccessible = true }
-                    .get(service) as MediaSession
+            val session: MediaSession =
+                ReflectionHelpers.getField(service, "mediaSession")
             // Robolectric does not connect MediaController's shadow to its session.
-            // Read the state and callback installed on the real MediaSession.
             val callbackHandler: Any =
                 ReflectionHelpers.getField(session, "mCallback")
             val callback: MediaSession.Callback =
                 ReflectionHelpers.getField(callbackHandler, "mCallback")
             for (previous in listOf(false, true)) {
                 for (next in listOf(false, true)) {
-                    BackgroundMediaPlaybackService.updateMediaInfo(
-                        MediaPlaybackInfo(
-                            durationMs = 20_000L,
-                            canSeek = true,
-                            canChangeSpeed = true,
-                            canPrevious = previous,
-                            canNext = next,
+                    for (position in listOf(0L, 10_000L)) {
+                        BackgroundMediaPlaybackService.updateMediaInfo(
+                            MediaPlaybackInfo(
+                                durationMs = 20_000L,
+                                positionMs = position,
+                                canSeek = true,
+                                canChangeSpeed = true,
+                                canMute = true,
+                                canPrevious = previous,
+                                canNext = next,
+                            )
                         )
-                    )
-                    val state: PlaybackState =
-                        ReflectionHelpers.getField(session, "mPlaybackState")
-                    assertEquals(
-                        previous,
-                        state.actions and PlaybackState.ACTION_SKIP_TO_PREVIOUS !=
+                        val previousEnabled = previous || position > 0
+                        val state: PlaybackState =
+                            ReflectionHelpers.getField(session, "mPlaybackState")
+                        assertEquals(
+                            previousEnabled,
+                            state.actions and
+                                PlaybackState.ACTION_SKIP_TO_PREVIOUS != 0L,
+                        )
+                        assertEquals(
+                            next,
+                            state.actions and PlaybackState.ACTION_SKIP_TO_NEXT !=
+                                0L,
+                        )
+                        assertTrue(
+                            state.actions and PlaybackState.ACTION_SEEK_TO != 0L
+                        )
+                        assertEquals(
                             0L,
-                    )
-                    assertEquals(
-                        next,
-                        state.actions and PlaybackState.ACTION_SKIP_TO_NEXT != 0L,
-                    )
-                    assertTrue(state.actions and PlaybackState.ACTION_SEEK_TO != 0L)
-                    assertEquals(
-                        0L,
-                        state.actions and
-                            (PlaybackState.ACTION_REWIND or
-                                PlaybackState.ACTION_FAST_FORWARD or
-                                PlaybackState.ACTION_SET_PLAYBACK_SPEED),
-                    )
-                    val expected = buildList {
-                        if (!previous) {
-                            add("MEDIA_PREVIOUS_UNAVAILABLE")
+                            state.actions and
+                                (PlaybackState.ACTION_REWIND or
+                                    PlaybackState.ACTION_FAST_FORWARD or
+                                    PlaybackState.ACTION_SET_PLAYBACK_SPEED),
+                        )
+                        val expected = buildList {
+                            if (!previousEnabled) {
+                                add("MEDIA_PREVIOUS_UNAVAILABLE")
+                            }
+                            if (!next) {
+                                add("MEDIA_NEXT_UNAVAILABLE")
+                            }
+                            add("MEDIA_MUTE")
+                            add("MEDIA_STOP")
                         }
-                        if (!next) {
-                            add("MEDIA_NEXT_UNAVAILABLE")
+                        assertEquals(
+                            expected,
+                            state.customActions.map {
+                                it.action.substringAfterLast('.')
+                            },
+                        )
+                        for (action in state.customActions.dropLast(2)) {
+                            callback.onCustomAction(action.action, null)
                         }
-                        add("MEDIA_STOP")
+                        assertFalse(shadowOf(service).isStoppedBySelf)
+                        assertEquals(
+                            R.drawable.media_close,
+                            state.customActions.last().icon,
+                        )
                     }
-                    assertEquals(
-                        expected,
-                        state.customActions.map {
-                            it.action.substringAfterLast('.')
-                        },
-                    )
-                    for (action in state.customActions.dropLast(1)) {
-                        callback.onCustomAction(action.action, null)
-                    }
-                    assertFalse(shadowOf(service).isStoppedBySelf)
                 }
             }
             callback.onCustomAction("uk.nktnet.webviewkiosk.action.MEDIA_STOP", null)
             assertTrue(shadowOf(service).isStoppedBySelf)
+        } finally {
+            controller.destroy()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun muteStateChangesLabelAndIconWithoutMovingOtherControls() {
+        val controller =
+            Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
+                .create()
+        try {
+            val service = controller.get()
+            val unavailable = service.buildNotification().actions[0]
+            assertNull(unavailable.actionIntent)
+            assertEquals(R.drawable.media_volume_disabled, unavailable.icon)
+            for (muted in listOf(false, true, false)) {
+                BackgroundMediaPlaybackService.updateMediaInfo(
+                    MediaPlaybackInfo(canMute = true, muted = muted)
+                )
+                val actions = service.buildNotification().actions
+                assertEquals(5, actions.size)
+                assertNotNull(actions[0].actionIntent)
+                assertEquals(
+                    service.getString(
+                        if (muted) {
+                            R.string.notification_background_media_unmute
+                        } else {
+                            R.string.notification_background_media_mute
+                        }
+                    ),
+                    actions[0].title,
+                )
+                assertEquals(
+                    if (muted) {
+                        R.drawable.media_volume_off
+                    } else {
+                        R.drawable.media_volume_on
+                    },
+                    actions[0].icon,
+                )
+                assertEquals(R.drawable.media_close, actions.last().icon)
+            }
         } finally {
             controller.destroy()
         }

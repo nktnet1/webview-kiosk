@@ -35,7 +35,7 @@ function frame({
   const commands = [];
   const media = {
     paused: !playing, ended: false, isConnected: true,
-    currentTime: 40, duration: 300, playbackRate: 1,
+    currentTime: 40, duration: 300, playbackRate: 1, muted: false,
     src: 'https://media.example.test/original.mp4',
     currentSrc: 'https://media.example.test/original.mp4',
     srcObject: null,
@@ -56,6 +56,9 @@ function frame({
     seekTo(value) { media.currentTime = value; commands.push(['seek', value]); },
     setPlaybackRate(value) { media.playbackRate = value; commands.push(['speed', value]); },
     playVideo() { media.play(); },
+    isMuted() { return media.muted; },
+    mute() { media.muted = true; commands.push('mute'); },
+    unMute() { media.muted = false; commands.push('unmute'); },
   };
   function controlButton(name) {
     return {
@@ -119,7 +122,7 @@ function frame({
   vm.runInNewContext(recoveryScript, sandbox);
   vm.runInNewContext(richScript, sandbox);
   return {
-    window, snapshots, commands, media, mediaSession, frameId: window.__wvkFrameId,
+    window, snapshots, commands, media, mediaSession, player: root, frameId: window.__wvkFrameId,
     replaceMedia(replacement) {
       media.isConnected = false;
       elements = [replacement];
@@ -143,11 +146,12 @@ test('YouTube title/channel/thumbnail/duration and playlist actions reach the na
   f.window.__wvkControlRichMedia('next', f.frameId, 0);
   assert.deepEqual(f.commands, ['next']);
   f.window.__wvkControlRichMedia('previous', f.frameId, 0);
-  assert.deepEqual(f.commands, ['next'], 'unsupported previous must do nothing');
+  assert.deepEqual(f.commands, ['next', ['seek', 0]], 'Previous restarts when there is progress');
 });
 
 test('YouTube playlist previous, seekbar, skip and speed control the existing player', () => {
   const f = frame({ index: 1 });
+  f.media.currentTime = 0;
   f.window.__wvkControlRichMedia('previous', f.frameId, 0);
   f.window.__wvkControlRichMedia('seek', f.frameId, 90_000);
   f.window.__wvkControlRichMedia('rewind', f.frameId, 0);
@@ -204,6 +208,7 @@ test('YouTube watch-page Next uses its enabled UI button when there is no playli
 
 test('YouTube Music exposes its own next and previous controls without a playlist API', () => {
   const f = frame({ host: 'music.youtube.com', playlist: [] });
+  f.media.currentTime = 0;
   const info = f.snapshots.at(-1)[1];
   assert.equal(info.canNext, true);
   assert.equal(info.canPrevious, true);
@@ -214,6 +219,7 @@ test('YouTube Music exposes its own next and previous controls without a playlis
 
 test('mobile YouTube identifies separate next and previous buttons by order', () => {
   const f = frame({ host: 'm.youtube.com', playlist: [] });
+  f.media.currentTime = 0;
   f.window.__wvkControlRichMedia('next', f.frameId, 0);
   f.window.__wvkControlRichMedia('previous', f.frameId, 0);
   assert.deepEqual(f.commands, ['next-click', 'previous-click']);
@@ -232,16 +238,17 @@ test('YouTube Shorts metadata and controls use the active reel, not an inactive 
   assert.equal(info.canNext, true);
   assert.equal(info.canPrevious, true);
   f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  f.media.currentTime = 0;
   f.window.__wvkControlRichMedia('previous', f.frameId, 0);
   f.window.__wvkControlRichMedia('seek', f.frameId, 90_000);
   assert.deepEqual(f.commands, ['next-short-click', 'previous-short-click', ['seek', 90]]);
 });
 
-test('Shorts hides unavailable Previous controls instead of invoking playlist methods', () => {
+test('Shorts without a previous item can restart progress without invoking playlist methods', () => {
   const f = frame({ pathname: '/shorts/zyxwvutsrqp', shortsPreviousEnabled: false });
   assert.equal(f.snapshots.at(-1)[1].canPrevious, false);
   f.window.__wvkControlRichMedia('previous', f.frameId, 0);
-  assert.deepEqual(f.commands, []);
+  assert.deepEqual(f.commands, [['seek', 0]]);
 });
 
 test('mobile YouTube Shorts selects the playing shorts-video without advertising missing arrows', () => {
@@ -324,4 +331,136 @@ test('targeting Play at a child reaches that child and leaves its siblings pause
   assert.equal(child.media.paused, false);
   assert.equal(sibling.media.paused, true);
   assert.equal(parent.media.paused, true);
+});
+
+test('Previous restarts an ordinary seekable item even without a playlist', () => {
+  const f = frame({ host: 'music.example.test' });
+  f.window.__wvkControlRichMedia('previous', f.frameId, 0);
+  assert.equal(f.media.currentTime, 0);
+  assert.equal(f.media.paused, false);
+  assert.deepEqual(f.commands, []);
+  f.media.currentTime = 0.25;
+  f.window.__wvkControlRichMedia('previous', f.frameId, 0);
+  assert.equal(f.media.currentTime, 0, 'even small progress can restart without a previous track');
+});
+
+test('Previous restarts after three seconds, then a near-start press selects the previous track', () => {
+  const f = frame({ index: 1 });
+  f.media.currentTime = 3.001;
+  f.window.__wvkControlRichMedia('previous', f.frameId, 0);
+  assert.deepEqual(f.commands, [['seek', 0]]);
+  f.media.currentTime = 0.25;
+  f.window.__wvkControlRichMedia('previous', f.frameId, 0);
+  assert.deepEqual(f.commands, [['seek', 0], 'previous']);
+});
+
+test('Previous uses the current position and the site previous-track handler near the start', () => {
+  const f = frame({ host: 'music.example.test' });
+  let previous = 0;
+  f.mediaSession.setActionHandler('previoustrack', () => { previous++; });
+  f.media.currentTime = 5;
+  f.window.__wvkControlRichMedia('previous', f.frameId, 0);
+  assert.equal(f.media.currentTime, 0);
+  assert.equal(previous, 0);
+  // Native metadata still contains an older position; the decision must be local.
+  f.media.currentTime = 3;
+  f.window.__wvkControlRichMedia('previous', f.frameId, 0);
+  assert.equal(previous, 1);
+});
+
+test('Previous does not seek live media or start a paused item', () => {
+  const live = frame({ host: 'music.example.test' });
+  live.media.duration = Infinity;
+  live.window.__wvkControlRichMedia('previous', live.frameId, 0);
+  assert.equal(live.media.currentTime, 40);
+  let previous = 0;
+  live.mediaSession.setActionHandler('previoustrack', () => { previous++; });
+  live.window.__wvkControlRichMedia('previous', live.frameId, 0);
+  assert.equal(previous, 1, 'live playlists can still select the previous item');
+
+  const paused = frame({ host: 'music.example.test', playing: false });
+  paused.window.__wvkControlRichMedia('previous', paused.frameId, 0);
+  assert.equal(paused.media.currentTime, 0);
+  assert.equal(paused.media.paused, true);
+  assert.deepEqual(paused.commands, []);
+});
+
+test('Mute toggles the selected HTML player without pausing, seeking, or changing volume', () => {
+  for (const playing of [true, false]) {
+    const f = frame({ host: 'music.example.test', playing });
+    f.media.volume = 0.6;
+    assert.equal(f.snapshots.at(-1)[1].canMute, true);
+    f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+    assert.equal(f.media.muted, true);
+    assert.equal(f.snapshots.at(-1)[1].muted, true);
+    f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+    assert.equal(f.media.muted, false);
+    assert.equal(f.snapshots.at(-1)[1].muted, false);
+    assert.equal(f.media.paused, !playing);
+    assert.equal(f.media.currentTime, 40);
+    assert.equal(f.media.volume, 0.6);
+    assert.deepEqual(f.commands, []);
+  }
+});
+
+test('site volume changes refresh the notification mute state', () => {
+  const f = frame({ host: 'music.example.test' });
+  f.media.muted = true;
+  f.emit('volumechange');
+  assert.equal(f.snapshots.at(-1)[1].muted, true);
+  f.media.muted = false;
+  f.emit('volumechange');
+  assert.equal(f.snapshots.at(-1)[1].muted, false);
+});
+
+test('Mute and restart commands affect only the selected cross-origin player', () => {
+  const selected = frame();
+  const sibling = frame({ host: 'music.example.test' });
+  const parent = frame({ host: 'example.test', playing: false, children: [selected, sibling] });
+  parent.window.__wvkControlRichMedia('mute', selected.frameId, 0);
+  parent.window.__wvkControlRichMedia('previous', selected.frameId, 0);
+  assert.equal(selected.media.muted, true);
+  assert.equal(selected.media.currentTime, 0);
+  assert.equal(sibling.media.muted, false);
+  assert.equal(sibling.media.currentTime, 40);
+  assert.equal(parent.media.muted, false);
+  assert.equal(parent.media.currentTime, 40);
+});
+
+test('Mute uses the YouTube API and can fall back to the existing HTML player', () => {
+  const f = frame();
+  f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+  assert.equal(f.media.muted, true);
+  f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+  assert.equal(f.media.muted, false);
+  assert.deepEqual(f.commands, ['mute', 'unmute']);
+  f.player.mute = () => { throw new Error('unavailable'); };
+  f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+  assert.equal(f.media.muted, true);
+  assert.equal(f.snapshots.at(-1)[1].muted, true);
+});
+
+test('Mute is unavailable when the selected player has no mute capability', () => {
+  const f = frame({ host: 'music.example.test' });
+  delete f.media.muted;
+  f.window.__wvkRefreshRichMedia(true);
+  assert.equal(f.snapshots.at(-1)[1].canMute, false);
+  f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+  assert.equal(f.media.muted, undefined);
+  assert.deepEqual(f.commands, []);
+});
+
+test('Mute stays consistent when a site API and its HTML player disagree', () => {
+  const f = frame();
+  f.player.isMuted = () => false;
+  f.media.muted = true;
+  f.emit('volumechange');
+  assert.equal(f.snapshots.at(-1)[1].muted, true, 'the HTML mute flag still silences playback');
+  f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+  assert.equal(f.media.muted, false);
+  assert.equal(f.snapshots.at(-1)[1].muted, false);
+  f.player.mute = () => {};
+  f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+  assert.equal(f.media.muted, true);
+  assert.equal(f.snapshots.at(-1)[1].muted, true);
 });
