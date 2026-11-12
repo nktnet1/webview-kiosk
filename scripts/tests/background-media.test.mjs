@@ -24,10 +24,14 @@ function createFrame(hostname, {
   const documentHandlers = new Map();
   const windowHandlers = new Map();
   const intervals = [];
+  let selectedVideo;
   const media = {
     paused: !playing,
     ended: false,
     isConnected: true,
+    src: 'https://media.example.test/original.mp4',
+    currentSrc: 'https://media.example.test/original.mp4',
+    srcObject: null,
     pause() {
       this.paused = true;
       emit('pause');
@@ -41,14 +45,15 @@ function createFrame(hostname, {
       return Promise.resolve();
     },
   };
+  selectedVideo = media;
   function emit(name) {
     for (const listener of documentHandlers.get(name) ?? []) listener({ target: media });
   }
   const youtubePlayer = {
-    contains(target) { return target === media; },
-    querySelector(selector) { return selector === 'video' ? media : null; },
-    getPlayerState() { return media.paused ? (media.ended ? 0 : 2) : 1; },
-    playVideo() { const result = media.play(); if (result?.catch) result.catch(() => {}); },
+    contains(target) { return target === selectedVideo; },
+    querySelector(selector) { return selector === 'video' ? selectedVideo : null; },
+    getPlayerState() { return selectedVideo.paused ? (selectedVideo.ended ? 0 : 2) : 1; },
+    playVideo() { const result = selectedVideo.play(); if (result?.catch) result.catch(() => {}); },
   };
   const isShorts = pathname.startsWith('/shorts/');
   const mobileShorts = isShorts && hostname.startsWith('m.youtube.com');
@@ -60,12 +65,12 @@ function createFrame(hostname, {
   const document = {
     getElementById(id) { return id === 'movie_player' ? (isShorts ? stalePlayer : youtubePlayer) : null; },
     querySelector(selector) {
-      if (isShorts && !mobileShorts && selector === 'ytd-reel-video-renderer[is-active] video') return media;
-      return selector === 'video' ? media : null;
+      if (isShorts && !mobileShorts && selector === 'ytd-reel-video-renderer[is-active] video') return selectedVideo;
+      return selector === 'video' ? selectedVideo : null;
     },
     querySelectorAll(selector) {
-      if (selector === 'audio,video') return [media];
-      if (selector === 'shorts-video video') return mobileShorts ? [media] : [];
+      if (selector === 'audio,video') return [selectedVideo];
+      if (selector === 'shorts-video video') return mobileShorts ? [selectedVideo] : [];
       if (selector === 'iframe') return children.map((child) => ({ contentWindow: child.window }));
       return [];
     },
@@ -123,6 +128,11 @@ function createFrame(hostname, {
         listener({ target: media, isTrusted: trusted });
       }
     },
+    replaceVideo(replacement) {
+      media.isConnected = false;
+      selectedVideo = replacement;
+    },
+    emit,
     tick() { for (const fn of intervals) fn(); },
     hideNative() { nativeHidden = true; },
   };
@@ -340,6 +350,112 @@ test('YouTube Shorts paused intentionally before Home stay paused', () => {
 test('mobile YouTube Shorts recover the selected shorts-video after Home', () => {
   const frame = createFrame('m.youtube.com', { pathname: '/shorts/zyxwvutsrqp' });
   frame.window.__wvkSetHostBackground(true);
+  frame.media.pause();
+  frame.tick();
+  assert.equal(frame.media.paused, false);
+});
+
+
+test('an old rejected Play cannot restore the resume queue after Stop', async () => {
+  const frame = createFrame('example.com');
+  frame.window.__wvkControlMedia('pause');
+  const originalPlay = frame.media.play;
+  let rejectPlay;
+  frame.media.play = () => new Promise((resolve, reject) => { rejectPlay = reject; });
+  frame.window.__wvkControlMedia('resume');
+  frame.window.__wvkControlMedia('stop');
+  rejectPlay(new Error('play interrupted by Stop'));
+  await new Promise((resolve) => setImmediate(resolve));
+  frame.media.play = originalPlay;
+  frame.window.__wvkControlMedia('resume');
+  assert.equal(frame.media.paused, true);
+});
+
+test('a rejected current Play remains available for a later retry', async () => {
+  const frame = createFrame('example.com');
+  frame.window.__wvkControlMedia('pause');
+  const originalPlay = frame.media.play;
+  frame.media.play = () => Promise.reject(new Error('not allowed yet'));
+  frame.window.__wvkControlMedia('resume');
+  await new Promise((resolve) => setImmediate(resolve));
+  frame.media.play = originalPlay;
+  frame.window.__wvkControlMedia('resume');
+  assert.equal(frame.media.paused, false);
+});
+
+test('notification Play cannot resume a different source on the same element', () => {
+  for (const change of ['src', 'currentSrc', 'srcObject']) {
+    const frame = createFrame('example.com');
+    frame.window.__wvkControlMedia('pause');
+    frame.media[change] = change === 'srcObject' ? {} : 'https://media.example.test/new.mp4';
+    frame.window.__wvkControlMedia('resume');
+    assert.equal(frame.media.paused, true, change);
+  }
+});
+
+test('reloading a paused source invalidates notification resume even at the same URL', () => {
+  const frame = createFrame('example.com');
+  frame.window.__wvkControlMedia('pause');
+  frame.emit('emptied');
+  frame.window.__wvkControlMedia('resume');
+  assert.equal(frame.media.paused, true);
+});
+
+test('YouTube recovery never starts a newly selected, never-played video element', () => {
+  for (const pathname of ['/watch', '/shorts/zyxwvutsrqp']) {
+    const frame = createFrame('www.youtube.com', { pathname });
+    frame.window.__wvkSetHostBackground(true);
+    frame.media.pause();
+    const replacement = { ...frame.media, isConnected: true };
+    frame.replaceVideo(replacement);
+    frame.tick();
+    assert.equal(replacement.paused, true, pathname);
+    frame.hideNative();
+    assert.equal(frame.document.hidden, true, 'an unplayed replacement must not retain visibility');
+  }
+});
+
+test('YouTube recovery rejects changed or reloaded sources on the existing player', () => {
+  for (const change of ['src', 'currentSrc', 'srcObject', 'emptied']) {
+    const frame = createFrame('www.youtube.com');
+    frame.window.__wvkSetHostBackground(true);
+    frame.media.pause();
+    if (change === 'emptied') frame.emit('emptied');
+    else frame.media[change] = change === 'srcObject' ? {} : 'https://media.example.test/new.mp4';
+    frame.tick();
+    assert.equal(frame.media.paused, true, change);
+  }
+});
+
+
+test('an older Play completion cannot clear visibility needed by a newer pending Play', async () => {
+  const frame = createFrame('www.youtube.com');
+  frame.hideNative();
+  frame.window.__wvkControlMedia('pause');
+  const settle = [];
+  frame.media.play = () => new Promise((resolve) => { settle.push(resolve); });
+  frame.window.__wvkControlMedia('resume');
+  frame.window.__wvkControlMedia('stop');
+  // A fresh playback session is paused while the first play promise is pending.
+  frame.media.paused = false;
+  frame.window.__wvkControlMedia('pause');
+  frame.window.__wvkControlMedia('resume');
+  assert.equal(settle.length, 2);
+  settle[0]();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(frame.document.hidden, false);
+  settle[1]();
+  await new Promise((resolve) => setImmediate(resolve));
+});
+
+
+test('a newly played source can subsequently recover after a background pause', () => {
+  const frame = createFrame('www.youtube.com');
+  frame.window.__wvkSetHostBackground(true);
+  frame.media.pause();
+  frame.media.src = frame.media.currentSrc = 'https://media.example.test/new.mp4';
+  frame.emit('emptied');
+  frame.media.play();
   frame.media.pause();
   frame.tick();
   assert.equal(frame.media.paused, false);

@@ -658,6 +658,37 @@ internal const val DOCUMENT_START_SCRIPT =
       var lastPlaying = null;
       var pausedForNotification = [];
       var resumingFromNotification = false;
+      var commandGeneration = 0;
+      var mediaVersions = new WeakMap();
+      // A reused video element can now contain a different clip or stream.
+      // Keep transport intent scoped to the resource that actually played.
+      function captureMedia(media) {
+        if (!media) return null;
+        return {
+          media: media, currentSrc: media.currentSrc || '', src: media.src || '',
+          srcObject: media.srcObject || null, version: mediaVersions.get(media) || 0
+        };
+      }
+      function matchesMedia(entry, media) {
+        return !!entry && !!media && media.isConnected && entry.media === media &&
+          entry.currentSrc === (media.currentSrc || '') && entry.src === (media.src || '') &&
+          entry.srcObject === (media.srcObject || null) &&
+          entry.version === (mediaVersions.get(media) || 0);
+      }
+      window.__wvkMediaIdentity = { capture: captureMedia, matches: matchesMedia };
+      function savePausedMedia(media) {
+        pausedForNotification = pausedForNotification.filter(function (entry) {
+          return entry.media !== media;
+        });
+        pausedForNotification.push(captureMedia(media));
+      }
+      document.addEventListener('emptied', function (event) {
+        var media = event.target;
+        mediaVersions.set(media, (mediaVersions.get(media) || 0) + 1);
+        pausedForNotification = pausedForNotification.filter(function (entry) {
+          return entry.media !== media;
+        });
+      }, true);
       window.__wvkHostBackground = false;
       function setHostBackground(hidden) {
         window.__wvkHostBackground = hidden === true;
@@ -741,6 +772,8 @@ internal const val DOCUMENT_START_SCRIPT =
         });
       }
       window.__wvkControlMedia = function (action) {
+        if (action !== 'pause' && action !== 'resume' && action !== 'stop') return;
+        var generation = ++commandGeneration;
         if (isYouTube && typeof window.__wvkYoutubeExplicitAction === 'function') {
           window.__wvkYoutubeExplicitAction(action);
         }
@@ -748,40 +781,43 @@ internal const val DOCUMENT_START_SCRIPT =
           resumingFromNotification = false;
           document.querySelectorAll('audio,video').forEach(function (media) {
             if (!media.paused && !media.ended) {
-              if (pausedForNotification.indexOf(media) === -1) pausedForNotification.push(media);
+              savePausedMedia(media);
               media.pause();
             }
           });
         } else if (action === 'resume') {
-          var previouslyPlaying = pausedForNotification.slice();
+          var previouslyPlaying = pausedForNotification.filter(function (entry) {
+            return matchesMedia(entry, entry.media);
+          });
           pausedForNotification.length = 0;
           // A video site can check document.hidden during a play() request.
           // Keep visibility available until the pending play promises settle.
           resumingFromNotification = previouslyPlaying.length > 0;
           var pending = [];
-          previouslyPlaying.forEach(function (media) {
-            if (!media.isConnected) return;
+          previouslyPlaying.forEach(function (entry) {
+            var media = entry.media;
+            if (!matchesMedia(entry, media)) return;
             try {
               var result = media.play();
               if (result && typeof result.catch === 'function') {
                 pending.push(result.catch(function () {
                   // A website may require a fresh tap before playback can resume.
-                  if (pausedForNotification.indexOf(media) === -1) pausedForNotification.push(media);
+                  if (generation === commandGeneration && matchesMedia(entry, media)) savePausedMedia(media);
                 }));
               }
             } catch (ignored) {
-              if (pausedForNotification.indexOf(media) === -1) pausedForNotification.push(media);
+              if (generation === commandGeneration && matchesMedia(entry, media)) savePausedMedia(media);
             }
           });
-          Promise.all(pending).then(function () { resumingFromNotification = false; });
+          Promise.all(pending).then(function () {
+            if (generation === commandGeneration) resumingFromNotification = false;
+          });
         } else if (action === 'stop') {
           resumingFromNotification = false;
           pausedForNotification.length = 0;
           document.querySelectorAll('audio,video').forEach(function (media) {
             media.pause();
           });
-        } else {
-          return;
         }
         forEachFrame(action);
         report();
@@ -830,8 +866,11 @@ internal const val YOUTUBE_BACKGROUND_RECOVERY_SCRIPT =
       if (window.__wvkYoutubeRecoveryInstalled) return;
       var host = window.location.hostname.toLowerCase();
       if (!/(^|\.)youtube(-nocookie)?\.com$/.test(host)) return;
+      if (!window.__wvkMediaIdentity) return;
       window.__wvkYoutubeRecoveryInstalled = true;
       var wasPlaying = false;
+      var lastPlayback = null;
+      var mediaIdentity = window.__wvkMediaIdentity;
       var explicitlyPaused = false;
       var attemptCount = 0;
       var audioBusyTicks = 0;
@@ -889,16 +928,19 @@ internal const val YOUTUBE_BACKGROUND_RECOVERY_SCRIPT =
           explicitlyPaused = false;
           attemptCount = 0;
           audioBusyTicks = 0;
-          wasPlaying = true;
+          wasPlaying = mediaIdentity.matches(lastPlayback, video());
         }
       };
       window.__wvkKeepYoutubeVisible = function () {
         return isBackground() && wasPlaying && !explicitlyPaused &&
+          mediaIdentity.matches(lastPlayback, video()) &&
           attemptCount < maxAttempts && audioBusyTicks < maxAudioBusyTicks;
       };
 
       function trackPlay(event) {
-        if (isShorts() && event && event.target !== video()) return;
+        var media = video();
+        if (!media || media.paused || media.ended || (event && event.target !== media)) return;
+        lastPlayback = mediaIdentity.capture(media);
         wasPlaying = true;
         explicitlyPaused = false;
         attemptCount = 0;
@@ -940,8 +982,12 @@ internal const val YOUTUBE_BACKGROUND_RECOVERY_SCRIPT =
           // A delayed pause from a notification must not be cancelled by a
           // final playing-state sample before the media element actually stops.
           if (!explicitlyPaused) {
-            wasPlaying = true;
-            attemptCount = 0;
+            var playingMedia = video();
+            if (playingMedia && !playingMedia.paused && !playingMedia.ended) {
+              lastPlayback = mediaIdentity.capture(playingMedia);
+              wasPlaying = true;
+              attemptCount = 0;
+            }
           }
           return;
         }
@@ -955,7 +1001,10 @@ internal const val YOUTUBE_BACKGROUND_RECOVERY_SCRIPT =
           return;
         }
         var media = video();
-        if (!media || media.ended) return;
+        if (!media || media.ended || !mediaIdentity.matches(lastPlayback, media)) {
+          wasPlaying = false;
+          return;
+        }
         // A focus loss may have paused the stream. Wait for any existing
         // music activity to clear instead of fighting phone calls or another
         // application. Android can report our own just-paused stream as active

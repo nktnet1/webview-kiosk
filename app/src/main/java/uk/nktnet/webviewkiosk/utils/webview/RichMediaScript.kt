@@ -9,7 +9,7 @@ package uk.nktnet.webviewkiosk.utils.webview
 internal const val RICH_MEDIA_SCRIPT =
     """
     (function () {
-      if (window.__wvkRichMediaInstalled || !window.__wvkFrameId) return;
+      if (window.__wvkRichMediaInstalled || !window.__wvkFrameId || !window.__wvkMediaIdentity) return;
       window.__wvkRichMediaInstalled = true;
       var frameId = window.__wvkFrameId;
       var youtube = /(^|\.)youtube(-nocookie)?\.com$/.test(location.hostname.toLowerCase());
@@ -17,6 +17,13 @@ internal const val RICH_MEDIA_SCRIPT =
       var lastSnapshot = '';
       var lastProgressReport = 0;
       var lastPlayedMedia = null;
+      var lastPlayback = null;
+      var mediaIdentity = window.__wvkMediaIdentity;
+
+      function rememberPlaying(media) {
+        lastPlayedMedia = media;
+        lastPlayback = mediaIdentity.capture(media);
+      }
 
       function isShorts() {
         return youtube && /^\/shorts(?:\/|$)/.test(location.pathname || '');
@@ -203,7 +210,7 @@ internal const val RICH_MEDIA_SCRIPT =
           window.__wvkControlMedia('resume');
           // The page may have paused itself on Home, rather than our pause list.
           // Never start an unrelated, never-played video from a notification.
-          if (element && element === lastPlayedMedia && element.paused && !element.ended) {
+          if (mediaIdentity.matches(lastPlayback, element) && element.paused && !element.ended) {
             if (root && typeof root.playVideo === 'function') root.playVideo();
             else if (typeof element.play === 'function') {
               var pending = element.play();
@@ -273,7 +280,7 @@ internal const val RICH_MEDIA_SCRIPT =
       ['play','playing','pause','ended','loadedmetadata','durationchange','ratechange'].forEach(function (name) {
         document.addEventListener(name, function (event) {
           if (name === 'play' || name === 'playing') {
-            lastPlayedMedia = event.target;
+            rememberPlaying(event.target);
           }
           report(true);
         }, true);
@@ -289,13 +296,13 @@ internal const val RICH_MEDIA_SCRIPT =
       window.setInterval(function () {
         var element = media();
         if (element && !element.paused && !element.ended) {
-          lastPlayedMedia = element;
+          rememberPlaying(element);
         }
         report(false);
       }, 2000);
       var playing = media();
       if (playing && !playing.paused && !playing.ended) {
-        lastPlayedMedia = playing;
+        rememberPlaying(playing);
       }
       report(true);
     })();

@@ -12,6 +12,13 @@ assert.ok(match, 'rich-media document-start script exists');
 const richScript = match[1];
 new vm.Script(richScript);
 
+const controllerSource = readFileSync(
+  path.resolve('app/src/main/java/uk/nktnet/webviewkiosk/utils/webview/BackgroundMediaPlaybackController.kt'), 'utf8',
+);
+const documentMatch = controllerSource.match(/internal const val DOCUMENT_START_SCRIPT =\s*"""([\s\S]*?)"""/);
+assert.ok(documentMatch, 'media bootstrap script exists');
+const documentScript = documentMatch[1];
+
 function frame({
   host = 'www.youtube.com', playing = true, title = 'Test song',
   channel = 'Test channel', videoId = 'abcdefghijk', playlist = ['abcdefghijk', 'noprstuvwxy'],
@@ -25,6 +32,9 @@ function frame({
   const media = {
     paused: !playing, ended: false, isConnected: true,
     currentTime: 40, duration: 300, playbackRate: 1,
+    src: 'https://media.example.test/original.mp4',
+    currentSrc: 'https://media.example.test/original.mp4',
+    srcObject: null,
     play() { this.paused = false; commands.push('play'); return Promise.resolve(); },
     pause() { this.paused = true; commands.push('pause'); },
   };
@@ -85,12 +95,12 @@ function frame({
     setActionHandler(action, handler) { this.handlers[action] = handler; },
   };
   const window = {
-    __wvkFrameId: host.replace(/\W/g, '') + '-123',
+    location: { hostname: host, pathname },
     navigator: { mediaSession },
     WebviewKioskBackgroundMedia: {
       onMediaInfoChanged(id, info) { snapshots.push([id, JSON.parse(info)]); },
+      onPlaybackStateChanged() {},
     },
-    __wvkControlMedia(action) { if (action === 'pause') media.pause(); else if (action === 'resume' && playing && media.isConnected) media.play(); },
     addEventListener(name, fn) { windowEvents.set(name, [...(windowEvents.get(name) ?? []), fn]); },
     setInterval(fn) { timers.push(fn); },
     postMessage(data) {
@@ -99,7 +109,9 @@ function frame({
   };
   window.parent = window;
   for (const child of children) child.window.parent = window;
-  vm.runInNewContext(richScript, { window, document, navigator: window.navigator, location: { hostname: host, pathname }, setTimeout, isFinite });
+  const sandbox = { window, document, navigator: window.navigator, location: window.location, setTimeout, isFinite };
+  vm.runInNewContext(documentScript, sandbox);
+  vm.runInNewContext(richScript, sandbox);
   return {
     window, snapshots, commands, media, mediaSession, frameId: window.__wvkFrameId,
     replaceMedia(replacement) {
@@ -242,4 +254,37 @@ test('notification Play never starts a replacement element that has not played',
   f.replaceMedia(replacement);
   f.window.__wvkControlRichMedia('play', f.frameId, 0);
   assert.equal(replacement.paused, true, 'a previous player cannot authorise an unrelated player');
+});
+
+
+test('notification fallback Play rejects a different source on the last played element', () => {
+  for (const change of ['src', 'currentSrc', 'srcObject', 'emptied']) {
+    const f = frame({ host: 'music.example.test' });
+    // A site-triggered pause does not populate our notification pause queue.
+    f.media.pause();
+    if (change === 'emptied') f.emit('emptied');
+    else f.media[change] = change === 'srcObject' ? {} : 'https://media.example.test/new.mp4';
+    f.window.__wvkControlRichMedia('play', f.frameId, 0);
+    assert.equal(f.media.paused, true, change);
+  }
+});
+
+test('notification fallback Play still resumes the same source after a site-triggered pause', () => {
+  const f = frame({ host: 'music.example.test' });
+  f.media.pause();
+  f.window.__wvkControlRichMedia('play', f.frameId, 0);
+  assert.equal(f.media.paused, false);
+});
+
+
+test('a newly played source becomes eligible for notification fallback Play', () => {
+  const f = frame({ host: 'music.example.test' });
+  f.media.pause();
+  f.media.src = f.media.currentSrc = 'https://media.example.test/new.mp4';
+  f.emit('emptied');
+  f.media.play();
+  f.emit('playing');
+  f.media.pause();
+  f.window.__wvkControlRichMedia('play', f.frameId, 0);
+  assert.equal(f.media.paused, false);
 });
