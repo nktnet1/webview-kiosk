@@ -12,7 +12,6 @@ class BatteryInterface(private val context: Context) {
         const val NAME = "WebviewKioskBatteryInterface"
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun getBatteryStatus(): String {
         val batteryStatus =

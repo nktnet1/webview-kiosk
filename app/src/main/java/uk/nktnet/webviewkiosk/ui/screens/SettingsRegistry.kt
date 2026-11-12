@@ -416,6 +416,11 @@ internal val settingsPages: List<SettingsPage> = buildList {
                         R.string.setting_info_media_playback_requires_user_gesture,
                     ),
                     SettingDefinition(
+                        R.string.web_engine_background_media_playback_title,
+                        UserSettingsKeys.WebEngine.BACKGROUND_MEDIA_PLAYBACK,
+                        R.string.setting_info_background_media_playback,
+                    ),
+                    SettingDefinition(
                         R.string.web_engine_mutual_tls_title,
                         UserSettingsKeys.WebEngine.MUTUAL_TLS,
                         R.string.setting_info_mutual_tls,

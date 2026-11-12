@@ -230,7 +230,14 @@ Sets whether the WebView requires a user gesture (e.g. tap) to play media.
 
 **Default:** true
 
-## 15. Mutual TLS [#mutual-tls]
+## 15. Background Media Playback [#background-media-playback]
+
+When enabled, audio and video already playing in the WebView can continue when
+{APP_NAME} is sent to the background or the screen is locked.
+
+**Default:** false
+
+## 16. Mutual TLS [#mutual-tls]
 
 Configure exact sites that may use a client certificate for
 [Mutual TLS](https://www.cloudflare.com/learning/access-management/what-is-mutual-tls/).
@@ -270,7 +277,7 @@ managed.example.com=work-client-cert
 
 **Default:** (blank)
 
-## 16. SSL Error Mode [#ssl-error-mode]
+## 17. SSL Error Mode [#ssl-error-mode]
 
 Configure the action to take when an SSL Error is received.
 
@@ -282,7 +289,7 @@ Configure the action to take when an SSL Error is received.
 
 **Default:** Block
 
-## 17. Mixed Content Mode [#mixed-content-mode]
+## 18. Mixed Content Mode [#mixed-content-mode]
 
 Configures the WebView's behavior when a secure origin attempts to load
 a resource from an insecure origin.
@@ -297,7 +304,7 @@ a resource from an insecure origin.
 
 **Default:** Never Allow
 
-## 18. Over Scroll Mode [#over-scroll-mode]
+## 19. Over Scroll Mode [#over-scroll-mode]
 
 Configures the WebView's behavior when the user scrolls beyond the content boundaries.
 
@@ -311,7 +318,7 @@ Configures the WebView's behavior when the user scrolls beyond the content bound
 
 **Default:** If Content Scrolls
 
-## 19. Request Focus On Page Start [#request-focus-on-page-start]
+## 20. Request Focus On Page Start [#request-focus-on-page-start]
 
 Sets whether the WebView should request focus when a page starts loading.
 

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="pdf_source_token" type="id" />
+    <item name="background_media_playback_controller" type="id" />
 </resources>

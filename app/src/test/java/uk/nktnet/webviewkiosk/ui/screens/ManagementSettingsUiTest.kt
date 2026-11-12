@@ -640,6 +640,10 @@ class ManagementSettingsUiTest {
             )
     }
 
+    // Robolectric's package manager requires a synthetic PermissionInfo for a
+    // stopped Shizuku fork. Android deprecates both public constructors and the
+    // protectionLevel setter without providing a replacement for test fixtures.
+    @Suppress("DEPRECATION")
     private fun installShizuku() {
         val shizukuPackageName = "example.shizuku.fork"
         shadowOf(controller.get().packageManager)

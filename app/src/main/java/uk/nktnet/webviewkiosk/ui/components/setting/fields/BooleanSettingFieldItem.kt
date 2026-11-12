@@ -16,6 +16,7 @@ fun BooleanSettingFieldItem(
     disabledReason: String? = null,
     itemText: (@Composable (Boolean) -> String)? = null,
     extraContent: (@Composable ((setValue: (Boolean) -> Unit) -> Unit))? = null,
+    extraContentForValue: (@Composable (Boolean) -> Unit)? = null,
 ) {
     val resolvedItemText: @Composable (Boolean) -> String =
         itemText
@@ -39,5 +40,6 @@ fun BooleanSettingFieldItem(
         onSave = onSave,
         itemText = resolvedItemText,
         extraContent = extraContent,
+        extraContentForValue = extraContentForValue,
     )
 }

@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package uk.nktnet.webviewkiosk.utils.webview.interfaces
 
 import android.webkit.JavascriptInterface
@@ -426,29 +424,23 @@ class NfcInterface(private val context: android.content.Context) {
         """
     }
 
-    @Suppress("unused")
-    @JavascriptInterface
-    fun openClient(): String = NfcBridgeManager.openClient()
+    @JavascriptInterface fun openClient(): String = NfcBridgeManager.openClient()
 
-    @Suppress("unused")
     @JavascriptInterface
     fun scanForClient(clientId: String?, optionsJson: String?): Boolean {
         return isNfcEnabled(context) && NfcBridgeManager.startClientScan(clientId)
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun stopScanForClient(clientId: String?) {
         NfcBridgeManager.stopClientScan(clientId)
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun releaseClient(clientId: String?) {
         NfcBridgeManager.releaseClient(clientId)
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun scan(optionsJson: String?): Boolean {
         if (!isNfcEnabled(context)) {
@@ -459,7 +451,6 @@ class NfcInterface(private val context: android.content.Context) {
         return true
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun stopScan() {
         NfcBridgeManager.setScanActive(false)
@@ -475,7 +466,6 @@ class NfcInterface(private val context: android.content.Context) {
         return writeInternal(messageJson)
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun writeForClient(
         clientId: String?,

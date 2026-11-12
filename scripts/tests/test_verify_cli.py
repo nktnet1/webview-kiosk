@@ -1,6 +1,7 @@
 """Contract tests for the single-command release verifier, without an SDK/AVD."""
 
 import contextlib
+import io
 import os
 import json
 import subprocess
@@ -47,7 +48,7 @@ class VerifyCliTest(unittest.TestCase):
         self.addCleanup(self.report_patch.stop)
 
     def fake_execute(self, calls):
-        def execute(label, argv, report):
+        def execute(label, argv, report, **kwargs):
             calls.append((label, list(map(str, argv))))
             report["steps"].append({"name": label, "status": "pass"})
         return execute
@@ -191,7 +192,7 @@ class VerifyCliTest(unittest.TestCase):
 
     def test_failed_test_command_is_recorded(self):
         calls = []
-        def fail(label, argv, report):
+        def fail(label, argv, report, **kwargs):
             report["steps"].append({"name": label, "status": "fail"})
             raise VERIFY_MODULE.VerificationError("Gradle failed")
         with patch.object(VERIFY_MODULE, "preflight"), patch.object(VERIFY_MODULE, "execute", side_effect=fail):
@@ -348,6 +349,74 @@ class VerifyCliTest(unittest.TestCase):
     def test_invalid_avd_name_is_rejected(self):
         with self.assertRaises(SystemExit):
             VERIFY_MODULE.main(["--avd", "../personal", "--skip-avd"])
+
+    def test_colour_is_interactive_only_and_respects_no_color(self):
+        class Terminal(io.StringIO):
+            def isatty(self):
+                return True
+
+        env = {**os.environ, "TERM": "xterm"}
+        env.pop("NO_COLOR", None)
+        with patch.dict(os.environ, env, clear=True):
+            self.assertIn("\033[1;32m", VERIFY_MODULE.colour("PASS", "1;32", stream=Terminal()))
+            self.assertEqual("PASS", VERIFY_MODULE.colour("PASS", "1;32", stream=io.StringIO()))
+            os.environ["NO_COLOR"] = ""
+            self.assertEqual("PASS", VERIFY_MODULE.colour("PASS", "1;32", stream=Terminal()))
+
+    def test_step_headings_and_skips_have_clear_separation(self):
+        report = {"requested": {"docs": False}, "steps": []}
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            VERIFY_MODULE.skipped("Documentation suites", "--skip-docs", report)
+        self.assertIn("Step 1/5 - Documentation suites", output.getvalue())
+        self.assertIn("SKIPPED - Documentation suites (--skip-docs)", output.getvalue())
+        self.assertEqual([{"name": "Documentation suites", "status": "skipped",
+                           "reason": "--skip-docs"}], report["steps"])
+
+    def test_script_tests_hide_expected_errors_but_keep_full_log(self):
+        report = {"requested": {"docs": True}, "steps": []}
+        log = Path(self.folder.name) / "script-tests.log"
+        output = io.StringIO()
+
+        def test_process(argv, **kwargs):
+            self.assertEqual(subprocess.STDOUT, kwargs["stderr"])
+            kwargs["stdout"].write("Error: 'magick' command not found\n"
+                                   "Ran 184 tests in 5.2s\nOK\n# tests 311\n# pass 311\n")
+            return SimpleNamespace(returncode=0)
+
+        with (patch.object(VERIFY_MODULE, "ROOT", Path(self.folder.name)),
+              patch.object(VERIFY_MODULE, "SCRIPT_TEST_LOG", log),
+              patch.object(VERIFY_MODULE.subprocess, "run", side_effect=test_process),
+              contextlib.redirect_stdout(output)):
+            VERIFY_MODULE.execute("Script tests (Python + Node)", ["python3", "tests"], report,
+                                  capture_output=True)
+        self.assertEqual("pass", report["steps"][0]["status"])
+        self.assertEqual("script-tests.log", report["steps"][0]["log"])
+        self.assertNotIn("magick", output.getvalue())
+        self.assertIn("Python: 184 tests | Node: 311 tests", output.getvalue())
+        self.assertIn("PASS - Script tests", output.getvalue())
+        self.assertIn("Error: 'magick' command not found", log.read_text())
+
+    def test_failed_script_suite_surfaces_errors_and_writes_failure_report(self):
+        report = {"requested": {"docs": True}, "steps": []}
+        log = Path(self.folder.name) / "script-tests.log"
+        output = io.StringIO()
+        errors = io.StringIO()
+
+        def test_process(argv, **kwargs):
+            kwargs["stdout"].write("AssertionError: real regression\n")
+            return SimpleNamespace(returncode=4)
+
+        with (patch.object(VERIFY_MODULE, "ROOT", Path(self.folder.name)),
+              patch.object(VERIFY_MODULE, "SCRIPT_TEST_LOG", log),
+              patch.object(VERIFY_MODULE.subprocess, "run", side_effect=test_process),
+              contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors)):
+            with self.assertRaisesRegex(VERIFY_MODULE.VerificationError, "exit 4"):
+                VERIFY_MODULE.execute("Script tests (Python + Node)", ["python3", "tests"], report,
+                                      capture_output=True)
+        self.assertIn("AssertionError: real regression", errors.getvalue())
+        self.assertIn("FAIL - Script tests", output.getvalue())
+        self.assertEqual("fail", report["steps"][0]["status"])
 
 
 if __name__ == "__main__":
