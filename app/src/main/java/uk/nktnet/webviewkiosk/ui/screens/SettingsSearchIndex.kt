@@ -19,7 +19,6 @@ internal data class SettingsSearchResult(
     val kind: SettingsSearchResultKind,
     val targetId: String? = null,
     val settingKey: String? = null,
-    val showKey: Boolean = false,
 )
 
 /** Resource names are stable across languages and resource-ID reassignments. */
@@ -162,14 +161,7 @@ internal class SettingsSearchIndex(context: Context) {
                     words.any { it in doc.options } -> 300
                     else -> 100
                 }
-            val showKey =
-                doc.key.isNotEmpty() &&
-                    (query.any { it == '_' || it == '.' } &&
-                        words.any { it in doc.key } ||
-                        words.any {
-                            it in doc.key && it !in doc.label && it !in doc.heading
-                        })
-            doc.result.copy(showKey = showKey) to score
+            doc.result to score
         }
         // Strongest group first, with stable registry order breaking ties. Keep
         // each breadcrumb group together and rank its rows by match quality.

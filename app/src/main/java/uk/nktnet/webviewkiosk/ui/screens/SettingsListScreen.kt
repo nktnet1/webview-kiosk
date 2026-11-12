@@ -232,11 +232,13 @@ private fun SettingsSearchResultRow(
     result: SettingsSearchResult,
     onClick: () -> Unit,
 ) {
-    val icon =
+    val (iconRes, descriptionRes) =
         when (result.kind) {
-            SettingsSearchResultKind.SETTING -> null
+            SettingsSearchResultKind.SETTING ->
+                R.drawable.baseline_settings_24 to
+                    R.string.settings_search_result_setting
             SettingsSearchResultKind.PAGE ->
-                R.drawable.baseline_arrow_forward_24 to
+                R.drawable.baseline_list_alt_24 to
                     R.string.settings_search_result_page
             SettingsSearchResultKind.INFORMATION ->
                 R.drawable.baseline_info_24 to
@@ -253,14 +255,12 @@ private fun SettingsSearchResultRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        icon?.let { (iconRes, descriptionRes) ->
-            Icon(
-                painter = painterResource(iconRes),
-                contentDescription = stringResource(descriptionRes),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp),
-            )
-        }
+        Icon(
+            painter = painterResource(iconRes),
+            contentDescription = stringResource(descriptionRes),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(24.dp),
+        )
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -269,7 +269,7 @@ private fun SettingsSearchResultRow(
                 text = stringResource(result.titleRes),
                 style = MaterialTheme.typography.bodyLarge,
             )
-            val subtitle = result.settingKey.takeIf { result.showKey }
+            val subtitle = result.settingKey
             if (subtitle != null) {
                 Text(
                     text = subtitle,

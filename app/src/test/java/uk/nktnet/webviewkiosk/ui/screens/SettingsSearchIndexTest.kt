@@ -221,22 +221,23 @@ class SettingsSearchIndexTest {
     }
 
     @Test
-    fun onlyShowsKeysWhenTheQueryUsesKeySyntaxOrKeySpecificTerms() {
+    fun retainsTheActualKeyForLabelPartialKeyAndFullKeyQueries() {
         val key = UserSettingsKeys.WebBrowsing.ALLOW_PULL_TO_REFRESH
         val labelled =
             searchSettings(context, "Pull to refresh").single {
                 it.settingKey == key
             }
-        assertFalse(labelled.showKey)
-        assertTrue(
-            searchSettings(context, "allow_pull_to_refresh")
-                .single { it.settingKey == key }
-                .showKey
+        assertEquals(key, labelled.settingKey)
+        assertEquals(
+            labelled,
+            searchSettings(context, "allow_pull_to_refresh").single {
+                it.settingKey == key
+            },
         )
         val byKey = searchSettings(context, key).first()
         assertEquals(key, byKey.settingKey)
         assertEquals(key, byKey.targetId)
-        assertTrue(byKey.showKey)
+        assertEquals(labelled, byKey)
         assertEquals(
             UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY,
             searchSettings(context, UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY)
