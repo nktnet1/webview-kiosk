@@ -15,10 +15,24 @@ internal const val RICH_MEDIA_SCRIPT =
       var youtube = /(^|\.)youtube(-nocookie)?\.com$/.test(location.hostname.toLowerCase());
       var handlers = Object.create(null);
       var lastSnapshot = '';
+      var lastReport = null;
       var lastProgressReport = 0;
       var lastPlayedMedia = null;
       var lastPlayback = null;
       var mediaIdentity = window.__wvkMediaIdentity;
+      var playlistCache = null;
+      var currentNavigation = null;
+      var pendingTrack = null;
+      var waitingMedia = new WeakSet();
+      var explicitlyPaused = false;
+
+      window.__wvkRichMediaExplicitAction = function (action) {
+        if (action === 'pause' || action === 'stop') {
+          explicitlyPaused = true;
+          pendingTrack = null;
+          waitingMedia = new WeakSet();
+        } else if (action === 'resume') explicitlyPaused = false;
+      };
 
       function rememberPlaying(media) {
         lastPlayedMedia = media;
@@ -105,6 +119,76 @@ internal const val RICH_MEDIA_SCRIPT =
         var node = active && active.querySelector(selector);
         return node && node.textContent ? node.textContent.trim() : '';
       }
+      function videoIdentity(root) {
+        var shortsId = isShorts() && /^\/shorts\/([a-zA-Z0-9_-]{11})(?:\/|$)/.exec(location.pathname || '');
+        var data = call(root, 'getVideoData', null) || {};
+        return (shortsId && shortsId[1]) || data.video_id || data.videoId || '';
+      }
+      function playlistNavigation(root, element, videoId) {
+        var context = /(?:\?|&)list=([^&]*)/.exec(location.search || '');
+        context = context ? context[1] : '';
+        var list = call(root, 'getPlaylist', null);
+        var index = call(root, 'getPlaylistIndex', -1);
+        if (Array.isArray(list) && list.length > 0 && typeof index === 'number' &&
+            Math.floor(index) === index && index >= 0 && index < list.length) {
+          playlistCache = {
+            root: root, context: context, videoId: videoId || list[index],
+            identity: mediaIdentity.capture(element), index: index, length: list.length
+          };
+          return playlistCache;
+        }
+        // Volume changes can temporarily remove YouTube's playlist getters and
+        // buttons. Unknown data must not erase bounds known for this same item.
+        var sameItem = playlistCache && playlistCache.context === context &&
+          (videoId ? playlistCache.videoId === videoId :
+            playlistCache.root === root && mediaIdentity.matches(playlistCache.identity, element));
+        if (sameItem && !(Array.isArray(list) && list.length === 0 && !context)) return playlistCache;
+        playlistCache = null;
+        return null;
+      }
+      function loadingState(root, element) {
+        if (explicitlyPaused) return false;
+        if (element && element.error) {
+          pendingTrack = null;
+          waitingMedia.delete(element);
+          return false;
+        }
+        var state = call(root, 'getPlayerState', null);
+        var ready = element && typeof element.readyState === 'number' ? element.readyState : 4;
+        var cued = state === 5 && ready >= 1;
+        var active = element && !element.paused && !element.ended;
+        var loading = !cued && (state === 3 ||
+          (element && waitingMedia.has(element) && (active || !!pendingTrack)) ||
+          (active && ready < 3));
+        if (pendingTrack) {
+          if (loading || state === -1) pendingTrack.sawLoading = true;
+          var changed = element && pendingTrack.identity &&
+            !mediaIdentity.matches(pendingTrack.identity, element);
+          var pausedReady = element && element.paused && ready >= 1 && state !== 3 && state !== -1;
+          var playable = (!loading && ready >= 3 && state !== -1) || pausedReady || cued;
+          if (playable && (changed || pendingTrack.readyEvent ||
+              (cued && videoIdentity(root) !== pendingTrack.videoId))) {
+            pendingTrack = null;
+            if (pausedReady || cued) {
+              waitingMedia.delete(element);
+              loading = false;
+            }
+          } else if (Date.now() - pendingTrack.requestedAt > 10000 && !loading) {
+            // A site may ignore a track command. Do not leave a phantom spinner.
+            pendingTrack = null;
+          }
+        }
+        return loading || pendingTrack !== null;
+      }
+      function changeTrack(root, element, action) {
+        pendingTrack = {
+          identity: mediaIdentity.capture(element), videoId: videoIdentity(root),
+          requestedAt: Date.now(), sawLoading: false, readyEvent: false
+        };
+        report(true);
+        try { action(); }
+        catch (ignored) { pendingTrack = null; }
+      }
       function snapshot() {
         var element = media();
         var root = youtube && player();
@@ -127,31 +211,36 @@ internal const val RICH_MEDIA_SCRIPT =
         } else {
           art = meta('og:image');
         }
-        var duration = nonnegative(call(root, 'getDuration', element ? element.duration : -1));
-        if (duration < 0 && element) duration = nonnegative(element.duration);
-        var position = nonnegative(call(root, 'getCurrentTime', element ? element.currentTime : -1));
-        if (position < 0 && element) position = nonnegative(element.currentTime);
-        var playlist = call(root, 'getPlaylist', null);
-        var index = call(root, 'getPlaylistIndex', -1);
-        var hasList = playlist && playlist.length > 1 && index >= 0;
+        // The API may still describe the old clip during a playlist transition.
+        // Prefer the selected HTML player's actual timeline whenever available.
+        var duration = nonnegative(element ? element.duration : -1);
+        if (duration < 0) duration = nonnegative(call(root, 'getDuration', -1));
+        var position = nonnegative(element ? element.currentTime : -1);
+        if (position < 0) position = nonnegative(call(root, 'getCurrentTime', -1));
+        var navigation = youtube && !isShorts() ? playlistNavigation(root, element, videoId) : null;
+        currentNavigation = navigation;
         var previous = !!(!youtube && handlers.previoustrack) ||
           !!(youtube && ((isShorts() && enabledButton(transportButton('previous'))) ||
-            (!isShorts() && ((hasList && index > 0 && typeof root.previousVideo === 'function') ||
+            (!isShorts() && ((navigation && navigation.index > 0 && typeof root.previousVideo === 'function') ||
               enabledButton(transportButton('previous'))))));
         var next = !!(!youtube && handlers.nexttrack) ||
           !!(youtube && ((isShorts() && enabledButton(transportButton('next'))) ||
-            (!isShorts() && ((hasList && index < playlist.length - 1 && typeof root.nextVideo === 'function') ||
+            (!isShorts() && ((navigation && navigation.index < navigation.length - 1 && typeof root.nextVideo === 'function') ||
               enabledButton(transportButton('next'))))));
         var live = data.isLive === true ||
           !!(element && element.duration === Infinity) ||
           !!(root && root.classList && root.classList.contains('ytp-live'));
-        var seek = !live && duration > 0 && !!(element || (root && typeof root.seekTo === 'function') || handlers.seekto);
+        var seek = !live && !(element && element.error) && duration > 0 &&
+          !!(element || (root && typeof root.seekTo === 'function') || handlers.seekto);
         var speed = element && element.playbackRate > 0 ? element.playbackRate : 1;
+        var buffering = loadingState(root, element);
+        var changingTrack = pendingTrack !== null;
         return {
           title: String(title), artist: String(artist), artworkUrl: String(art),
-          durationMs: duration >= 0 ? Math.round(duration * 1000) : -1,
-          positionMs: position >= 0 ? Math.round(position * 1000) : -1,
-          canPrevious: previous, canNext: next, canSeek: seek,
+          durationMs: !changingTrack && duration >= 0 ? Math.round(duration * 1000) : -1,
+          positionMs: changingTrack ? 0 : (position >= 0 ? Math.round(position * 1000) : -1),
+          buffering: buffering,
+          canPrevious: previous, canNext: next, canSeek: seek && !changingTrack,
           canMute: !!(element && typeof element.muted === 'boolean') ||
             !!(root && typeof root.isMuted === 'function' &&
               typeof root.mute === 'function' && typeof root.unMute === 'function'),
@@ -161,9 +250,29 @@ internal const val RICH_MEDIA_SCRIPT =
           speed: speed
         };
       }
-      function report(force) {
+      function report(force, volumeOnly) {
         var data = snapshot();
         if (!data) return;
+        var element = media();
+        var id = videoIdentity(youtube && player());
+        var context = location.search || '';
+        var navigation = currentNavigation;
+        var sameItem = lastReport && lastReport.context === context &&
+          (id ? lastReport.videoId === id : mediaIdentity.matches(lastReport.identity, element));
+        var sameBounds = lastReport &&
+          ((!navigation && !lastReport.navigation) ||
+            (navigation && lastReport.navigation && navigation.index === lastReport.navigation.index &&
+              navigation.length === lastReport.navigation.length));
+        if (youtube && volumeOnly === true && sameItem && sameBounds) {
+          // A volume-only event is not evidence that track navigation changed.
+          // This also covers watch-page playlists managed through UI buttons.
+          data.canPrevious = lastReport.data.canPrevious;
+          data.canNext = lastReport.data.canNext;
+        }
+        lastReport = {
+          data: data, identity: mediaIdentity.capture(element), videoId: id,
+          context: context, navigation: navigation
+        };
         var serialized = JSON.stringify(data);
         if (serialized === lastSnapshot && !force) return;
         lastSnapshot = serialized;
@@ -183,7 +292,9 @@ internal const val RICH_MEDIA_SCRIPT =
             var result = original.apply(this, arguments);
             if (['nexttrack', 'previoustrack', 'seekto', 'seekbackward', 'seekforward'].indexOf(action) !== -1) {
               handlers[action] = typeof handler === 'function' ? handler : null;
-              report(true);
+              // YouTube resets these handlers during volume changes; its track
+              // capabilities come from the player and buttons, not this registry.
+              if (!youtube) report(true);
             }
             return result;
           };
@@ -208,6 +319,7 @@ internal const val RICH_MEDIA_SCRIPT =
         var root = youtube && player();
         var element = media();
         var data = snapshot();
+        var navigation = currentNavigation;
         if (action === 'pause') {
           window.__wvkControlMedia('pause', true);
         } else if (action === 'play') {
@@ -224,14 +336,16 @@ internal const val RICH_MEDIA_SCRIPT =
         } else if (action === 'next' && data && data.canNext) {
           if (isShorts()) {
             var nextShort = transportButton('next');
-            if (enabledButton(nextShort)) nextShort.click();
-          } else if (handlers.nexttrack && !youtube) handlers.nexttrack({action: 'nexttrack'});
+            if (enabledButton(nextShort)) changeTrack(root, element, function () { nextShort.click(); });
+          } else if (handlers.nexttrack && !youtube) {
+            changeTrack(root, element, function () { handlers.nexttrack({action: 'nexttrack'}); });
+          }
           else if (root && typeof root.nextVideo === 'function' &&
-                   call(root, 'getPlaylist', null) && call(root, 'getPlaylist', null).length > 1) {
-            root.nextVideo();
+                   navigation && navigation.index < navigation.length - 1) {
+            changeTrack(root, element, function () { root.nextVideo(); });
           } else {
             var next = transportButton('next');
-            if (enabledButton(next)) next.click();
+            if (enabledButton(next)) changeTrack(root, element, function () { next.click(); });
           }
         } else if (action === 'previous' && data) {
           // Use the current player position, not a potentially stale native tick.
@@ -243,14 +357,16 @@ internal const val RICH_MEDIA_SCRIPT =
             return;
           } else if (isShorts()) {
             var previousShort = transportButton('previous');
-            if (enabledButton(previousShort)) previousShort.click();
-          } else if (handlers.previoustrack && !youtube) handlers.previoustrack({action: 'previoustrack'});
+            if (enabledButton(previousShort)) changeTrack(root, element, function () { previousShort.click(); });
+          } else if (handlers.previoustrack && !youtube) {
+            changeTrack(root, element, function () { handlers.previoustrack({action: 'previoustrack'}); });
+          }
           else if (root && typeof root.previousVideo === 'function' &&
-                   call(root, 'getPlaylist', null) && call(root, 'getPlaylist', null).length > 1) {
-            root.previousVideo();
+                   navigation && navigation.index > 0) {
+            changeTrack(root, element, function () { root.previousVideo(); });
           } else {
             var previous = transportButton('previous');
-            if (enabledButton(previous)) previous.click();
+            if (enabledButton(previous)) changeTrack(root, element, function () { previous.click(); });
           }
         } else if (action === 'mute' && data && data.canMute) {
           var muted = !data.muted;
@@ -276,7 +392,7 @@ internal const val RICH_MEDIA_SCRIPT =
           if (root && typeof root.setPlaybackRate === 'function') root.setPlaybackRate(nextRate);
           else if (element) element.playbackRate = nextRate;
         }
-        report(true);
+        report(true, action === 'mute');
       }
       function dispatch(action, target, value) {
         if (frameId === target) {
@@ -298,12 +414,35 @@ internal const val RICH_MEDIA_SCRIPT =
           dispatch(event.data.__wvkRichMediaCommand, event.data.target, event.data.value);
         }
       });
-      ['play','playing','pause','ended','loadedmetadata','durationchange','ratechange','volumechange'].forEach(function (name) {
+      ['waiting','loadstart','emptied'].forEach(function (name) {
+        document.addEventListener(name, function (event) {
+          waitingMedia.add(event.target);
+          report(true);
+        }, true);
+      });
+      ['playing','canplay','seeked'].forEach(function (name) {
+        document.addEventListener(name, function (event) {
+          waitingMedia.delete(event.target);
+          if (pendingTrack && event.target === media() &&
+              (pendingTrack.sawLoading || videoIdentity(youtube && player()) !== pendingTrack.videoId ||
+                !mediaIdentity.matches(pendingTrack.identity, event.target))) pendingTrack.readyEvent = true;
+          report(true);
+        }, true);
+      });
+      document.addEventListener('error', function (event) {
+        waitingMedia.delete(event.target);
+        if (event.target === media()) pendingTrack = null;
+        report(true);
+      }, true);
+      // Aborting the old resource is normal during a track change, not a failure.
+      ['play','playing','pause','ended','loadedmetadata','durationchange','ratechange','volumechange','abort'].forEach(function (name) {
         document.addEventListener(name, function (event) {
           if (name === 'play' || name === 'playing') {
+            explicitlyPaused = false;
             rememberPlaying(event.target);
           }
-          report(true);
+          if (name === 'pause' || name === 'ended') waitingMedia.delete(event.target);
+          report(true, name === 'volumechange');
         }, true);
       });
       document.addEventListener('timeupdate', function () {

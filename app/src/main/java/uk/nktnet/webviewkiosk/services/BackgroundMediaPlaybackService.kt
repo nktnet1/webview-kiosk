@@ -321,14 +321,16 @@ class BackgroundMediaPlaybackService : Service() {
             builder
                 .setActions(actions)
                 .setState(
-                    if (playing) {
+                    if (info.buffering) {
+                        PlaybackState.STATE_BUFFERING
+                    } else if (playing) {
                         PlaybackState.STATE_PLAYING
                     } else {
                         PlaybackState.STATE_PAUSED
                     },
                     info.positionMs.takeIf { it >= 0 }
                         ?: PlaybackState.PLAYBACK_POSITION_UNKNOWN,
-                    if (playing) {
+                    if (playing && !info.buffering) {
                         info.speed
                     } else {
                         0f
@@ -394,14 +396,18 @@ class BackgroundMediaPlaybackService : Service() {
                 }
             )
             .setContentText(
-                info.artist.ifBlank {
-                    if (playing) {
-                        getString(
-                            R.string.notification_background_media_text,
-                            getString(R.string.app_name),
-                        )
-                    } else {
-                        getString(R.string.notification_background_media_paused)
+                if (info.buffering) {
+                    getString(R.string.notification_background_media_loading)
+                } else {
+                    info.artist.ifBlank {
+                        if (playing) {
+                            getString(
+                                R.string.notification_background_media_text,
+                                getString(R.string.app_name),
+                            )
+                        } else {
+                            getString(R.string.notification_background_media_paused)
+                        }
                     }
                 }
             )
@@ -448,17 +454,17 @@ class BackgroundMediaPlaybackService : Service() {
             enabled = info.canPreviousOrRestart,
         )
         button(
-            if (playing) {
+            if (playing || info.buffering) {
                 R.drawable.media_pause
             } else {
                 R.drawable.media_play
             },
-            if (playing) {
+            if (playing || info.buffering) {
                 R.string.notification_background_media_pause
             } else {
                 R.string.notification_background_media_play
             },
-            if (playing) {
+            if (playing || info.buffering) {
                 ACTION_PAUSE
             } else {
                 ACTION_PLAY

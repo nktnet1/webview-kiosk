@@ -12,6 +12,7 @@
     <string name="notification_background_media_play">Play</string>
     <string name="notification_background_media_pause">Pause</string>
     <string name="notification_background_media_paused">Playback paused</string>
+    <string name="notification_background_media_loading">Loading media…</string>
     <string name="notification_background_media_previous">Previous</string>
     <string name="notification_background_media_next">Next</string>
     <string name="notification_background_media_previous_unavailable">Previous (unavailable)</string>

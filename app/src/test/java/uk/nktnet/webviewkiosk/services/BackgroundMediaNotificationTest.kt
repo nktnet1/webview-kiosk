@@ -24,6 +24,103 @@ import uk.nktnet.webviewkiosk.utils.webview.MediaPlaybackInfo
 @LooperMode(LooperMode.Mode.PAUSED)
 class BackgroundMediaNotificationTest {
     @Test
+    @Config(sdk = [28, 33, 37])
+    fun bufferingStopsClockAndDisplaysLoadingUntilPlaybackResumes() {
+        val controller =
+            Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
+                .create()
+        try {
+            val service = controller.get()
+            val session: MediaSession =
+                ReflectionHelpers.getField(service, "mediaSession")
+            BackgroundMediaPlaybackService.updatePlaying(true)
+            BackgroundMediaPlaybackService.updateMediaInfo(
+                MediaPlaybackInfo(
+                    title = "Old track",
+                    artist = "Artist",
+                    positionMs = 40_000,
+                    durationMs = 300_000,
+                    canSeek = true,
+                    canNext = true,
+                    speed = 1.25f,
+                )
+            )
+            val loading =
+                MediaPlaybackInfo(
+                    title = "Next track",
+                    artist = "Artist",
+                    positionMs = 0,
+                    durationMs = -1,
+                    buffering = true,
+                    canNext = true,
+                )
+            BackgroundMediaPlaybackService.updateMediaInfo(loading)
+            var state: PlaybackState =
+                ReflectionHelpers.getField(session, "mPlaybackState")
+            assertEquals(PlaybackState.STATE_BUFFERING, state.state)
+            assertEquals(0L, state.position)
+            assertEquals(0f, state.playbackSpeed)
+            assertEquals(0L, state.actions and PlaybackState.ACTION_SEEK_TO)
+            assertTrue(state.actions and PlaybackState.ACTION_SKIP_TO_NEXT != 0L)
+            assertEquals(
+                service.getString(R.string.notification_background_media_loading),
+                service
+                    .buildNotification()
+                    .extras
+                    .getString(Notification.EXTRA_TEXT),
+            )
+
+            // The new element can be paused while loading; that is still buffering.
+            BackgroundMediaPlaybackService.updatePlaying(false)
+            state = ReflectionHelpers.getField(session, "mPlaybackState")
+            assertEquals(PlaybackState.STATE_BUFFERING, state.state)
+            assertEquals(0f, state.playbackSpeed)
+            assertEquals(
+                service.getString(R.string.notification_background_media_pause),
+                service.buildNotification().actions[2].title,
+            )
+
+            BackgroundMediaPlaybackService.updateMediaInfo(
+                loading.copy(
+                    buffering = false,
+                    durationMs = 180_000,
+                    positionMs = 250,
+                    canSeek = true,
+                )
+            )
+            BackgroundMediaPlaybackService.updatePlaying(true)
+            state = ReflectionHelpers.getField(session, "mPlaybackState")
+            assertEquals(PlaybackState.STATE_PLAYING, state.state)
+            assertEquals(250L, state.position)
+            assertEquals(1f, state.playbackSpeed)
+            assertEquals(
+                "Artist",
+                service
+                    .buildNotification()
+                    .extras
+                    .getString(Notification.EXTRA_TEXT),
+            )
+
+            // Rebuffering the same track freezes its actual position instead of
+            // resetting it.
+            BackgroundMediaPlaybackService.updateMediaInfo(
+                loading.copy(
+                    buffering = true,
+                    durationMs = 180_000,
+                    positionMs = 45_000,
+                    canSeek = true,
+                )
+            )
+            state = ReflectionHelpers.getField(session, "mPlaybackState")
+            assertEquals(PlaybackState.STATE_BUFFERING, state.state)
+            assertEquals(45_000L, state.position)
+            assertEquals(0f, state.playbackSpeed)
+        } finally {
+            controller.destroy()
+        }
+    }
+
+    @Test
     @Config(sdk = [23, 28])
     fun notificationKeepsFiveSlotsWithMuteFirstAndCloseLast() {
         val controller =
@@ -110,6 +207,11 @@ class BackgroundMediaNotificationTest {
                             )
                             assertNotNull(notification.contentIntent)
                             assertNotNull(notification.deleteIntent)
+                            assertTrue(
+                                notification.extras.containsKey(
+                                    Notification.EXTRA_MEDIA_SESSION
+                                )
+                            )
                         }
                     }
                 }

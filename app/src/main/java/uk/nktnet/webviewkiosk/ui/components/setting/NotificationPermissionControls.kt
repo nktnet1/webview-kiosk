@@ -63,9 +63,7 @@ fun rememberNotificationPermissionControl(): NotificationPermissionControlState 
     )
 }
 
-/**
- * The same permission button is used by Device, background media, and MQTT settings.
- */
+/** Permission controls for Device alerts and non-exempt foreground notifications. */
 @Composable
 fun NotificationPermissionButton(state: NotificationPermissionControlState) {
     Button(

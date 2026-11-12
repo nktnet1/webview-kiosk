@@ -29,6 +29,61 @@ import uk.nktnet.webviewkiosk.states.LockStateSingleton
 @LooperMode(LooperMode.Mode.PAUSED)
 class BackgroundMediaPlaybackControllerLifecycleTest {
     @Test
+    fun notificationPauseClearsLoadingAndRejectsLateBufferingReports() {
+        val webView = WebView(RuntimeEnvironment.getApplication())
+        val controller = BackgroundMediaPlaybackController(webView, { true }, {})
+        val service =
+            Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
+                .create()
+        try {
+            field(controller, "serviceRequested").setBoolean(controller, true)
+            field(controller, "activeFrameId").set(controller, "player")
+            val buffering = MediaPlaybackInfo(buffering = true, positionMs = 0)
+            field(controller, "currentMediaInfo").set(controller, buffering)
+            BackgroundMediaPlaybackService.updateMediaInfo(buffering)
+            controller.javaClass
+                .getDeclaredMethod("pauseFromNotificationInternal")
+                .apply { isAccessible = true }
+                .invoke(controller)
+            assertFalse(
+                (field(controller, "currentMediaInfo").get(controller)
+                        as MediaPlaybackInfo)
+                    .buffering
+            )
+            val cached =
+                field(controller, "mediaByFrame").get(controller) as Map<*, *>
+            assertFalse((cached["player"] as MediaPlaybackInfo).buffering)
+
+            controller.javaClass
+                .getDeclaredMethod(
+                    "onMediaInfoChanged",
+                    String::class.java,
+                    String::class.java,
+                )
+                .apply { isAccessible = true }
+                .invoke(
+                    controller,
+                    "player",
+                    """{"buffering":true,"positionMs":0}""",
+                )
+            assertFalse(
+                (field(controller, "currentMediaInfo").get(controller)
+                        as MediaPlaybackInfo)
+                    .buffering
+            )
+            assertEquals(
+                service.get().getString(R.string.notification_background_media_play),
+                service.get().buildNotification().actions[2].title,
+            )
+            assertTrue(controller.shouldRetainWindowVisibility())
+        } finally {
+            controller.dispose()
+            service.destroy()
+            webView.destroy()
+        }
+    }
+
+    @Test
     fun nativeCommandsAllowRestartAndMuteOnlyForSupportedPlayers() {
         val webView = WebView(RuntimeEnvironment.getApplication())
         val controller = BackgroundMediaPlaybackController(webView, { true }, {})

@@ -16,6 +16,7 @@ internal data class MediaPlaybackInfo(
     val artworkUrl: String = "",
     val durationMs: Long = -1L,
     val positionMs: Long = -1L,
+    val buffering: Boolean = false,
     val canPrevious: Boolean = false,
     val canNext: Boolean = false,
     val canSeek: Boolean = false,
@@ -34,6 +35,7 @@ internal data class MediaPlaybackInfo(
             artist != other.artist ||
             artworkUrl != other.artworkUrl ||
             durationMs != other.durationMs ||
+            buffering != other.buffering ||
             canPrevious != other.canPrevious ||
             canPreviousOrRestart != other.canPreviousOrRestart ||
             canNext != other.canNext ||
@@ -91,6 +93,7 @@ internal data class MediaPlaybackInfo(
                         } else {
                             position
                         },
+                    buffering = flag("buffering"),
                     canPrevious = flag("canPrevious"),
                     canNext = flag("canNext"),
                     canSeek = flag("canSeek") && duration > 0,

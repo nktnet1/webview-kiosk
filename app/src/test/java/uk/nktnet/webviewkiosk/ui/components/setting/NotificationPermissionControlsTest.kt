@@ -9,9 +9,8 @@ import uk.nktnet.webviewkiosk.utils.PermissionState
 
 class NotificationPermissionControlsTest {
     @Test
-    fun warnsForEitherForegroundServiceOnlyWhenEnabledWithoutNotificationAccess() {
-        // The condition is shared by media and MQTT, not tied to Device > Allow
-        // Notifications.
+    fun warnsForNonExemptForegroundNotificationsOnlyWhenEnabledWithoutAccess() {
+        // Media-session notifications are exempt; MQTT uses this warning.
         assertTrue(
             shouldWarnForForegroundServiceNotifications(
                 serviceEnabled = true,

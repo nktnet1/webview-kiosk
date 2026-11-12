@@ -67,5 +67,21 @@ class MediaPlaybackInfoTest {
         assertTrue(first.presentationChanged(first.copy(title = "Another video")))
         assertTrue(first.presentationChanged(first.copy(canMute = true)))
         assertTrue(first.presentationChanged(first.copy(muted = true)))
+        assertTrue(first.presentationChanged(first.copy(buffering = true)))
+    }
+
+    @Test
+    fun parsesBufferingWithoutChangingMediaCapabilities() {
+        val buffering =
+            MediaPlaybackInfo.parse(
+                """{"buffering":true,"positionMs":0,"durationMs":-1,"canNext":true,"canSeek":false,"canMute":true}"""
+            )!!
+        assertTrue(buffering.buffering)
+        assertEquals(0L, buffering.positionMs)
+        assertEquals(-1L, buffering.durationMs)
+        assertTrue(buffering.canNext)
+        assertTrue(buffering.canMute)
+        assertFalse(buffering.canSeek)
+        assertFalse(MediaPlaybackInfo.parse("{}")!!.buffering)
     }
 }

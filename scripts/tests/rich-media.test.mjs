@@ -27,15 +27,20 @@ function frame({
   host = 'www.youtube.com', playing = true, title = 'Test song',
   channel = 'Test channel', videoId = 'abcdefghijk', playlist = ['abcdefghijk', 'noprstuvwxy'],
   index = 0, children = [], pathname = '/watch', shortsPreviousEnabled = true,
+  search = Array.isArray(playlist) && playlist.length ? '?list=TEST_LIST' : '',
+  nextButtonEnabled = true,
 } = {}) {
   const snapshots = [];
   const events = new Map();
   const windowEvents = new Map();
   const timers = [];
   const commands = [];
+  let currentVideoId = videoId;
+  let currentIndex = index;
+  let now = Date.now();
   const media = {
     paused: !playing, ended: false, isConnected: true,
-    currentTime: 40, duration: 300, playbackRate: 1, muted: false,
+    currentTime: 40, duration: 300, playbackRate: 1, muted: false, readyState: 4, error: null,
     src: 'https://media.example.test/original.mp4',
     currentSrc: 'https://media.example.test/original.mp4',
     srcObject: null,
@@ -46,11 +51,12 @@ function frame({
   const mobileShorts = isShorts && host.startsWith('m.youtube.com');
   const root = {
     querySelector(selector) { return selector === 'video' ? media : null; },
-    getVideoData() { return { title, author: channel, video_id: videoId }; },
+    getVideoData() { return { title, author: channel, video_id: currentVideoId }; },
     getDuration() { return media.duration; },
     getCurrentTime() { return media.currentTime; },
     getPlaylist() { return playlist; },
-    getPlaylistIndex() { return index; },
+    getPlaylistIndex() { return currentIndex; },
+    getPlayerState() { return media.ended ? 0 : (media.paused ? 2 : (media.readyState < 3 ? 3 : 1)); },
     nextVideo() { commands.push('next'); },
     previousVideo() { commands.push('previous'); },
     seekTo(value) { media.currentTime = value; commands.push(['seek', value]); },
@@ -63,7 +69,8 @@ function frame({
   function controlButton(name) {
     return {
       getAttribute() { return null; },
-      disabled: name === 'previous-short' && !shortsPreviousEnabled,
+      disabled: (name === 'previous-short' && !shortsPreviousEnabled) ||
+        (name === 'next' && !nextButtonEnabled),
       hasAttribute() { return false; },
       click() { commands.push(`${name}-click`); },
     };
@@ -102,7 +109,7 @@ function frame({
     setActionHandler(action, handler) { this.handlers[action] = handler; },
   };
   const window = {
-    location: { hostname: host, pathname },
+    location: { hostname: host, pathname, search },
     navigator: { mediaSession },
     WebviewKioskBackgroundMedia: {
       onMediaInfoChanged(id, info) { snapshots.push([id, JSON.parse(info)]); },
@@ -117,7 +124,10 @@ function frame({
   };
   window.parent = window;
   for (const child of children) child.window.parent = window;
-  const sandbox = { window, document, navigator: window.navigator, location: window.location, setTimeout, isFinite };
+  const sandbox = {
+    window, document, navigator: window.navigator, location: window.location, setTimeout, isFinite,
+    Date: class extends Date { static now() { return now; } },
+  };
   vm.runInNewContext(documentScript, sandbox);
   vm.runInNewContext(recoveryScript, sandbox);
   vm.runInNewContext(richScript, sandbox);
@@ -128,6 +138,24 @@ function frame({
       elements = [replacement];
     },
     tick() { for (const fn of timers) fn(); },
+    advance(ms) { now += ms; for (const fn of timers) fn(); },
+    setPlaylist(list, at) { playlist = list; currentIndex = at; },
+    setVideoId(id) { currentVideoId = id; },
+    setNextButtonEnabled(value) { nextButtonEnabled = value; },
+    finishTrack({ id = 'noprstuvwxy', at = 1, position = 0, duration = 180, playing = true } = {}) {
+      currentVideoId = id;
+      currentIndex = at;
+      media.currentTime = position;
+      media.duration = duration;
+      media.error = null;
+      media.currentSrc = `https://media.example.test/${id}.mp4`;
+      media.src = media.currentSrc;
+      media.readyState = 4;
+      media.paused = !playing;
+      for (const name of ['loadedmetadata', playing ? 'playing' : 'canplay']) {
+        for (const fn of events.get(name) ?? []) fn({ target: media });
+      }
+    },
     emit(name) { for (const fn of events.get(name) ?? []) fn({ target: media }); },
   };
 }
@@ -145,14 +173,16 @@ test('YouTube title/channel/thumbnail/duration and playlist actions reach the na
   assert.equal(info.canSeek, true);
   f.window.__wvkControlRichMedia('next', f.frameId, 0);
   assert.deepEqual(f.commands, ['next']);
-  f.window.__wvkControlRichMedia('previous', f.frameId, 0);
-  assert.deepEqual(f.commands, ['next', ['seek', 0]], 'Previous restarts when there is progress');
+  const restart = frame();
+  restart.window.__wvkControlRichMedia('previous', restart.frameId, 0);
+  assert.deepEqual(restart.commands, [['seek', 0]], 'Previous restarts when there is progress');
 });
 
 test('YouTube playlist previous, seekbar, skip and speed control the existing player', () => {
   const f = frame({ index: 1 });
   f.media.currentTime = 0;
   f.window.__wvkControlRichMedia('previous', f.frameId, 0);
+  f.finishTrack({ id: 'abcdefghijk', at: 0 });
   f.window.__wvkControlRichMedia('seek', f.frameId, 90_000);
   f.window.__wvkControlRichMedia('rewind', f.frameId, 0);
   f.window.__wvkControlRichMedia('forward', f.frameId, 0);
@@ -174,7 +204,7 @@ test('ordinary HTML media has no Next/Previous unless the website installs media
 });
 
 test('targeted transport commands reach only the playing cross-origin child frame', () => {
-  const playingChild = frame({ host: 'www.youtube.com', index: 1 });
+  const playingChild = frame({ host: 'www.youtube.com', index: 0 });
   const adChild = frame({ host: 'music.example.test', index: 1 });
   const parent = frame({ host: 'example.org', playing: false, children: [playingChild, adChild] });
   parent.window.__wvkControlRichMedia('next', playingChild.frameId, 0);
@@ -240,6 +270,7 @@ test('YouTube Shorts metadata and controls use the active reel, not an inactive 
   f.window.__wvkControlRichMedia('next', f.frameId, 0);
   f.media.currentTime = 0;
   f.window.__wvkControlRichMedia('previous', f.frameId, 0);
+  f.finishTrack();
   f.window.__wvkControlRichMedia('seek', f.frameId, 90_000);
   assert.deepEqual(f.commands, ['next-short-click', 'previous-short-click', ['seek', 90]]);
 });
@@ -463,4 +494,205 @@ test('Mute stays consistent when a site API and its HTML player disagree', () =>
   f.window.__wvkControlRichMedia('mute', f.frameId, 0);
   assert.equal(f.media.muted, true);
   assert.equal(f.snapshots.at(-1)[1].muted, true);
+});
+
+test('track navigation reports loading before the website starts changing the player', () => {
+  const f = frame();
+  f.player.nextVideo = () => {
+    const loading = f.snapshots.at(-1)[1];
+    assert.equal(loading.buffering, true);
+    assert.equal(loading.positionMs, 0);
+    assert.equal(loading.durationMs, -1);
+    assert.equal(loading.canSeek, false);
+    f.commands.push('next');
+  };
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  f.media.currentTime = 45;
+  f.tick();
+  assert.equal(f.snapshots.at(-1)[1].buffering, true);
+  assert.equal(f.snapshots.at(-1)[1].positionMs, 0);
+});
+
+test('playlist loading ends on actual readiness and uses the new HTML timeline over stale API data', () => {
+  const f = frame();
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  f.media.readyState = 1;
+  f.emit('loadstart');
+  f.emit('waiting');
+  f.player.getCurrentTime = () => 45;
+  f.player.getDuration = () => 300;
+  f.finishTrack({ position: 0.25, duration: 180 });
+  const ready = f.snapshots.at(-1)[1];
+  assert.equal(ready.buffering, false);
+  assert.equal(ready.positionMs, 250);
+  assert.equal(ready.durationMs, 180_000);
+  assert.equal(ready.canSeek, true);
+});
+
+test('same-resource YouTube transitions finish on playing after a buffering state', () => {
+  const f = frame();
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  f.player.getPlayerState = () => 3;
+  f.tick();
+  assert.equal(f.snapshots.at(-1)[1].buffering, true);
+  f.setVideoId('noprstuvwxy');
+  f.setPlaylist(['abcdefghijk', 'noprstuvwxy'], 1);
+  f.media.currentTime = 0.1;
+  f.player.getPlayerState = () => 1;
+  f.emit('playing');
+  assert.equal(f.snapshots.at(-1)[1].buffering, false);
+  assert.equal(f.snapshots.at(-1)[1].positionMs, 100);
+});
+
+test('ordinary buffering preserves position and stops once data is ready', () => {
+  const f = frame({ host: 'music.example.test' });
+  f.media.readyState = 2;
+  f.emit('waiting');
+  assert.equal(f.snapshots.at(-1)[1].buffering, true);
+  assert.equal(f.snapshots.at(-1)[1].positionMs, 40_000);
+  assert.equal(f.snapshots.at(-1)[1].durationMs, 300_000);
+  f.media.readyState = 4;
+  f.emit('playing');
+  assert.equal(f.snapshots.at(-1)[1].buffering, false);
+  f.emit('stalled');
+  f.tick();
+  assert.equal(f.snapshots.at(-1)[1].buffering, false, 'a fetch stall with buffered data is not a playback stall');
+});
+
+test('notification Pause cancels the loading indicator even if the API still reports buffering', () => {
+  const f = frame();
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  f.player.getPlayerState = () => 3;
+  f.window.__wvkControlMedia('pause');
+  f.emit('waiting');
+  f.window.__wvkRefreshRichMedia(true);
+  assert.equal(f.snapshots.at(-1)[1].buffering, false);
+  assert.equal(f.media.paused, true);
+});
+
+test('track errors and ignored or throwing commands cannot leave a phantom spinner', () => {
+  const failed = frame();
+  failed.window.__wvkControlRichMedia('next', failed.frameId, 0);
+  failed.media.error = { code: 2 };
+  failed.emit('error');
+  assert.equal(failed.snapshots.at(-1)[1].buffering, false);
+  assert.equal(failed.snapshots.at(-1)[1].canSeek, false);
+
+  const ignored = frame();
+  ignored.window.__wvkControlRichMedia('next', ignored.frameId, 0);
+  ignored.advance(10_001);
+  assert.equal(ignored.snapshots.at(-1)[1].buffering, false);
+  assert.equal(ignored.snapshots.at(-1)[1].positionMs, 40_000);
+
+  const throwing = frame();
+  throwing.player.nextVideo = () => { throw new Error('unavailable'); };
+  throwing.window.__wvkControlRichMedia('next', throwing.frameId, 0);
+  assert.equal(throwing.snapshots.at(-1)[1].buffering, false);
+});
+
+test('cued and paused replacement tracks stop loading without starting playback', () => {
+  const f = frame();
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  f.player.getPlayerState = () => 5;
+  f.finishTrack({ playing: false });
+  assert.equal(f.snapshots.at(-1)[1].buffering, false);
+  assert.equal(f.snapshots.at(-1)[1].positionMs, 0);
+  assert.equal(f.media.paused, true);
+  assert.deepEqual(f.commands, ['next']);
+});
+
+test('muting cannot erase known playlist navigation when YouTube temporarily clears its getters', () => {
+  for (const unavailable of [null, []]) {
+    const f = frame({ nextButtonEnabled: false });
+    assert.equal(f.snapshots.at(-1)[1].canNext, true);
+    f.player.mute = () => {
+      f.media.muted = true;
+      f.setPlaylist(unavailable, -1);
+      f.emit('volumechange');
+    };
+    f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+    assert.equal(f.snapshots.at(-1)[1].muted, true);
+    assert.equal(f.snapshots.at(-1)[1].canNext, true);
+    f.tick();
+    assert.equal(f.snapshots.at(-1)[1].canNext, true);
+    f.window.__wvkControlRichMedia('next', f.frameId, 0);
+    assert.deepEqual(f.commands, ['next'], 'cached navigation must remain usable, not just look enabled');
+  }
+});
+
+test('cached navigation respects new playlist bounds, item identity, and leaving the playlist', () => {
+  const last = frame({ nextButtonEnabled: false });
+  last.finishTrack();
+  assert.equal(last.snapshots.at(-1)[1].canNext, false);
+  last.window.__wvkControlRichMedia('mute', last.frameId, 0);
+  assert.equal(last.snapshots.at(-1)[1].canNext, false);
+
+  const changed = frame({ nextButtonEnabled: false });
+  changed.setPlaylist(null, -1);
+  changed.setVideoId('newnewnew12');
+  changed.tick();
+  assert.equal(changed.snapshots.at(-1)[1].canNext, false);
+
+  const removed = frame({ nextButtonEnabled: false });
+  removed.setPlaylist([], -1);
+  removed.window.location.search = '';
+  removed.tick();
+  assert.equal(removed.snapshots.at(-1)[1].canNext, false);
+});
+
+test('loading metadata remains scoped to the selected cross-origin player', () => {
+  const selected = frame();
+  const sibling = frame();
+  const parent = frame({ host: 'example.test', children: [selected, sibling] });
+  parent.window.__wvkControlRichMedia('next', selected.frameId, 0);
+  assert.equal(selected.snapshots.at(-1)[1].buffering, true);
+  assert.equal(sibling.snapshots.at(-1)[1].buffering, false);
+  assert.equal(parent.snapshots.at(-1)[1].buffering, false);
+});
+
+test('volume-only refreshes preserve UI-managed YouTube playlist buttons during their rerender', () => {
+  const f = frame({ playlist: [], search: '?list=UI_MANAGED' });
+  assert.equal(f.snapshots.at(-1)[1].canNext, true);
+  const start = f.snapshots.length;
+  f.player.mute = () => {
+    f.media.muted = true;
+    f.setNextButtonEnabled(false);
+    f.emit('volumechange');
+    f.mediaSession.setActionHandler('nexttrack', null);
+    f.mediaSession.setActionHandler('seekto', null);
+  };
+  f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+  assert.equal(f.snapshots.at(-1)[1].muted, true);
+  assert.ok(f.snapshots.slice(start).every(([, info]) => info.canNext), 'no disabled Next snapshot may leak during mute');
+  f.setNextButtonEnabled(true);
+  f.tick();
+  assert.equal(f.snapshots.at(-1)[1].canNext, true);
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  assert.deepEqual(f.commands, ['next-click']);
+});
+
+test('volume-only refreshes still respect real playlist changes and different media', () => {
+  const f = frame({ nextButtonEnabled: false });
+  assert.equal(f.snapshots.at(-1)[1].canNext, true);
+  f.setPlaylist(['abcdefghijk'], 0);
+  f.media.muted = true;
+  f.emit('volumechange');
+  assert.equal(f.snapshots.at(-1)[1].canNext, false, 'fresh playlist bounds take precedence over old capabilities');
+
+  const replaced = frame({ playlist: [], search: '?list=UI_MANAGED' });
+  replaced.setNextButtonEnabled(false);
+  replaced.setVideoId('newnewnew12');
+  replaced.emit('volumechange');
+  assert.equal(replaced.snapshots.at(-1)[1].canNext, false);
+});
+
+test('aborting the old resource during a track change cannot restart its clock', () => {
+  const f = frame();
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  f.emit('abort');
+  assert.equal(f.snapshots.at(-1)[1].buffering, true);
+  assert.equal(f.snapshots.at(-1)[1].positionMs, 0);
+  assert.equal(f.snapshots.at(-1)[1].durationMs, -1);
+  f.finishTrack();
+  assert.equal(f.snapshots.at(-1)[1].buffering, false);
 });

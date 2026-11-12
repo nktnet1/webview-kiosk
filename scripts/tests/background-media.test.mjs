@@ -483,3 +483,11 @@ test('a newly played source can subsequently recover after a background pause', 
   frame.tick();
   assert.equal(frame.media.paused, false);
 });
+
+test('media errors stop reporting playback instead of leaving the notification clock running', () => {
+  const frame = createFrame('example.com');
+  assert.equal(frame.reports.at(-1)[1], true);
+  frame.media.error = { code: 2 };
+  frame.emit('error');
+  assert.equal(frame.reports.at(-1)[1], false);
+});

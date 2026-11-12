@@ -332,7 +332,13 @@ internal class BackgroundMediaPlaybackController(
         if (disposed || !isActive() || frameId.isBlank() || frameId.length > 128) {
             return
         }
-        val info = MediaPlaybackInfo.parse(payload) ?: return
+        val parsed = MediaPlaybackInfo.parse(payload) ?: return
+        val info =
+            if (pausedByNotification || stoppedByUser) {
+                parsed.copy(buffering = false)
+            } else {
+                parsed
+            }
         // Do not let inactive advertising frames replace the playing video's data.
         mediaByFrame[frameId] = info
         if (mediaByFrame.size > 24) {
@@ -440,6 +446,11 @@ internal class BackgroundMediaPlaybackController(
         frames.clear()
         pauseMedia(retainResumePosition = true)
         BackgroundMediaPlaybackService.updatePlaying(false)
+        currentMediaInfo = currentMediaInfo?.copy(buffering = false)
+        currentMediaInfo?.let { info ->
+            activeFrameId?.let { mediaByFrame[it] = info }
+            BackgroundMediaPlaybackService.updateMediaInfo(info)
+        }
     }
 
     private fun resumeFromNotificationInternal() {
@@ -667,7 +678,7 @@ internal const val DOCUMENT_START_SCRIPT =
       function report() {
         var playing = Array.prototype.some.call(
           document.querySelectorAll('audio,video'),
-          function (media) { return !media.paused && !media.ended; }
+          function (media) { return !media.paused && !media.ended && !media.error; }
         );
         if (playing === lastPlaying) return;
         lastPlaying = playing;
@@ -684,6 +695,9 @@ internal const val DOCUMENT_START_SCRIPT =
       window.__wvkControlMedia = function (action, localOnly) {
         if (action !== 'pause' && action !== 'resume' && action !== 'stop') return;
         var generation = ++commandGeneration;
+        if (typeof window.__wvkRichMediaExplicitAction === 'function') {
+          window.__wvkRichMediaExplicitAction(action);
+        }
         if (isYouTube && typeof window.__wvkYoutubeExplicitAction === 'function') {
           window.__wvkYoutubeExplicitAction(action);
         }
@@ -740,7 +754,7 @@ internal const val DOCUMENT_START_SCRIPT =
           catch (ignored) {}
         });
       };
-      ['play','playing','pause','ended','emptied','abort'].forEach(function (event) {
+      ['play','playing','pause','ended','emptied','abort','error'].forEach(function (event) {
         document.addEventListener(event, report, true);
       });
       document.addEventListener('DOMContentLoaded', report);
