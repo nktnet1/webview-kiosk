@@ -15,6 +15,7 @@ import socket
 import subprocess
 import sys
 import time
+from collections import deque
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from glob import glob
@@ -27,6 +28,8 @@ R8_REPORTS = ROOT / "build/reports/r8"
 AVD_ROOT = ROOT / "build/verify/avd"
 AVD_NAME = "r8-verify-api36-16k"
 IMAGE_TAG = "google_apis_ps16k"
+SCRIPT_TEST_LOG = ROOT / "build/reports/verify/script-tests.log"
+SEPARATOR = "-" * 72
 
 # Direct execution adds scripts/ to sys.path, not its parent. Package imports
 # must also work via `python3 -m scripts.verify` and the regression suite.
@@ -36,6 +39,59 @@ if __name__ == "__main__" and not __package__:
 
 class VerificationError(Exception):
     """A failed check, missing prerequisite or unsafe emulator state."""
+
+
+def colour(text, code, *, stream=None):
+    """Use ANSI colours only in an interactive terminal that permits them."""
+    stream = sys.stdout if stream is None else stream
+    if "NO_COLOR" in os.environ or os.environ.get("TERM") == "dumb" or not stream.isatty():
+        return text
+    return f"\033[{code}m{text}\033[0m"
+
+
+def section(title):
+    print(f"\n{colour(SEPARATOR, '36')}\n{colour('[verify] ' + title, '1;36')}\n"
+          f"{colour(SEPARATOR, '36')}", flush=True)
+
+
+def step_heading(label, report):
+    # Skipping docs omits both documentation phases as one grouped entry.
+    total = 6 if report["requested"]["docs"] else 5
+    section(f"Step {len(report['steps']) + 1}/{total} - {label}")
+
+
+def step_status(label, status, *, seconds=None, reason=None):
+    shade = {"pass": "1;32", "fail": "1;31", "skipped": "1;33"}[status]
+    suffix = f" ({seconds:.2f}s)" if seconds is not None else f" ({reason})" if reason else ""
+    print(f"\n[verify] {colour(status.upper(), shade)} - {label}{suffix}\n", flush=True)
+
+
+def skipped(label, reason, report):
+    step_heading(label, report)
+    report["steps"].append({"name": label, "status": "skipped", "reason": reason})
+    step_status(label, "skipped", reason=reason)
+
+
+def test_summary(path):
+    """Report the useful counts without replaying expected-error test fixtures."""
+    output = path.read_text(encoding="utf-8", errors="replace")
+    python = re.search(r"(?m)^Ran (\d+) tests? in ", output)
+    node = re.search(r"(?m)^# tests (\d+)\s*$", output)
+    counts = []
+    if python:
+        counts.append(f"Python: {python.group(1)} tests")
+    if node:
+        counts.append(f"Node: {node.group(1)} tests")
+    if counts:
+        print(f"  {' | '.join(counts)}", flush=True)
+
+
+def test_failure_tail(path, lines=70):
+    print(f"  Last {lines} lines of test output:", file=sys.stderr, flush=True)
+    with path.open(encoding="utf-8", errors="replace") as output:
+        for line in deque(output, maxlen=lines):
+            print(line, end="", file=sys.stderr)
+    print(file=sys.stderr, flush=True)
 
 
 def sdk_root():
@@ -367,11 +423,19 @@ def preflight(args):
                 image_package(sdk)
 
 
-def execute(label, argv, report):
-    print(f"\n[verify] {label}: {' '.join(map(str, argv))}", flush=True)
+def execute(label, argv, report, *, capture_output=False, show_heading=True):
+    if show_heading:
+        step_heading(label, report)
+    print(f"  {colour('$ ' + ' '.join(map(str, argv)), '2')}", flush=True)
     started = time.monotonic()
     try:
-        result = subprocess.run([str(x) for x in argv], cwd=ROOT, check=False)
+        if capture_output:
+            SCRIPT_TEST_LOG.parent.mkdir(parents=True, exist_ok=True)
+            with SCRIPT_TEST_LOG.open("w", encoding="utf-8") as log:
+                result = subprocess.run([str(x) for x in argv], cwd=ROOT, check=False,
+                                        stdout=log, stderr=subprocess.STDOUT)
+        else:
+            result = subprocess.run([str(x) for x in argv], cwd=ROOT, check=False)
     except OSError as error:
         result = None
         details = str(error)
@@ -379,34 +443,45 @@ def execute(label, argv, report):
         details = f"exit {result.returncode}"
     duration = round(time.monotonic() - started, 2)
     success = result is not None and result.returncode == 0
-    report["steps"].append({"name": label, "status": "pass" if success else "fail", "seconds": duration,
-                            "command": [str(x) for x in argv], "result": details})
-    print(f"[verify] {label}: {'PASS' if success else 'FAIL'} ({duration}s)", flush=True)
+    step = {"name": label, "status": "pass" if success else "fail", "seconds": duration,
+            "command": [str(x) for x in argv], "result": details}
+    if capture_output:
+        step["log"] = str(SCRIPT_TEST_LOG.relative_to(ROOT))
+    report["steps"].append(step)
+    if capture_output and SCRIPT_TEST_LOG.is_file():
+        if success:
+            test_summary(SCRIPT_TEST_LOG)
+        else:
+            test_failure_tail(SCRIPT_TEST_LOG)
+        print(f"  Full test output: {SCRIPT_TEST_LOG.relative_to(ROOT)}", flush=True)
+    step_status(label, "pass" if success else "fail", seconds=duration)
     if not success:
         raise VerificationError(f"{label} failed ({details})")
 
 
 def verify(args, report):
+    section("Preflight - tools, JDK and Android environment")
     preflight(args)
+    print(f"[verify] {colour('PASS', '1;32')} - Preflight\n", flush=True)
     report["javaHome"] = os.environ.get("JAVA_HOME")
     python = sys.executable
-    execute("Script tests (Python + Node)", [python, "scripts/ci/test_local.py", "checks"], report)
+    execute("Script tests (Python + Node)", [python, "scripts/ci/test_local.py", "checks"], report,
+            capture_output=True)
     execute("Android format, lint, JVM and minified APK", ["sh", "gradlew", "checkFormatting", "lint",
             ":adblock:test", ":app:testDebugUnitTest", ":app:assembleSmokeRelease",
             "--warning-mode=all", "--build-cache", "--stacktrace"], report)
     execute("R8 static audit", [python, "scripts/r8/r8_audit.py", SMOKE_APK,
             "--require-mapping", "--fail-on-warnings", "--json", R8_REPORTS / "smokeRelease.json"], report)
     if args.skip_docs:
-        report["steps"].append({"name": "Documentation suites", "status": "skipped", "reason": "--skip-docs"})
+        skipped("Documentation suites", "--skip-docs", report)
     else:
         execute("Documentation lint, types and unit tests", [python, "scripts/ci/test_local.py", "docs"], report)
         if args.skip_browser:
-            report["steps"].append({"name": "Documentation browser tests", "status": "skipped", "reason": "--skip-browser"})
+            skipped("Documentation browser tests", "--skip-browser", report)
         else:
             execute("Documentation browser tests", [python, "scripts/ci/test_local.py", "docs-browser"], report)
     if args.skip_avd:
-        report["steps"].append({"name": "Minified APK emulator + runtime tests", "status": "skipped",
-                                "reason": "--skip-avd"})
+        skipped("Minified APK emulator + runtime tests", "--skip-avd", report)
         return
     if args.serial or getattr(args, "running_serial", None):
         # Reuse an already-running compatible emulator, never stopping it or
@@ -416,10 +491,11 @@ def verify(args, report):
                 "--require-mapping", "--fail-on-warnings", "--device", "--runtime", "--serial", serial,
                 "--json", R8_REPORTS / "smokeRelease-runtime.json"], report)
     else:
+        step_heading("Minified APK emulator + runtime tests", report)
         with test_emulator(args.avd, args.boot_timeout) as serial:
             execute("Minified APK emulator + runtime tests", [python, "scripts/r8/r8_audit.py", SMOKE_APK,
                     "--require-mapping", "--fail-on-warnings", "--device", "--runtime", "--serial", serial,
-                    "--json", R8_REPORTS / "smokeRelease-runtime.json"], report)
+                    "--json", R8_REPORTS / "smokeRelease-runtime.json"], report, show_heading=False)
 
 
 def main(argv=None):
@@ -446,11 +522,21 @@ def main(argv=None):
         report["status"] = "partial" if any(s["status"] == "skipped" for s in report["steps"]) else "pass"
     except (VerificationError, KeyboardInterrupt) as error:
         report["error"] = str(error) or "Interrupted"
-        print(f"\n[verify] FAIL: {report['error']}", file=sys.stderr, flush=True)
+        print(f"\n[verify] {colour('FAIL', '1;31', stream=sys.stderr)}: {report['error']}",
+              file=sys.stderr, flush=True)
     finally:
         VERIFY_REPORT.parent.mkdir(parents=True, exist_ok=True)
         VERIFY_REPORT.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-        print(f"[verify] {report['status'].upper()} - report: {VERIFY_REPORT}", flush=True)
+        final = report["status"].upper()
+        shade = {"PASS": "1;32", "PARTIAL": "1;33", "FAIL": "1;31"}[final]
+        section("Verification summary")
+        print(f"[verify] {colour(final, shade)} - "
+              f"{sum(s['status'] == 'pass' for s in report['steps'])} passed, "
+              f"{sum(s['status'] == 'skipped' for s in report['steps'])} skipped, "
+              f"{sum(s['status'] == 'fail' for s in report['steps'])} failed\n"
+              f"[verify] Report: {VERIFY_REPORT}", flush=True)
+        if report["status"] == "fail" and not any(s["status"] == "fail" for s in report["steps"]):
+            print(f"[verify] Setup or emulator failure: {report['error']}", flush=True)
     return 1 if report["status"] == "fail" else 0
 
 
