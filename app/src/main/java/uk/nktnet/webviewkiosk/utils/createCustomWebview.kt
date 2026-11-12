@@ -65,6 +65,7 @@ import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
+import uk.nktnet.webviewkiosk.utils.webview.LegacyWebViewClient
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
@@ -137,6 +138,38 @@ private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boole
             }
         },
     )
+
+/**
+ * Avoid Chromium's pre-73 compat HTTP-error bridge, which rejects an empty reason
+ * phrase.
+ */
+internal fun needsFrameworkWebViewClient(
+    sdkInt: Int,
+    webViewVersion: String?,
+): Boolean {
+    if (sdkInt < Build.VERSION_CODES.M) {
+        return false // No framework HTTP-error callback.
+    }
+    val majorVersion = webViewVersion?.substringBefore('.')?.toIntOrNull()
+    return if (majorVersion != null) {
+        majorVersion < 73
+    } else {
+        // Favour safety when the provider version is unknown on older Android.
+        sdkInt <= Build.VERSION_CODES.N_MR1
+    }
+}
+
+private fun needsFrameworkWebViewClient(context: Context): Boolean {
+    val version =
+        try {
+            WebViewCompat.getCurrentWebViewPackage(context)?.versionName
+        } catch (_: Exception) {
+            null
+        } catch (_: LinkageError) {
+            null
+        }
+    return needsFrameworkWebViewClient(Build.VERSION.SDK_INT, version)
+}
 
 private fun isWebPdf(
     url: String,
@@ -697,7 +730,7 @@ fun createCustomWebview(
                         navigation.isActive() &&
                             getTag(R.id.pdf_source_token) == token
 
-                    webViewClient =
+                    val compatClient =
                         object : WebViewClientCompat() {
                             override fun onReceivedClientCertRequest(
                                 view: WebView?,
@@ -1518,6 +1551,12 @@ fun createCustomWebview(
                                 }
                                 return true
                             }
+                        }
+                    webViewClient =
+                        if (needsFrameworkWebViewClient(context)) {
+                            LegacyWebViewClient(compatClient)
+                        } else {
+                            compatClient
                         }
 
                     webChromeClient =
