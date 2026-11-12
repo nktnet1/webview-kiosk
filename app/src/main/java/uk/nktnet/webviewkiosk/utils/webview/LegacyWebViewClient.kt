@@ -25,6 +25,11 @@ import androidx.webkit.WebViewClientCompat
  * callback overridden by our compat client so its navigation and error handling
  * remain unchanged. Keep these forwarders in sync with createCustomWebview's compat
  * client.
+ *
+ * References:
+ * - https://stackoverflow.com/questions/57414530/illegalstateexception-reasonphrase-cant-be-empty-with-android-webview
+ * - https://bugs.chromium.org/p/chromium/issues/detail?id=925887
+ * - https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/webkit/WebResourceResponse.java#155
  */
 internal class LegacyWebViewClient(private val delegate: WebViewClientCompat) :
     WebViewClient() {
