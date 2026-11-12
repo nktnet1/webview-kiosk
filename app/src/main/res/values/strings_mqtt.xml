@@ -195,5 +195,5 @@ All global variables are supported, e.g. you can use
     <string name="ui_received_invalid_mqtt_command_see_debug_logs_in_mqtt_s" formatted="false">"Received invalid MQTT command. See debug logs in MQTT settings."</string>
     <string name="ui_restart" formatted="false">"Restart"</string>
     <string name="ui_restarted_successfully" formatted="false">"Restarted successfully."</string>
-    <string name="ui_mqtt_foreground_notification_permission_warning">Notifications are not permitted for this app. The MQTT foreground service can continue running, but its status notification may be hidden. Use the permission button below to enable notifications and see it.</string>
+    <string name="ui_mqtt_foreground_notification_permission_warning">Notifications are not permitted for this app. The MQTT foreground service can continue running, but its status notification may be hidden.</string>
 </resources>
