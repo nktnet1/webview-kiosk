@@ -12,10 +12,30 @@ class NotificationPermissionControlsTest {
     fun warnsForEitherForegroundServiceOnlyWhenEnabledWithoutNotificationAccess() {
         // The condition is shared by media and MQTT, not tied to Device > Allow
         // Notifications.
-        assertTrue(shouldWarnForForegroundServiceNotifications(true, false))
-        assertFalse(shouldWarnForForegroundServiceNotifications(true, true))
-        assertFalse(shouldWarnForForegroundServiceNotifications(false, false))
-        assertFalse(shouldWarnForForegroundServiceNotifications(false, true))
+        assertTrue(
+            shouldWarnForForegroundServiceNotifications(
+                serviceEnabled = true,
+                notificationsAvailable = false,
+            )
+        )
+        assertFalse(
+            shouldWarnForForegroundServiceNotifications(
+                serviceEnabled = true,
+                notificationsAvailable = true,
+            )
+        )
+        assertFalse(
+            shouldWarnForForegroundServiceNotifications(
+                serviceEnabled = false,
+                notificationsAvailable = false,
+            )
+        )
+        assertFalse(
+            shouldWarnForForegroundServiceNotifications(
+                serviceEnabled = false,
+                notificationsAvailable = true,
+            )
+        )
     }
 
     @Test

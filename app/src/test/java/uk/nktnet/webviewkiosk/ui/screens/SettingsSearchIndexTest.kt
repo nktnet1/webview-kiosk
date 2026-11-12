@@ -211,7 +211,7 @@ class SettingsSearchIndexTest {
         val optionMatch = results.indexOfFirst {
             it.settingKey == UserSettingsKeys.WebLifecycle.RESET_ACTIONS
         }
-        assertTrue(titleMatch >= 0 && optionMatch > titleMatch)
+        assertTrue(titleMatch in 0..<optionMatch)
         val grouped = groupSettingsSearchResults(results)
         assertTrue(grouped.size > 1)
         assertEquals(results, grouped.flatMap { it.second })
@@ -323,12 +323,12 @@ class SettingsSearchIndexTest {
             definitions.map { it.key }.toSet(),
         )
         assertEquals(definitions.size, definitions.map { it.key }.distinct().size)
-        for (definition in definitions) {
-            assertTrue(context.getString(definition.titleRes).isNotBlank())
-            assertTrue(context.getString(definition.descriptionRes).isNotBlank())
+        for ((titleRes, key, descriptionRes) in definitions) {
+            assertTrue(context.getString(titleRes).isNotBlank())
+            assertTrue(context.getString(descriptionRes).isNotBlank())
             assertTrue(
-                searchSettings(context, definition.key).any {
-                    it.settingKey == definition.key && it.targetId == definition.key
+                searchSettings(context, key).any {
+                    it.settingKey == key && it.targetId == key
                 }
             )
         }

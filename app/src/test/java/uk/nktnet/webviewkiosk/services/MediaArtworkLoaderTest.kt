@@ -50,7 +50,8 @@ class MediaArtworkLoaderTest {
     @Test
     fun malformedArtworkDoesNotEscapeTheWorker() {
         val retrieve =
-            MediaArtworkLoader.Companion.javaClass
+            MediaArtworkLoader.Companion::class
+                .java
                 .getDeclaredMethod("retrieve", String::class.java)
                 .apply { isAccessible = true }
         assertNull(
