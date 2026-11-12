@@ -140,23 +140,20 @@ private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boole
     )
 
 /**
- * Avoid Chromium's pre-73 compat HTTP-error bridge, which rejects an empty reason
- * phrase.
+ * WebView 67-72 can crash in the compat HTTP-error bridge when a response has no
+ * reason phrase. Use a framework client on API 24+, where request-aware navigation
+ * is available. On API 21-23 keep the compat client to preserve iframe navigation;
+ * those devices retain the original crash risk if their provider is vulnerable.
  */
 internal fun needsFrameworkWebViewClient(
     sdkInt: Int,
     webViewVersion: String?,
 ): Boolean {
-    if (sdkInt < Build.VERSION_CODES.M) {
-        return false // No framework HTTP-error callback.
+    if (sdkInt < Build.VERSION_CODES.N) {
+        return false
     }
-    val majorVersion = webViewVersion?.substringBefore('.')?.toIntOrNull()
-    return if (majorVersion != null) {
-        majorVersion < 73
-    } else {
-        // Favour safety when the provider version is unknown on older Android.
-        sdkInt <= Build.VERSION_CODES.N_MR1
-    }
+    val majorVersion = webViewVersion?.substringBefore('.')?.trim()?.toIntOrNull()
+    return majorVersion in 67..72
 }
 
 private fun needsFrameworkWebViewClient(context: Context): Boolean {

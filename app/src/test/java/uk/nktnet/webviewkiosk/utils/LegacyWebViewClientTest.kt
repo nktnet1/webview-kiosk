@@ -29,22 +29,33 @@ import uk.nktnet.webviewkiosk.utils.webview.LegacyWebViewClient
 @Config(sdk = [28])
 class LegacyWebViewClientTest {
     @Test
-    fun onlyVulnerableWebViewProvidersUseTheFrameworkClient() {
-        assertTrue(needsFrameworkWebViewClient(25, "72.0.3626.105"))
-        assertTrue(needsFrameworkWebViewClient(25, "54.0.2840.85"))
-        assertTrue(needsFrameworkWebViewClient(28, "72.0.3626.105"))
-        assertFalse(needsFrameworkWebViewClient(25, "73.0.3683.90"))
-        assertFalse(needsFrameworkWebViewClient(25, "130.0.6723.73"))
-        assertFalse(needsFrameworkWebViewClient(36, "136.0.7103.1"))
-        assertFalse(needsFrameworkWebViewClient(21, "54.0.2840.85"))
+    fun olderAndroidKeepsCompatNavigationEvenOnVulnerableProviders() {
+        for (sdk in listOf(21, 22, 23)) {
+            assertFalse(needsFrameworkWebViewClient(sdk, "67.0.3396.87"))
+            assertFalse(needsFrameworkWebViewClient(sdk, "72.0.3626.105"))
+            assertFalse(needsFrameworkWebViewClient(sdk, null))
+        }
     }
 
     @Test
-    fun unknownProviderVersionFallsBackOnOlderAndroidOnly() {
-        assertTrue(needsFrameworkWebViewClient(23, null))
-        assertTrue(needsFrameworkWebViewClient(25, "not-a-version"))
-        assertFalse(needsFrameworkWebViewClient(28, null))
-        assertFalse(needsFrameworkWebViewClient(36, "not-a-version"))
+    fun requestAwareAndroidUsesFrameworkOnlyForVulnerableProviders() {
+        for (sdk in listOf(24, 25, 28, 36)) {
+            assertFalse(needsFrameworkWebViewClient(sdk, "66.0.3359.158"))
+            assertTrue(needsFrameworkWebViewClient(sdk, "67.0.3396.87"))
+            assertTrue(needsFrameworkWebViewClient(sdk, "72.0.3626.105"))
+            assertFalse(needsFrameworkWebViewClient(sdk, "73.0.3683.90"))
+            assertFalse(needsFrameworkWebViewClient(sdk, "130.0.6723.73"))
+        }
+    }
+
+    @Test
+    fun unknownOrInvalidProviderVersionsKeepCompatNavigation() {
+        for (sdk in listOf(23, 24, 25, 28, 36)) {
+            assertFalse(needsFrameworkWebViewClient(sdk, null))
+            assertFalse(needsFrameworkWebViewClient(sdk, "not-a-version"))
+            assertFalse(needsFrameworkWebViewClient(sdk, "0"))
+            assertFalse(needsFrameworkWebViewClient(sdk, ""))
+        }
     }
 
     @Test
@@ -77,8 +88,8 @@ class LegacyWebViewClientTest {
                     view: WebView,
                     request: WebResourceRequest,
                 ): Boolean {
-                    events += "navigate"
-                    return true
+                    events += "navigate:${request.isForMainFrame}"
+                    return request.isForMainFrame
                 }
 
                 @Deprecated("For API < 24")
@@ -135,6 +146,12 @@ class LegacyWebViewClientTest {
         assertFalse(client is WebViewClientCompat)
         client.onPageStarted(webView, url, null)
         assertTrue(client.shouldOverrideUrlLoading(webView, request))
+        assertFalse(
+            client.shouldOverrideUrlLoading(
+                webView,
+                documentRequest("https://example.invalid/iframe", mainFrame = false),
+            )
+        )
         assertTrue(client.shouldOverrideUrlLoading(webView, url))
         assertSame(response, client.shouldInterceptRequest(webView, request))
         client.doUpdateVisitedHistory(webView, url, false)
@@ -145,7 +162,8 @@ class LegacyWebViewClientTest {
         assertEquals(
             listOf(
                 "start:$url",
-                "navigate",
+                "navigate:true",
+                "navigate:false",
                 "legacy-navigate",
                 "intercept",
                 "history",
@@ -232,11 +250,14 @@ class LegacyWebViewClientTest {
         )
     }
 
-    private fun documentRequest(url: String): WebResourceRequest =
+    private fun documentRequest(
+        url: String,
+        mainFrame: Boolean = true,
+    ): WebResourceRequest =
         object : WebResourceRequest {
             override fun getUrl(): Uri = Uri.parse(url)
 
-            override fun isForMainFrame(): Boolean = true
+            override fun isForMainFrame(): Boolean = mainFrame
 
             override fun isRedirect(): Boolean = false
 
