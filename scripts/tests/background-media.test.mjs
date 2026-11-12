@@ -20,6 +20,7 @@ function createFrame(hostname, {
   pathname = '/watch',
 } = {}) {
   const reports = [];
+  const userInteractions = [];
   const documentHandlers = new Map();
   const windowHandlers = new Map();
   const intervals = [];
@@ -82,6 +83,7 @@ function createFrame(hostname, {
     WebviewKioskBackgroundMedia: {
       onPlaybackStateChanged(id, isPlaying) { reports.push([id, isPlaying]); },
       canAutoResume() { return true; },
+      onUserInteraction() { userInteractions.push(true); },
     },
     addEventListener(name, fn) {
       windowHandlers.set(name, [...(windowHandlers.get(name) ?? []), fn]);
@@ -115,11 +117,28 @@ function createFrame(hostname, {
     return event;
   }
   return {
-    window, document, media, reports, sandbox, visibilityChange,
+    window, document, media, reports, userInteractions, sandbox, visibilityChange,
+    gesture(type, trusted) {
+      for (const listener of documentHandlers.get(type) ?? []) {
+        listener({ target: media, isTrusted: trusted });
+      }
+    },
     tick() { for (const fn of intervals) fn(); },
     hideNative() { nativeHidden = true; },
   };
 }
+
+test('real page gestures can rearm media after notification Stop, synthetic events cannot', () => {
+  const frame = createFrame('example.com');
+  frame.window.__wvkControlMedia('stop');
+  frame.gesture('pointerdown', false);
+  frame.gesture('click', false);
+  assert.equal(frame.userInteractions.length, 0);
+  frame.gesture('pointerdown', true);
+  assert.equal(frame.userInteractions.length, 1);
+  frame.gesture('keydown', true);
+  assert.equal(frame.userInteractions.length, 2);
+});
 
 test('notification Pause then Play affects only media that was playing', () => {
   const frame = createFrame('example.com');

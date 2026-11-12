@@ -394,7 +394,7 @@ fun createCustomWebview(
                     scriptlets?.dispose(rendererGone)
                     requests?.dispose(rendererGone)
                     blobInterface?.dispose()
-                    backgroundPlayback?.dispose()
+                    backgroundPlayback?.dispose(rendererGone)
                     view.setTag(R.id.background_media_playback_controller, null)
                     NfcBridgeManager.detachWebView(view)
                 }

@@ -187,7 +187,12 @@ internal class BackgroundMediaPlaybackController(
     private var currentMediaInfo: MediaPlaybackInfo? = null
     private val mediaByFrame = mutableMapOf<String, MediaPlaybackInfo>()
     private val bridge =
-        MediaStateBridge(webView, ::onPlaybackStateChanged, ::onMediaInfoChanged)
+        MediaStateBridge(
+            webView,
+            ::onPlaybackStateChanged,
+            ::onMediaInfoChanged,
+            ::onUserInteraction,
+        )
 
     /** Keep the renderer's last visible state only during an active FGS session. */
     fun shouldRetainWindowVisibility(): Boolean =
@@ -286,6 +291,13 @@ internal class BackgroundMediaPlaybackController(
                 "window.__wvkReportMediaPlayback && window.__wvkReportMediaPlayback();",
                 null,
             )
+        }
+    }
+
+    /** A fresh foreground gesture may restart media after notification Stop. */
+    internal fun onUserInteraction() {
+        if (!disposed && isActive() && !hostInBackground && stoppedByUser) {
+            stoppedByUser = false
         }
     }
 
@@ -467,7 +479,7 @@ internal class BackgroundMediaPlaybackController(
         }
     }
 
-    private fun stopService() {
+    private fun stopService(releaseVisibility: Boolean = true) {
         cancelPendingPauseStop()
         wasYouTubePlaying = false
         activeFrameId = null
@@ -479,7 +491,7 @@ internal class BackgroundMediaPlaybackController(
             activeController = null
             context.stopService(BackgroundMediaPlaybackService.startIntent(context))
         }
-        if (wasRequested) {
+        if (wasRequested && releaseVisibility) {
             // If Home already hid the Activity, deliver the deferred visibility
             // change now so an idle WebView does not stay artificially visible.
             releaseWindowVisibility()
@@ -544,19 +556,28 @@ internal class BackgroundMediaPlaybackController(
         stopService()
     }
 
-    fun dispose() {
+    fun dispose(rendererGone: Boolean = false) {
         if (disposed) {
             return
         }
-        stopPlayback(userInitiated = false)
+        if (rendererGone) {
+            // onRenderProcessGone must not evaluate JS or notify the dead
+            // renderer about deferred window visibility.
+            frames.clear()
+            stopService(releaseVisibility = false)
+        } else {
+            stopPlayback(userInitiated = false)
+        }
         disposed = true
-        webView.removeJavascriptInterface(BRIDGE_NAME)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Restore the framework policy if background playback is turned off.
-            webView.setRendererPriorityPolicy(
-                WebView.RENDERER_PRIORITY_IMPORTANT,
-                true,
-            )
+        if (!rendererGone) {
+            webView.removeJavascriptInterface(BRIDGE_NAME)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // Restore the framework policy if the WebView is reused.
+                webView.setRendererPriorityPolicy(
+                    WebView.RENDERER_PRIORITY_IMPORTANT,
+                    true,
+                )
+            }
         }
     }
 }
@@ -682,6 +703,17 @@ internal const val DOCUMENT_START_SCRIPT =
         window.addEventListener('visibilitychange', preservePlaybackVisibility, true);
         document.addEventListener('visibilitychange', preservePlaybackVisibility, true);
       }
+
+      // Stop must not permanently disable playback: only an actual user
+      // interaction can arm a new session after notification Stop.
+      function reportUserInteraction(event) {
+        if (!event.isTrusted) return;
+        try { window.WebviewKioskBackgroundMedia.onUserInteraction(); }
+        catch (ignored) {}
+      }
+      ['pointerdown', 'keydown', 'click'].forEach(function (name) {
+        document.addEventListener(name, reportUserInteraction, true);
+      });
 
       function report() {
         var playing = Array.prototype.some.call(

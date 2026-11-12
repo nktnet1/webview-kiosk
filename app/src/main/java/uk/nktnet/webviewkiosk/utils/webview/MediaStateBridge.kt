@@ -16,6 +16,7 @@ internal class MediaStateBridge(
     private val webView: WebView,
     private val report: (String, Boolean) -> Unit,
     private val reportInfo: (String, String) -> Unit,
+    private val reportUserInteraction: () -> Unit,
 ) {
     private val audioManager =
         webView.context.applicationContext.getSystemService(Context.AUDIO_SERVICE)
@@ -44,5 +45,10 @@ internal class MediaStateBridge(
     @JavascriptInterface
     fun onPlaybackStateChanged(frameId: String, playing: Boolean) {
         webView.post { report(frameId, playing) }
+    }
+
+    @JavascriptInterface
+    fun onUserInteraction() {
+        webView.post { reportUserInteraction() }
     }
 }

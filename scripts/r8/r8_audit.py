@@ -36,6 +36,7 @@ BRIDGES = {
         ("onPlaybackStateChanged", "(Ljava/lang/String;Z)V"),
         ("onMediaInfoChanged", "(Ljava/lang/String;Ljava/lang/String;)V"),
         ("canAutoResume", "()Z"),
+        ("onUserInteraction", "()V"),
     },
     "uk.nktnet.webviewkiosk.blocking.WebViewRequests$Rules": {
         ("shouldBlock", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z"),
