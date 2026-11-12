@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun ApplyDesktopViewportWidthSetting() {
@@ -17,11 +18,9 @@ fun ApplyDesktopViewportWidthSetting() {
     val settingKey = UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH
 
     NumberSettingFieldItem(
-        label =
-            stringResource(R.string.js_scripts_apply_desktop_viewport_width_title),
         infoText =
             stringResource(
-                R.string.setting_info_apply_desktop_viewport_width,
+                settingDefinition(settingKey).descriptionRes,
                 Constants.MIN_DESKTOP_WIDTH,
             ),
         initialValue = userSettings.applyDesktopViewportWidth,

@@ -2,8 +2,6 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -15,8 +13,6 @@ fun LoadWithOverviewModeSetting() {
     val settingKey = UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.web_engine_load_with_overview_mode_title),
-        infoText = stringResource(R.string.setting_info_load_with_overview_mode),
         initialValue = userSettings.loadWithOverviewMode,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

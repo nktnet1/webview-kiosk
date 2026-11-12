@@ -19,9 +19,6 @@ fun KioskControlPanelRegionSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION
 
     DropdownSettingFieldItem(
-        label =
-            stringResource(R.string.web_browsing_kiosk_control_panel_region_title),
-        infoText = stringResource(R.string.setting_info_kiosk_control_panel_region),
         options = KioskControlPanelRegionOption.entries,
         initialValue = userSettings.kioskControlPanelRegion,
         settingKey = settingKey,

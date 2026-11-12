@@ -3,8 +3,6 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.homeassista
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -16,11 +14,6 @@ fun MqttHomeAssistantEnableDiscoverySetting() {
     val settingKey = UserSettingsKeys.Mqtt.HomeAssistant.ENABLED
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.mqtt_home_assistant_enabled_title),
-        infoText =
-            stringResource(
-                R.string.setting_info_mqtt_home_assistant_enable_discovery
-            ),
         initialValue = userSettings.mqttHomeAssistantEnabled,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

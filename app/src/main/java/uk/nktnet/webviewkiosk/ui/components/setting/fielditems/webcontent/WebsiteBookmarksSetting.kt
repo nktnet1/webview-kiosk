@@ -29,6 +29,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 import uk.nktnet.webviewkiosk.utils.validateUrl
 
 @Composable
@@ -40,10 +41,9 @@ fun WebsiteBookmarksSetting() {
     val restricted = userSettings.isRestricted(settingKey)
 
     TextSettingFieldItem(
-        label = stringResource(R.string.web_content_website_bookmarks_title),
         infoText =
             stringResource(
-                R.string.setting_info_website_bookmarks,
+                settingDefinition(settingKey).descriptionRes,
                 Constants.WEBSITE_URL,
             ),
         placeholder =

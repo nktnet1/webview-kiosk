@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun RefreshOnLoadingErrorIntervalSecondsSetting() {
@@ -18,14 +19,9 @@ fun RefreshOnLoadingErrorIntervalSecondsSetting() {
         UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
 
     NumberSettingFieldItem(
-        label =
-            stringResource(
-                R.string
-                    .web_lifecycle_refresh_on_loading_error_interval_seconds_title
-            ),
         infoText =
             stringResource(
-                R.string.setting_info_refresh_on_loading_error_interval_seconds,
+                settingDefinition(settingKey).descriptionRes,
                 Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS,
             ),
         placeholder = stringResource(R.string.ui_e_g_5),

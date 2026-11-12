@@ -26,6 +26,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
 import uk.nktnet.webviewkiosk.utils.webview.validateMutualTls
 
@@ -37,10 +38,9 @@ fun MutualTlsSetting() {
     val certificateInstallerActivity = LocalActivity.current as? MainActivity
     val settingKey = UserSettingsKeys.WebEngine.MUTUAL_TLS
     TextSettingFieldItem(
-        label = stringResource(R.string.web_engine_mutual_tls_title),
         infoText =
             stringResource(
-                R.string.setting_info_mutual_tls,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
             ),
         placeholder = stringResource(R.string.ui_mutual_tls_host_placeholder),

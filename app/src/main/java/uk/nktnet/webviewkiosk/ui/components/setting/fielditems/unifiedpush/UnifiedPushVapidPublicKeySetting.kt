@@ -35,9 +35,6 @@ fun UnifiedPushVapidPublicKeySetting() {
     val scope = rememberCoroutineScope()
 
     TextSettingFieldItem(
-        label = stringResource(R.string.unifiedpush_vapid_public_key_title),
-        infoText =
-            stringResource(R.string.setting_info_unified_push_vapid_public_key),
         placeholder = "",
         validator = {
             it.isEmpty() || isValidVapidPublicKey(it)

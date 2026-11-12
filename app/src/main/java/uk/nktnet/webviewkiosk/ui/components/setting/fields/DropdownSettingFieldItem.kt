@@ -15,14 +15,15 @@ import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.ui.components.common.DropdownSelector
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun <T> DropdownSettingFieldItem(
-    label: String,
-    infoText: String,
+    settingKey: String,
+    label: String = stringResource(settingDefinition(settingKey).titleRes),
+    infoText: String = stringResource(settingDefinition(settingKey).descriptionRes),
     options: List<T>,
     initialValue: T,
-    settingKey: String,
     restricted: Boolean,
     disabledReason: String? = null,
     extraContent: (@Composable ((setValue: (T) -> Unit) -> Unit))? = null,
@@ -39,6 +40,7 @@ fun <T> DropdownSettingFieldItem(
     var draftError by remember { mutableStateOf(false) }
 
     GenericSettingFieldItem(
+        settingKey = settingKey,
         label = label,
         value = itemText(value),
         restricted = restricted,

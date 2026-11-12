@@ -8,6 +8,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun MqttHomeAssistantDeviceNameSetting() {
@@ -18,10 +19,9 @@ fun MqttHomeAssistantDeviceNameSetting() {
     val automaticLabel = stringResource(R.string.ui_automatic)
 
     TextSettingFieldItem(
-        label = stringResource(R.string.mqtt_home_assistant_device_name_title),
         infoText =
             stringResource(
-                R.string.setting_info_mqtt_home_assistant_device_name,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
             ),
         placeholder = stringResource(R.string.ui_home_kiosk),

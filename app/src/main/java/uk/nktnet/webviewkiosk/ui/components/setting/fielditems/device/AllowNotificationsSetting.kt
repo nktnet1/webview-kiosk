@@ -10,6 +10,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.NotificationPermissionButton
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 import uk.nktnet.webviewkiosk.ui.components.setting.rememberNotificationPermissionControl
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun AllowNotificationsSetting() {
@@ -19,10 +20,9 @@ fun AllowNotificationsSetting() {
     val notificationPermission = rememberNotificationPermissionControl()
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.device_allow_notifications_title),
         infoText =
             stringResource(
-                R.string.setting_info_allow_notifications,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
             ),
         initialValue = userSettings.allowNotifications,

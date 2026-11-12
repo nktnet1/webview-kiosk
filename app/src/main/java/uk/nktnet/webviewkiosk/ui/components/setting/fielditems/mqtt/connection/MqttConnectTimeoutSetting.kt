@@ -17,8 +17,6 @@ fun MqttConnectTimeoutSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.mqtt_connection_connect_timeout_title),
-        infoText = stringResource(R.string.setting_info_mqtt_connect_timeout),
         placeholder = stringResource(R.string.ui_e_g_30),
         initialValue = userSettings.mqttConnectTimeout,
         settingKey = settingKey,

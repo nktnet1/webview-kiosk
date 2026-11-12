@@ -16,8 +16,6 @@ fun MqttKeepAliveSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.mqtt_connection_keep_alive_title),
-        infoText = stringResource(R.string.setting_info_mqtt_keep_alive),
         placeholder = stringResource(R.string.ui_e_g_60),
         initialValue = userSettings.mqttKeepAlive,
         settingKey = settingKey,

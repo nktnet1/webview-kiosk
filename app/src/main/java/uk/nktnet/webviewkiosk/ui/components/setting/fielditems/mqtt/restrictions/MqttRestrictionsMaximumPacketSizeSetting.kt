@@ -16,11 +16,6 @@ fun MqttRestrictionsMaximumPacketSizeSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Restrictions.MAXIMUM_PACKET_SIZE
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.mqtt_restrictions_maximum_packet_size_title),
-        infoText =
-            stringResource(
-                R.string.setting_info_mqtt_restrictions_maximum_packet_size
-            ),
         placeholder = stringResource(R.string.ui_e_g_2048),
         initialValue = userSettings.mqttRestrictionsMaximumPacketSize,
         settingKey = settingKey,

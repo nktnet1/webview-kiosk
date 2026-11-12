@@ -17,8 +17,6 @@ fun CustomBlockPageHtmlSetting() {
     val settingKey = UserSettingsKeys.Appearance.CUSTOM_BLOCK_PAGE_HTML
 
     TextSettingFieldItem(
-        label = stringResource(R.string.appearance_custom_block_page_html_title),
-        infoText = stringResource(R.string.setting_info_custom_block_page_html),
         placeholder =
             stringResource(
                 R.string.ui_custom_block_page_html_example,

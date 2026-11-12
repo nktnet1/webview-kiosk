@@ -17,11 +17,6 @@ fun UnifiedPushMessageForDistributorSetting() {
     val restricted = userSettings.isRestricted(settingKey)
 
     TextSettingFieldItem(
-        label = stringResource(R.string.unifiedpush_message_for_distributor_title),
-        infoText =
-            stringResource(
-                R.string.setting_info_unified_push_message_for_distributor
-            ),
         placeholder =
             stringResource(
                 R.string.ui_e_g_registering_value,

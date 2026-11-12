@@ -16,8 +16,6 @@ fun MqttUsernameSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Connection.USERNAME
 
     TextSettingFieldItem(
-        label = stringResource(R.string.mqtt_connection_username_title),
-        infoText = stringResource(R.string.setting_info_mqtt_username),
         placeholder = stringResource(R.string.ui_e_g_user001),
         initialValue = userSettings.mqttUsername,
         settingKey = settingKey,

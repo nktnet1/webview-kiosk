@@ -40,8 +40,6 @@ fun HomeUrlSetting() {
     val restricted = userSettings.isRestricted(settingKey)
 
     TextSettingFieldItem(
-        label = stringResource(R.string.web_content_home_url_title),
-        infoText = stringResource(R.string.setting_info_home_url),
         placeholder = stringResource(R.string.ui_e_g_value, Constants.WEBSITE_URL),
         initialValue = userSettings.homeUrl,
         settingKey = settingKey,

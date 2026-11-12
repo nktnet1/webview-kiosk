@@ -29,6 +29,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun MqttClientIdSetting() {
@@ -43,10 +44,9 @@ fun MqttClientIdSetting() {
     val recommendedClientId = $$"wk-${$${MqttVariableName.APP_INSTANCE_ID.name}}"
 
     TextSettingFieldItem(
-        label = stringResource(R.string.mqtt_connection_client_id_title),
         infoText =
             stringResource(
-                R.string.setting_info_mqtt_client_id,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
                 recommendedClientId,
             ),

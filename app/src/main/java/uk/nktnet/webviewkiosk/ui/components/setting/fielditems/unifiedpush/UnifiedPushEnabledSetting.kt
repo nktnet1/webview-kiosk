@@ -8,6 +8,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun UnifiedPushEnabledSetting() {
@@ -16,10 +17,9 @@ fun UnifiedPushEnabledSetting() {
     val settingKey = UserSettingsKeys.UnifiedPush.ENABLED
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.unifiedpush_enabled_title),
         infoText =
             stringResource(
-                R.string.setting_info_unified_push_enabled,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
             ),
         initialValue = userSettings.unifiedPushEnabled,

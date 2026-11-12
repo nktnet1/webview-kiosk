@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.ForegroundServiceNotificationPermissionContent
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 import uk.nktnet.webviewkiosk.utils.initMqttForegroundService
 
 @Composable
@@ -18,10 +19,9 @@ fun MqttUseForegroundServiceSetting() {
     val settingKey = UserSettingsKeys.Mqtt.USE_FOREGROUND_SERVICE
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.mqtt_use_foreground_service_title),
         infoText =
             stringResource(
-                R.string.setting_info_mqtt_use_foreground_service,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
             ),
         initialValue = userSettings.mqttUseForegroundService,

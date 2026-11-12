@@ -46,7 +46,8 @@ import uk.nktnet.webviewkiosk.utils.humanReadableSize
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
 
 @Composable
-fun InfoItem(label: String, value: String) {
+fun InfoItem(@StringRes labelRes: Int, value: String) {
+    val label = stringResource(labelRes)
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
@@ -54,7 +55,13 @@ fun InfoItem(label: String, value: String) {
     Column(
         modifier =
             Modifier.fillMaxWidth()
-                .bringSearchSettingIntoView(label)
+                .bringSearchSettingIntoView(
+                    settingsItemTargetId(
+                        context,
+                        SettingsSearchResultKind.INFORMATION,
+                        labelRes,
+                    )
+                )
                 .padding(vertical = 12.dp)
                 .combinedClickable(
                     onClick = {
@@ -125,41 +132,41 @@ fun SettingsAboutScreen(navController: NavController) {
             AboutSectionHeading(R.string.about_section_app)
 
             InfoItem(
-                label = stringResource(R.string.about_app_name),
+                labelRes = R.string.about_app_name,
                 value = systemInfo.app.name,
             )
             InfoItem(
-                label = stringResource(R.string.about_app_package),
+                labelRes = R.string.about_app_package,
                 value = systemInfo.app.packageName,
             )
             InfoItem(
-                label = stringResource(R.string.about_app_version),
+                labelRes = R.string.about_app_version,
                 value =
                     "${systemInfo.app.versionCode} " +
                         "(${systemInfo.app.versionName})",
             )
             InfoItem(
-                label = stringResource(R.string.about_app_min_sdk),
+                labelRes = R.string.about_app_min_sdk,
                 value = systemInfo.app.minSdk.toString(),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_target_sdk),
+                labelRes = R.string.about_app_target_sdk,
                 value = systemInfo.app.targetSdk.toString(),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_debug_build),
+                labelRes = R.string.about_app_debug_build,
                 value = systemInfo.app.isDebug.toString(),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_installer),
+                labelRes = R.string.about_app_installer,
                 value = systemInfo.app.installer ?: stringResource(R.string.ui_n_a),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_instance_id),
+                labelRes = R.string.about_app_instance_id,
                 value = systemInfo.app.instanceId,
             )
             InfoItem(
-                label = stringResource(R.string.about_source_code_url),
+                labelRes = R.string.about_source_code_url,
                 value = systemInfo.app.sourceCodeUrl,
             )
 
@@ -168,59 +175,58 @@ fun SettingsAboutScreen(navController: NavController) {
             AboutSectionHeading(R.string.about_section_management)
 
             InfoItem(
-                label = stringResource(R.string.about_app_device_owner),
+                labelRes = R.string.about_app_device_owner,
                 value = systemInfo.app.isDeviceOwner.toString(),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_profile_owner),
+                labelRes = R.string.about_app_profile_owner,
                 value = systemInfo.app.isProfileOwner.toString(),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_management_mode),
+                labelRes = R.string.about_app_management_mode,
                 value =
                     stringResource(
                         managementModeLabelRes(systemInfo.app.managementMode)
                     ),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_management_owner),
+                labelRes = R.string.about_app_management_owner,
                 value =
                     stringResource(
                         managementOwnerLabelRes(systemInfo.app.managementOwner)
                     ),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_management_user_type),
+                labelRes = R.string.about_app_management_user_type,
                 value =
                     stringResource(
                         managementUserTypeLabelRes(systemInfo.app.managementUserType)
                     ),
             )
             InfoItem(
-                label = stringResource(R.string.about_device_managed_profile),
+                labelRes = R.string.about_device_managed_profile,
                 value =
                     systemInfo.device.isManagedProfile?.toString()
                         ?: stringResource(R.string.ui_n_a),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_lock_task_permitted),
+                labelRes = R.string.about_app_lock_task_permitted,
                 value = systemInfo.app.isLockTaskPermitted.toString(),
             )
             InfoItem(
-                label =
-                    stringResource(R.string.about_app_dhizuku_permission_granted),
+                labelRes = R.string.about_app_dhizuku_permission_granted,
                 value = systemInfo.app.dhizukuPermissionGranted.toString(),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_manage_lock_task_packages),
+                labelRes = R.string.about_app_manage_lock_task_packages,
                 value = systemInfo.app.canManageLockTaskPackages.toString(),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_manage_lock_task_features),
+                labelRes = R.string.about_app_manage_lock_task_features,
                 value = systemInfo.app.canManageLockTaskFeatures.toString(),
             )
             InfoItem(
-                label = stringResource(R.string.about_app_lock_device),
+                labelRes = R.string.about_app_lock_device,
                 value = systemInfo.app.canLockDevice.toString(),
             )
 
@@ -229,7 +235,7 @@ fun SettingsAboutScreen(navController: NavController) {
             AboutSectionHeading(R.string.about_section_device)
 
             InfoItem(
-                label = stringResource(R.string.about_device_android_version),
+                labelRes = R.string.about_device_android_version,
                 value =
                     stringResource(
                         R.string.ui_value_sdk_value,
@@ -238,13 +244,13 @@ fun SettingsAboutScreen(navController: NavController) {
                     ),
             )
             InfoItem(
-                label = stringResource(R.string.about_device_webview_version),
+                labelRes = R.string.about_device_webview_version,
                 value =
                     systemInfo.device.webViewVersion
                         ?: stringResource(R.string.ui_n_a),
             )
             InfoItem(
-                label = stringResource(R.string.about_device_screen_display),
+                labelRes = R.string.about_device_screen_display,
                 value =
                     stringResource(
                         R.string.ui_value_x_value_px_density_value,
@@ -254,82 +260,82 @@ fun SettingsAboutScreen(navController: NavController) {
                     ),
             )
             InfoItem(
-                label = stringResource(R.string.about_device_time_zone),
+                labelRes = R.string.about_device_time_zone,
                 value = systemInfo.device.timeZone,
             )
             InfoItem(
-                label = stringResource(R.string.about_device_locale),
+                labelRes = R.string.about_device_locale,
                 value = systemInfo.device.locale,
             )
             InfoItem(
-                label = stringResource(R.string.about_device_total_ram),
+                labelRes = R.string.about_device_total_ram,
                 value = humanReadableSize(context, systemInfo.device.totalMemory),
             )
             InfoItem(
-                label = stringResource(R.string.about_device_total_storage),
+                labelRes = R.string.about_device_total_storage,
                 value = humanReadableSize(context, systemInfo.device.totalStorage),
             )
             InfoItem(
-                label = stringResource(R.string.about_device_model),
+                labelRes = R.string.about_device_model,
                 value = systemInfo.device.model,
             )
             InfoItem(
-                label = stringResource(R.string.about_device_manufacturer),
+                labelRes = R.string.about_device_manufacturer,
                 value = systemInfo.device.manufacturer,
             )
             InfoItem(
-                label = stringResource(R.string.about_device_brand),
+                labelRes = R.string.about_device_brand,
                 value = systemInfo.device.brand,
             )
             InfoItem(
-                label = stringResource(R.string.about_device_device),
+                labelRes = R.string.about_device_device,
                 value = systemInfo.device.device,
             )
             InfoItem(
-                label = stringResource(R.string.about_device_product),
+                labelRes = R.string.about_device_product,
                 value = systemInfo.device.product,
             )
             InfoItem(
-                label = stringResource(R.string.about_device_hardware),
+                labelRes = R.string.about_device_hardware,
                 value = systemInfo.device.hardware,
             )
             InfoItem(
-                label = stringResource(R.string.about_device_board),
+                labelRes = R.string.about_device_board,
                 value = systemInfo.device.board,
             )
             InfoItem(
-                label = stringResource(R.string.about_device_bootloader),
+                labelRes = R.string.about_device_bootloader,
                 value = systemInfo.device.bootloader,
             )
             InfoItem(
-                label = stringResource(R.string.about_device_security_patch),
+                labelRes = R.string.about_device_security_patch,
                 value =
                     systemInfo.device.securityPatch
                         ?: stringResource(R.string.ui_n_a),
             )
             InfoItem(
-                label = stringResource(R.string.about_device_supported_abis),
+                labelRes = R.string.about_device_supported_abis,
                 value =
                     systemInfo.device.supportedAbis.joinToString(", ").ifEmpty {
                         "N/A"
                     },
             )
             InfoItem(
-                label = stringResource(R.string.about_device_supported_32bit_abis),
+                labelRes = R.string.about_device_supported_32bit_abis,
                 value =
                     systemInfo.device.supported32BitAbis.joinToString(", ").ifEmpty {
                         "N/A"
                     },
             )
             InfoItem(
-                label = stringResource(R.string.about_device_supported_64bit_abis),
+                labelRes = R.string.about_device_supported_64bit_abis,
                 value =
                     systemInfo.device.supported64BitAbis.joinToString(", ").ifEmpty {
                         "N/A"
                     },
             )
             InfoItem(
-                label = stringResource(R.string.about_device_build_fingerprint),
+                labelRes = R.string.about_device_build_fingerprint,
                 value = systemInfo.device.buildFingerprint,
             )
 

@@ -10,6 +10,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
 import uk.nktnet.webviewkiosk.managers.MqttManager.mqttVariableReplacement
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun MqttWillPayloadSetting() {
@@ -18,10 +19,9 @@ fun MqttWillPayloadSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Will.PAYLOAD
 
     TextSettingFieldItem(
-        label = stringResource(R.string.mqtt_will_payload_title),
         infoText =
             stringResource(
-                R.string.setting_info_mqtt_will_payload,
+                settingDefinition(settingKey).descriptionRes,
                 MqttVariableName.USERNAME.name,
                 MqttVariableName.APP_INSTANCE_ID.name,
             ),

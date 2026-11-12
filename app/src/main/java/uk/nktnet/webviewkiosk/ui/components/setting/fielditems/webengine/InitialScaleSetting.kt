@@ -17,8 +17,6 @@ fun InitialScaleSetting() {
     val settingKey = UserSettingsKeys.WebEngine.INITIAL_SCALE
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.web_engine_initial_scale_title),
-        infoText = stringResource(R.string.setting_info_initial_scale),
         placeholder = stringResource(R.string.ui_e_g_100),
         initialValue = userSettings.initialScale,
         settingKey = settingKey,

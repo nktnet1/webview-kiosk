@@ -16,8 +16,6 @@ fun MqttPasswordSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Connection.PASSWORD
 
     TextSettingFieldItem(
-        label = stringResource(R.string.mqtt_connection_password_title),
-        infoText = stringResource(R.string.setting_info_mqtt_password),
         placeholder = stringResource(R.string.ui_e_g),
         initialValue = userSettings.mqttPassword,
         settingKey = settingKey,

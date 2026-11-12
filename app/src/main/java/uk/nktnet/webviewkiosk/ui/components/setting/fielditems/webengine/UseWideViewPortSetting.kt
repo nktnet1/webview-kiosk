@@ -2,8 +2,6 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -15,8 +13,6 @@ fun UseWideViewPortSetting() {
     val settingKey = UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.web_engine_use_wide_viewport_title),
-        infoText = stringResource(R.string.setting_info_use_wide_view_port),
         initialValue = userSettings.useWideViewport,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

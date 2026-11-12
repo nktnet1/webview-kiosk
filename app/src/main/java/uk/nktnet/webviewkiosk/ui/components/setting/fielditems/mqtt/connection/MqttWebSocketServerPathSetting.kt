@@ -16,8 +16,6 @@ fun MqttWebSocketServerPathSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH
 
     TextSettingFieldItem(
-        label = stringResource(R.string.mqtt_connection_websocket_server_path_title),
-        infoText = stringResource(R.string.setting_info_mqtt_web_socket_server_path),
         placeholder = stringResource(R.string.ui_mqtt),
         initialValue = userSettings.mqttWebSocketServerPath,
         settingKey = settingKey,

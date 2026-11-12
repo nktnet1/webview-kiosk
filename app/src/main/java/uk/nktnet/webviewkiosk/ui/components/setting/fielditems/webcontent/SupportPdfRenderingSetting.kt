@@ -28,6 +28,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun SupportPdfRenderingSetting() {
@@ -66,10 +67,9 @@ fun SupportPdfRenderingSetting() {
     }
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.web_content_support_pdf_rendering_title),
         infoText =
             stringResource(
-                R.string.setting_info_support_pdf_rendering,
+                settingDefinition(settingKey).descriptionRes,
                 Constants.PDF_JS_ASSETS_DUMMY_URL,
             ),
         initialValue = userSettings.supportPdfRendering,

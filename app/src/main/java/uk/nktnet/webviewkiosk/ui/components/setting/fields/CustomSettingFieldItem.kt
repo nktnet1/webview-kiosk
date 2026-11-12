@@ -10,16 +10,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun CustomSettingFieldItem(
-    label: String,
-    infoText: String,
-    value: String,
     settingKey: String,
+    label: String = stringResource(settingDefinition(settingKey).titleRes),
+    infoText: String = stringResource(settingDefinition(settingKey).descriptionRes),
+    value: String,
     restricted: Boolean,
     onSave: () -> Unit,
     onDismissCallback: () -> Unit = {},
@@ -28,6 +30,7 @@ fun CustomSettingFieldItem(
     var showDialog by remember { mutableStateOf(false) }
 
     GenericSettingFieldItem(
+        settingKey = settingKey,
         label = label,
         value = value.ifBlank { "(blank)" },
         restricted = restricted,

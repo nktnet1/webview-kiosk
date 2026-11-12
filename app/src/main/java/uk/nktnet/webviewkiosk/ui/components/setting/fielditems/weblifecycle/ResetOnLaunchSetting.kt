@@ -3,8 +3,6 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -16,8 +14,6 @@ fun ResetOnLaunchSetting() {
     val settingKey = UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.web_lifecycle_reset_on_launch_title),
-        infoText = stringResource(R.string.setting_info_reset_on_launch),
         initialValue = userSettings.resetOnLaunch,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

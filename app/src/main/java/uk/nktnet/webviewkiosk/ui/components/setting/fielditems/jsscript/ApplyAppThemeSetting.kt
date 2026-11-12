@@ -8,6 +8,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
 fun ApplyAppThemeSetting() {
@@ -16,10 +17,9 @@ fun ApplyAppThemeSetting() {
     val settingKey = UserSettingsKeys.JsScripts.APPLY_APP_THEME
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.js_scripts_apply_app_theme_title),
         infoText =
             stringResource(
-                R.string.setting_info_apply_app_theme,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
             ),
         initialValue = userSettings.applyAppTheme,

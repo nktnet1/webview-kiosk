@@ -10,6 +10,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 import uk.nktnet.webviewkiosk.utils.initMqttForegroundService
 
 @Composable
@@ -19,10 +20,9 @@ fun MqttEnabledSetting() {
     val settingKey = UserSettingsKeys.Mqtt.ENABLED
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.mqtt_enabled_title),
         infoText =
             stringResource(
-                R.string.setting_info_mqtt_enabled,
+                settingDefinition(settingKey).descriptionRes,
                 stringResource(R.string.app_name),
             ),
         initialValue = userSettings.mqttEnabled,

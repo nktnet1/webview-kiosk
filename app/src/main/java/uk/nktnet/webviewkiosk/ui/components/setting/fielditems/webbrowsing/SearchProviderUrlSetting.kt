@@ -30,6 +30,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 import uk.nktnet.webviewkiosk.utils.validateUrl
 
 @Composable
@@ -60,10 +61,9 @@ fun SearchProviderUrlSetting() {
         )
 
     TextSettingFieldItem(
-        label = stringResource(R.string.web_browsing_search_provider_url_title),
         infoText =
             stringResource(
-                R.string.setting_info_search_provider_url,
+                settingDefinition(settingKey).descriptionRes,
                 Constants.DEFAULT_SEARCH_PROVIDER_URL,
             ),
         placeholder = Constants.DEFAULT_SEARCH_PROVIDER_URL,
