@@ -1,14 +1,18 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
+import android.app.Notification
 import android.webkit.WebView
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.services.BackgroundMediaPlaybackService
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -120,6 +124,106 @@ class BackgroundMediaPlaybackControllerLifecycleTest {
             controller.dispose()
             webView.destroy()
         }
+    }
+
+    @Test
+    fun blockedAutoplayCannotReplaceTheNotificationPauseTarget() {
+        val webView = WebView(RuntimeEnvironment.getApplication())
+        val controller = BackgroundMediaPlaybackController(webView, { true }, {})
+        try {
+            field(controller, "serviceRequested").setBoolean(controller, true)
+            field(controller, "pausedByNotification").setBoolean(controller, true)
+            field(controller, "activeFrameId").set(controller, "main-player")
+            field(controller, "currentMediaInfo")
+                .set(controller, MediaPlaybackInfo(title = "Original video"))
+
+            report(controller, "autoplay-frame", true)
+
+            assertEquals(
+                "main-player",
+                field(controller, "activeFrameId").get(controller),
+            )
+            assertEquals(
+                "Original video",
+                (field(controller, "currentMediaInfo").get(controller)
+                        as MediaPlaybackInfo)
+                    .title,
+            )
+            assertFalse(
+                (field(controller, "frames").get(controller) as PlayingMediaFrames)
+                    .isPlaying
+            )
+        } finally {
+            controller.dispose()
+            webView.destroy()
+        }
+    }
+
+    @Test
+    fun switchingToAFrameWithoutMetadataClearsPreviousNotificationDetails() {
+        val webView = WebView(RuntimeEnvironment.getApplication())
+        val controller = BackgroundMediaPlaybackController(webView, { true }, {})
+        val serviceController =
+            Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
+                .create()
+        val service = serviceController.get()
+        try {
+            field(controller, "serviceRequested").setBoolean(controller, true)
+            field(controller, "activeFrameId").set(controller, "old-player")
+            val frames =
+                field(controller, "frames").get(controller) as PlayingMediaFrames
+            frames.update("old-player", true)
+            frames.update("new-player", true)
+            BackgroundMediaPlaybackService.updateMediaInfo(
+                MediaPlaybackInfo(
+                    title = "Old video",
+                    durationMs = 60_000L,
+                    canSeek = true,
+                )
+            )
+
+            report(controller, "old-player", false)
+
+            val notification = service.buildNotification()
+            assertEquals(
+                "new-player",
+                field(controller, "activeFrameId").get(controller),
+            )
+            assertEquals(
+                service.getString(R.string.notification_background_media_title),
+                notification.extras.getString(Notification.EXTRA_TITLE),
+            )
+            assertFalse(
+                notification.actions.any {
+                    it.title ==
+                        service.getString(
+                            R.string.notification_background_media_rewind
+                        )
+                }
+            )
+        } finally {
+            controller.dispose()
+            serviceController.destroy()
+            webView.destroy()
+        }
+    }
+
+    private fun field(controller: BackgroundMediaPlaybackController, name: String) =
+        controller.javaClass.getDeclaredField(name).apply { isAccessible = true }
+
+    private fun report(
+        controller: BackgroundMediaPlaybackController,
+        frameId: String,
+        playing: Boolean,
+    ) {
+        controller.javaClass
+            .getDeclaredMethod(
+                "onPlaybackStateChanged",
+                String::class.java,
+                Boolean::class.javaPrimitiveType,
+            )
+            .apply { isAccessible = true }
+            .invoke(controller, frameId, playing)
     }
 
     @Test

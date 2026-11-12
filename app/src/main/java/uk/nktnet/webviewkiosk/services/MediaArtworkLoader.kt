@@ -13,10 +13,12 @@ import java.util.concurrent.Executors
 /**
  * Loads small, public HTTPS thumbnails; never sends WebView cookies or credentials.
  */
-internal class MediaArtworkLoader {
+internal class MediaArtworkLoader(
+    private val retrieveArtwork: (String) -> Bitmap? = Companion::retrieve
+) {
     private val worker = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
-    private var serial = 0
+    @Volatile private var serial = 0
 
     fun load(url: String, pageHost: String?, onLoaded: (Bitmap?) -> Unit) {
         val generation = ++serial
@@ -25,7 +27,12 @@ internal class MediaArtworkLoader {
             return
         }
         worker.execute {
-            val bitmap = retrieve(url)
+            // Only the latest queued cover can still be displayed. Skip stale
+            // downloads instead of making the current track wait behind them.
+            if (generation != serial) {
+                return@execute
+            }
+            val bitmap = retrieveArtwork(url)
             main.post {
                 if (generation == serial) {
                     onLoaded(bitmap)

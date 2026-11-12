@@ -19,6 +19,10 @@ const documentMatch = controllerSource.match(/internal const val DOCUMENT_START_
 assert.ok(documentMatch, 'media bootstrap script exists');
 const documentScript = documentMatch[1];
 
+const recoveryMatch = controllerSource.match(/internal const val YOUTUBE_BACKGROUND_RECOVERY_SCRIPT =\s*"""([\s\S]*?)"""/);
+assert.ok(recoveryMatch, 'YouTube recovery script exists');
+const recoveryScript = recoveryMatch[1];
+
 function frame({
   host = 'www.youtube.com', playing = true, title = 'Test song',
   channel = 'Test channel', videoId = 'abcdefghijk', playlist = ['abcdefghijk', 'noprstuvwxy'],
@@ -100,6 +104,7 @@ function frame({
     WebviewKioskBackgroundMedia: {
       onMediaInfoChanged(id, info) { snapshots.push([id, JSON.parse(info)]); },
       onPlaybackStateChanged() {},
+      canAutoResume() { return true; },
     },
     addEventListener(name, fn) { windowEvents.set(name, [...(windowEvents.get(name) ?? []), fn]); },
     setInterval(fn) { timers.push(fn); },
@@ -111,6 +116,7 @@ function frame({
   for (const child of children) child.window.parent = window;
   const sandbox = { window, document, navigator: window.navigator, location: window.location, setTimeout, isFinite };
   vm.runInNewContext(documentScript, sandbox);
+  vm.runInNewContext(recoveryScript, sandbox);
   vm.runInNewContext(richScript, sandbox);
   return {
     window, snapshots, commands, media, mediaSession, frameId: window.__wvkFrameId,
@@ -287,4 +293,35 @@ test('a newly played source becomes eligible for notification fallback Play', ()
   f.media.pause();
   f.window.__wvkControlRichMedia('play', f.frameId, 0);
   assert.equal(f.media.paused, false);
+});
+
+
+test('targeting Play at the parent frame does not resume paused child players', () => {
+  const child = frame({ host: 'www.youtube.com' });
+  const parent = frame({ host: 'example.org', children: [child] });
+  parent.window.__wvkSetHostBackground(true);
+  parent.window.__wvkControlMedia('pause');
+  parent.window.__wvkControlRichMedia('play', parent.frameId, 0);
+  child.tick();
+  assert.equal(parent.media.paused, false);
+  assert.equal(child.media.paused, true);
+});
+
+test('targeting Pause at the parent frame leaves child players alone', () => {
+  const child = frame({ host: 'www.youtube.com' });
+  const parent = frame({ host: 'example.org', children: [child] });
+  parent.window.__wvkControlRichMedia('pause', parent.frameId, 0);
+  assert.equal(parent.media.paused, true);
+  assert.equal(child.media.paused, false);
+});
+
+test('targeting Play at a child reaches that child and leaves its siblings paused', () => {
+  const child = frame({ host: 'www.youtube.com' });
+  const sibling = frame({ host: 'music.example.test' });
+  const parent = frame({ host: 'example.org', playing: false, children: [child, sibling] });
+  parent.window.__wvkControlMedia('pause');
+  parent.window.__wvkControlRichMedia('play', child.frameId, 0);
+  assert.equal(child.media.paused, false);
+  assert.equal(sibling.media.paused, true);
+  assert.equal(parent.media.paused, true);
 });

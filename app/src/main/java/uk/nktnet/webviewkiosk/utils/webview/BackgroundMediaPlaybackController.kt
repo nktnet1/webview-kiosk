@@ -236,6 +236,7 @@ internal class BackgroundMediaPlaybackController(
 
     fun onNavigationStarted() {
         if (!disposed) {
+            bridge.invalidatePendingReports()
             cancelPendingPauseStop()
             wasYouTubePlaying = false
             stoppedByUser = false
@@ -307,6 +308,12 @@ internal class BackgroundMediaPlaybackController(
         if (disposed || !isActive()) {
             return
         }
+        if (playing && (stoppedByUser || pausedByNotification)) {
+            // Reject blocked autoplay before it can replace the paused player
+            // or register a new frame as the notification's transport target.
+            pauseMedia(retainResumePosition = pausedByNotification)
+            return
+        }
         val shouldPlay = frames.update(frameId, playing)
         // Keep the first still-playing document selected; muted ad frames must
         // not steal notification metadata or transport controls mid-video.
@@ -321,9 +328,13 @@ internal class BackgroundMediaPlaybackController(
             if (activeFrameId != preferred) {
                 activeFrameId = preferred
                 currentMediaInfo = preferred?.let(mediaByFrame::get)
-                currentMediaInfo?.let(
-                    BackgroundMediaPlaybackService::updateMediaInfo
-                )
+                if (serviceRequested) {
+                    // A new frame may not have reported metadata yet. Do not
+                    // leave the previous player's title or capabilities visible.
+                    BackgroundMediaPlaybackService.updateMediaInfo(
+                        currentMediaInfo ?: MediaPlaybackInfo()
+                    )
+                }
             }
         }
         if (playing && (frameId.startsWith("yt-") || isYouTubePage())) {
@@ -332,11 +343,7 @@ internal class BackgroundMediaPlaybackController(
         if (shouldPlay) {
             cancelPendingPauseStop()
         }
-        if (shouldPlay && (stoppedByUser || pausedByNotification)) {
-            // A page may immediately try to restart media after the user
-            // paused it from the notification; honour the explicit action.
-            pauseMedia(retainResumePosition = pausedByNotification)
-        } else if (shouldPlay) {
+        if (shouldPlay) {
             awaitingResume = false
             if (!serviceRequested) {
                 // Android 17 requires a mediaPlayback FGS to start while the
@@ -523,6 +530,7 @@ internal class BackgroundMediaPlaybackController(
         if (disposed || !serviceRequested) {
             return
         }
+        bridge.invalidatePendingReports()
         cancelPendingPauseStop()
         pausedByNotification = true
         awaitingResume = false
@@ -555,6 +563,7 @@ internal class BackgroundMediaPlaybackController(
     }
 
     private fun stopPlayback(userInitiated: Boolean) {
+        bridge.invalidatePendingReports()
         cancelPendingPauseStop()
         stoppedByUser = userInitiated
         pausedByNotification = false
@@ -568,6 +577,7 @@ internal class BackgroundMediaPlaybackController(
         if (disposed) {
             return
         }
+        bridge.dispose()
         if (rendererGone) {
             // onRenderProcessGone must not evaluate JS or notify the dead
             // renderer about deferred window visibility.
@@ -771,7 +781,7 @@ internal const val DOCUMENT_START_SCRIPT =
           catch (ignored) {}
         });
       }
-      window.__wvkControlMedia = function (action) {
+      window.__wvkControlMedia = function (action, localOnly) {
         if (action !== 'pause' && action !== 'resume' && action !== 'stop') return;
         var generation = ++commandGeneration;
         if (isYouTube && typeof window.__wvkYoutubeExplicitAction === 'function') {
@@ -819,7 +829,7 @@ internal const val DOCUMENT_START_SCRIPT =
             media.pause();
           });
         }
-        forEachFrame(action);
+        if (localOnly !== true) forEachFrame(action);
         report();
       };
       window.__wvkReportMediaPlayback = function () { lastPlaying = null; report(); };

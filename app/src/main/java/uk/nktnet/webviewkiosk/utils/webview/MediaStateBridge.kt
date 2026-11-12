@@ -18,6 +18,9 @@ internal class MediaStateBridge(
     private val reportInfo: (String, String) -> Unit,
     private val reportUserInteraction: () -> Unit,
 ) {
+    @Volatile private var generation = 0L
+    @Volatile private var disposed = false
+
     private val audioManager =
         webView.context.applicationContext.getSystemService(Context.AUDIO_SERVICE)
             as? AudioManager
@@ -27,28 +30,51 @@ internal class MediaStateBridge(
      */
     @JavascriptInterface
     fun canAutoResume(): Boolean =
-        try {
-            audioManager?.let {
-                it.mode == AudioManager.MODE_NORMAL && !it.isMusicActive
-            } == true
-        } catch (_: RuntimeException) {
-            false
+        !disposed &&
+            try {
+                audioManager?.let {
+                    it.mode == AudioManager.MODE_NORMAL && !it.isMusicActive
+                } == true
+            } catch (_: RuntimeException) {
+                false
+            }
+
+    /** Main-thread navigation and transport actions supersede queued reports. */
+    fun invalidatePendingReports() {
+        generation++
+    }
+
+    fun dispose() {
+        disposed = true
+        invalidatePendingReports()
+    }
+
+    private fun postIfCurrent(action: () -> Unit) {
+        val ownerGeneration = generation
+        if (disposed) {
+            return
         }
+        webView.post {
+            if (!disposed && ownerGeneration == generation) {
+                action()
+            }
+        }
+    }
 
     @JavascriptInterface
     fun onMediaInfoChanged(frameId: String, json: String) {
         if (frameId.length <= 128 && json.length <= 8_192) {
-            webView.post { reportInfo(frameId, json) }
+            postIfCurrent { reportInfo(frameId, json) }
         }
     }
 
     @JavascriptInterface
     fun onPlaybackStateChanged(frameId: String, playing: Boolean) {
-        webView.post { report(frameId, playing) }
+        postIfCurrent { report(frameId, playing) }
     }
 
     @JavascriptInterface
     fun onUserInteraction() {
-        webView.post { reportUserInteraction() }
+        postIfCurrent { reportUserInteraction() }
     }
 }

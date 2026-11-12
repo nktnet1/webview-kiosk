@@ -205,9 +205,9 @@ internal const val RICH_MEDIA_SCRIPT =
         var element = media();
         var data = snapshot();
         if (action === 'pause') {
-          window.__wvkControlMedia('pause');
+          window.__wvkControlMedia('pause', true);
         } else if (action === 'play') {
-          window.__wvkControlMedia('resume');
+          window.__wvkControlMedia('resume', true);
           // The page may have paused itself on Home, rather than our pause list.
           // Never start an unrelated, never-played video from a notification.
           if (mediaIdentity.matches(lastPlayback, element) && element.paused && !element.ended) {
