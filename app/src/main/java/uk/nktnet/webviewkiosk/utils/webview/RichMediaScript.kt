@@ -349,7 +349,7 @@ internal const val RICH_MEDIA_SCRIPT =
         var at = Math.max(0, Math.min(end, seconds));
         var root = youtube && player();
         if (root && typeof root.seekTo === 'function') root.seekTo(at, true);
-        else if (handlers.seekto) handlers.seekto({seekTime: at, fastSeek: false});
+        else if (handlers.seekto) handlers.seekto({action: 'seekto', seekTime: at, fastSeek: false});
         else {
           var element = media();
           if (element) element.currentTime = at;

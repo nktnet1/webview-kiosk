@@ -931,7 +931,8 @@ internal const val YOUTUBE_BACKGROUND_RECOVERY_SCRIPT =
           audioBusyTicks = 0;
           return;
         }
-        if (current !== 2 || !wasPlaying || explicitlyPaused || attemptCount >= maxAttempts) {
+        if (current !== 2 || !wasPlaying || explicitlyPaused || attemptCount >= maxAttempts ||
+            audioBusyTicks >= maxAudioBusyTicks) {
           return;
         }
         var media = video();

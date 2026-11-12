@@ -353,6 +353,37 @@ test('an active music interruption prevents automatic YouTube resume', () => {
   assert.equal(frame.document.hidden, true);
 });
 
+test('YouTube abandons automatic recovery after a sustained audio interruption', () => {
+  const frame = createFrame('www.youtube.com');
+  frame.window.__wvkSetHostBackground(true);
+  frame.media.pause();
+  let audioAvailable = false;
+  frame.window.WebviewKioskBackgroundMedia.canAutoResume = () => audioAvailable;
+  for (let i = 0; i < 8; i++) frame.tick();
+  assert.equal(frame.media.paused, true);
+
+  audioAvailable = true;
+  for (let i = 0; i < 3; i++) frame.tick();
+  assert.equal(frame.media.paused, true, 'ending the interruption must not revive an expired recovery');
+
+  frame.window.__wvkControlMedia('resume');
+  frame.tick();
+  assert.equal(frame.media.paused, false, 'an explicit Play can start a new recovery budget');
+});
+
+test('YouTube can still recover after a brief audio interruption', () => {
+  const frame = createFrame('www.youtube.com');
+  frame.window.__wvkSetHostBackground(true);
+  frame.media.pause();
+  frame.window.WebviewKioskBackgroundMedia.canAutoResume = () => false;
+  frame.tick();
+  assert.equal(frame.media.paused, true);
+
+  frame.window.WebviewKioskBackgroundMedia.canAutoResume = () => true;
+  frame.tick();
+  assert.equal(frame.media.paused, false);
+});
+
 test('YouTube Shorts recover the active reel after Home without resuming the inactive player', () => {
   const frame = createFrame('www.youtube.com', { pathname: '/shorts/zyxwvutsrqp' });
   frame.window.__wvkSetHostBackground(true);

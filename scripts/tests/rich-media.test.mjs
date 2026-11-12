@@ -204,6 +204,21 @@ test('ordinary HTML media has no Next/Previous unless the website installs media
   assert.equal(f.snapshots.at(-1)[1].canNext, false);
 });
 
+test('notification seeking supplies the action required by a shared Media Session handler', () => {
+  const f = frame({ host: 'player.example.test' });
+  const handleAction = (details) => {
+    if (details.action === 'seekto') f.media.currentTime = details.seekTime;
+  };
+  f.mediaSession.setActionHandler('seekto', handleAction);
+  f.mediaSession.setActionHandler('nexttrack', handleAction);
+
+  f.window.__wvkControlRichMedia('seek', f.frameId, 120_000);
+  assert.equal(f.media.currentTime, 120);
+
+  f.window.__wvkControlRichMedia('previous', f.frameId, 0);
+  assert.equal(f.media.currentTime, 0, 'restart must use the same valid seek action');
+});
+
 test('targeted transport commands reach only the playing cross-origin child frame', () => {
   const playingChild = frame({ host: 'www.youtube.com', index: 0 });
   const adChild = frame({ host: 'music.example.test', index: 1 });
