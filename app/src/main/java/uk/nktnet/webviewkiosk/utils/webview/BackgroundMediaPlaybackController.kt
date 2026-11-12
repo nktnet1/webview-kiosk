@@ -286,7 +286,6 @@ internal class BackgroundMediaPlaybackController(
     fun onActivityStarted() {
         if (!disposed) {
             onHostBackgroundChanged(false)
-            stoppedByUser = false
             webView.evaluateJavascript(
                 "window.__wvkReportMediaPlayback && window.__wvkReportMediaPlayback();",
                 null,
@@ -294,10 +293,13 @@ internal class BackgroundMediaPlaybackController(
         }
     }
 
-    /** A fresh foreground gesture may restart media after notification Stop. */
+    /**
+     * A fresh foreground gesture may restart media after notification Pause/Stop.
+     */
     internal fun onUserInteraction() {
-        if (!disposed && isActive() && !hostInBackground && stoppedByUser) {
+        if (!disposed && isActive() && !hostInBackground) {
             stoppedByUser = false
+            pausedByNotification = false
         }
     }
 

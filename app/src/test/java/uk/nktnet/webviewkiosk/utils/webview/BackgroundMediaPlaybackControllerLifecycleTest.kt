@@ -23,6 +23,8 @@ class BackgroundMediaPlaybackControllerLifecycleTest {
             }
         try {
             stopped.setBoolean(controller, true)
+            controller.onActivityStarted()
+            assertTrue(stopped.getBoolean(controller))
             controller.onUserInteraction()
             assertFalse(stopped.getBoolean(controller))
 
@@ -30,6 +32,35 @@ class BackgroundMediaPlaybackControllerLifecycleTest {
             controller.onHostBackgroundChanged(true)
             controller.onUserInteraction()
             assertTrue(stopped.getBoolean(controller))
+        } finally {
+            controller.dispose()
+            webView.destroy()
+        }
+    }
+
+    @Test
+    fun foregroundGestureAllowsPagePlaybackAfterNotificationPause() {
+        val webView = WebView(RuntimeEnvironment.getApplication())
+        var active = true
+        val controller = BackgroundMediaPlaybackController(webView, { active }, {})
+        val paused =
+            controller.javaClass.getDeclaredField("pausedByNotification").apply {
+                isAccessible = true
+            }
+        try {
+            paused.setBoolean(controller, true)
+            controller.onHostBackgroundChanged(true)
+            controller.onUserInteraction()
+            assertTrue(paused.getBoolean(controller))
+
+            controller.onHostBackgroundChanged(false)
+            active = false
+            controller.onUserInteraction()
+            assertTrue(paused.getBoolean(controller))
+
+            active = true
+            controller.onUserInteraction()
+            assertFalse(paused.getBoolean(controller))
         } finally {
             controller.dispose()
             webView.destroy()

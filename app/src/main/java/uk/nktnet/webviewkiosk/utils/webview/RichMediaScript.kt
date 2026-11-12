@@ -17,7 +17,6 @@ internal const val RICH_MEDIA_SCRIPT =
       var lastSnapshot = '';
       var lastProgressReport = 0;
       var lastPlayedMedia = null;
-      var lastMediaActive = false;
 
       function isShorts() {
         return youtube && /^\/shorts(?:\/|$)/.test(location.pathname || '');
@@ -204,7 +203,7 @@ internal const val RICH_MEDIA_SCRIPT =
           window.__wvkControlMedia('resume');
           // The page may have paused itself on Home, rather than our pause list.
           // Never start an unrelated, never-played video from a notification.
-          if (lastMediaActive && element && element.paused) {
+          if (element && element === lastPlayedMedia && element.paused && !element.ended) {
             if (root && typeof root.playVideo === 'function') root.playVideo();
             else if (typeof element.play === 'function') {
               var pending = element.play();
@@ -275,7 +274,6 @@ internal const val RICH_MEDIA_SCRIPT =
         document.addEventListener(name, function (event) {
           if (name === 'play' || name === 'playing') {
             lastPlayedMedia = event.target;
-            lastMediaActive = true;
           }
           report(true);
         }, true);
@@ -292,14 +290,12 @@ internal const val RICH_MEDIA_SCRIPT =
         var element = media();
         if (element && !element.paused && !element.ended) {
           lastPlayedMedia = element;
-          lastMediaActive = true;
         }
         report(false);
       }, 2000);
       var playing = media();
       if (playing && !playing.paused && !playing.ended) {
         lastPlayedMedia = playing;
-        lastMediaActive = true;
       }
       report(true);
     })();

@@ -67,8 +67,9 @@ internal class MediaArtworkLoader {
         }
 
         private fun retrieve(value: String): Bitmap? {
-            val connection = (URL(value).openConnection() as HttpURLConnection)
+            var connection: HttpURLConnection? = null
             return try {
+                connection = URL(value).openConnection() as HttpURLConnection
                 connection.instanceFollowRedirects = false
                 connection.connectTimeout = 3_000
                 connection.readTimeout = 3_000
@@ -118,7 +119,7 @@ internal class MediaArtworkLoader {
             } catch (_: Exception) {
                 null
             } finally {
-                connection.disconnect()
+                connection?.disconnect()
             }
         }
     }

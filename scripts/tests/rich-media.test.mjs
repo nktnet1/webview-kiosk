@@ -53,6 +53,7 @@ function frame({
   }
   media.closest = () => root;
   const staleRoot = { getVideoData() { return { title: 'Wrong inactive Short', video_id: 'oldoldold12' }; } };
+  let elements = [media];
   const document = {
     title: `${title} - YouTube`,
     getElementById(id) {
@@ -69,7 +70,7 @@ function frame({
       return null;
     },
     querySelectorAll(selector) {
-      if (selector === 'audio,video') return [media];
+      if (selector === 'audio,video') return elements;
       if (selector === 'shorts-video video') return mobileShorts ? [media] : [];
       if (selector === '.player-controls-middle .player-middle-controls-prev-next-button') {
         return host === 'm.youtube.com' ? [controlButton('previous'), controlButton('next')] : [];
@@ -89,7 +90,7 @@ function frame({
     WebviewKioskBackgroundMedia: {
       onMediaInfoChanged(id, info) { snapshots.push([id, JSON.parse(info)]); },
     },
-    __wvkControlMedia(action) { if (action === 'pause') media.pause(); else if (action === 'resume' && playing) media.play(); },
+    __wvkControlMedia(action) { if (action === 'pause') media.pause(); else if (action === 'resume' && playing && media.isConnected) media.play(); },
     addEventListener(name, fn) { windowEvents.set(name, [...(windowEvents.get(name) ?? []), fn]); },
     setInterval(fn) { timers.push(fn); },
     postMessage(data) {
@@ -101,6 +102,10 @@ function frame({
   vm.runInNewContext(richScript, { window, document, navigator: window.navigator, location: { hostname: host, pathname }, setTimeout, isFinite });
   return {
     window, snapshots, commands, media, mediaSession, frameId: window.__wvkFrameId,
+    replaceMedia(replacement) {
+      media.isConnected = false;
+      elements = [replacement];
+    },
     tick() { for (const fn of timers) fn(); },
     emit(name) { for (const fn of events.get(name) ?? []) fn({ target: media }); },
   };
@@ -228,4 +233,13 @@ test('mobile YouTube Shorts selects the playing shorts-video without advertising
   assert.equal(info.artworkUrl, 'https://i.ytimg.com/vi/zyxwvutsrqp/hqdefault.jpg');
   assert.equal(info.canPrevious, false);
   assert.equal(info.canNext, false);
+});
+
+test('notification Play never starts a replacement element that has not played', () => {
+  const f = frame({ host: 'music.example.test' });
+  f.window.__wvkControlRichMedia('pause', f.frameId, 0);
+  const replacement = { ...f.media, isConnected: true };
+  f.replaceMedia(replacement);
+  f.window.__wvkControlRichMedia('play', f.frameId, 0);
+  assert.equal(replacement.paused, true, 'a previous player cannot authorise an unrelated player');
 });

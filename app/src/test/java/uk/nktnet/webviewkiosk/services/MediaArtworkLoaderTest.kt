@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.services
 
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -8,6 +9,20 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class MediaArtworkLoaderTest {
+    @Test
+    fun malformedArtworkDoesNotEscapeTheWorker() {
+        val retrieve =
+            MediaArtworkLoader.Companion.javaClass
+                .getDeclaredMethod("retrieve", String::class.java)
+                .apply { isAccessible = true }
+        assertNull(
+            retrieve.invoke(
+                MediaArtworkLoader.Companion,
+                "https://i.ytimg.com:invalid/cover.jpg",
+            )
+        )
+    }
+
     @Test
     fun permitsYouTubeAndSameOriginHttpsArtworkOnly() {
         assertTrue(
