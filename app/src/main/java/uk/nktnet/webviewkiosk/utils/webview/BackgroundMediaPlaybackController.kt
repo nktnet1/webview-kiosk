@@ -309,7 +309,13 @@ internal class BackgroundMediaPlaybackController(
         // Keep the first still-playing document selected; muted ad frames must
         // not steal notification metadata or transport controls mid-video.
         if (activeFrameId == null || !frames.contains(activeFrameId!!)) {
-            val preferred = frames.firstPlayingFrame()
+            // Retain the last playing frame while its media session survives a
+            // pause (for example, YouTube auto-pausing on Home). Notification
+            // Play must still be able to target that player even though the
+            // frame is no longer in the currently playing set.
+            val preferred =
+                frames.firstPlayingFrame()
+                    ?: activeFrameId.takeIf { serviceRequested }
             if (activeFrameId != preferred) {
                 activeFrameId = preferred
                 currentMediaInfo = preferred?.let(mediaByFrame::get)
