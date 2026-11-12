@@ -429,6 +429,113 @@ class BackgroundMediaPlaybackControllerLifecycleTest {
     private fun field(controller: BackgroundMediaPlaybackController, name: String) =
         controller.javaClass.getDeclaredField(name).apply { isAccessible = true }
 
+    @Test
+    fun mutedAutoplayCannotKeepControlsWhenAnUnmutedPlayerStarts() {
+        for (metadataFirst in listOf(false, true)) {
+            val webView = WebView(RuntimeEnvironment.getApplication())
+            val controller = BackgroundMediaPlaybackController(webView, { true }, {})
+            try {
+                field(controller, "serviceRequested").setBoolean(controller, true)
+                reportInfo(controller, "muted-ad", """{"title":"Ad","muted":true}""")
+                report(controller, "muted-ad", true)
+                assertEquals(
+                    "muted-ad",
+                    field(controller, "activeFrameId").get(controller),
+                )
+
+                val mainInfo =
+                    """{"title":"Selected video","muted":false,"canNext":true}"""
+                if (metadataFirst) {
+                    reportInfo(controller, "main-player", mainInfo)
+                }
+                report(controller, "main-player", true)
+                if (!metadataFirst) {
+                    reportInfo(controller, "main-player", mainInfo)
+                }
+
+                assertEquals(
+                    "main-player",
+                    field(controller, "activeFrameId").get(controller),
+                )
+                assertEquals(
+                    "Selected video",
+                    (field(controller, "currentMediaInfo").get(controller)
+                            as MediaPlaybackInfo)
+                        .title,
+                )
+                controller.javaClass
+                    .getDeclaredMethod("pauseFromNotificationInternal")
+                    .apply { isAccessible = true }
+                    .invoke(controller)
+                controller.javaClass
+                    .getDeclaredMethod("resumeFromNotificationInternal")
+                    .apply { isAccessible = true }
+                    .invoke(controller)
+                assertEquals(
+                    "window.__wvkControlRichMedia && window.__wvkControlRichMedia('play','main-player',0);",
+                    shadowOf(webView).lastEvaluatedJavascript,
+                )
+            } finally {
+                controller.dispose()
+                webView.destroy()
+            }
+        }
+    }
+
+    @Test
+    fun mutingTheSelectedPlayerDoesNotTransferItsControlsToAnotherFrame() {
+        val webView = WebView(RuntimeEnvironment.getApplication())
+        val controller = BackgroundMediaPlaybackController(webView, { true }, {})
+        try {
+            field(controller, "serviceRequested").setBoolean(controller, true)
+            reportInfo(
+                controller,
+                "main-player",
+                """{"title":"Selected video","muted":false}""",
+            )
+            report(controller, "main-player", true)
+            reportInfo(
+                controller,
+                "other-frame",
+                """{"title":"Other video","muted":false}""",
+            )
+            report(controller, "other-frame", true)
+            reportInfo(
+                controller,
+                "main-player",
+                """{"title":"Selected video","muted":true}""",
+            )
+
+            assertEquals(
+                "main-player",
+                field(controller, "activeFrameId").get(controller),
+            )
+            assertTrue(
+                (field(controller, "currentMediaInfo").get(controller)
+                        as MediaPlaybackInfo)
+                    .muted
+            )
+        } finally {
+            controller.dispose()
+            webView.destroy()
+        }
+    }
+
+    private fun reportInfo(
+        controller: BackgroundMediaPlaybackController,
+        frameId: String,
+        payload: String,
+    ) {
+        controller.javaClass
+            .getDeclaredMethod(
+                "onMediaInfoChanged",
+                String::class.java,
+                String::class.java,
+            )
+            .apply { isAccessible = true }
+            .invoke(controller, frameId, payload)
+    }
+
     private fun report(
         controller: BackgroundMediaPlaybackController,
         frameId: String,

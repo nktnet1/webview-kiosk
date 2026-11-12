@@ -94,6 +94,9 @@ internal const val RICH_MEDIA_SCRIPT =
       function nonnegative(value) {
         return typeof value === 'number' && isFinite(value) && value >= 0 ? value : -1;
       }
+      function boundedText(value, limit) {
+        return String(value).replace(/[\x00-\x1f]/g, '').slice(0, limit).trim();
+      }
       function meta(name) {
         var node = document.querySelector('meta[property="' + name + '"]') ||
           document.querySelector('meta[name="' + name + '"]');
@@ -259,6 +262,10 @@ internal const val RICH_MEDIA_SCRIPT =
         } else {
           art = meta('og:image');
         }
+        // Match the native field bounds before serializing. A large data URL
+        // or title must not make the bridge reject every capability and tick.
+        art = String(art);
+        if (art.length > 1024) art = '';
         // The API may still describe the old clip during a playlist transition.
         // Prefer the selected HTML player's actual timeline whenever available.
         var duration = nonnegative(element ? element.duration : -1);
@@ -297,7 +304,7 @@ internal const val RICH_MEDIA_SCRIPT =
         }
         var changingTrack = pendingTrack !== null;
         return {
-          title: String(title), artist: String(artist), artworkUrl: String(art),
+          title: boundedText(title, 200), artist: boundedText(artist, 160), artworkUrl: art,
           durationMs: !changingTrack && duration >= 0 ? Math.round(duration * 1000) : -1,
           positionMs: changingTrack ? 0 : (position >= 0 ? Math.round(position * 1000) : -1),
           buffering: buffering,

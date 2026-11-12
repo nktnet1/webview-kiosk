@@ -24,7 +24,8 @@ internal class PlayingMediaFrames {
 
     fun contains(frameId: String): Boolean = frameId in frames
 
-    fun firstPlayingFrame(): String? = frames.firstOrNull()
+    fun firstPlayingFrame(predicate: (String) -> Boolean = { true }): String? =
+        frames.firstOrNull(predicate)
 
     fun update(frameId: String, playing: Boolean): Boolean {
         if (frameId.isBlank() || frameId.length > 128) {
@@ -154,6 +155,7 @@ internal class BackgroundMediaPlaybackController(
     private var pausedByNotification = false
     private var hostInBackground = false
     private var activeFrameId: String? = null
+    private var activeFrameWasUnmuted = false
     private var currentMediaInfo: MediaPlaybackInfo? = null
     private val mediaByFrame = mutableMapOf<String, MediaPlaybackInfo>()
     private val bridge =
@@ -283,28 +285,7 @@ internal class BackgroundMediaPlaybackController(
             return
         }
         val shouldPlay = frames.update(frameId, playing)
-        // Keep the first still-playing document selected; muted ad frames must
-        // not steal notification metadata or transport controls mid-video.
-        if (activeFrameId == null || !frames.contains(activeFrameId!!)) {
-            // Retain the last playing frame while its media session survives a
-            // pause (for example, YouTube auto-pausing on Home). Notification
-            // Play must still be able to target that player even though the
-            // frame is no longer in the currently playing set.
-            val preferred =
-                frames.firstPlayingFrame()
-                    ?: activeFrameId.takeIf { serviceRequested }
-            if (activeFrameId != preferred) {
-                activeFrameId = preferred
-                currentMediaInfo = preferred?.let(mediaByFrame::get)
-                if (serviceRequested) {
-                    // A new frame may not have reported metadata yet. Do not
-                    // leave the previous player's title or capabilities visible.
-                    BackgroundMediaPlaybackService.updateMediaInfo(
-                        currentMediaInfo ?: MediaPlaybackInfo()
-                    )
-                }
-            }
-        }
+        selectActiveFrame()
         if (shouldPlay && !serviceRequested) {
             // Start while the Activity is visible, not when it backgrounds.
             val activity = webView.context as? MainActivity
@@ -328,6 +309,48 @@ internal class BackgroundMediaPlaybackController(
         }
     }
 
+    private fun selectActiveFrame() {
+        val current = activeFrameId
+        val currentlyPlaying = current != null && frames.contains(current)
+        // A muted autoplay frame may have started before the user's player.
+        // Once a selected frame has played unmuted, keep its controls stable
+        // even when the user mutes it or another frame starts playing.
+        val retainCurrent =
+            currentlyPlaying &&
+                (activeFrameWasUnmuted || mediaByFrame[current]?.muted != true)
+        val preferred =
+            if (retainCurrent) {
+                current
+            } else {
+                frames.firstPlayingFrame { mediaByFrame[it]?.muted == false }
+                    ?: current.takeIf { currentlyPlaying }
+                    ?: frames.firstPlayingFrame()
+                    // A paused session must retain its notification Play target.
+                    ?: current.takeIf { serviceRequested }
+            }
+        if (current != preferred) {
+            activeFrameId = preferred
+            activeFrameWasUnmuted = false
+            updateCurrentMediaInfo(preferred?.let(mediaByFrame::get))
+        }
+        if (
+            preferred != null &&
+                frames.contains(preferred) &&
+                mediaByFrame[preferred]?.muted == false
+        ) {
+            activeFrameWasUnmuted = true
+        }
+    }
+
+    private fun updateCurrentMediaInfo(info: MediaPlaybackInfo?) {
+        currentMediaInfo = info
+        if (serviceRequested) {
+            BackgroundMediaPlaybackService.updateMediaInfo(
+                currentMediaInfo ?: MediaPlaybackInfo()
+            )
+        }
+    }
+
     private fun onMediaInfoChanged(frameId: String, payload: String) {
         if (disposed || !isActive() || frameId.isBlank() || frameId.length > 128) {
             return
@@ -346,11 +369,10 @@ internal class BackgroundMediaPlaybackController(
                 .firstOrNull { it != activeFrameId }
                 ?.let(mediaByFrame::remove)
         }
+        // Playback and metadata callbacks can arrive in either order.
+        selectActiveFrame()
         if (activeFrameId == frameId) {
-            currentMediaInfo = info
-            if (serviceRequested) {
-                BackgroundMediaPlaybackService.updateMediaInfo(info)
-            }
+            updateCurrentMediaInfo(info)
         }
     }
 
@@ -409,6 +431,7 @@ internal class BackgroundMediaPlaybackController(
 
     private fun stopService(releaseVisibility: Boolean = true) {
         activeFrameId = null
+        activeFrameWasUnmuted = false
         currentMediaInfo = null
         mediaByFrame.clear()
         val wasRequested = serviceRequested

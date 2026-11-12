@@ -219,6 +219,52 @@ test('notification seeking supplies the action required by a shared Media Sessio
   assert.equal(f.media.currentTime, 0, 'restart must use the same valid seek action');
 });
 
+test('oversized artwork cannot discard the active player metadata and controls at the native bridge', () => {
+  for (const artwork of [
+    'data:image/png;base64,' + 'A'.repeat(20_000),
+    'https://player.example.test/cover.png?token=' + 'a'.repeat(10_000),
+  ]) {
+    const f = frame({ host: 'player.example.test' });
+    const accepted = [];
+    f.window.WebviewKioskBackgroundMedia.onMediaInfoChanged = (id, payload) => {
+      if (payload.length <= 8192) accepted.push(JSON.parse(payload));
+    };
+    f.mediaSession.metadata = {
+      title: 'Podcast episode', artist: 'Presenter', artwork: [{ src: artwork }],
+    };
+    f.mediaSession.setActionHandler('nexttrack', () => f.commands.push('next'));
+    f.window.__wvkRefreshRichMedia(true);
+
+    assert.equal(accepted.at(-1)?.title, 'Podcast episode');
+    assert.equal(accepted.at(-1)?.artist, 'Presenter');
+    assert.equal(accepted.at(-1)?.canNext, true);
+    assert.equal(accepted.at(-1)?.canMute, true);
+    assert.equal(accepted.at(-1)?.artworkUrl, '', 'skip oversized artwork without requesting a truncated URL');
+    f.window.__wvkControlRichMedia('next', f.frameId, 0);
+    assert.deepEqual(f.commands, ['next']);
+  }
+});
+
+test('oversized text metadata stays within the native report budget after JSON escaping', () => {
+  const f = frame({ host: 'player.example.test' });
+  const accepted = [];
+  f.window.WebviewKioskBackgroundMedia.onMediaInfoChanged = (id, payload) => {
+    if (payload.length <= 8192) accepted.push(JSON.parse(payload));
+  };
+  f.mediaSession.metadata = {
+    title: '\u0000\n' + '"'.repeat(10_000),
+    artist: '\u0001\r' + '\\'.repeat(10_000),
+    artwork: [{ src: 'https://player.example.test/cover.png' }],
+  };
+  f.window.__wvkRefreshRichMedia(true);
+
+  const info = accepted.at(-1);
+  assert.equal(info?.title, '"'.repeat(200));
+  assert.equal(info?.artist, '\\'.repeat(160));
+  assert.equal(info?.artworkUrl, 'https://player.example.test/cover.png');
+  assert.equal(info?.canSeek, true);
+});
+
 test('targeted transport commands reach only the playing cross-origin child frame', () => {
   const playingChild = frame({ host: 'www.youtube.com', index: 0 });
   const adChild = frame({ host: 'music.example.test', index: 1 });
