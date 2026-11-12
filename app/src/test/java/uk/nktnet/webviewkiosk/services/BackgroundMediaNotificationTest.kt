@@ -3,7 +3,7 @@ package uk.nktnet.webviewkiosk.services
 import android.app.Notification
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -15,12 +15,8 @@ import uk.nktnet.webviewkiosk.utils.webview.MediaPlaybackInfo
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
 class BackgroundMediaNotificationTest {
-    // Notification has no non-deprecated API to inspect the RemoteViews selected
-    // by setCustomContentView/setCustomBigContentView. Keep the assertion rather
-    // than weakening coverage of the actual built notification.
-    @Suppress("DEPRECATION")
     @Test
-    fun flatNotificationUsesCustomControlsInsteadOfSystemMediaStyle() {
+    fun notificationUsesNativeMediaStyleWithTransportControls() {
         val controller =
             Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
                 .create()
@@ -37,57 +33,45 @@ class BackgroundMediaNotificationTest {
                     canNext = true,
                 )
             )
-            val notification = service.buildNotification(flatLayout = true)
+            val notification = service.buildNotification()
             assertEquals(
-                Notification.DecoratedCustomViewStyle::class.java.name,
+                Notification.MediaStyle::class.java.name,
                 notification.extras.getString(Notification.EXTRA_TEMPLATE),
             )
             assertEquals(
-                R.layout.notification_media_compact,
-                notification.contentView.layoutId,
+                "Test video",
+                notification.extras.getString(Notification.EXTRA_TITLE),
             )
             assertEquals(
-                R.layout.notification_media_expanded,
-                notification.bigContentView.layoutId,
+                "Test channel",
+                notification.extras.getString(Notification.EXTRA_TEXT),
+            )
+            val actions = notification.actions.map { it.title.toString() }
+            assertTrue(
+                actions.contains(
+                    service.getString(R.string.notification_background_media_play)
+                )
+            )
+            assertTrue(
+                actions.contains(
+                    service.getString(
+                        R.string.notification_background_media_previous
+                    )
+                )
+            )
+            assertTrue(
+                actions.contains(
+                    service.getString(R.string.notification_background_media_next)
+                )
+            )
+            assertTrue(
+                actions.contains(
+                    service.getString(R.string.notification_background_media_stop)
+                )
             )
             assertNotNull(notification.contentIntent)
         } finally {
             controller.destroy()
         }
-    }
-
-    @Test
-    fun olderAndroidRetainsNativeMediaStyle() {
-        val controller =
-            Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
-                .create()
-        try {
-            val notification = controller.get().buildNotification(flatLayout = false)
-            assertEquals(
-                Notification.MediaStyle::class.java.name,
-                notification.extras.getString(Notification.EXTRA_TEMPLATE),
-            )
-        } finally {
-            controller.destroy()
-        }
-    }
-
-    @Test
-    fun flatProgressIsBoundedAndAbsentForUnseekableMedia() {
-        assertNull(flatMediaProgress(MediaPlaybackInfo()))
-        assertNull(
-            flatMediaProgress(
-                MediaPlaybackInfo(durationMs = 10_000L, positionMs = 5_000L)
-            )
-        )
-        val info =
-            MediaPlaybackInfo(
-                durationMs = 10_000L,
-                positionMs = 5_000L,
-                canSeek = true,
-            )
-        assertEquals(50, flatMediaProgress(info))
-        assertEquals(0, flatMediaProgress(info.copy(positionMs = 0L)))
-        assertEquals(100, flatMediaProgress(info.copy(positionMs = 20_000L)))
     }
 }

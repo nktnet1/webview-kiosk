@@ -18,5 +18,4 @@
     <string name="notification_background_media_forward">Forward 30 seconds</string>
     <string name="notification_background_media_speed">Speed (%1$s×)</string>
     <string name="notification_background_media_speed_title">Playback speed</string>
-    <string name="notification_background_media_progress">Playback progress</string>
 </resources>

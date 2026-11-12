@@ -14,8 +14,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
-import android.view.View
-import android.widget.RemoteViews
 import androidx.core.app.ServiceCompat
 import java.lang.ref.WeakReference
 import uk.nktnet.webviewkiosk.MainActivity
@@ -226,11 +224,6 @@ class BackgroundMediaPlaybackService : Service() {
             return
         }
         val refresh = info.presentationChanged(value)
-        // On Android 13+, the flat notification uses a regular progress bar.
-        // Repaint only on a whole-percent change, not on every WebView time tick.
-        val progressChanged =
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                flatMediaProgress(info) != flatMediaProgress(value)
         val artworkChanged = info.artworkUrl != value.artworkUrl
         info = value
         publishPlaybackState()
@@ -249,8 +242,6 @@ class BackgroundMediaPlaybackService : Service() {
         }
         if (refresh) {
             publishMetadata()
-        }
-        if (refresh || progressChanged) {
             refreshNotification()
         }
     }
@@ -367,9 +358,7 @@ class BackgroundMediaPlaybackService : Service() {
         )
 
     @Suppress("DEPRECATION")
-    internal fun buildNotification(
-        flatLayout: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-    ): Notification {
+    internal fun buildNotification(): Notification {
         val openIntent =
             packageManager.getLaunchIntentForPackage(packageName)
                 ?: Intent(this, MainActivity::class.java)
@@ -415,25 +404,6 @@ class BackgroundMediaPlaybackService : Service() {
             .setDefaults(0)
             .setOngoing(true)
         artwork?.let(builder::setLargeIcon)
-
-        if (flatLayout && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            // The Android 13+ media card draws its own animated squiggle and
-            // exposes no API to make that seekbar straight. Use a decorated
-            // notification with a flat progress indicator instead. Keep the
-            // MediaSession active for headset / external transport controls.
-            val compact =
-                flatMediaView(R.layout.notification_media_compact, openPendingIntent)
-            val expanded =
-                flatMediaView(
-                    R.layout.notification_media_expanded,
-                    openPendingIntent,
-                )
-            builder
-                .setStyle(Notification.DecoratedCustomViewStyle())
-                .setCustomContentView(compact)
-                .setCustomBigContentView(expanded)
-            return builder.build()
-        }
 
         var nextIndex = 0
         val compact = mutableListOf<Int>()
@@ -522,117 +492,6 @@ class BackgroundMediaPlaybackService : Service() {
         return builder.build()
     }
 
-    private fun flatMediaView(layout: Int, openIntent: PendingIntent): RemoteViews {
-        val views = RemoteViews(packageName, layout)
-        views.setTextViewText(
-            R.id.notification_media_title,
-            info.title.ifBlank {
-                getString(R.string.notification_background_media_title)
-            },
-        )
-        views.setTextViewText(
-            R.id.notification_media_artist,
-            info.artist.ifBlank { getString(R.string.app_name) },
-        )
-        views.setOnClickPendingIntent(R.id.notification_media_open, openIntent)
-        if (artwork != null) {
-            views.setImageViewBitmap(R.id.notification_media_artwork, artwork)
-            views.setViewVisibility(R.id.notification_media_artwork, View.VISIBLE)
-        } else {
-            views.setViewVisibility(R.id.notification_media_artwork, View.GONE)
-        }
-
-        views.setImageViewResource(
-            R.id.notification_media_play_pause,
-            if (playing) {
-                android.R.drawable.ic_media_pause
-            } else {
-                android.R.drawable.ic_media_play
-            },
-        )
-        views.setContentDescription(
-            R.id.notification_media_play_pause,
-            getString(
-                if (playing) {
-                    R.string.notification_background_media_pause
-                } else {
-                    R.string.notification_background_media_play
-                }
-            ),
-        )
-        views.setOnClickPendingIntent(
-            R.id.notification_media_play_pause,
-            actionIntent(
-                if (playing) {
-                    ACTION_PAUSE
-                } else {
-                    ACTION_PLAY
-                },
-                2,
-            ),
-        )
-        views.setOnClickPendingIntent(
-            R.id.notification_media_stop,
-            actionIntent(ACTION_STOP, 3),
-        )
-
-        if (layout == R.layout.notification_media_expanded) {
-            fun control(id: Int, visible: Boolean, action: String, code: Int) {
-                views.setViewVisibility(
-                    id,
-                    if (visible) {
-                        View.VISIBLE
-                    } else {
-                        View.GONE
-                    },
-                )
-                if (visible) {
-                    views.setOnClickPendingIntent(id, actionIntent(action, code))
-                }
-            }
-            control(
-                R.id.notification_media_previous,
-                info.canPrevious,
-                ACTION_PREVIOUS,
-                4,
-            )
-            control(R.id.notification_media_next, info.canNext, ACTION_NEXT, 5)
-            control(R.id.notification_media_rewind, info.canSeek, ACTION_REWIND, 6)
-            control(R.id.notification_media_forward, info.canSeek, ACTION_FORWARD, 7)
-            control(
-                R.id.notification_media_speed,
-                info.canChangeSpeed,
-                ACTION_SPEED,
-                8,
-            )
-            views.setTextViewText(
-                R.id.notification_media_speed,
-                getString(
-                    R.string.notification_background_media_speed,
-                    info.speed.toString(),
-                ),
-            )
-            val progress = flatMediaProgress(info)
-            views.setViewVisibility(
-                R.id.notification_media_progress,
-                if (progress == null) {
-                    View.GONE
-                } else {
-                    View.VISIBLE
-                },
-            )
-            if (progress != null) {
-                views.setProgressBar(
-                    R.id.notification_media_progress,
-                    100,
-                    progress,
-                    false,
-                )
-            }
-        }
-        return views
-    }
-
     private fun refreshNotification() {
         if (foregroundStarted) {
             CustomNotificationManager.updateServiceNotification(
@@ -653,13 +512,4 @@ class BackgroundMediaPlaybackService : Service() {
         mediaSession.release()
         super.onDestroy()
     }
-}
-
-/** A bounded, integer-only progress value for the static notification bar. */
-internal fun flatMediaProgress(info: MediaPlaybackInfo): Int? {
-    if (info.durationMs <= 0L || info.positionMs < 0L || !info.canSeek) {
-        return null
-    }
-    return (info.positionMs.coerceIn(0L, info.durationMs) * 100L / info.durationMs)
-        .toInt()
 }
