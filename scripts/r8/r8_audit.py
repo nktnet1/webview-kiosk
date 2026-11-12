@@ -32,6 +32,12 @@ ROOT = Path(__file__).resolve().parents[2]
 # must preserve their original names and signatures. Keep in sync with the
 # @JavascriptInterface declarations in app/src/main/java.
 BRIDGES = {
+    "uk.nktnet.webviewkiosk.utils.webview.MediaStateBridge": {
+        ("onPlaybackStateChanged", "(Ljava/lang/String;Z)V"),
+        ("onMediaInfoChanged", "(Ljava/lang/String;Ljava/lang/String;)V"),
+        ("canAutoResume", "()Z"),
+        ("onUserInteraction", "()V"),
+    },
     "uk.nktnet.webviewkiosk.blocking.WebViewRequests$Rules": {
         ("shouldBlock", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z"),
     },

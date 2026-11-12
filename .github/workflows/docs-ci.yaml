@@ -20,6 +20,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    outputs:
+      browser_relevant: ${{ steps.browser_changes.outputs.browser }}
+      base_path: ${{ steps.setup_pages.outputs.base_path || '/' }}
 
     defaults:
       run:
@@ -83,18 +86,59 @@ jobs:
           GITHUB_TOKEN: ${{ github.event_name != 'pull_request' && github.token || '' }}
           PUBLIC_DOCS_BASE_PATH: ${{ steps.setup_pages.outputs.base_path || '/' }}
 
-      - name: Install Chromium for browser tests
-        if: github.event_name == 'workflow_dispatch' || steps.browser_changes.outputs.browser == 'true'
-        run: pnpm exec playwright install --with-deps chromium
+      - name: Upload artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs/dist/client
+
+  browser:
+    name: Documentation browser tests
+    needs: build
+    if: github.event_name == 'workflow_dispatch' || needs.build.outputs.browser_relevant == 'true'
+    runs-on: ubuntu-24.04
+    # Pinned to docs/package.json's @playwright/test version. Chromium and OS
+    # libraries are already present, so we do not depend on flaky apt mirrors.
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      options: --user 1001
+
+    defaults:
+      run:
+        working-directory: docs
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: docs/package.json
+
+      - name: Set up Node.js and cache pnpm store
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: docs/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build documentation for browser tests
+        run: pnpm build
+        env:
+          GITHUB_TOKEN: ${{ github.event_name != 'pull_request' && github.token || '' }}
+          PUBLIC_DOCS_BASE_PATH: ${{ needs.build.outputs.base_path }}
 
       - name: Run documentation browser tests
-        if: github.event_name == 'workflow_dispatch' || steps.browser_changes.outputs.browser == 'true'
         run: pnpm test:e2e
         env:
-          PUBLIC_DOCS_BASE_PATH: ${{ steps.setup_pages.outputs.base_path || '/' }}
+          PUBLIC_DOCS_BASE_PATH: ${{ needs.build.outputs.base_path }}
 
       - name: Upload browser reports
-        if: always() && (github.event_name == 'workflow_dispatch' || steps.browser_changes.outputs.browser == 'true')
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: docs-browser-results
@@ -102,9 +146,3 @@ jobs:
             docs/playwright-report/
             docs/test-results/
           if-no-files-found: ignore
-
-      - name: Upload artifact
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./docs/dist/client

@@ -64,6 +64,9 @@ import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaFullscreenContainer
+import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaPlaybackController
+import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaWindowVisibility
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
@@ -344,6 +347,7 @@ fun createCustomWebview(
                 null
             }
         var hideFullscreen: () -> Unit = {}
+        var releaseFullscreenMediaVisibility: () -> Unit = {}
         val navigation = WebViewNavigationSession(config.isActive)
         val lifetime = WebViewLifetime()
         // Only a main-frame start can reopen progress after completion.
@@ -365,6 +369,7 @@ fun createCustomWebview(
         var cosmetics: WebViewCosmetics? = null
         var scriptlets: WebViewScriptlets? = null
         var requests: WebViewRequests? = null
+        var backgroundPlayback: BackgroundMediaPlaybackController? = null
 
         fun releaseWebView(view: WebView, rendererGone: Boolean): Boolean {
             val wasActive = navigation.isActive()
@@ -389,6 +394,8 @@ fun createCustomWebview(
                     scriptlets?.dispose(rendererGone)
                     requests?.dispose(rendererGone)
                     blobInterface?.dispose()
+                    backgroundPlayback?.dispose(rendererGone)
+                    view.setTag(R.id.background_media_playback_controller, null)
                     NfcBridgeManager.detachWebView(view)
                 }
             return released && wasActive
@@ -434,9 +441,52 @@ fun createCustomWebview(
         }
 
         ServiceWorkerBlocker.install(contentBlocker)
+        val mediaWindowVisibility = BackgroundMediaWindowVisibility()
         val webView =
             object : WebView(context) {
                     var awaitingPdfPageStart = false
+
+                    override fun onWindowVisibilityChanged(visibility: Int) {
+                        // The raw host window state is distinct from an
+                        // ancestor hiding this WebView for fullscreen video.
+                        backgroundPlayback?.onHostBackgroundChanged(
+                            windowVisibility != VISIBLE
+                        )
+                        val deferred =
+                            mediaWindowVisibility.dispatch(
+                                visibility,
+                                backgroundPlayback?.shouldRetainWindowVisibility() ==
+                                    true,
+                            ) { updated ->
+                                super.onWindowVisibilityChanged(updated)
+                            }
+                        if (
+                            visibility != VISIBLE &&
+                                userSettings.backgroundMediaPlayback
+                        ) {
+                            Log.d(
+                                "BackgroundMediaPlayback",
+                                if (deferred) {
+                                    "Deferred hidden WebView window during media playback"
+                                } else {
+                                    "WebView window hidden without active background media session"
+                                },
+                            )
+                        }
+                    }
+
+                    fun releaseMediaWindowVisibility() {
+                        if (
+                            mediaWindowVisibility.release { updated ->
+                                super.onWindowVisibilityChanged(updated)
+                            }
+                        ) {
+                            Log.d(
+                                "BackgroundMediaPlayback",
+                                "Restored WebView window visibility after media stopped",
+                            )
+                        }
+                    }
 
                     fun clearPdfNavigation() {
                         awaitingPdfPageStart = false
@@ -750,6 +800,7 @@ fun createCustomWebview(
                                     navigation.pageStarted(it)
                                 }
                                 startLoadingProgress()
+                                backgroundPlayback?.onNavigationStarted()
                                 awaitingPdfPageStart = false
                                 config.setLastErrorUrl("")
                                 config.onHttpAuthRequest(null)
@@ -838,6 +889,7 @@ fun createCustomWebview(
                                         )
                                 }
                                 cosmetics?.onPageFinished()
+                                backgroundPlayback?.onPageFinished()
 
                                 url?.let {
                                     /*
@@ -1608,14 +1660,25 @@ fun createCustomWebview(
                                     callback.onCustomViewHidden()
                                     return
                                 }
-                                fullScreenContainer =
-                                    FrameLayout(activity).apply {
-                                        addView(
-                                            view,
-                                            ViewGroup.LayoutParams.MATCH_PARENT,
-                                            ViewGroup.LayoutParams.MATCH_PARENT,
-                                        )
-                                    }
+                                // Fullscreen video is hosted outside the WebView.
+                                // Guard both views while the same media session is
+                                // active.
+                                val mediaContainer =
+                                    BackgroundMediaFullscreenContainer(activity) {
+                                            backgroundPlayback
+                                                ?.shouldRetainWindowVisibility() ==
+                                                true
+                                        }
+                                        .apply {
+                                            addView(
+                                                view,
+                                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                            )
+                                        }
+                                fullScreenContainer = mediaContainer
+                                releaseFullscreenMediaVisibility =
+                                    mediaContainer::releaseMediaWindowVisibility
 
                                 customView = view
                                 customViewCallback = callback
@@ -1649,6 +1712,8 @@ fun createCustomWebview(
                                 fullScreenContainer = null
                                 customView = null
                                 customViewCallback = null
+                                releaseFullscreenMediaVisibility()
+                                releaseFullscreenMediaVisibility = {}
 
                                 container?.removeView(view)
                                 (container?.parent as? ViewGroup)?.removeView(
@@ -1837,6 +1902,18 @@ fun createCustomWebview(
                         }
                     }
                 }
+
+        if (userSettings.backgroundMediaPlayback && userSettings.enableJavaScript) {
+            backgroundPlayback =
+                BackgroundMediaPlaybackController(webView, config.isActive) {
+                    webView.releaseMediaWindowVisibility()
+                    releaseFullscreenMediaVisibility()
+                }
+            webView.setTag(
+                R.id.background_media_playback_controller,
+                backgroundPlayback,
+            )
+        }
 
         CookieManager.getInstance().apply {
             setAcceptCookie(userSettings.acceptCookies)

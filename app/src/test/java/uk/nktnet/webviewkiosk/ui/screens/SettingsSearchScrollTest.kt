@@ -144,8 +144,6 @@ class SettingsSearchScrollTest {
             SETTINGS_SEARCH_FLASH_DELAY_MS,
         )
         val activity = controller.get()
-        val title =
-            activity.getString(R.string.appearance_show_loading_progress_bar_title)
         var consumed = 0
         view.setContent {
             MaterialTheme {
@@ -189,6 +187,7 @@ class SettingsSearchScrollTest {
             repeat(5) { renderFrame(advanceTime = false) }
             val actual =
                 roots
+                    .asSequence()
                     .filter { it.view.isAttachedToWindow }
                     .flatMap {
                         it.semanticsOwner.getAllSemanticsNodes(
@@ -226,9 +225,8 @@ class SettingsSearchScrollTest {
                     }
                     .mapNotNull { it.config.getOrNull(SemanticsProperties.TestTag) }
                     .toSet()
-            for (item in page.items) {
-                val id =
-                    settingsItemTargetId(controller.get(), item.kind, item.titleRes)
+            for ((titleRes, kind) in page.items) {
+                val id = settingsItemTargetId(controller.get(), kind, titleRes)
                 assertTrue(
                     "Missing target $id on ${page.route}",
                     "settings_target:$id" in actual,

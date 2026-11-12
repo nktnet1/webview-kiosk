@@ -368,6 +368,13 @@ class UserSettings(val context: Context) {
             UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE,
             true,
         )
+    var backgroundMediaPlayback by
+        booleanPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.WebEngine.BACKGROUND_MEDIA_PLAYBACK,
+            false,
+        )
     private var mutualTlsPref by
         stringPrefOptional(
             getRestrictions,
@@ -1375,6 +1382,10 @@ class UserSettings(val context: Context) {
                     UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE,
                     mediaPlaybackRequiresUserGesture,
                 )
+                put(
+                    UserSettingsKeys.WebEngine.BACKGROUND_MEDIA_PLAYBACK,
+                    backgroundMediaPlayback,
+                )
                 put(UserSettingsKeys.WebEngine.MUTUAL_TLS, mutualTls)
                 put(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
                 put(
@@ -1940,6 +1951,11 @@ class UserSettings(val context: Context) {
                 json.optBoolean(
                     UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE,
                     mediaPlaybackRequiresUserGesture,
+                )
+            backgroundMediaPlayback =
+                json.optBoolean(
+                    UserSettingsKeys.WebEngine.BACKGROUND_MEDIA_PLAYBACK,
+                    backgroundMediaPlayback,
                 )
             mutualTls =
                 json.optString(UserSettingsKeys.WebEngine.MUTUAL_TLS, mutualTls)

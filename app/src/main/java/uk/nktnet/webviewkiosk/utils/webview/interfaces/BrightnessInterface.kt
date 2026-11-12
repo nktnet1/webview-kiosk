@@ -11,13 +11,11 @@ class BrightnessInterface(private val context: Context) {
         const val NAME = "WebviewKioskBrightnessInterface"
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun getBrightness(): Int {
         return getWindowBrightness(context)
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun setBrightness(brightness: Int) {
         val activity = context as? Activity ?: return

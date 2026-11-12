@@ -211,7 +211,7 @@ class SettingsSearchIndexTest {
         val optionMatch = results.indexOfFirst {
             it.settingKey == UserSettingsKeys.WebLifecycle.RESET_ACTIONS
         }
-        assertTrue(titleMatch >= 0 && optionMatch > titleMatch)
+        assertTrue(titleMatch in 0..<optionMatch)
         val grouped = groupSettingsSearchResults(results)
         assertTrue(grouped.size > 1)
         assertEquals(results, grouped.flatMap { it.second })
@@ -243,6 +243,32 @@ class SettingsSearchIndexTest {
             searchSettings(context, UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY)
                 .first()
                 .settingKey,
+        )
+    }
+
+    @Test
+    fun backgroundMediaPlaybackUsesSharedMetadataAndIsSearchable() {
+        val key = UserSettingsKeys.WebEngine.BACKGROUND_MEDIA_PLAYBACK
+        val titleRes = R.string.web_engine_background_media_playback_title
+        val descriptionRes = R.string.setting_info_background_media_playback
+        val definition = settingDefinition(key)
+        assertEquals(titleRes, definition.titleRes)
+        assertEquals(descriptionRes, definition.descriptionRes)
+
+        val expected =
+            SettingsSearchResult(
+                titleRes = titleRes,
+                route = Screen.SettingsWebEngine.route,
+                kind = SettingsSearchResultKind.SETTING,
+                targetId = key,
+                settingKey = key,
+            )
+        assertEquals(expected, searchSettings(context, key).single())
+        assertEquals(
+            expected,
+            searchSettings(context, context.getString(titleRes)).single {
+                it.settingKey == key
+            },
         )
     }
 
@@ -297,12 +323,12 @@ class SettingsSearchIndexTest {
             definitions.map { it.key }.toSet(),
         )
         assertEquals(definitions.size, definitions.map { it.key }.distinct().size)
-        for (definition in definitions) {
-            assertTrue(context.getString(definition.titleRes).isNotBlank())
-            assertTrue(context.getString(definition.descriptionRes).isNotBlank())
+        for ((titleRes, key, descriptionRes) in definitions) {
+            assertTrue(context.getString(titleRes).isNotBlank())
+            assertTrue(context.getString(descriptionRes).isNotBlank())
             assertTrue(
-                searchSettings(context, definition.key).any {
-                    it.settingKey == definition.key && it.targetId == definition.key
+                searchSettings(context, key).any {
+                    it.settingKey == key && it.targetId == key
                 }
             )
         }

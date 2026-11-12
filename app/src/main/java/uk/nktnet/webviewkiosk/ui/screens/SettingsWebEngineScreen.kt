@@ -24,6 +24,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.AllowFi
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.AllowFileDownloadSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.AllowFilePickerSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.AllowUniversalAccessFromFileURLsSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.BackgroundMediaPlaybackSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.BuiltInZoomControlsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.CacheModeSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.DisplayZoomControlsSetting
@@ -78,6 +79,7 @@ fun SettingsWebEngineScreen(navController: NavController) {
             AllowFilePickerSetting()
             AllowFileDownloadSetting()
             MediaPlaybackRequiresUserGestureSetting()
+            BackgroundMediaPlaybackSetting()
             MutualTlsSetting()
             SslErrorModeSetting()
             MixedContentModeSetting()

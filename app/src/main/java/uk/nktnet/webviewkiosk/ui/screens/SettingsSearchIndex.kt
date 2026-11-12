@@ -85,43 +85,44 @@ internal class SettingsSearchIndex(context: Context) {
                     )
                 )
             }
-            for (setting in page.settings) {
+            for ((titleRes, key, descriptionRes, optionLabelRes, aliasesRes) in
+                page.settings) {
                 add(
                     Document(
                         SettingsSearchResult(
-                            setting.titleRes,
+                            titleRes,
                             page.route,
                             SettingsSearchResultKind.SETTING,
-                            targetId = setting.key,
-                            settingKey = setting.key,
+                            targetId = key,
+                            settingKey = key,
                         ),
-                        text(setting.titleRes),
-                        normaliseSettingsSearch(setting.key),
+                        text(titleRes),
+                        normaliseSettingsSearch(key),
                         heading,
-                        text(setting.descriptionRes),
-                        text(setting.aliasesRes),
-                        setting.optionLabelRes.joinToString(" ") { text(it) },
+                        text(descriptionRes),
+                        text(aliasesRes),
+                        optionLabelRes.joinToString(" ") { text(it) },
                     )
                 )
             }
-            for (item in page.items) {
+            for ((titleRes, kind, descriptionRes) in page.items) {
                 add(
                     Document(
                         SettingsSearchResult(
-                            item.titleRes,
+                            titleRes,
                             page.route,
-                            item.kind,
+                            kind,
                             targetId =
                                 settingsItemTargetId(
                                     context,
-                                    item.kind,
-                                    item.titleRes,
+                                    kind,
+                                    titleRes,
                                 ),
                         ),
-                        text(item.titleRes),
+                        text(titleRes),
                         "",
                         heading,
-                        text(item.descriptionRes),
+                        text(descriptionRes),
                         "",
                         "",
                     )

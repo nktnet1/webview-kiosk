@@ -273,6 +273,13 @@
         android:description="@string/setting_info_media_playback_requires_user_gesture"
     />
     <restriction
+        android:key="web_engine.background_media_playback"
+        android:restrictionType="bool"
+        android:defaultValue="false"
+        android:title="@string/web_engine_background_media_playback_title"
+        android:description="@string/setting_info_background_media_playback"
+    />
+    <restriction
         android:key="web_engine.mutual_tls"
         android:restrictionType="string"
         android:title="@string/web_engine_mutual_tls_title"

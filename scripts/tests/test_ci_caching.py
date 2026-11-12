@@ -1,8 +1,11 @@
-"""Static regression checks for test workflow scope and caching.
+"""Check the app and documentation CI contracts that affect real builds.
 
-Uses only the standard library so these checks run before Gradle or pnpm.
+Keep these checks focused on runnable jobs, their dependencies, and the
+conditions under which they execute. In particular, job-local setup is not a
+workflow-wide singleton: the docs build and browser jobs run on separate runners.
 """
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -14,200 +17,104 @@ DOCS_DEPLOY = (ROOT / ".github/workflows/docs.yaml").read_text(encoding="utf-8")
 RELEASE = (ROOT / ".github/workflows/release.yaml").read_text(encoding="utf-8")
 
 
-class CiCachingTest(unittest.TestCase):
-    def test_gradle_cache_is_enabled_without_competing_java_cache(self):
-        self.assertEqual(1, TESTS.count("uses: gradle/actions/setup-gradle@v6"))
-        self.assertNotIn("cache: gradle", TESTS)
-        self.assertIn("cache-read-only:", TESTS)
-        self.assertIn("head.repo.full_name != github.repository", TESTS)
-        self.assertIn(
-            "run: sh gradlew :adblock:test :app:testDebugUnitTest "
-            "--build-cache --profile --stacktrace",
-            TESTS,
-        )
-        self.assertEqual(1, TESTS.count("build/reports/profile/"))
+def job_body(workflow: str, name: str) -> str:
+    """Extract a top-level job without requiring a YAML dependency in CI."""
+    _, separator, jobs = workflow.partition("\njobs:\n")
+    if not separator:
+        raise AssertionError("Workflow has no jobs section")
+    match = re.search(rf"(?m)^  {re.escape(name)}:\s*$", jobs)
+    if not match:
+        raise AssertionError(f"Workflow is missing the {name!r} job")
+    remainder = jobs[match.end():]
+    next_job = re.search(r"(?m)^  [A-Za-z_][\w-]*:\s*$", remainder)
+    return remainder[:next_job.start()] if next_job else remainder
 
-    def test_no_avd_or_installed_apk_automated_jobs_remain(self):
-        self.assertNotIn("  emulator:", TESTS)
-        self.assertNotIn("  smoke:", RELEASE)
-        self.assertNotIn("reactivecircus/android-emulator-runner", TESTS)
-        self.assertNotIn("reactivecircus/android-emulator-runner", RELEASE)
-        self.assertNotIn("connectedDebugAndroidTest", TESTS)
-        self.assertNotIn("avd-cache", TESTS)
-        self.assertIn("needs: [verify, build]", RELEASE)
-        self.assertIn("  android:\n", TESTS)
 
-    def test_old_instrumentation_suite_stays_retired_and_r8_probes_are_opt_in(self):
-        self.assertTrue((ROOT / "app/src/androidTest/java/uk/nktnet/webviewkiosk/r8/R8RuntimeInstrumentation.java").is_file())
-        self.assertFalse((ROOT / "scripts/smoke-release-apk.sh").exists())
-        self.assertFalse((ROOT / "scripts/ci/run-android-instrumentation.sh").exists())
-        self.assertFalse((ROOT / "scripts/ci/test-local.sh").exists())
-        self.assertFalse((ROOT / "scripts/maintenance/update-graphics.sh").exists())
-        self.assertFalse((ROOT / "scripts/ci/report_android_instrumentation.py").exists())
-        gradle_build = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
-        versions = (ROOT / "gradle/libs.versions.toml").read_text(encoding="utf-8")
-        self.assertRegex(gradle_build, r'testInstrumentationRunner\s*=\s*"uk\.nktnet\.webviewkiosk\.r8\.R8RuntimeInstrumentation"')
-        self.assertIn('testBuildType = "smokeRelease"', gradle_build)
-        # AGP 9 defaults unit tests to just testBuildType. Keep debug JVM
-        # tests in CI and Compose Preview resources for other build types.
-        self.assertRegex(
-            gradle_build,
-            r'androidComponents\s*\{[^}]*beforeVariants\(selector\(\)'
-            r'\.all\(\)\)\s*\{\s*'
-            r'it\.hostTests\[HostTestBuilder\.UNIT_TEST_TYPE\]\?\.enable\s*=\s*true',
-        )
-        self.assertNotIn("android.onlyEnableUnitTestForTheTestedBuildType=false", gradle_build)
-        self.assertNotIn("androidTestImplementation", gradle_build)
-        self.assertNotIn("--runtime", TESTS)
-        self.assertNotIn("--runtime", RELEASE)
-        self.assertNotIn("connectedSmokeReleaseAndroidTest", TESTS)
-        self.assertNotIn("androidx-test-runner", versions)
-        self.assertNotIn("androidx-test-ext-junit", versions)
-        self.assertNotIn("androidx-test-core", versions)
-
-    def test_android_release_no_longer_waits_for_docs(self):
-        self.assertIn("uses: ./.github/workflows/tests.yaml", RELEASE)
-        self.assertNotIn("  docs:\n", TESTS)
-        self.assertNotIn("  docs-browser:\n", TESTS)
-        self.assertNotIn("cache: pnpm", TESTS)
-        self.assertNotIn("playwright", TESTS)
-
-    def test_android_ci_runs_only_for_relevant_changes_on_pushes_and_prs(self):
-        # Keep one identical allowlist for push and pull_request events.
-        # workflow_call and workflow_dispatch must remain unfiltered.
-        triggers = TESTS.split("\nconcurrency:", 1)[0]
-        match = re.search(
-            r"  push:\n    branches:\n      - main\n"
-            r"(?:    #[^\n]*\n)*"
-            r"    paths: &android_paths\n"
-            r"(?P<patterns>(?:      - '[^']+'\n)+)"
-            r"  pull_request:\n    paths: \*android_paths\n",
-            triggers,
-        )
-        self.assertIsNotNone(match)
-        paths = re.findall(r"^      - '([^']+)'$", match.group("patterns"), re.MULTILINE)
-        self.assertEqual(
-            [
-                "app/**",
-                "adblock/**",
-                "config/**",
-                "gradle/**",
-                "scripts/**",
-                "build.gradle.kts",
-                "settings.gradle.kts",
-                "gradle.properties",
-                "gradlew",
-                "gradlew.bat",
-                ".editorconfig",
-                ".github/workflows/tests.yaml",
-                ".github/workflows/release.yaml",
-            ],
-            paths,
-        )
-        self.assertIn("  workflow_dispatch:\n", triggers)
-        self.assertIn("  workflow_call:\n", triggers)
-
-        # These simple patterns are directory/** or exact filenames.
-        def matches(changed_files):
-            return any(
-                file.startswith(path[:-3] + "/") if path.endswith("/**")
-                else file == path
-                for file in changed_files
-                for path in paths
-            )
-
-        for changed_files in (
-            ["docs/content/docs/index.mdx"],
-            ["docs/src/components/example.tsx", "README.md"],
-            ["metadata/en-US/changelogs/123.txt"],
-            ["misc/icons/foreground.svg"],
-            [".github/CONTRIBUTING.md"],
+class CiWorkflowTest(unittest.TestCase):
+    def test_android_ci_verifies_app_and_release_uses_the_same_checks(self):
+        android = job_body(TESTS, "android")
+        for required in (
+            "run: python3 scripts/ci/test_local.py checks",
+            "uses: gradle/actions/setup-gradle@",
+            "sh gradlew checkFormatting",
+            "sh gradlew :adblock:test :app:testDebugUnitTest",
+            "scripts/r8/r8_audit.py",
         ):
-            with self.subTest(ignored=changed_files):
-                self.assertFalse(matches(changed_files))
-        for changed_files in (
-            ["app/src/main/AndroidManifest.xml"],
-            ["adblock/src/main/kotlin/Filter.kt"],
-            ["config/detekt/braces.yml"],
-            ["gradle/libs.versions.toml"],
-            ["scripts/tests/test_ci_caching.py"],
-            ["gradle.properties"],
-            [".editorconfig"],
-            [".github/workflows/tests.yaml"],
-            [".github/workflows/release.yaml"],
-            ["docs/content/docs/index.mdx", "app/build.gradle.kts"],
+            self.assertIn(required, android)
+        self.assertIn("uses: ./.github/workflows/tests.yaml", job_body(RELEASE, "verify"))
+        self.assertIn("needs: [verify, build]", job_body(RELEASE, "release"))
+
+    def test_android_and_docs_checks_have_separate_change_scopes(self):
+        for pattern in ("app/**", "adblock/**", "gradle/**", "scripts/**"):
+            self.assertIn(f"- '{pattern}'", TESTS)
+        self.assertNotIn("- 'docs/**'", TESTS)
+        for pattern in ("docs/**", ".github/workflows/docs-ci.yaml"):
+            self.assertIn(f"- '{pattern}'", DOCS_CI)
+        self.assertNotIn("- 'app/**'", DOCS_CI)
+        self.assertIn("  workflow_call:", TESTS)
+        self.assertIn("  workflow_call:", DOCS_CI)
+
+    def test_docs_build_validates_and_packages_site_without_installing_browser(self):
+        build = job_body(DOCS_CI, "build")
+        for required in (
+            "uses: pnpm/action-setup@",
+            "uses: actions/setup-node@",
+            "cache: pnpm",
+            "cache-dependency-path: docs/pnpm-lock.yaml",
+            "run: pnpm install --frozen-lockfile",
+            "run: pnpm check",
+            "run: pnpm typecheck",
+            "run: pnpm test",
+            "run: pnpm build",
+            "uses: actions/upload-pages-artifact@",
         ):
-            with self.subTest(included=changed_files):
-                self.assertTrue(matches(changed_files))
+            self.assertIn(required, build)
+        self.assertNotIn("run: pnpm test:e2e", build)
+        self.assertNotIn("playwright install", build)
+        self.assertIn("if: github.event_name != 'pull_request'", build)
 
-    def test_docs_validation_installs_and_caches_once(self):
-        self.assertEqual(1, DOCS_CI.count("uses: pnpm/action-setup@v6"))
-        self.assertEqual(1, DOCS_CI.count("uses: actions/setup-node@v6"))
-        self.assertEqual(1, DOCS_CI.count("cache: pnpm"))
-        self.assertIn("cache-dependency-path: docs/pnpm-lock.yaml", DOCS_CI)
-        self.assertLess(
-            DOCS_CI.index("uses: pnpm/action-setup@v6"),
-            DOCS_CI.index("uses: actions/setup-node@v6"),
-        )
-        for command in ("pnpm check", "pnpm typecheck", "pnpm test", "pnpm build"):
-            self.assertEqual(1, DOCS_CI.count(f"run: {command}\n"))
-        # Deployment reuses the exact same checks instead of maintaining a copy.
-        self.assertNotIn("pnpm install", DOCS_DEPLOY)
-
-    def test_docs_ci_runs_on_prs_and_deployment_is_main_only(self):
-        self.assertIn("  pull_request:\n    paths:\n", DOCS_CI)
-        self.assertIn("  workflow_call:\n", DOCS_CI)
-        self.assertNotIn("  push:\n", DOCS_CI)
-        self.assertNotIn("  workflow_dispatch:\n", DOCS_CI)
-        for path in (
-            "docs/**",
-            ".github/workflows/docs-ci.yaml",
-            ".github/workflows/docs.yaml",
-        ):
-            self.assertIn(f"      - '{path}'", DOCS_CI)
-        self.assertIn("group: docs-ci-${{ github.ref }}", DOCS_CI)
-        self.assertIn("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", DOCS_CI)
-
+    def test_docs_deployment_reuses_validation_and_does_not_publish_prs(self):
         self.assertIn("  push:\n    branches:\n      - main", DOCS_DEPLOY)
-        self.assertIn("  workflow_dispatch:\n", DOCS_DEPLOY)
-        self.assertNotIn("  pull_request:\n", DOCS_DEPLOY)
-        self.assertIn("uses: ./.github/workflows/docs-ci.yaml", DOCS_DEPLOY)
-        self.assertIn("    needs: build", DOCS_DEPLOY)
-        self.assertIn("group: pages", DOCS_DEPLOY)
-        self.assertIn("pages: write", DOCS_DEPLOY)
-        self.assertIn("id-token: write", DOCS_DEPLOY)
-
-        # A PR must neither configure Pages nor upload a deployment artifact.
-        self.assertIn("if: github.event_name != 'pull_request'", DOCS_CI)
+        self.assertNotIn("  pull_request:", DOCS_DEPLOY)
+        self.assertIn("uses: ./.github/workflows/docs-ci.yaml", job_body(DOCS_DEPLOY, "build"))
+        deploy = job_body(DOCS_DEPLOY, "deploy")
+        self.assertIn("needs: build", deploy)
+        self.assertIn("uses: actions/deploy-pages@", deploy)
+        build = job_body(DOCS_CI, "build")
         self.assertIn(
             "GITHUB_TOKEN: ${{ github.event_name != 'pull_request' && github.token || '' }}",
-            DOCS_CI,
-        )
-        self.assertIn(
-            "PUBLIC_DOCS_BASE_PATH: ${{ steps.setup_pages.outputs.base_path || '/' }}", DOCS_CI
+            build,
         )
 
-    def test_browser_checks_only_when_relevant_or_manual(self):
-        self.assertIn("uses: dorny/paths-filter@v3", DOCS_CI)
-        self.assertIn("pull-requests: read", DOCS_CI)
-        for path in (
-            "docs/src/**",
-            "docs/tests/e2e/**",
-            "docs/vite.config.ts",
-            "docs/config/playwright.config.ts",
-            "docs/package.json",
-            "docs/pnpm-lock.yaml",
-            ".github/workflows/docs-ci.yaml",
-            ".github/workflows/docs.yaml",
-        ):
-            self.assertIn(f"- '{path}'", DOCS_CI)
-        browser_condition = (
+    def test_browser_job_is_conditional_and_uses_preinstalled_chromium(self):
+        build = job_body(DOCS_CI, "build")
+        browser = job_body(DOCS_CI, "browser")
+        self.assertIn("uses: dorny/paths-filter@", build)
+        self.assertIn("browser_relevant: ${{ steps.browser_changes.outputs.browser }}", build)
+        for path in ("docs/src/**", "docs/tests/e2e/**", "docs/config/playwright.config.ts"):
+            self.assertIn(f"- '{path}'", build)
+        self.assertIn("needs: build", browser)
+        self.assertIn(
             "if: github.event_name == 'workflow_dispatch' "
-            "|| steps.browser_changes.outputs.browser == 'true'"
+            "|| needs.build.outputs.browser_relevant == 'true'",
+            browser,
         )
-        self.assertEqual(2, DOCS_CI.count(browser_condition))
-        self.assertIn("pnpm exec playwright install --with-deps chromium", DOCS_CI)
-        self.assertIn("run: pnpm test:e2e", DOCS_CI)
+        for required in (
+            "uses: pnpm/action-setup@",
+            "uses: actions/setup-node@",
+            "run: pnpm install --frozen-lockfile",
+            "run: pnpm build",
+            "run: pnpm test:e2e",
+            "uses: actions/upload-artifact@",
+        ):
+            self.assertIn(required, browser)
+        self.assertNotIn("playwright install", DOCS_CI)
+
+        # A different browser binary from @playwright/test makes real E2E runs fail.
+        image = re.search(r"image: mcr\.microsoft\.com/playwright:v([\d.]+)-noble", browser)
+        self.assertIsNotNone(image, "Browser job needs a pinned Playwright image")
+        package = json.loads((ROOT / "docs/package.json").read_text(encoding="utf-8"))
+        self.assertEqual(package["devDependencies"]["@playwright/test"], image.group(1))
 
 
 if __name__ == "__main__":

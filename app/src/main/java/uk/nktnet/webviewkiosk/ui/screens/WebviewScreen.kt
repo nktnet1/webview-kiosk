@@ -40,6 +40,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -111,7 +114,9 @@ import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
+import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaPlaybackController
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
+import uk.nktnet.webviewkiosk.utils.webview.PAUSE_MEDIA_SCRIPT
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -391,6 +396,46 @@ fun WebviewScreen(navController: NavController) {
     if (webView == null) {
         WebViewUnavailable(navController, webViewError)
         return
+    }
+
+    // The default is intentionally foreground-only. Pause HTML media when the
+    // host Activity becomes invisible, not when a picker/dialog briefly takes
+    // focus. Leave enabled WebViews running and let their playback service own
+    // background lifetime.
+    DisposableEffect(activity, webView, userSettings.backgroundMediaPlayback) {
+        val activityLifecycle = (activity as? LifecycleOwner)?.lifecycle
+        val observer = LifecycleEventObserver { _, event ->
+            if (userSettings.backgroundMediaPlayback) {
+                val controller =
+                    webView.getTag(R.id.background_media_playback_controller)
+                        as? BackgroundMediaPlaybackController
+                if (
+                    event == Lifecycle.Event.ON_PAUSE ||
+                        event == Lifecycle.Event.ON_STOP
+                ) {
+                    controller?.onHostBackgroundChanged(true)
+                }
+                if (
+                    event == Lifecycle.Event.ON_START ||
+                        event == Lifecycle.Event.ON_RESUME
+                ) {
+                    controller?.onActivityStarted()
+                }
+            } else {
+                when (event) {
+                    Lifecycle.Event.ON_STOP -> {
+                        if (userSettings.enableJavaScript) {
+                            webView.evaluateJavascript(PAUSE_MEDIA_SCRIPT, null)
+                        }
+                        webView.onPause()
+                    }
+                    Lifecycle.Event.ON_START -> webView.onResume()
+                    else -> Unit
+                }
+            }
+        }
+        activityLifecycle?.addObserver(observer)
+        onDispose { activityLifecycle?.removeObserver(observer) }
     }
 
     DisposableEffect(webView) {

@@ -32,8 +32,24 @@ fun rememberPermissionState(
     val activity = LocalActivity.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    var granted by remember { mutableStateOf(false) }
-    var shouldShowRationale by remember { mutableStateOf(false) }
+    var granted by
+        remember(context, permission) {
+            mutableStateOf(
+                ContextCompat.checkSelfPermission(context, permission) ==
+                    PackageManager.PERMISSION_GRANTED
+            )
+        }
+    var shouldShowRationale by
+        remember(activity, permission) {
+            mutableStateOf(
+                activity?.let {
+                    ActivityCompat.shouldShowRequestPermissionRationale(
+                        it,
+                        permission,
+                    )
+                } ?: false
+            )
+        }
 
     val launcher =
         rememberLauncherForActivityResult(

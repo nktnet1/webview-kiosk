@@ -6,4 +6,18 @@
     <string name="notification_mqtt_service_title">MQTT Service</string>
     <string name="notification_remote_notify_command_title">Remote Notify Command</string>
     <string name="notification_blob_download_title">Blob Download</string>
+    <string name="notification_background_media_title">Background media</string>
+    <string name="notification_background_media_text">Audio or video playing in %1$s</string>
+    <string name="notification_background_media_stop">Close</string>
+    <string name="notification_background_media_play">Play</string>
+    <string name="notification_background_media_pause">Pause</string>
+    <string name="notification_background_media_paused">Playback paused</string>
+    <string name="notification_background_media_loading">Loading media…</string>
+    <string name="notification_background_media_previous">Previous</string>
+    <string name="notification_background_media_next">Next</string>
+    <string name="notification_background_media_previous_unavailable">Previous (unavailable)</string>
+    <string name="notification_background_media_next_unavailable">Next (unavailable)</string>
+    <string name="notification_background_media_mute">Mute</string>
+    <string name="notification_background_media_unmute">Unmute</string>
+    <string name="notification_background_media_mute_unavailable">Mute (unavailable)</string>
 </resources>

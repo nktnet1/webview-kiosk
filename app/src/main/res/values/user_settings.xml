@@ -96,6 +96,7 @@
     <string name="web_engine_allow_file_download_description">Allow websites to download files. On Android 9 and earlier, external storage permission is required.</string>
 
     <string name="web_engine_media_playback_requires_user_gesture_title">Media Playback Requires User Gesture</string>
+    <string name="web_engine_background_media_playback_title">Background Media Playback</string>
 
     <string name="web_engine_mutual_tls_title">Mutual TLS</string>
     <string name="web_engine_mutual_tls_description">One site per line as host[:port][=KeyChain alias]. Only exact hosts are supported; the default port is 443.</string>
