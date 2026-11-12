@@ -111,6 +111,50 @@ class Android6KioskLifecycleTest {
     }
 
     @Test
+    fun android9LockOnLaunchWaitsUntilResumedAndWindowFocused() {
+        setSdk(Build.VERSION_CODES.P)
+        settings.lockOnLaunch = true
+        val controller = mainActivity().start()
+
+        assertFalse(shadowLockTaskStarted(controller.get()))
+        controller.get().onWindowFocusChanged(true)
+        assertFalse(
+            "must not lock before resume",
+            shadowLockTaskStarted(controller.get()),
+        )
+
+        controller.resume()
+        assertTrue(shadowLockTaskStarted(controller.get()))
+    }
+
+    @Test
+    fun android9LockOnLaunchDoesNotRelockWhenFocusReturns() {
+        setSdk(Build.VERSION_CODES.P)
+        settings.lockOnLaunch = true
+        val controller = mainActivity().start().resume()
+
+        assertFalse(
+            "must not lock before focus",
+            shadowLockTaskStarted(controller.get()),
+        )
+        controller.get().onWindowFocusChanged(true)
+        assertTrue(shadowLockTaskStarted(controller.get()))
+
+        controller.get().onWindowFocusChanged(false)
+        controller.get().stopLockTask()
+        controller.get().onWindowFocusChanged(true)
+        assertFalse(
+            "must not relock after manual unlock",
+            shadowLockTaskStarted(controller.get()),
+        )
+        controller.pause().resume()
+        assertFalse(
+            "must not relock on resume",
+            shadowLockTaskStarted(controller.get()),
+        )
+    }
+
+    @Test
     fun launcherDoesNotRedirectWhenLockOnLaunchIsDisabled() {
         val controller = mainActivity(launcherIntent()).start().resume()
 

@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.AnnotatedString
 import androidx.navigation.NavHostController
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.webkit.WebResourceErrorCompat
 import androidx.webkit.WebViewClientCompat
 import java.util.concurrent.TimeUnit
@@ -542,6 +543,42 @@ class MainActivityWebViewRefreshTest {
         webView.stopLoading()
         frames()
         assertFalse(hasLoadingIcon())
+    }
+
+    @Test
+    fun quickPullToRefreshCompletionStopsNativeIndicatorWithoutAComposeFrame() {
+        val webView = webView()
+        val client = webView.webViewClient
+        val url = "https://example.invalid/pull"
+        webView.loadUrl(url)
+        client.onPageStarted(webView, url, null)
+        client.doUpdateVisitedHistory(webView, url, false)
+        client.onPageFinished(webView, url)
+        frames()
+        assertEquals(url, SystemSettings(activity).currentUrl)
+
+        val layout = webView.parent as SwipeRefreshLayout
+        assertFalse(layout.isRefreshing)
+        // The gesture starts the native indicator without waiting for Compose.
+        layout.isRefreshing = true
+        val listenerField =
+            SwipeRefreshLayout::class.java.getDeclaredField("mListener")
+        listenerField.isAccessible = true
+        val refreshListener =
+            listenerField.get(layout) as SwipeRefreshLayout.OnRefreshListener
+        refreshListener.onRefresh()
+        assertTrue(layout.isRefreshing)
+        assertEquals(url, shadowOf(webView).lastLoadedUrl)
+
+        // A fast cached page can finish before Compose applies the true state.
+        client.onPageStarted(webView, url, null)
+        client.onPageFinished(webView, url)
+        assertFalse(
+            "Completed refresh must dismiss the native indicator",
+            layout.isRefreshing,
+        )
+        frames()
+        assertFalse(layout.isRefreshing)
     }
 
     @Test
