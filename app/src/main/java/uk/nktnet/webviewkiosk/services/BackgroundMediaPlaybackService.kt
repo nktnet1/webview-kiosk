@@ -489,11 +489,10 @@ class BackgroundMediaPlaybackService : Service() {
             R.string.notification_background_media_stop,
             ACTION_STOP,
         )
-        builder.setStyle(
+        builder.style =
             Notification.MediaStyle()
                 .setMediaSession(mediaSession.sessionToken)
                 .setShowActionsInCompactView(1, 2, 3)
-        )
         return builder.build()
     }
 
