@@ -67,6 +67,7 @@ function frame({
     unMute() { media.muted = false; commands.push('unmute'); },
   };
   function controlButton(name) {
+    if (name === 'next' && nextButtonEnabled === null) return null;
     return {
       getAttribute() { return null; },
       disabled: (name === 'previous-short' && !shortsPreviousEnabled) ||
@@ -684,6 +685,122 @@ test('volume-only refreshes still respect real playlist changes and different me
   replaced.setVideoId('newnewnew12');
   replaced.emit('volumechange');
   assert.equal(replaced.snapshots.at(-1)[1].canNext, false);
+});
+
+test('muted UI-managed navigation survives later reports and still executes Next', () => {
+  for (const unavailable of [false, null]) {
+    const f = frame({ playlist: [], search: '?list=UI_MANAGED' });
+    const start = f.snapshots.length;
+    f.player.mute = () => {
+      f.media.muted = true;
+      f.setNextButtonEnabled(unavailable);
+      f.emit('volumechange');
+    };
+    f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+    for (const name of ['timeupdate', 'loadedmetadata', 'durationchange', 'ratechange']) {
+      f.advance(2000);
+      f.emit(name);
+    }
+    assert.ok(f.snapshots.slice(start).every(([, info]) => info.canNext),
+      'progress and periodic reports must not undo the mute fix');
+    f.window.__wvkControlRichMedia('next', f.frameId, 0);
+    assert.deepEqual(f.commands, ['next'], 'Next must execute through the current player while its UI is unavailable');
+  }
+});
+
+test('website mute and asynchronous player events use the same stable navigation as commands', () => {
+  const f = frame({ host: 'm.youtube.com', playlist: [], search: '?list=UI_MANAGED' });
+  f.media.currentTime = 0;
+  f.emit('timeupdate');
+  f.media.muted = true;
+  f.setNextButtonEnabled(null);
+  f.emit('loadedmetadata');
+  f.advance(8000);
+  assert.equal(f.snapshots.at(-1)[1].canNext, true);
+  assert.equal(f.snapshots.at(-1)[1].canPrevious, true);
+  f.window.__wvkControlRichMedia('previous', f.frameId, 0);
+  assert.deepEqual(f.commands, ['previous-click']);
+  f.finishTrack({ id: 'abcdefghijk', at: 0 });
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  assert.deepEqual(f.commands, ['previous-click', 'next']);
+});
+
+test('unmuting retains navigation until the same player controls recover', () => {
+  const f = frame({ playlist: [], search: '?list=UI_MANAGED' });
+  f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+  f.setNextButtonEnabled(null);
+  f.tick();
+  f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+  f.advance(6000);
+  assert.equal(f.snapshots.at(-1)[1].muted, false);
+  assert.equal(f.snapshots.at(-1)[1].canNext, true);
+  f.setNextButtonEnabled(true);
+  f.tick();
+  f.setNextButtonEnabled(false);
+  f.tick();
+  assert.equal(f.snapshots.at(-1)[1].canNext, false,
+    'after recovery a real UI capability change must take effect');
+});
+
+test('mute preservation cannot carry navigation to another item, playlist, or fresh boundary', () => {
+  for (const change of [
+    (f) => { f.setVideoId('newnewnew12'); },
+    (f) => { f.window.location.search = '?list=ANOTHER_LIST'; },
+    (f) => { f.setPlaylist(['abcdefghijk'], 0); },
+  ]) {
+    const f = frame({ playlist: [], search: '?list=UI_MANAGED' });
+    f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+    f.setNextButtonEnabled(null);
+    change(f);
+    f.tick();
+    assert.equal(f.snapshots.at(-1)[1].canNext, false);
+    f.window.__wvkControlRichMedia('next', f.frameId, 0);
+    assert.deepEqual(f.commands, ['mute']);
+  }
+});
+
+test('mute cannot invent navigation or retain a control that has no executable target', () => {
+  const disabled = frame({ playlist: [], nextButtonEnabled: false });
+  disabled.window.__wvkControlRichMedia('mute', disabled.frameId, 0);
+  disabled.advance(6000);
+  assert.equal(disabled.snapshots.at(-1)[1].canNext, false);
+  disabled.window.__wvkControlRichMedia('next', disabled.frameId, 0);
+  assert.deepEqual(disabled.commands, ['mute']);
+
+  const removed = frame({ playlist: [], search: '?list=UI_MANAGED' });
+  removed.player.mute = () => {
+    removed.media.muted = true;
+    removed.setNextButtonEnabled(null);
+    delete removed.player.nextVideo;
+    removed.emit('volumechange');
+  };
+  removed.window.__wvkControlRichMedia('mute', removed.frameId, 0);
+  assert.equal(removed.snapshots.at(-1)[1].canNext, false);
+  removed.window.__wvkControlRichMedia('next', removed.frameId, 0);
+  assert.deepEqual(removed.commands, []);
+});
+
+test('unmuted navigation changes remain immediate without a preceding mute transition', () => {
+  const f = frame({ playlist: [], search: '?list=UI_MANAGED' });
+  f.setNextButtonEnabled(false);
+  f.tick();
+  assert.equal(f.snapshots.at(-1)[1].canNext, false);
+});
+
+test('site callbacks during a mute command cannot erase navigation before the mute flag changes', () => {
+  const f = frame({ playlist: [], search: '?list=UI_MANAGED' });
+  const start = f.snapshots.length;
+  f.player.mute = () => {
+    f.emit('loadedmetadata');
+    f.setNextButtonEnabled(null);
+    f.emit('durationchange');
+    f.media.muted = true;
+  };
+  f.window.__wvkControlRichMedia('mute', f.frameId, 0);
+  assert.ok(f.snapshots.slice(start).every(([, info]) => info.canNext));
+  assert.equal(f.snapshots.at(-1)[1].muted, true);
+  f.window.__wvkControlRichMedia('next', f.frameId, 0);
+  assert.deepEqual(f.commands, ['next']);
 });
 
 test('aborting the old resource during a track change cannot restart its clock', () => {

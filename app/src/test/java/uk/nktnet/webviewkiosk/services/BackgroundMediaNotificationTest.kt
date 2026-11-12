@@ -309,6 +309,7 @@ class BackgroundMediaNotificationTest {
 
     @Suppress("DEPRECATION")
     @Test
+    @Config(sdk = [28, 33, 37])
     fun muteStateChangesLabelAndIconWithoutMovingOtherControls() {
         val controller =
             Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
@@ -318,9 +319,15 @@ class BackgroundMediaNotificationTest {
             val unavailable = service.buildNotification().actions[0]
             assertNull(unavailable.actionIntent)
             assertEquals(R.drawable.media_volume_disabled, unavailable.icon)
+            val session: MediaSession =
+                ReflectionHelpers.getField(service, "mediaSession")
             for (muted in listOf(false, true, false)) {
                 BackgroundMediaPlaybackService.updateMediaInfo(
-                    MediaPlaybackInfo(canMute = true, muted = muted)
+                    MediaPlaybackInfo(
+                        canMute = true,
+                        muted = muted,
+                        canNext = true,
+                    )
                 )
                 val actions = service.buildNotification().actions
                 assertEquals(5, actions.size)
@@ -342,6 +349,16 @@ class BackgroundMediaNotificationTest {
                         R.drawable.media_volume_on
                     },
                     actions[0].icon,
+                )
+                assertNotNull(actions[3].actionIntent)
+                assertEquals(R.drawable.media_next, actions[3].icon)
+                val state: PlaybackState =
+                    ReflectionHelpers.getField(session, "mPlaybackState")
+                assertTrue(state.actions and PlaybackState.ACTION_SKIP_TO_NEXT != 0L)
+                assertFalse(
+                    state.customActions.any {
+                        it.action.endsWith("MEDIA_NEXT_UNAVAILABLE")
+                    }
                 )
                 assertEquals(R.drawable.media_close, actions.last().icon)
             }

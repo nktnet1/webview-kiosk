@@ -15,13 +15,14 @@ internal const val RICH_MEDIA_SCRIPT =
       var youtube = /(^|\.)youtube(-nocookie)?\.com$/.test(location.hostname.toLowerCase());
       var handlers = Object.create(null);
       var lastSnapshot = '';
-      var lastReport = null;
       var lastProgressReport = 0;
       var lastPlayedMedia = null;
       var lastPlayback = null;
       var mediaIdentity = window.__wvkMediaIdentity;
       var playlistCache = null;
       var currentNavigation = null;
+      var navigationState = null;
+      var changingVolume = false;
       var pendingTrack = null;
       var waitingMedia = new WeakSet();
       var explicitlyPaused = false;
@@ -146,6 +147,39 @@ internal const val RICH_MEDIA_SCRIPT =
         playlistCache = null;
         return null;
       }
+      function stableNavigation(root, element, videoId, navigation, muted, previous, next) {
+        var cached = navigationState;
+        var context = (location.pathname || '') + (location.search || '');
+        var sameItem = cached && cached.context === context &&
+          (videoId ? cached.videoId === videoId : mediaIdentity.matches(cached.identity, element));
+        var sameBounds = cached &&
+          ((!navigation && !cached.navigation) ||
+            (navigation && cached.navigation && navigation.index === cached.navigation.index &&
+              navigation.length === cached.navigation.length));
+        var holding = sameItem && sameBounds &&
+          (changingVolume || muted || cached.muted || cached.holding);
+        var observedPrevious = previous;
+        var observedNext = next;
+        if (holding) {
+          // Muting can hide/reset YouTube's controls for longer than one event.
+          // Preserve known operations across every snapshot, including commands,
+          // only while the current player still provides a way to execute them.
+          if (cached.previous && root && typeof root.previousVideo === 'function' &&
+              (!navigation || navigation.index > 0)) previous = true;
+          if (cached.next && root && typeof root.nextVideo === 'function' &&
+              (!navigation || navigation.index < navigation.length - 1)) next = true;
+        }
+        navigationState = {
+          context: context, videoId: videoId || (sameItem ? cached.videoId : ''),
+          identity: mediaIdentity.capture(element), navigation: navigation,
+          previous: !!previous, next: !!next, muted: muted,
+          // Unmuting can also rerender the controls. Release the retained state
+          // once they recover, or immediately on a new item/context/bounds.
+          holding: !!holding &&
+            (changingVolume || muted || previous !== observedPrevious || next !== observedNext)
+        };
+        return navigationState;
+      }
       function loadingState(root, element) {
         if (explicitlyPaused) return false;
         if (element && element.error) {
@@ -217,6 +251,7 @@ internal const val RICH_MEDIA_SCRIPT =
         if (duration < 0) duration = nonnegative(call(root, 'getDuration', -1));
         var position = nonnegative(element ? element.currentTime : -1);
         if (position < 0) position = nonnegative(call(root, 'getCurrentTime', -1));
+        var muted = !!(element && element.muted === true) || call(root, 'isMuted', false) === true;
         var navigation = youtube && !isShorts() ? playlistNavigation(root, element, videoId) : null;
         currentNavigation = navigation;
         var previous = !!(!youtube && handlers.previoustrack) ||
@@ -227,6 +262,11 @@ internal const val RICH_MEDIA_SCRIPT =
           !!(youtube && ((isShorts() && enabledButton(transportButton('next'))) ||
             (!isShorts() && ((navigation && navigation.index < navigation.length - 1 && typeof root.nextVideo === 'function') ||
               enabledButton(transportButton('next'))))));
+        if (youtube && !isShorts()) {
+          var stable = stableNavigation(root, element, videoId, navigation, muted, previous, next);
+          previous = stable.previous;
+          next = stable.next;
+        }
         var live = data.isLive === true ||
           !!(element && element.duration === Infinity) ||
           !!(root && root.classList && root.classList.contains('ytp-live'));
@@ -244,35 +284,15 @@ internal const val RICH_MEDIA_SCRIPT =
           canMute: !!(element && typeof element.muted === 'boolean') ||
             !!(root && typeof root.isMuted === 'function' &&
               typeof root.mute === 'function' && typeof root.unMute === 'function'),
-          muted: !!(element && element.muted === true) || call(root, 'isMuted', false) === true,
+          muted: muted,
           canChangeSpeed: !!(element && typeof element.playbackRate === 'number') ||
             !!(root && typeof root.setPlaybackRate === 'function'),
           speed: speed
         };
       }
-      function report(force, volumeOnly) {
+      function report(force) {
         var data = snapshot();
         if (!data) return;
-        var element = media();
-        var id = videoIdentity(youtube && player());
-        var context = location.search || '';
-        var navigation = currentNavigation;
-        var sameItem = lastReport && lastReport.context === context &&
-          (id ? lastReport.videoId === id : mediaIdentity.matches(lastReport.identity, element));
-        var sameBounds = lastReport &&
-          ((!navigation && !lastReport.navigation) ||
-            (navigation && lastReport.navigation && navigation.index === lastReport.navigation.index &&
-              navigation.length === lastReport.navigation.length));
-        if (youtube && volumeOnly === true && sameItem && sameBounds) {
-          // A volume-only event is not evidence that track navigation changed.
-          // This also covers watch-page playlists managed through UI buttons.
-          data.canPrevious = lastReport.data.canPrevious;
-          data.canNext = lastReport.data.canNext;
-        }
-        lastReport = {
-          data: data, identity: mediaIdentity.capture(element), videoId: id,
-          context: context, navigation: navigation
-        };
         var serialized = JSON.stringify(data);
         if (serialized === lastSnapshot && !force) return;
         lastSnapshot = serialized;
@@ -346,6 +366,9 @@ internal const val RICH_MEDIA_SCRIPT =
           } else {
             var next = transportButton('next');
             if (enabledButton(next)) changeTrack(root, element, function () { next.click(); });
+            else if (root && typeof root.nextVideo === 'function') {
+              changeTrack(root, element, function () { root.nextVideo(); });
+            }
           }
         } else if (action === 'previous' && data) {
           // Use the current player position, not a potentially stale native tick.
@@ -367,17 +390,26 @@ internal const val RICH_MEDIA_SCRIPT =
           } else {
             var previous = transportButton('previous');
             if (enabledButton(previous)) changeTrack(root, element, function () { previous.click(); });
+            else if (root && typeof root.previousVideo === 'function') {
+              changeTrack(root, element, function () { root.previousVideo(); });
+            }
           }
         } else if (action === 'mute' && data && data.canMute) {
           var muted = !data.muted;
-          if (root && typeof root.isMuted === 'function' &&
-              typeof root.mute === 'function' && typeof root.unMute === 'function') {
-            try {
-              if (muted) root.mute(); else root.unMute();
-            } catch (ignored) {}
+          // Site callbacks can run synchronously before the mute flag changes.
+          changingVolume = true;
+          try {
+            if (root && typeof root.isMuted === 'function' &&
+                typeof root.mute === 'function' && typeof root.unMute === 'function') {
+              try {
+                if (muted) root.mute(); else root.unMute();
+              } catch (ignored) {}
+            }
+            // Sites may mute either the HTML element or their own player API.
+            if (element && typeof element.muted === 'boolean') element.muted = muted;
+          } finally {
+            changingVolume = false;
           }
-          // Sites may mute either the HTML element or their own player API.
-          if (element && typeof element.muted === 'boolean') element.muted = muted;
         } else if (action === 'seek' && typeof value === 'number') {
           seekTo(value / 1000);
         } else if (action === 'rewind' || action === 'forward') {
@@ -392,7 +424,7 @@ internal const val RICH_MEDIA_SCRIPT =
           if (root && typeof root.setPlaybackRate === 'function') root.setPlaybackRate(nextRate);
           else if (element) element.playbackRate = nextRate;
         }
-        report(true, action === 'mute');
+        report(true);
       }
       function dispatch(action, target, value) {
         if (frameId === target) {
@@ -442,7 +474,7 @@ internal const val RICH_MEDIA_SCRIPT =
             rememberPlaying(event.target);
           }
           if (name === 'pause' || name === 'ended') waitingMedia.delete(event.target);
-          report(true, name === 'volumechange');
+          report(true);
         }, true);
       });
       document.addEventListener('timeupdate', function () {
