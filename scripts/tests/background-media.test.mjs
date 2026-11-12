@@ -138,6 +138,29 @@ function createFrame(hostname, {
   };
 }
 
+test('foreground playback refresh reaches already-playing nested frames', () => {
+  const embed = createFrame('player.example');
+  const child = createFrame('embed.example', { playing: false, children: [embed] });
+  const parent = createFrame('example.com', { playing: false, children: [child] });
+  for (const frame of [parent, child, embed]) frame.reports.length = 0;
+
+  parent.window.__wvkReportMediaPlayback();
+
+  assert.equal(parent.reports.length, 1);
+  assert.equal(parent.reports[0][1], false);
+  assert.equal(child.reports.length, 1);
+  assert.equal(child.reports[0][1], false);
+  assert.equal(embed.reports.length, 1);
+  assert.equal(embed.reports[0][1], true);
+});
+
+test('playback refresh rejects requests from unrelated windows', () => {
+  const frame = createFrame('example.com');
+  frame.reports.length = 0;
+  frame.window.postMessage({ __wvkMediaReport: true });
+  assert.equal(frame.reports.length, 0);
+});
+
 test('real page gestures can rearm media after notification Stop, synthetic events cannot', () => {
   const frame = createFrame('example.com');
   frame.window.__wvkControlMedia('stop');

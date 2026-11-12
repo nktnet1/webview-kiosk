@@ -38,11 +38,10 @@ class BackgroundMediaPlaybackService : Service() {
         private const val ACTION_NEXT = "uk.nktnet.webviewkiosk.action.MEDIA_NEXT"
         private const val ACTION_PREVIOUS =
             "uk.nktnet.webviewkiosk.action.MEDIA_PREVIOUS"
-        private const val ACTION_REWIND =
-            "uk.nktnet.webviewkiosk.action.MEDIA_REWIND"
-        private const val ACTION_FORWARD =
-            "uk.nktnet.webviewkiosk.action.MEDIA_FORWARD"
-        private const val ACTION_SPEED = "uk.nktnet.webviewkiosk.action.MEDIA_SPEED"
+        private const val ACTION_PREVIOUS_UNAVAILABLE =
+            "uk.nktnet.webviewkiosk.action.MEDIA_PREVIOUS_UNAVAILABLE"
+        private const val ACTION_NEXT_UNAVAILABLE =
+            "uk.nktnet.webviewkiosk.action.MEDIA_NEXT_UNAVAILABLE"
         private const val ACTION_STOP = "uk.nktnet.webviewkiosk.action.MEDIA_STOP"
         private const val TAG = "BackgroundMediaPlayback"
         private var activeService: WeakReference<BackgroundMediaPlaybackService>? =
@@ -92,6 +91,7 @@ class BackgroundMediaPlaybackService : Service() {
 
                         override fun onStop() {
                             BackgroundMediaPlaybackController.stopFromNotification()
+                            stopSelf()
                         }
 
                         override fun onSkipToPrevious() {
@@ -134,15 +134,12 @@ class BackgroundMediaPlaybackService : Service() {
                             extras: Bundle?,
                         ) {
                             when (action) {
-                                ACTION_REWIND -> onRewind()
-                                ACTION_FORWARD -> onFastForward()
-                                ACTION_SPEED -> {
-                                    if (info.canChangeSpeed) {
-                                        BackgroundMediaPlaybackController
-                                            .speedFromNotification()
-                                    }
-                                }
                                 ACTION_STOP -> onStop()
+                                // Android's semantic media controls have no
+                                // disabled custom-action state. These dimmed
+                                // placeholders are deliberately inert.
+                                ACTION_PREVIOUS_UNAVAILABLE,
+                                ACTION_NEXT_UNAVAILABLE -> Unit
                             }
                         }
                     }
@@ -174,11 +171,6 @@ class BackgroundMediaPlaybackService : Service() {
             ACTION_NEXT -> BackgroundMediaPlaybackController.nextFromNotification()
             ACTION_PREVIOUS ->
                 BackgroundMediaPlaybackController.previousFromNotification()
-            ACTION_REWIND ->
-                BackgroundMediaPlaybackController.rewindFromNotification()
-            ACTION_FORWARD ->
-                BackgroundMediaPlaybackController.forwardFromNotification()
-            ACTION_SPEED -> BackgroundMediaPlaybackController.speedFromNotification()
             ACTION_START -> Unit
             else -> {
                 stopSelfResult(startId)
@@ -279,52 +271,36 @@ class BackgroundMediaPlaybackService : Service() {
         if (info.canNext) {
             actions = actions or PlaybackState.ACTION_SKIP_TO_NEXT
         }
-        // Android 13+ uses the session's custom actions instead of the
-        // notification's action list. Expose Stop there as well.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            builder.addCustomAction(
-                PlaybackState.CustomAction.Builder(
-                        ACTION_STOP,
-                        getString(R.string.notification_background_media_stop),
-                        android.R.drawable.ic_menu_close_clear_cancel,
-                    )
-                    .build()
-            )
-        }
         if (info.canSeek) {
-            actions =
-                actions or
-                    PlaybackState.ACTION_SEEK_TO or
-                    PlaybackState.ACTION_REWIND or
-                    PlaybackState.ACTION_FAST_FORWARD
-            builder.addCustomAction(
-                PlaybackState.CustomAction.Builder(
-                        ACTION_REWIND,
-                        getString(R.string.notification_background_media_rewind),
-                        android.R.drawable.ic_media_rew,
-                    )
-                    .build()
-            )
-            builder.addCustomAction(
-                PlaybackState.CustomAction.Builder(
-                        ACTION_FORWARD,
-                        getString(R.string.notification_background_media_forward),
-                        android.R.drawable.ic_media_ff,
-                    )
-                    .build()
-            )
+            // Keep the position slider, without exposing rewind/forward buttons.
+            actions = actions or PlaybackState.ACTION_SEEK_TO
         }
-        if (info.canChangeSpeed) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+ derives controls from PlaybackState, rather than the
+            // notification action list. Fill unavailable skip slots first so
+            // Close stays after Previous/Next instead of replacing either one.
+            if (!info.canPrevious) {
+                builder.addCustomAction(
+                    ACTION_PREVIOUS_UNAVAILABLE,
+                    getString(
+                        R.string.notification_background_media_previous_unavailable
+                    ),
+                    R.drawable.media_previous_disabled,
+                )
+            }
+            if (!info.canNext) {
+                builder.addCustomAction(
+                    ACTION_NEXT_UNAVAILABLE,
+                    getString(
+                        R.string.notification_background_media_next_unavailable
+                    ),
+                    R.drawable.media_next_disabled,
+                )
+            }
             builder.addCustomAction(
-                PlaybackState.CustomAction.Builder(
-                        ACTION_SPEED,
-                        getString(
-                            R.string.notification_background_media_speed,
-                            info.speed.toString(),
-                        ),
-                        android.R.drawable.ic_menu_manage,
-                    )
-                    .build()
+                ACTION_STOP,
+                getString(R.string.notification_background_media_stop),
+                android.R.drawable.ic_menu_close_clear_cancel,
             )
         }
         mediaSession.setPlaybackState(
@@ -398,6 +374,7 @@ class BackgroundMediaPlaybackService : Service() {
                 }
             )
             .setContentIntent(openPendingIntent)
+            .setDeleteIntent(actionIntent(ACTION_STOP, 4))
             .setCategory(Notification.CATEGORY_TRANSPORT)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
@@ -405,32 +382,38 @@ class BackgroundMediaPlaybackService : Service() {
             .setOngoing(true)
         artwork?.let(builder::setLargeIcon)
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setForegroundServiceBehavior(
+                Notification.FOREGROUND_SERVICE_IMMEDIATE
+            )
+        }
         var nextIndex = 0
-        val compact = mutableListOf<Int>()
-        fun button(
-            icon: Int,
-            label: Int,
-            action: String,
-            compactView: Boolean = false,
-        ) {
+        fun button(icon: Int, label: Int, action: String, enabled: Boolean = true) {
             builder.addAction(
                 icon,
                 getString(label),
-                actionIntent(action, nextIndex + 1),
+                if (enabled) {
+                    actionIntent(action, nextIndex + 1)
+                } else {
+                    null
+                },
             )
-            if (compactView) {
-                compact.add(nextIndex)
-            }
             nextIndex++
         }
-        if (info.canPrevious) {
-            button(
-                android.R.drawable.ic_media_previous,
-                R.string.notification_background_media_previous,
-                ACTION_PREVIOUS,
-                compactView = true,
-            )
-        }
+        button(
+            if (info.canPrevious) {
+                android.R.drawable.ic_media_previous
+            } else {
+                R.drawable.media_previous_disabled
+            },
+            if (info.canPrevious) {
+                R.string.notification_background_media_previous
+            } else {
+                R.string.notification_background_media_previous_unavailable
+            },
+            ACTION_PREVIOUS,
+            enabled = info.canPrevious,
+        )
         button(
             if (playing) {
                 android.R.drawable.ic_media_pause
@@ -447,47 +430,30 @@ class BackgroundMediaPlaybackService : Service() {
             } else {
                 ACTION_PLAY
             },
-            compactView = true,
         )
-        if (info.canNext) {
-            button(
-                android.R.drawable.ic_media_next,
-                R.string.notification_background_media_next,
-                ACTION_NEXT,
-                compactView = true,
-            )
-        }
-        if (info.canSeek && nextIndex < 4) {
-            button(
-                android.R.drawable.ic_media_rew,
-                R.string.notification_background_media_rewind,
-                ACTION_REWIND,
-            )
-        }
-        if (info.canSeek && nextIndex < 4) {
-            button(
-                android.R.drawable.ic_media_ff,
-                R.string.notification_background_media_forward,
-                ACTION_FORWARD,
-            )
-        }
-        if (info.canChangeSpeed && nextIndex < 4) {
-            button(
-                android.R.drawable.ic_menu_manage,
-                R.string.notification_background_media_speed_title,
-                ACTION_SPEED,
-            )
-        }
+        button(
+            if (info.canNext) {
+                android.R.drawable.ic_media_next
+            } else {
+                R.drawable.media_next_disabled
+            },
+            if (info.canNext) {
+                R.string.notification_background_media_next
+            } else {
+                R.string.notification_background_media_next_unavailable
+            },
+            ACTION_NEXT,
+            enabled = info.canNext,
+        )
         button(
             android.R.drawable.ic_menu_close_clear_cancel,
             R.string.notification_background_media_stop,
             ACTION_STOP,
-            compactView = compact.size < 3,
         )
         builder.setStyle(
             Notification.MediaStyle()
                 .setMediaSession(mediaSession.sessionToken)
-                .setShowActionsInCompactView(*compact.toIntArray())
+                .setShowActionsInCompactView(0, 1, 2)
         )
         return builder.build()
     }

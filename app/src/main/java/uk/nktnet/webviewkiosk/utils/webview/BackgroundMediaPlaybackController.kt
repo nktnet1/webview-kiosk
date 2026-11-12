@@ -42,37 +42,10 @@ internal class PlayingMediaFrames {
 }
 
 /**
- * A YouTube pause when Home is pressed must not immediately tear down the media
- * foreground service: that would expose Chromium to the hidden-window signal before
- * the page has a chance to recover. Keep a bounded grace period, also for foreground
- * pauses so an immediate Home gesture cannot race the bridge.
- */
-internal object YouTubeBackgroundPausePolicy {
-    const val FOREGROUND_GRACE_MS = 1_500L
-    const val BACKGROUND_GRACE_MS = 32_000L
-
-    fun gracePeriod(
-        wasYouTubePlaying: Boolean,
-        serviceRequested: Boolean,
-        userStopped: Boolean,
-        background: Boolean,
-    ): Long? =
-        if (wasYouTubePlaying && serviceRequested && !userStopped) {
-            if (background) {
-                BACKGROUND_GRACE_MS
-            } else {
-                FOREGROUND_GRACE_MS
-            }
-        } else {
-            null
-        }
-}
-
-/**
  * WebView receives window visibility separately from onPause(). Chromium may suspend
  * video as soon as the host window becomes GONE/INVISIBLE, even if WebView.onPause()
  * is never called. Defer that signal for an active media session and replay it when
- * the session ends while the Activity is hidden.
+ * the session is closed while the Activity is hidden.
  *
  * See https://issues.chromium.org/issues/494455605.
  */
@@ -94,7 +67,7 @@ internal class BackgroundMediaWindowVisibility {
         return false
     }
 
-    /** Restores the actual hidden state after Stop, navigation, or media end. */
+    /** Restores the actual hidden state after Close, navigation, or disposal. */
     fun release(notifyWebView: (Int) -> Unit): Boolean {
         val visibility = deferredVisibility ?: return false
         deferredVisibility = null
@@ -161,10 +134,6 @@ internal class BackgroundMediaPlaybackController(
             activeController?.get()?.sendMediaCommand("forward")
         }
 
-        fun speedFromNotification() {
-            activeController?.get()?.sendMediaCommand("speed")
-        }
-
         fun isPlaying(): Boolean =
             activeController?.get()?.let {
                 it.serviceRequested &&
@@ -179,10 +148,7 @@ internal class BackgroundMediaPlaybackController(
     private var serviceRequested = false
     private var stoppedByUser = false
     private var pausedByNotification = false
-    private var awaitingResume = false
-    private var wasYouTubePlaying = false
     private var hostInBackground = false
-    private var pendingPauseStop: Runnable? = null
     private var activeFrameId: String? = null
     private var currentMediaInfo: MediaPlaybackInfo? = null
     private val mediaByFrame = mutableMapOf<String, MediaPlaybackInfo>()
@@ -237,11 +203,8 @@ internal class BackgroundMediaPlaybackController(
     fun onNavigationStarted() {
         if (!disposed) {
             bridge.invalidatePendingReports()
-            cancelPendingPauseStop()
-            wasYouTubePlaying = false
             stoppedByUser = false
             pausedByNotification = false
-            awaitingResume = false
             frames.clear()
             activeFrameId = null
             currentMediaInfo = null
@@ -258,6 +221,7 @@ internal class BackgroundMediaPlaybackController(
             webView.evaluateJavascript(YOUTUBE_BACKGROUND_RECOVERY_SCRIPT, null)
             webView.evaluateJavascript(RICH_MEDIA_SCRIPT, null)
             publishHostBackground()
+            requestPlaybackReport()
         }
     }
 
@@ -271,10 +235,6 @@ internal class BackgroundMediaPlaybackController(
         hostInBackground = background
         Log.d(TAG, "Host background=$background, mediaSession=$serviceRequested")
         publishHostBackground()
-        // A pause reported just before Home must get the longer recovery window.
-        if (pendingPauseStop != null) {
-            scheduleYouTubePauseStop(forceReschedule = true)
-        }
     }
 
     private fun publishHostBackground() {
@@ -287,11 +247,15 @@ internal class BackgroundMediaPlaybackController(
     fun onActivityStarted() {
         if (!disposed) {
             onHostBackgroundChanged(false)
-            webView.evaluateJavascript(
-                "window.__wvkReportMediaPlayback && window.__wvkReportMediaPlayback();",
-                null,
-            )
+            requestPlaybackReport()
         }
+    }
+
+    private fun requestPlaybackReport() {
+        webView.evaluateJavascript(
+            "window.__wvkReportMediaPlayback && window.__wvkReportMediaPlayback();",
+            null,
+        )
     }
 
     /**
@@ -337,46 +301,22 @@ internal class BackgroundMediaPlaybackController(
                 }
             }
         }
-        if (playing && (frameId.startsWith("yt-") || isYouTubePage())) {
-            wasYouTubePlaying = true
-        }
-        if (shouldPlay) {
-            cancelPendingPauseStop()
-        }
-        if (shouldPlay) {
-            awaitingResume = false
-            if (!serviceRequested) {
-                // Android 17 requires a mediaPlayback FGS to start while the
-                // UI is visible. Never start one after the Activity stopped.
-                val activity = webView.context as? MainActivity
-                if (
-                    activity
-                        ?.lifecycle
-                        ?.currentState
-                        ?.isAtLeast(Lifecycle.State.STARTED) == true
-                ) {
-                    startService()
-                } else {
-                    pauseMedia()
-                }
-            }
-        } else if (!pausedByNotification && !awaitingResume) {
-            // YouTube may issue its own pause as Home hides the Activity.
-            // Keep the FGS and Chromium visibility until the injected player
-            // guard can try recovering. Normal websites still stop promptly.
+        if (shouldPlay && !serviceRequested) {
+            // Start while the Activity is visible, not when it backgrounds.
+            val activity = webView.context as? MainActivity
             if (
-                YouTubeBackgroundPausePolicy.gracePeriod(
-                    wasYouTubePlaying,
-                    serviceRequested,
-                    stoppedByUser,
-                    hostInBackground,
-                ) != null
+                activity
+                    ?.lifecycle
+                    ?.currentState
+                    ?.isAtLeast(Lifecycle.State.STARTED) == true
             ) {
-                scheduleYouTubePauseStop()
+                startService()
             } else {
-                stopService()
+                pauseMedia()
             }
         }
+        // A page pause (including YouTube auto-pause) keeps its media session,
+        // metadata and notification. Close, navigation and disposal end it.
         if (serviceRequested) {
             BackgroundMediaPlaybackService.updatePlaying(
                 shouldPlay && !pausedByNotification
@@ -416,7 +356,6 @@ internal class BackgroundMediaPlaybackController(
                 "seek",
                 "rewind",
                 "forward" -> info.canSeek
-                "speed" -> info.canChangeSpeed
                 else -> false
             }
         val frameId = activeFrameId ?: return
@@ -433,43 +372,6 @@ internal class BackgroundMediaPlaybackController(
             "window.__wvkControlRichMedia && window.__wvkControlRichMedia('$command','$frameId',$point);",
             null,
         )
-    }
-
-    private fun isYouTubePage(): Boolean {
-        val host = webView.url?.toUri()?.host?.lowercase() ?: return false
-        return host == "youtube.com" ||
-            host.endsWith(".youtube.com") ||
-            host == "youtube-nocookie.com" ||
-            host.endsWith(".youtube-nocookie.com")
-    }
-
-    private fun cancelPendingPauseStop() {
-        pendingPauseStop?.let(webView::removeCallbacks)
-        pendingPauseStop = null
-    }
-
-    private fun scheduleYouTubePauseStop(forceReschedule: Boolean = false) {
-        if (pendingPauseStop != null && !forceReschedule) {
-            return
-        }
-        cancelPendingPauseStop()
-        val delay =
-            YouTubeBackgroundPausePolicy.gracePeriod(
-                wasYouTubePlaying,
-                serviceRequested,
-                stoppedByUser,
-                hostInBackground,
-            ) ?: return
-        Log.d(TAG, "YouTube paused, preserving media session for ${delay}ms")
-        val task = Runnable {
-            pendingPauseStop = null
-            if (!frames.isPlaying && !pausedByNotification && !awaitingResume) {
-                Log.d(TAG, "YouTube did not resume; ending background media session")
-                stopService()
-            }
-        }
-        pendingPauseStop = task
-        webView.postDelayed(task, delay)
     }
 
     private fun startService() {
@@ -495,8 +397,6 @@ internal class BackgroundMediaPlaybackController(
     }
 
     private fun stopService(releaseVisibility: Boolean = true) {
-        cancelPendingPauseStop()
-        wasYouTubePlaying = false
         activeFrameId = null
         currentMediaInfo = null
         mediaByFrame.clear()
@@ -531,9 +431,7 @@ internal class BackgroundMediaPlaybackController(
             return
         }
         bridge.invalidatePendingReports()
-        cancelPendingPauseStop()
         pausedByNotification = true
-        awaitingResume = false
         frames.clear()
         pauseMedia(retainResumePosition = true)
         BackgroundMediaPlaybackService.updatePlaying(false)
@@ -550,7 +448,6 @@ internal class BackgroundMediaPlaybackController(
         pausedByNotification = false
         // Do not report playing before an HTMLMediaElement actually resumes.
         // Websites may reject script-initiated play() without a user gesture.
-        awaitingResume = true
         val frame = activeFrameId
         if (frame != null && frame.matches(Regex("[A-Za-z0-9.-]{1,128}"))) {
             webView.evaluateJavascript(
@@ -564,10 +461,8 @@ internal class BackgroundMediaPlaybackController(
 
     private fun stopPlayback(userInitiated: Boolean) {
         bridge.invalidatePendingReports()
-        cancelPendingPauseStop()
         stoppedByUser = userInitiated
         pausedByNotification = false
-        awaitingResume = false
         frames.clear()
         pauseMedia()
         stopService()
@@ -832,7 +727,14 @@ internal const val DOCUMENT_START_SCRIPT =
         if (localOnly !== true) forEachFrame(action);
         report();
       };
-      window.__wvkReportMediaPlayback = function () { lastPlaying = null; report(); };
+      window.__wvkReportMediaPlayback = function () {
+        lastPlaying = null;
+        report();
+        document.querySelectorAll('iframe').forEach(function (frame) {
+          try { frame.contentWindow.postMessage({ __wvkMediaReport: true }, '*'); }
+          catch (ignored) {}
+        });
+      };
       ['play','playing','pause','ended','emptied','abort'].forEach(function (event) {
         document.addEventListener(event, report, true);
       });
@@ -849,6 +751,9 @@ internal const val DOCUMENT_START_SCRIPT =
         // Only accept commands sent by the embedding parent, never messages
         // from arbitrary ads, sibling frames, or external windows.
         if (window.parent !== window && event.source === window.parent && event.data) {
+          if (event.data.__wvkMediaReport === true) {
+            window.__wvkReportMediaPlayback();
+          }
           if (typeof event.data.__wvkMediaHostHidden === 'boolean') {
             setHostBackground(event.data.__wvkMediaHostHidden);
           }

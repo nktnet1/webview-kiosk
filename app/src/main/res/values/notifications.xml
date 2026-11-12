@@ -8,14 +8,12 @@
     <string name="notification_blob_download_title">Blob Download</string>
     <string name="notification_background_media_title">Background media</string>
     <string name="notification_background_media_text">Audio or video playing in %1$s</string>
-    <string name="notification_background_media_stop">Stop playback</string>
+    <string name="notification_background_media_stop">Close</string>
     <string name="notification_background_media_play">Play</string>
     <string name="notification_background_media_pause">Pause</string>
     <string name="notification_background_media_paused">Playback paused</string>
     <string name="notification_background_media_previous">Previous</string>
     <string name="notification_background_media_next">Next</string>
-    <string name="notification_background_media_rewind">Rewind 10 seconds</string>
-    <string name="notification_background_media_forward">Forward 30 seconds</string>
-    <string name="notification_background_media_speed">Speed (%1$s×)</string>
-    <string name="notification_background_media_speed_title">Playback speed</string>
+    <string name="notification_background_media_previous_unavailable">Previous (unavailable)</string>
+    <string name="notification_background_media_next_unavailable">Next (unavailable)</string>
 </resources>
