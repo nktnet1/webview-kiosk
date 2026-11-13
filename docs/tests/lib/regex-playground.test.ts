@@ -43,6 +43,52 @@ describe("RE2 URL playground", () => {
     });
   });
 
+  it("fails closed on expensive counted repetitions", () => {
+    expect(testUrlRules(url, "(a{1000}){1000}", "")).toEqual({
+      blocked: true,
+      ruleError: true,
+    });
+    expect(testUrlRules(url, "example", "(a{1000}|b{1000}){1000}")).toEqual({
+      blocked: true,
+      ruleError: true,
+    });
+    expect(testUrlRules(url, "example", "/allowed")).toEqual({
+      blocked: false,
+      ruleError: false,
+    });
+  });
+
+  it("allows long URLs when the rule is safe", () => {
+    const longUrl = `https://example.com/${"a".repeat(70_000)}/allowed`;
+    expect(testUrlRules(longUrl, "/denied$", "")).toEqual({
+      blocked: false,
+      ruleError: false,
+    });
+    expect(testUrlRules(longUrl, "/allowed$", "")).toEqual({
+      blocked: true,
+      ruleError: false,
+    });
+  });
+
+  it("accepts safe patterns longer than the previous character limit", () => {
+    const literal = "a".repeat(4200);
+    expect(testUrlRules(`https://example.com/${literal}`, literal, "")).toEqual(
+      {
+        blocked: true,
+        ruleError: false,
+      },
+    );
+  });
+
+  it("rejects excessive grouping depth", () => {
+    expect(
+      testUrlRules(url, `${"(".repeat(65)}a${")".repeat(65)}`, ""),
+    ).toEqual({
+      blocked: true,
+      ruleError: true,
+    });
+  });
+
   it("handles the nested-quantifier input without catastrophic backtracking", () => {
     const expensive = `https://example.com/${"a".repeat(6000)}!`;
     expect(testUrlRules(expensive, "(a+)+$", "")).toEqual({

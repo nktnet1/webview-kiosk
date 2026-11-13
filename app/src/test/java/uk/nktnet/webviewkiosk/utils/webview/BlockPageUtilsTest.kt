@@ -138,16 +138,72 @@ class BlockPageUtilsTest {
     }
 
     @Test
-    fun oversizedRuleFailsClosed() {
+    fun expensiveCountedRepetitionsFailClosedBeforeCompilation() {
+        for (pattern in listOf("(a{1000}){1000}", "(a{1000}|b{1000}){1000}")) {
+            assertFalse(UrlRegexComplexity.isWithinBudget(pattern))
+            assertEquals(
+                BlockCause.URL_REGEX_ERROR,
+                getBlockInfo(
+                        "https://example.com",
+                        listOf(pattern),
+                        emptyList(),
+                        settings,
+                    )
+                    .second,
+            )
+        }
+        assertTrue(UrlRegexComplexity.isWithinBudget("(ab{3}){4}"))
+        assertFalse(
+            UrlRegexComplexity.isWithinBudget("(".repeat(65) + "a" + ")".repeat(65))
+        )
+    }
+
+    @Test
+    fun safeLargePatternsAndUrlsAreNotRejectedByArbitraryLengthLimits() {
+        val pattern = "a".repeat(4200)
+        val url = "https://example.com/" + "a".repeat(70_000) + "/allowed"
         assertEquals(
-            BlockCause.URL_REGEX_ERROR,
+            BlockCause.BLACKLIST,
             getBlockInfo(
-                    "https://example.com",
-                    listOf("a".repeat(UrlRegexMatcher.MAX_PATTERN_LENGTH + 1)),
+                    "https://example.com/$pattern",
+                    listOf(pattern),
                     emptyList(),
                     settings,
                 )
                 .second,
+        )
+        assertNull(
+            getBlockInfo(url, listOf("/denied$"), emptyList(), settings).second
+        )
+        assertEquals(
+            BlockCause.BLACKLIST,
+            getBlockInfo(url, listOf("/allowed$"), emptyList(), settings).second,
+        )
+    }
+
+    @Test
+    fun configurationScopedCacheDoesNotThrashAt257Rules() {
+        val blacklist = (0..256).map { "^https://denied.example/$it$" }
+        val rules = UrlRegexMatcher.forRules(blacklist, emptyList())
+        for (pattern in blacklist) {
+            assertEquals(
+                UrlRegexMatchResult.NO_MATCH,
+                rules.match(pattern, "https://other.example"),
+            )
+        }
+        assertEquals(257, rules.cachedRuleCount)
+        assertTrue(
+            rules === UrlRegexMatcher.forRules(blacklist.toList(), emptyList())
+        )
+        for (pattern in blacklist) {
+            assertEquals(
+                UrlRegexMatchResult.NO_MATCH,
+                rules.match(pattern, "https://other.example"),
+            )
+        }
+        assertEquals(257, rules.cachedRuleCount)
+        assertFalse(
+            rules === UrlRegexMatcher.forRules(blacklist.dropLast(1), emptyList())
         )
     }
 

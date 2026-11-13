@@ -8,6 +8,7 @@ import {
   PageLastUpdate,
   ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
+import type { MDXContent } from "mdx/types";
 import { Suspense } from "react";
 import { useMDXComponents } from "#/components/fumadocs/mdx";
 import { gitConfig } from "#/lib/shared";
@@ -71,6 +72,10 @@ const clientLoader = browserCollections.legal.createClientLoader({
       markdownUrl: string;
     },
   ) {
+    // Fumadocs' client-loader types widen compiled MDX fields to `unknown`.
+    // The generated legal collection declares `default` and `lastModified`.
+    const Content = MDX as MDXContent;
+    const modified = lastModified as Date | undefined;
     // biome-ignore lint/correctness/useHookAtTopLevel: default fumadocs template
     const components = useMDXComponents();
     return (
@@ -94,7 +99,7 @@ const clientLoader = browserCollections.legal.createClientLoader({
         <article className="container grid grid-cols-1 px-0 py-2 md:py-4 lg:grid-cols-[2fr_1fr] lg:px-4 gap-y-6">
           <div className="prose">
             <InlineTOC className="mt-6 mb-0" items={toc} />
-            <MDX components={components} />
+            <Content components={components} />
           </div>
           <div className="prose p-4 flex flex-col items-center mt-3">
             <div className="flex flex-row gap-2 items-center justify-center border-b pb-6">
@@ -104,7 +109,7 @@ const clientLoader = browserCollections.legal.createClientLoader({
                 githubUrl={`https://github.com/${gitConfig.user}/${gitConfig.repo}/blob/${gitConfig.branch}/docs/content/legal/${path}`}
               />
             </div>
-            {lastModified && <PageLastUpdate date={lastModified} />}
+            {modified && <PageLastUpdate date={modified} />}
           </div>
         </article>
       </main>

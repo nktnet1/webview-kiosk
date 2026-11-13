@@ -31,12 +31,14 @@ internal fun urlRegexBlockCause(
     url: String,
     blacklistRegexes: List<String>,
     whitelistRegexes: List<String>,
-    match: (String, String) -> UrlRegexMatchResult = UrlRegexMatcher::match,
+    match: ((String, String) -> UrlRegexMatchResult)? = null,
 ): BlockCause? {
+    val evaluate =
+        match ?: UrlRegexMatcher.forRules(blacklistRegexes, whitelistRegexes)::match
     // Match the blacklist first: whitelist rules only affect blocked URLs.
     val blacklistCause =
         blacklistRegexes.firstNotNullOfOrNull { regex ->
-            when (match(regex, url)) {
+            when (evaluate(regex, url)) {
                 UrlRegexMatchResult.MATCH -> BlockCause.BLACKLIST
                 UrlRegexMatchResult.ERROR -> BlockCause.URL_REGEX_ERROR
                 UrlRegexMatchResult.NO_MATCH -> null
@@ -45,7 +47,7 @@ internal fun urlRegexBlockCause(
 
     var cause = blacklistCause
     for (regex in whitelistRegexes) {
-        when (match(regex, url)) {
+        when (evaluate(regex, url)) {
             // Explicit whitelist matches retain their existing precedence,
             // even when a different rule failed closed.
             UrlRegexMatchResult.MATCH -> return null

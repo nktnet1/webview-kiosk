@@ -1,10 +1,9 @@
 import { RE2JS } from "re2js";
+import { isRe2RuleWithinBudget } from "#/lib/re2-complexity";
 
 type RuleResult = "match" | "no-match" | "error";
 
-// Mirror Android's URL rule limits and RE2/J's unanchored find() semantics.
-const MAX_PATTERN_LENGTH = 4096;
-const MAX_URL_LENGTH = 65536;
+// Mirror Android's RE2/J unanchored find() semantics and complexity guard.
 
 function parseRules(input: string): string[] {
   return input
@@ -14,7 +13,7 @@ function parseRules(input: string): string[] {
 }
 
 function matchRule(pattern: string, url: string): RuleResult {
-  if (pattern.length > MAX_PATTERN_LENGTH || url.length > MAX_URL_LENGTH) {
+  if (!isRe2RuleWithinBudget(pattern)) {
     return "error";
   }
 

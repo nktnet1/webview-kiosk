@@ -146,7 +146,9 @@ class LegacyWebViewClientTest {
             WebResourceResponse("text/html", "UTF-8", 503, "Error", emptyMap(), null)
 
         // Chromium must see a framework client, not a WebViewClientCompat.
-        assertFalse(client is WebViewClientCompat)
+        assertFalse(
+            WebViewClientCompat::class.java.isAssignableFrom(client.javaClass)
+        )
         client.onPageStarted(webView, url, null)
         assertTrue(client.shouldOverrideUrlLoading(webView, request))
         assertFalse(
