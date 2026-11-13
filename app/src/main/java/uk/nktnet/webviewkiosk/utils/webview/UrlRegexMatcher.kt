@@ -17,9 +17,27 @@ internal object UrlRegexMatcher {
     private const val TAG = "UrlRegexMatcher"
     private const val MAX_CACHED_RULES = 4096
     private const val MAX_CACHED_COST = 65536
+    // RE2/J avoids backtracking, but its NFA can still perform work proportional
+    // to program size * input length. Cap the estimated work across all rules
+    // considered for a single URL, including whitelist rules.
+    private const val MAX_MATCH_WORK = 24_000_000L
+
+    internal class MatchBudget {
+        private var remaining = MAX_MATCH_WORK
+
+        fun charge(estimatedCost: Int, urlLength: Int): Boolean {
+            val work =
+                estimatedCost.coerceAtLeast(1).toLong() * urlLength.coerceAtLeast(1)
+            if (work > remaining) {
+                return false
+            }
+            remaining -= work
+            return true
+        }
+    }
 
     private sealed interface CompiledRule {
-        data class Valid(val pattern: Pattern) : CompiledRule
+        data class Valid(val pattern: Pattern, val cost: Int) : CompiledRule
 
         data object Invalid : CompiledRule
     }
@@ -38,7 +56,11 @@ internal object UrlRegexMatcher {
         internal val cachedRuleCount: Int
             get() = synchronized(compiled) { compiled.size }
 
-        fun match(source: String, url: String): UrlRegexMatchResult {
+        fun match(
+            source: String,
+            url: String,
+            budget: MatchBudget = MatchBudget(),
+        ): UrlRegexMatchResult {
             val rule =
                 synchronized(compiled) {
                     compiled[source]
@@ -54,13 +76,22 @@ internal object UrlRegexMatcher {
                                     CompiledRule.Invalid
                                 } else {
                                     try {
-                                        CompiledRule.Valid(Pattern.compile(source))
+                                        CompiledRule.Valid(
+                                            Pattern.compile(source),
+                                            estimatedCost,
+                                        )
                                     } catch (_: RuntimeException) {
                                         // Do not expose configured patterns or
                                         // visited URLs.
                                         Log.w(
                                             TAG,
                                             "Unsupported or invalid RE2/J URL rule",
+                                        )
+                                        CompiledRule.Invalid
+                                    } catch (_: StackOverflowError) {
+                                        Log.w(
+                                            TAG,
+                                            "RE2/J URL rule compilation exhausted the stack",
                                         )
                                         CompiledRule.Invalid
                                     }
@@ -80,17 +111,32 @@ internal object UrlRegexMatcher {
                         }
                 }
             return when (rule) {
-                is CompiledRule.Valid ->
-                    try {
-                        if (rule.pattern.matcher(url).find()) {
-                            UrlRegexMatchResult.MATCH
-                        } else {
-                            UrlRegexMatchResult.NO_MATCH
-                        }
-                    } catch (error: RuntimeException) {
-                        Log.w(TAG, "RE2/J URL rule evaluation failed", error)
+                is CompiledRule.Valid -> {
+                    if (!budget.charge(rule.cost, url.length)) {
+                        Log.w(
+                            TAG,
+                            "RE2/J URL rule exceeds the evaluation work budget",
+                        )
                         UrlRegexMatchResult.ERROR
+                    } else {
+                        try {
+                            if (rule.pattern.matcher(url).find()) {
+                                UrlRegexMatchResult.MATCH
+                            } else {
+                                UrlRegexMatchResult.NO_MATCH
+                            }
+                        } catch (error: RuntimeException) {
+                            Log.w(TAG, "RE2/J URL rule evaluation failed", error)
+                            UrlRegexMatchResult.ERROR
+                        } catch (_: StackOverflowError) {
+                            Log.w(
+                                TAG,
+                                "RE2/J URL rule evaluation exhausted the stack",
+                            )
+                            UrlRegexMatchResult.ERROR
+                        }
                     }
+                }
                 CompiledRule.Invalid -> UrlRegexMatchResult.ERROR
             }
         }

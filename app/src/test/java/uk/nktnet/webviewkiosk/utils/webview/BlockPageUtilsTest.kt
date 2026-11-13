@@ -182,6 +182,41 @@ class BlockPageUtilsTest {
     }
 
     @Test
+    fun largeRegexAndUrlFailClosedBeforeExpensiveMatching() {
+        // RE2/J is linear in URL length, but can still run for seconds when
+        // multiplied by thousands of program states. The compile guard alone
+        // accepts both of these rules.
+        val url = "https://example.com/" + "a".repeat(70_000)
+        val optional = "a?".repeat(4000) + "b"
+        val literal = "a".repeat(4200) + "b"
+        assertTrue(UrlRegexComplexity.isWithinBudget(optional))
+        assertTrue(UrlRegexComplexity.isWithinBudget(literal))
+
+        val started = System.nanoTime()
+        for (pattern in listOf(optional, literal)) {
+            assertEquals(
+                BlockCause.URL_REGEX_ERROR,
+                getBlockInfo(url, listOf(pattern), emptyList(), settings).second,
+            )
+        }
+        assertTrue(
+            "Expensive matches should be rejected before the WebView can freeze",
+            System.nanoTime() - started <
+                java.util.concurrent.TimeUnit.SECONDS.toNanos(2),
+        )
+    }
+
+    @Test
+    fun matchWorkBudgetIsSharedAcrossBlacklistRules() {
+        val url = "https://example.com/" + "a".repeat(4200)
+        val harmlessButLarge = listOf("b".repeat(4200), "c".repeat(4200))
+        assertEquals(
+            BlockCause.URL_REGEX_ERROR,
+            urlRegexBlockCause(url, harmlessButLarge, emptyList()),
+        )
+    }
+
+    @Test
     fun configurationScopedCacheDoesNotThrashAt257Rules() {
         val blacklist = (0..256).map { "^https://denied.example/$it$" }
         val rules = UrlRegexMatcher.forRules(blacklist, emptyList())

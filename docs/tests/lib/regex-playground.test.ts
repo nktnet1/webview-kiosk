@@ -80,6 +80,25 @@ describe("RE2 URL playground", () => {
     );
   });
 
+  it("rejects large RE2 programs on long URLs before matching", () => {
+    const longUrl = `https://example.com/${"a".repeat(70_000)}`;
+    for (const pattern of [`${"a?".repeat(4000)}b`, `${"a".repeat(4200)}b`]) {
+      expect(testUrlRules(longUrl, pattern, "")).toEqual({
+        blocked: true,
+        ruleError: true,
+      });
+    }
+  });
+
+  it("shares a match work budget across the blacklist", () => {
+    const mediumUrl = `https://example.com/${"a".repeat(4200)}`;
+    const blacklist = ["b".repeat(4200), "c".repeat(4200)].join("\n");
+    expect(testUrlRules(mediumUrl, blacklist, "")).toEqual({
+      blocked: true,
+      ruleError: true,
+    });
+  });
+
   it("rejects excessive grouping depth", () => {
     expect(
       testUrlRules(url, `${"(".repeat(65)}a${")".repeat(65)}`, ""),

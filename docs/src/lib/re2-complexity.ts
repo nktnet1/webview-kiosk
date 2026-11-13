@@ -67,7 +67,7 @@ function isDigit(char: string | undefined): boolean {
   return char !== undefined && char >= "0" && char <= "9";
 }
 
-export function isRe2RuleWithinBudget(pattern: string): boolean {
+export function estimateRe2RuleCost(pattern: string): number | null {
   const stack: Frame[] = [];
   let frame = new Frame();
   let i = 0;
@@ -94,14 +94,14 @@ export function isRe2RuleWithinBudget(pattern: string): boolean {
         break;
       }
       case "(":
-        if (stack.length === MAX_GROUP_DEPTH) return false;
+        if (stack.length === MAX_GROUP_DEPTH) return null;
         stack.push(frame);
         frame = new Frame();
         i++;
         break;
       case ")": {
         const parent = stack.pop();
-        if (!parent) return false;
+        if (!parent) return null;
         const groupCost = cap(frame.cost() + 2);
         frame = parent;
         frame.addAtom(groupCost);
@@ -133,7 +133,11 @@ export function isRe2RuleWithinBudget(pattern: string): boolean {
         frame.addAtom(1);
         i++;
     }
-    if (frame.cost() > MAX_COST) return false;
+    if (frame.cost() > MAX_COST) return null;
   }
-  return !stack.length && frame.cost() <= MAX_COST;
+  return !stack.length && frame.cost() <= MAX_COST ? frame.cost() : null;
+}
+
+export function isRe2RuleWithinBudget(pattern: string): boolean {
+  return estimateRe2RuleCost(pattern) !== null;
 }
