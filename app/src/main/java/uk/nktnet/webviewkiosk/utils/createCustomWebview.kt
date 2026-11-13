@@ -68,6 +68,7 @@ import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaFullscreenContainer
 import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaPlaybackController
 import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaWindowVisibility
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
+import uk.nktnet.webviewkiosk.utils.webview.LegacyWebViewClient
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
@@ -140,6 +141,35 @@ private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boole
             }
         },
     )
+
+/**
+ * WebView 67-72 can crash in the compat HTTP-error bridge when a response has no
+ * reason phrase. Use a framework client on API 24+, where request-aware navigation
+ * is available. On API 21-23 keep the compat client to preserve iframe navigation;
+ * those devices retain the original crash risk if their provider is vulnerable.
+ */
+internal fun needsFrameworkWebViewClient(
+    sdkInt: Int,
+    webViewVersion: String?,
+): Boolean {
+    if (sdkInt < Build.VERSION_CODES.N) {
+        return false
+    }
+    val majorVersion = webViewVersion?.substringBefore('.')?.trim()?.toIntOrNull()
+    return majorVersion in 67..72
+}
+
+private fun needsFrameworkWebViewClient(context: Context): Boolean {
+    val version =
+        try {
+            WebViewCompat.getCurrentWebViewPackage(context)?.versionName
+        } catch (_: Exception) {
+            null
+        } catch (_: LinkageError) {
+            null
+        }
+    return needsFrameworkWebViewClient(Build.VERSION.SDK_INT, version)
+}
 
 private fun isWebPdf(
     url: String,
@@ -747,7 +777,7 @@ fun createCustomWebview(
                         navigation.isActive() &&
                             getTag(R.id.pdf_source_token) == token
 
-                    webViewClient =
+                    val compatClient =
                         object : WebViewClientCompat() {
                             override fun onReceivedClientCertRequest(
                                 view: WebView?,
@@ -1570,6 +1600,12 @@ fun createCustomWebview(
                                 }
                                 return true
                             }
+                        }
+                    webViewClient =
+                        if (needsFrameworkWebViewClient(context)) {
+                            LegacyWebViewClient(compatClient)
+                        } else {
+                            compatClient
                         }
 
                     webChromeClient =
