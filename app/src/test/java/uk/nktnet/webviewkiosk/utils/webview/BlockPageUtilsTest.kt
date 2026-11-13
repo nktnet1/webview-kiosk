@@ -196,6 +196,42 @@ class BlockPageUtilsTest {
     }
 
     @Test
+    fun oversizedPdfViewerAcceptsItsExplicitDefaultPort() {
+        val target =
+            "https://example.com/report.pdf?query=" +
+                "/?".repeat(MAX_NAVIGATION_URL_LENGTH / 5)
+        for (port in listOf(":443", ":0443")) {
+            val viewer =
+                "${Constants.PDF_JS_ASSETS_DUMMY_URL}$port/?wk_pdf_url=${Uri.encode(target)}"
+
+            assertTrue(viewer.length > MAX_NAVIGATION_URL_LENGTH)
+            assertFalse(isInvalidNavigationUrl(viewer))
+            assertEquals(target, resolve(viewer))
+        }
+    }
+
+    @Test
+    fun oversizedPdfValidationBoundsNestingBeforeResolvingTheSource() {
+        val prefix = "https://example.com/"
+        val source = prefix + "x".repeat(MAX_NAVIGATION_URL_LENGTH - prefix.length)
+        // Query values may contain literal ':' and '?'. These wrappers grow
+        // only linearly, so a size limit alone cannot bound their nesting.
+        val tenWrappers =
+            (1..10).fold(source) { target, _ ->
+                "${Constants.PDF_JS_ASSETS_DUMMY_URL}/?wk_pdf_url=$target"
+            }
+
+        assertFalse(isInvalidNavigationUrl(tenWrappers))
+        val excessive =
+            "${Constants.PDF_JS_ASSETS_DUMMY_URL}/?wk_pdf_url=$tenWrappers"
+        assertTrue(isInvalidNavigationUrl(excessive))
+        assertEquals(
+            BlockCause.INVALID_URL,
+            getBlockInfo(excessive, emptyList(), emptyList(), settings).second,
+        )
+    }
+
+    @Test
     fun malformedWebsiteTargetsAreRejectedWithoutMatching() {
         for (url in
             listOf(

@@ -100,35 +100,49 @@ private fun isMalformedNavigationUrl(url: String, uri: Uri): Boolean {
 }
 
 internal fun isInvalidNavigationUrl(url: String): Boolean {
-    if (url.length > MAX_NAVIGATION_URL_LENGTH) {
-        val isData = url.startsWith("data:", ignoreCase = true)
-        val pdfViewerOrigin = Constants.PDF_JS_ASSETS_DUMMY_URL
-        val mayBePdfViewer =
-            url.startsWith("$pdfViewerOrigin?", ignoreCase = true) ||
-                url.startsWith("$pdfViewerOrigin/?", ignoreCase = true)
+    var target = url
+    var depth = 0
+    while (true) {
+        val oversized = target.length > MAX_NAVIGATION_URL_LENGTH
+        val maximumLength =
+            if (target.startsWith("data:", ignoreCase = true)) {
+                MAX_DATA_URL_LENGTH
+            } else {
+                MAX_PDF_VIEWER_URL_LENGTH
+            }
+        if (oversized && target.length > maximumLength) {
+            return true
+        }
+        val uri = runCatching { target.toUri() }.getOrNull() ?: return true
+        val isData = uri.scheme.equals("data", ignoreCase = true)
         if (
-            !(isData && url.length <= MAX_DATA_URL_LENGTH) &&
-                !(mayBePdfViewer && url.length <= MAX_PDF_VIEWER_URL_LENGTH)
+            oversized &&
+                !isData &&
+                !runCatching { isPdfViewerUrl(uri) }.getOrDefault(false)
         ) {
             return true
         }
-    }
-    return runCatching {
-            val uri = url.toUri()
-            when {
-                isMalformedNavigationUrl(url, uri) -> true
-                uri.scheme.equals("data", ignoreCase = true) ->
-                    url.length > MAX_DATA_URL_LENGTH
-                url.length <= MAX_NAVIGATION_URL_LENGTH -> false
-                !isPdfViewerUrl(uri) -> true
-                else -> {
-                    // PDF viewer URLs include an encoded copy of the source.
-                    val source = uri.getQueryParameter("wk_pdf_url")
-                    source.isNullOrBlank() || isInvalidNavigationUrl(source)
-                }
-            }
+        if (
+            runCatching { isMalformedNavigationUrl(target, uri) }.getOrDefault(true)
+        ) {
+            return true
         }
-        .getOrDefault(true)
+        if (isData) {
+            return target.length > MAX_DATA_URL_LENGTH
+        }
+        if (!oversized) {
+            return false
+        }
+        // Validate the encoded source without recursing before the resolver's
+        // own depth check. Literal query values can nest arbitrarily deeply.
+        if (depth++ >= MAX_WRAPPED_URL_DEPTH) {
+            return true
+        }
+        target =
+            runCatching { uri.getQueryParameter("wk_pdf_url") }
+                .getOrNull()
+                ?.takeIf { it.isNotBlank() } ?: return true
+    }
 }
 
 fun getBlockInfo(
