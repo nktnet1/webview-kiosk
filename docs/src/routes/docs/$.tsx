@@ -14,7 +14,6 @@ import {
   PageLastUpdate,
   ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
-import type { MDXContent } from "mdx/types";
 import { type ComponentProps, Suspense } from "react";
 import { useMDXComponents } from "#/components/fumadocs/mdx";
 import { cn } from "#/lib/cn";
@@ -78,19 +77,12 @@ const clientLoader = browserCollections.docs.createClientLoader({
       lastModified?: Date;
     },
   ) {
-    // Fumadocs' client-loader types widen compiled MDX fields to `unknown`.
-    // The collection schema already validates these frontmatter fields.
-    const { title, description } = frontmatter as Pick<
-      (typeof source)["$inferPage"]["data"],
-      "title" | "description"
-    >;
-    const Content = MDX as MDXContent;
     // biome-ignore lint/correctness/useHookAtTopLevel: default fumadocs template
     const components = useMDXComponents();
     return (
       <DocsPage toc={toc}>
-        <DocsTitle>{title}</DocsTitle>
-        <DocsDescription>{description}</DocsDescription>
+        <DocsTitle>{frontmatter.title}</DocsTitle>
+        <DocsDescription>{frontmatter.description}</DocsDescription>
         <div className="flex flex-row gap-2 items-center border-b -mt-4 pb-6">
           <MarkdownCopyButton markdownUrl={markdownUrl} />
           <ViewOptionsPopover
@@ -99,7 +91,7 @@ const clientLoader = browserCollections.docs.createClientLoader({
           />
         </div>
         <DocsBody>
-          <Content components={components} />
+          <MDX components={components} />
           {lastModified && (
             <PageLastUpdate
               className="mb-6 mt-8 pt-4 border-t-2"
