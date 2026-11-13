@@ -88,6 +88,43 @@ internal object UrlRegexComplexity {
 
     fun isWithinBudget(pattern: String): Boolean = estimatedCost(pattern) != null
 
+    /**
+     * Extract a prefix that must appear at the beginning of every match. Only a
+     * leading ^ without preceding flags is considered; stop at any construct whose
+     * meaning cannot be proven to be a literal character. This is a no-match
+     * prefilter, not a replacement for RE2/J matching.
+     */
+    fun anchoredLiteralPrefix(pattern: String): String? {
+        // Alternation outside a group can make the leading ^ apply only to
+        // one branch (^blocked|allowed). Reject every | conservatively.
+        if (!pattern.startsWith('^') || '|' in pattern) {
+            return null
+        }
+        val prefix = StringBuilder()
+        var i = 1
+        while (i < pattern.length) {
+            val char = pattern[i]
+            when {
+                char == '\\' -> {
+                    if (
+                        i + 1 >= pattern.length ||
+                            pattern[i + 1] !in "\\.^$|?*+()[]{}"
+                    ) {
+                        break
+                    }
+                    prefix.append(pattern[i + 1])
+                    i += 2
+                }
+                char in ".^$|?*+()[]{}" -> break
+                else -> {
+                    prefix.append(char)
+                    i++
+                }
+            }
+        }
+        return prefix.takeIf { it.isNotEmpty() }?.toString()
+    }
+
     fun estimatedCost(pattern: String): Int? {
         val stack = ArrayDeque<Frame>()
         var frame = Frame()

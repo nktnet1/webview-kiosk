@@ -141,3 +141,31 @@ export function estimateRe2RuleCost(pattern: string): number | null {
 export function isRe2RuleWithinBudget(pattern: string): boolean {
   return estimateRe2RuleCost(pattern) !== null;
 }
+
+/** A conservative, anchored literal prefix usable only to skip non-matches. */
+export function getAnchoredLiteralPrefix(pattern: string): string | null {
+  // A top-level alternative could match without the leading ^. Reject all
+  // alternatives conservatively, even those inside groups or character classes.
+  if (!pattern.startsWith("^") || pattern.includes("|")) return null;
+  let prefix = "";
+  let i = 1;
+  while (i < pattern.length) {
+    const char = pattern[i];
+    if (char === "\\") {
+      if (
+        i + 1 >= pattern.length
+        || !"\\.^$|?*+()[]{}".includes(pattern[i + 1])
+      ) {
+        break;
+      }
+      prefix += pattern[i + 1];
+      i += 2;
+    } else if (".^$|?*+()[]{}".includes(char)) {
+      break;
+    } else {
+      prefix += char;
+      i++;
+    }
+  }
+  return prefix || null;
+}

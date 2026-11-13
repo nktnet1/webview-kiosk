@@ -217,6 +217,60 @@ class BlockPageUtilsTest {
     }
 
     @Test
+    fun anchoredNonMatchesDoNotExhaustTheBudgetOnLongUrls() {
+        val blacklist = (0..256).map { "^https://denied\\.example/$it$" }
+        val url = "https://denied.example/allowed?" + "x".repeat(4000)
+
+        // Each entry is a valid, inexpensive anchored non-match. Charging
+        // every rule by its length * the full URL length incorrectly blocks it.
+        assertNull(urlRegexBlockCause(url, blacklist, emptyList()))
+        assertEquals(
+            BlockCause.BLACKLIST,
+            urlRegexBlockCause(
+                "https://denied.example/256",
+                blacklist,
+                emptyList(),
+            ),
+        )
+    }
+
+    @Test
+    fun anchoredPrefixDoesNotGuessThroughRegexConstructs() {
+        assertEquals(
+            "abc.def",
+            UrlRegexComplexity.anchoredLiteralPrefix("^abc\\.def.*"),
+        )
+        assertEquals("abc", UrlRegexComplexity.anchoredLiteralPrefix("^abc(?i)def"))
+        assertNull(UrlRegexComplexity.anchoredLiteralPrefix("(?m)^abc"))
+        assertNull(UrlRegexComplexity.anchoredLiteralPrefix("^\\d+"))
+        assertNull(UrlRegexComplexity.anchoredLiteralPrefix("^blocked|allowed"))
+        assertEquals(
+            BlockCause.BLACKLIST,
+            urlRegexBlockCause("abc.def123", listOf("^abc\\.def.*"), emptyList()),
+        )
+        assertEquals(
+            BlockCause.BLACKLIST,
+            urlRegexBlockCause("allowed", listOf("^blocked|allowed"), emptyList()),
+        )
+    }
+
+    @Test
+    fun sharesTheMatchBudgetAcrossNestedBlockPageWrappers() {
+        var url = "https://example.com/" + "a".repeat(2400)
+        repeat(10) {
+            url = block(url)
+        }
+        val result =
+            resolveBlockPageTarget(
+                url,
+                listOf("a?".repeat(2000) + "Z"),
+                emptyList(),
+                settings,
+            )
+        assertEquals(BlockCause.URL_REGEX_ERROR, result?.blockCause)
+    }
+
+    @Test
     fun configurationScopedCacheDoesNotThrashAt257Rules() {
         val blacklist = (0..256).map { "^https://denied.example/$it$" }
         val rules = UrlRegexMatcher.forRules(blacklist, emptyList())

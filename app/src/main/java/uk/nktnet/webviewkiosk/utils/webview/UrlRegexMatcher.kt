@@ -37,7 +37,11 @@ internal object UrlRegexMatcher {
     }
 
     private sealed interface CompiledRule {
-        data class Valid(val pattern: Pattern, val cost: Int) : CompiledRule
+        data class Valid(
+            val pattern: Pattern,
+            val cost: Int,
+            val anchoredPrefix: String?,
+        ) : CompiledRule
 
         data object Invalid : CompiledRule
     }
@@ -79,6 +83,9 @@ internal object UrlRegexMatcher {
                                         CompiledRule.Valid(
                                             Pattern.compile(source),
                                             estimatedCost,
+                                            UrlRegexComplexity.anchoredLiteralPrefix(
+                                                source
+                                            ),
                                         )
                                     } catch (_: RuntimeException) {
                                         // Do not expose configured patterns or
@@ -112,7 +119,14 @@ internal object UrlRegexMatcher {
                 }
             return when (rule) {
                 is CompiledRule.Valid -> {
-                    if (!budget.charge(rule.cost, url.length)) {
+                    if (
+                        rule.anchoredPrefix != null &&
+                            !url.startsWith(rule.anchoredPrefix)
+                    ) {
+                        // An anchored pattern cannot match if its mandatory
+                        // literal prefix differs. Do not consume the budget.
+                        UrlRegexMatchResult.NO_MATCH
+                    } else if (!budget.charge(rule.cost, url.length)) {
                         Log.w(
                             TAG,
                             "RE2/J URL rule exceeds the evaluation work budget",

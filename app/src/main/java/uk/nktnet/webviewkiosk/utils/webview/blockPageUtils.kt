@@ -32,13 +32,13 @@ internal fun urlRegexBlockCause(
     blacklistRegexes: List<String>,
     whitelistRegexes: List<String>,
     match: ((String, String) -> UrlRegexMatchResult)? = null,
+    budget: UrlRegexMatcher.MatchBudget = UrlRegexMatcher.MatchBudget(),
 ): BlockCause? {
     val evaluate =
         match
             ?: run {
                 val rules =
                     UrlRegexMatcher.forRules(blacklistRegexes, whitelistRegexes)
-                val budget = UrlRegexMatcher.MatchBudget()
                 val matcher: (String, String) -> UrlRegexMatchResult =
                     { source, target ->
                         rules.match(source, target, budget)
@@ -77,6 +77,21 @@ fun getBlockInfo(
     blacklistRegexes: List<String>,
     whitelistRegexes: List<String>,
     userSettings: UserSettings,
+): Pair<SchemeType, BlockCause?> =
+    getBlockInfoWithBudget(
+        url,
+        blacklistRegexes,
+        whitelistRegexes,
+        userSettings,
+        UrlRegexMatcher.MatchBudget(),
+    )
+
+internal fun getBlockInfoWithBudget(
+    url: String,
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
+    userSettings: UserSettings,
+    budget: UrlRegexMatcher.MatchBudget,
 ): Pair<SchemeType, BlockCause?> {
     val uri = url.toUri()
     val scheme = uri.scheme?.lowercase() ?: ""
@@ -90,7 +105,8 @@ fun getBlockInfo(
             else -> SchemeType.OTHER
         }
 
-    val regexBlockCause = urlRegexBlockCause(url, blacklistRegexes, whitelistRegexes)
+    val regexBlockCause =
+        urlRegexBlockCause(url, blacklistRegexes, whitelistRegexes, budget = budget)
     val blockCause =
         when {
             regexBlockCause != null -> regexBlockCause
@@ -105,6 +121,7 @@ internal data class ResolvedBlockPageTarget(
     val url: String,
     val schemeType: SchemeType,
     val blockCause: BlockCause?,
+    val regexMatchBudget: UrlRegexMatcher.MatchBudget,
 )
 
 fun resolveBlockPageUrl(
@@ -127,6 +144,7 @@ internal fun resolveBlockPageTarget(
 ): ResolvedBlockPageTarget? {
     var targetUrl = url
     var depth = 0
+    val budget = UrlRegexMatcher.MatchBudget()
     while (true) {
         val uri = targetUrl.toUri()
         if (isPdfViewerUrl(uri)) {
@@ -140,15 +158,16 @@ internal fun resolveBlockPageTarget(
             continue
         }
         val (schemeType, blockCause) =
-            getBlockInfo(
+            getBlockInfoWithBudget(
                 targetUrl,
                 blacklistRegexes,
                 whitelistRegexes,
                 userSettings,
+                budget,
             )
         // Keep a denied URL so the caller can apply its usual block action.
         if (blockCause != null || !isCustomBlockPageUrl(schemeType, uri)) {
-            return ResolvedBlockPageTarget(targetUrl, schemeType, blockCause)
+            return ResolvedBlockPageTarget(targetUrl, schemeType, blockCause, budget)
         }
         // Do not let malformed or excessively nested wrappers trigger unchecked
         // loads.

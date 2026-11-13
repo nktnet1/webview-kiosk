@@ -99,6 +99,28 @@ describe("RE2 URL playground", () => {
     });
   });
 
+  it("does not exhaust the budget for anchored non-matches on long URLs", () => {
+    const blacklist = Array.from(
+      { length: 257 },
+      (_, index) => `^https://denied\\.example/${index}$`,
+    ).join("\n");
+    expect(
+      testUrlRules(
+        `https://denied.example/allowed?${"x".repeat(4000)}`,
+        blacklist,
+        "",
+      ),
+    ).toEqual({ blocked: false, ruleError: false });
+    expect(testUrlRules("https://denied.example/256", blacklist, "")).toEqual({
+      blocked: true,
+      ruleError: false,
+    });
+    expect(testUrlRules("allowed", "^blocked|allowed", "")).toEqual({
+      blocked: true,
+      ruleError: false,
+    });
+  });
+
   it("rejects excessive grouping depth", () => {
     expect(
       testUrlRules(url, `${"(".repeat(65)}a${")".repeat(65)}`, ""),

@@ -1,5 +1,8 @@
 import { RE2JS } from "re2js";
-import { estimateRe2RuleCost } from "#/lib/re2-complexity";
+import {
+  estimateRe2RuleCost,
+  getAnchoredLiteralPrefix,
+} from "#/lib/re2-complexity";
 
 type RuleResult = "match" | "no-match" | "error";
 
@@ -23,12 +26,15 @@ function matchRule(
   const cost = estimateRe2RuleCost(pattern);
   if (cost === null) return "error";
 
-  const work = Math.max(cost, 1) * Math.max(url.length, 1);
-  if (work > budget.remaining) return "error";
-  budget.remaining -= work;
-
   try {
-    return RE2JS.compile(pattern).matcher(url).find() ? "match" : "no-match";
+    const regex = RE2JS.compile(pattern);
+    const prefix = getAnchoredLiteralPrefix(pattern);
+    if (prefix !== null && !url.startsWith(prefix)) return "no-match";
+
+    const work = Math.max(cost, 1) * Math.max(url.length, 1);
+    if (work > budget.remaining) return "error";
+    budget.remaining -= work;
+    return regex.matcher(url).find() ? "match" : "no-match";
   } catch {
     return "error";
   }

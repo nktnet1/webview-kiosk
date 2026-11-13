@@ -77,6 +77,7 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigationSession
 import uk.nktnet.webviewkiosk.utils.webview.blockedPageHtml
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
+import uk.nktnet.webviewkiosk.utils.webview.getBlockInfoWithBudget
 import uk.nktnet.webviewkiosk.utils.webview.handleMutualTlsRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.cancelPdfSourceRequests
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
@@ -1254,13 +1255,14 @@ fun createCustomWebview(
                                     if (navigationUrl == resolvedUrl) {
                                         resolved.schemeType to resolved.blockCause
                                     } else {
-                                        getBlockInfo(
+                                        getBlockInfoWithBudget(
                                             url = navigationUrl,
                                             blacklistRegexes =
                                                 config.blacklistRegexes,
                                             whitelistRegexes =
                                                 config.whitelistRegexes,
                                             userSettings = userSettings,
+                                            budget = resolved.regexMatchBudget,
                                         )
                                     }
                                 val blockCause =
