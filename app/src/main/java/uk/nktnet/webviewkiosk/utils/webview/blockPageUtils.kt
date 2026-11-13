@@ -26,11 +26,14 @@ fun isBlockedUrl(
     blacklistRegexes: List<Regex>,
     whitelistRegexes: List<Regex>,
 ): Boolean {
-    return !whitelistRegexes.any {
-        it.containsMatchIn(url)
+    // A whitelist cannot affect the decision unless the blacklist matches.
+    // Checking it first can evaluate an expensive regex even with no blacklist.
+    val deadlineNanos = UrlRegexMatcher.deadlineNanos()
+    return blacklistRegexes.any {
+        UrlRegexMatcher.matches(it, url, deadlineNanos, failClosed = true)
     } &&
-        blacklistRegexes.any {
-            it.containsMatchIn(url)
+        whitelistRegexes.none {
+            UrlRegexMatcher.matches(it, url, deadlineNanos, failClosed = false)
         }
 }
 

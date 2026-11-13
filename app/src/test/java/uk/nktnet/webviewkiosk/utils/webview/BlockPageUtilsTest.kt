@@ -38,6 +38,59 @@ class BlockPageUtilsTest {
     }
 
     @Test
+    fun expensiveNestedRegexDoesNotBlockUrlNavigation() {
+        // The Android ICU/Java backtracking engine can stall on this non-match.
+        val url = "https://example.com/" + "a".repeat(6000) + "!"
+        val expensive = Regex("(a+)+$")
+
+        val start = System.nanoTime()
+        assertFalse(isBlockedUrl(url, listOf(expensive), emptyList()))
+        assertTrue(
+            "Regex should complete well inside the WebView ANR threshold",
+            System.nanoTime() - start <
+                java.util.concurrent.TimeUnit.SECONDS.toNanos(2),
+        )
+        assertTrue(isBlockedUrl(url, listOf(Regex(".*")), listOf(expensive)))
+    }
+
+    @Test
+    fun javaOnlyLookaroundsAndBackreferencesStillWork() {
+        val whitelist = listOf(Regex("(?<=https://)example\\.com"))
+        val blacklist = listOf(Regex("example\\.com"))
+        assertFalse(isBlockedUrl("https://example.com", blacklist, whitelist))
+        assertTrue(
+            isBlockedUrl(
+                "https://example.com/denied",
+                blacklist,
+                listOf(Regex("(?<=/)(den)\\1")),
+            )
+        )
+        assertFalse(
+            isBlockedUrl(
+                "https://example.com/denden",
+                blacklist,
+                listOf(Regex("(?<=/)(den)\\1")),
+            )
+        )
+    }
+
+    @Test
+    fun whitelistWithoutBlacklistSkipsRegexEvaluation() {
+        val start = System.nanoTime()
+        assertFalse(
+            isBlockedUrl(
+                "https://example.com/" + "a".repeat(6000) + "!",
+                emptyList(),
+                listOf(Regex("(a+)+$")),
+            )
+        )
+        assertTrue(
+            System.nanoTime() - start <
+                java.util.concurrent.TimeUnit.SECONDS.toNanos(2)
+        )
+    }
+
+    @Test
     fun appliesTheLocalFilePolicyToFileUrlsAndAssetLoaderLinks() {
         val urls =
             listOf(
