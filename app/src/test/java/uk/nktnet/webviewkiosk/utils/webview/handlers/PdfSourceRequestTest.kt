@@ -486,7 +486,7 @@ class PdfSourceRequestTest {
 
         assertEquals(
             403,
-            load(token, blacklist = listOf(Regex("/forbidden\\.pdf$")))?.statusCode,
+            load(token, blacklist = listOf("/forbidden\\.pdf$"))?.statusCode,
         )
         assertEquals(0, forbiddenRequests.get())
     }
@@ -1573,7 +1573,7 @@ class PdfSourceRequestTest {
             403,
             load(
                 token,
-                blacklist = listOf(Regex("track=1")),
+                blacklist = listOf("track=1"),
                 documentUrl = clean,
             ),
         )
@@ -1581,7 +1581,7 @@ class PdfSourceRequestTest {
             403,
             load(
                 token,
-                blacklist = listOf(Regex("blocked\\.pdf$")),
+                blacklist = listOf("blocked\\.pdf$"),
                 documentUrl = clean,
             ),
         )
@@ -1663,7 +1663,7 @@ class PdfSourceRequestTest {
         requestUrl: String = "$base/pdf_source?wk_pdf_token=${token.orEmpty()}",
         headers: Map<String, String> = emptyMap(),
         userAgent: String? = null,
-        blacklist: List<Regex> = emptyList(),
+        blacklist: List<String> = emptyList(),
         onAuthenticationRequired: (String, String, HttpAuthRequest) -> Unit =
             { _, _, request ->
                 request.cancel()

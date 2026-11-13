@@ -23,24 +23,21 @@ enum class SchemeType {
 
 fun isBlockedUrl(
     url: String,
-    blacklistRegexes: List<Regex>,
-    whitelistRegexes: List<Regex>,
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
 ): Boolean = urlRegexBlockCause(url, blacklistRegexes, whitelistRegexes) != null
 
 internal fun urlRegexBlockCause(
     url: String,
-    blacklistRegexes: List<Regex>,
-    whitelistRegexes: List<Regex>,
-    match: (Regex, String, Long) -> UrlRegexMatchResult = UrlRegexMatcher::match,
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
+    match: (String, String) -> UrlRegexMatchResult = UrlRegexMatcher::match,
 ): BlockCause? {
     // Match the blacklist first: whitelist rules only affect blocked URLs.
-    // Use one shared evaluation deadline, as before.
-    val deadlineNanos = UrlRegexMatcher.deadlineNanos()
     val blacklistCause =
         blacklistRegexes.firstNotNullOfOrNull { regex ->
-            when (match(regex, url, deadlineNanos)) {
+            when (match(regex, url)) {
                 UrlRegexMatchResult.MATCH -> BlockCause.BLACKLIST
-                UrlRegexMatchResult.TIMEOUT -> BlockCause.URL_REGEX_TIMEOUT
                 UrlRegexMatchResult.ERROR -> BlockCause.URL_REGEX_ERROR
                 UrlRegexMatchResult.NO_MATCH -> null
             }
@@ -48,16 +45,11 @@ internal fun urlRegexBlockCause(
 
     var cause = blacklistCause
     for (regex in whitelistRegexes) {
-        when (match(regex, url, deadlineNanos)) {
+        when (match(regex, url)) {
             // Explicit whitelist matches retain their existing precedence,
             // even when a different rule failed closed.
             UrlRegexMatchResult.MATCH -> return null
             UrlRegexMatchResult.NO_MATCH -> Unit
-            UrlRegexMatchResult.TIMEOUT -> {
-                if (cause == BlockCause.BLACKLIST) {
-                    cause = BlockCause.URL_REGEX_TIMEOUT
-                }
-            }
             UrlRegexMatchResult.ERROR -> {
                 if (cause == BlockCause.BLACKLIST) {
                     cause = BlockCause.URL_REGEX_ERROR
@@ -70,8 +62,8 @@ internal fun urlRegexBlockCause(
 
 fun getBlockInfo(
     url: String,
-    blacklistRegexes: List<Regex>,
-    whitelistRegexes: List<Regex>,
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
     userSettings: UserSettings,
 ): Pair<SchemeType, BlockCause?> {
     val uri = url.toUri()
@@ -97,12 +89,30 @@ fun getBlockInfo(
     return schemeType to blockCause
 }
 
+internal data class ResolvedBlockPageTarget(
+    val url: String,
+    val schemeType: SchemeType,
+    val blockCause: BlockCause?,
+)
+
 fun resolveBlockPageUrl(
     url: String,
-    blacklistRegexes: List<Regex>,
-    whitelistRegexes: List<Regex>,
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
     userSettings: UserSettings,
-): String? {
+): String? =
+    resolveBlockPageTarget(url, blacklistRegexes, whitelistRegexes, userSettings)
+        ?.url
+
+/**
+ * Resolve wrappers and return their already-evaluated policy for navigation callers.
+ */
+internal fun resolveBlockPageTarget(
+    url: String,
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
+    userSettings: UserSettings,
+): ResolvedBlockPageTarget? {
     var targetUrl = url
     var depth = 0
     while (true) {
@@ -126,7 +136,7 @@ fun resolveBlockPageUrl(
             )
         // Keep a denied URL so the caller can apply its usual block action.
         if (blockCause != null || !isCustomBlockPageUrl(schemeType, uri)) {
-            return targetUrl
+            return ResolvedBlockPageTarget(targetUrl, schemeType, blockCause)
         }
         // Do not let malformed or excessively nested wrappers trigger unchecked
         // loads.

@@ -95,6 +95,7 @@ import uk.nktnet.webviewkiosk.utils.webview.isPdfViewerUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.parseFileChooserResult
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
+import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageTarget
 import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.sameNavigationUrl
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDarkReaderScript
@@ -195,8 +196,8 @@ private fun isWebPdf(
 data class WebViewConfig(
     val systemSettings: SystemSettings,
     val userSettings: UserSettings,
-    val blacklistRegexes: List<Regex>,
-    val whitelistRegexes: List<Regex>,
+    val blacklistRegexes: List<String>,
+    val whitelistRegexes: List<String>,
     val isActive: () -> Boolean,
     val setLastErrorUrl: (errorUrl: String) -> Unit,
     val onLocalNetworkPermissionMissing: () -> Unit,
@@ -1214,21 +1215,15 @@ fun createCustomWebview(
                                 if (requestUrl.isNullOrEmpty()) {
                                     return false
                                 }
-                                val resolvedUrl =
-                                    resolveBlockPageUrl(
+                                val resolved =
+                                    resolveBlockPageTarget(
                                         requestUrl,
                                         config.blacklistRegexes,
                                         config.whitelistRegexes,
                                         userSettings,
                                     ) ?: return true
-                                val originalPolicy =
-                                    getBlockInfo(
-                                            resolvedUrl,
-                                            config.blacklistRegexes,
-                                            config.whitelistRegexes,
-                                            userSettings,
-                                        )
-                                        .second
+                                val resolvedUrl = resolved.url
+                                val originalPolicy = resolved.blockCause
                                 val navigationUrl =
                                     if (
                                         isMainFrame &&
@@ -1256,12 +1251,18 @@ fun createCustomWebview(
                                 }
 
                                 val (schemeType, policyBlockCause) =
-                                    getBlockInfo(
-                                        url = navigationUrl,
-                                        blacklistRegexes = config.blacklistRegexes,
-                                        whitelistRegexes = config.whitelistRegexes,
-                                        userSettings = userSettings,
-                                    )
+                                    if (navigationUrl == resolvedUrl) {
+                                        resolved.schemeType to resolved.blockCause
+                                    } else {
+                                        getBlockInfo(
+                                            url = navigationUrl,
+                                            blacklistRegexes =
+                                                config.blacklistRegexes,
+                                            whitelistRegexes =
+                                                config.whitelistRegexes,
+                                            userSettings = userSettings,
+                                        )
+                                    }
                                 val blockCause =
                                     originalPolicy
                                         ?: policyBlockCause

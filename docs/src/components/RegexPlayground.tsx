@@ -4,27 +4,13 @@ import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Textarea } from "#/components/ui/textarea";
+import { testUrlRules } from "#/lib/regex-playground";
 
 export default function RegexPlayground() {
   const [blacklist, setBlacklist] = useState("");
   const [whitelist, setWhitelist] = useState("");
   const [testUrl, setTestUrl] = useState("");
   const [result, setResult] = useState<"blocked" | "allowed" | null>(null);
-
-  function parseRegexList(input: string): RegExp[] {
-    return input
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0)
-      .map((line) => {
-        try {
-          return new RegExp(line);
-        } catch {
-          return null;
-        }
-      })
-      .filter((r): r is RegExp => r !== null);
-  }
 
   function isValidUrl(url: string): boolean {
     try {
@@ -39,17 +25,6 @@ export default function RegexPlayground() {
     }
   }
 
-  function isBlockedUrl(
-    url: string,
-    blacklistRegexes: RegExp[],
-    whitelistRegexes: RegExp[],
-  ): boolean {
-    if (whitelistRegexes.some((re) => re.test(url))) {
-      return false;
-    }
-    return blacklistRegexes.some((re) => re.test(url));
-  }
-
   function handleValidate() {
     if (!isValidUrl(testUrl)) {
       toast.warning("Invalid URL - a valid example is https://example.com");
@@ -57,14 +32,15 @@ export default function RegexPlayground() {
       return;
     }
 
-    const blacklistRegexes = parseRegexList(blacklist);
-    const whitelistRegexes = parseRegexList(whitelist);
-
-    const blocked = isBlockedUrl(testUrl, blacklistRegexes, whitelistRegexes);
+    const { blocked, ruleError } = testUrlRules(testUrl, blacklist, whitelist);
     setResult(blocked ? "blocked" : "allowed");
 
     if (blocked) {
-      toast.error(`URL is Blocked: ${testUrl}`);
+      toast.error(
+        ruleError
+          ? `URL is Blocked (RE2 rule evaluation failed): ${testUrl}`
+          : `URL is Blocked: ${testUrl}`,
+      );
     } else {
       toast.success(`URL is Allowed: ${testUrl}`);
     }
@@ -86,6 +62,9 @@ export default function RegexPlayground() {
 
   return (
     <div className="w-full mx-auto space-y-4">
+      <p className="text-sm text-muted-foreground">
+        URL rules use RE2-based matching, as in the Android app.
+      </p>
       <Card>
         <CardContent className="space-y-4">
           <div>

@@ -128,7 +128,7 @@ import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
 import uk.nktnet.webviewkiosk.utils.webview.html.generatePdfRendererHtml
 import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
-import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageUrl
+import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageTarget
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 
 // All API levels use Compose IME insets when edge-to-edge is active. API 29
@@ -204,18 +204,16 @@ fun WebviewScreen(navController: NavController) {
         findInPageFocusRequestKey++
     }
 
-    val blacklistRegexes: List<Regex> by lazy {
-        userSettings.websiteBlacklist
-            .lines()
-            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
+    val blacklistRegexes: List<String> by lazy {
+        userSettings.websiteBlacklist.lines().mapNotNull {
+            it.trim().takeIf(String::isNotEmpty)
+        }
     }
 
-    val whitelistRegexes: List<Regex> by lazy {
-        userSettings.websiteWhitelist
-            .lines()
-            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
+    val whitelistRegexes: List<String> by lazy {
+        userSettings.websiteWhitelist.lines().mapNotNull {
+            it.trim().takeIf(String::isNotEmpty)
+        }
     }
 
     var lastErrorUrl by remember { mutableStateOf("") }
@@ -443,21 +441,15 @@ fun WebviewScreen(navController: NavController) {
         if (!isCurrentWebView()) {
             return
         }
-        val resolvedUrl =
-            resolveBlockPageUrl(
+        val resolved =
+            resolveBlockPageTarget(
                 newUrl,
                 blacklistRegexes,
                 whitelistRegexes,
                 userSettings,
             ) ?: return
-        val originalPolicy =
-            getBlockInfo(
-                    resolvedUrl,
-                    blacklistRegexes,
-                    whitelistRegexes,
-                    userSettings,
-                )
-                .second
+        val resolvedUrl = resolved.url
+        val originalPolicy = resolved.blockCause
         val url =
             if (originalPolicy == null) {
                 WebViewBlocker.documentUrl(resolvedUrl, "GET", contentBlocker)
@@ -466,12 +458,16 @@ fun WebviewScreen(navController: NavController) {
             }
         systemSettings.urlBeingHandled = url
         val (schemeType, policyBlockCause) =
-            getBlockInfo(
-                url = url,
-                blacklistRegexes = blacklistRegexes,
-                whitelistRegexes = whitelistRegexes,
-                userSettings = userSettings,
-            )
+            if (url == resolvedUrl) {
+                resolved.schemeType to resolved.blockCause
+            } else {
+                getBlockInfo(
+                    url = url,
+                    blacklistRegexes = blacklistRegexes,
+                    whitelistRegexes = whitelistRegexes,
+                    userSettings = userSettings,
+                )
+            }
         val blockCause =
             originalPolicy
                 ?: policyBlockCause

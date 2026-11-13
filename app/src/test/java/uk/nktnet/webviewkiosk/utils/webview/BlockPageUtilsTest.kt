@@ -26,8 +26,8 @@ class BlockPageUtilsTest {
 
     @Test
     fun whitelistMatchesOverrideBlacklistMatches() {
-        val blacklist = listOf(Regex("example\\.com"))
-        val whitelist = listOf(Regex("/allowed(?:/|$)"))
+        val blacklist = listOf("example\\.com")
+        val whitelist = listOf("/allowed(?:/|$)")
 
         assertTrue(isBlockedUrl("https://example.com/denied", blacklist, whitelist))
         assertFalse(
@@ -41,7 +41,7 @@ class BlockPageUtilsTest {
     fun expensiveNestedRegexDoesNotBlockUrlNavigation() {
         // The Android ICU/Java backtracking engine can stall on this non-match.
         val url = "https://example.com/" + "a".repeat(6000) + "!"
-        val expensive = Regex("(a+)+$")
+        val expensive = "(a+)+$"
 
         val start = System.nanoTime()
         assertFalse(isBlockedUrl(url, listOf(expensive), emptyList()))
@@ -50,28 +50,28 @@ class BlockPageUtilsTest {
             System.nanoTime() - start <
                 java.util.concurrent.TimeUnit.SECONDS.toNanos(2),
         )
-        assertTrue(isBlockedUrl(url, listOf(Regex(".*")), listOf(expensive)))
+        assertTrue(isBlockedUrl(url, listOf(".*"), listOf(expensive)))
     }
 
     @Test
-    fun javaOnlyLookaroundsAndBackreferencesStillWork() {
-        val whitelist = listOf(Regex("(?<=https://)example\\.com"))
-        val blacklist = listOf(Regex("example\\.com"))
-        assertFalse(isBlockedUrl("https://example.com", blacklist, whitelist))
-        assertTrue(
-            isBlockedUrl(
-                "https://example.com/denied",
-                blacklist,
-                listOf(Regex("(?<=/)(den)\\1")),
-            )
+    fun unsupportedRegexSyntaxFailsClosedWithoutNativeFallback() {
+        val url = "https://example.com/"
+        assertEquals(
+            BlockCause.URL_REGEX_ERROR,
+            getBlockInfo(url, listOf("(?<=https://)example"), emptyList(), settings)
+                .second,
         )
-        assertFalse(
-            isBlockedUrl(
-                "https://example.com/denden",
-                blacklist,
-                listOf(Regex("(?<=/)(den)\\1")),
-            )
+        assertEquals(
+            BlockCause.URL_REGEX_ERROR,
+            getBlockInfo(
+                    url,
+                    listOf("example"),
+                    listOf("(?<=https://)example"),
+                    settings,
+                )
+                .second,
         )
+        assertFalse(isBlockedUrl(url, listOf("example"), listOf("https://example")))
     }
 
     @Test
@@ -81,7 +81,7 @@ class BlockPageUtilsTest {
             isBlockedUrl(
                 "https://example.com/" + "a".repeat(6000) + "!",
                 emptyList(),
-                listOf(Regex("(a+)+$")),
+                listOf("(a+)+$"),
             )
         )
         assertTrue(
@@ -91,85 +91,63 @@ class BlockPageUtilsTest {
     }
 
     @Test
-    fun regexTimeoutAndErrorHaveDistinctBlockPageCauses() {
-        val blacklist = Regex("blacklist")
-        val whitelist = Regex("whitelist")
+    fun invalidRegexHasDistinctBlockPageCause() {
         val url = "https://example.com/"
-
-        for ((result, cause) in
+        for ((blacklist, whitelist) in
             listOf(
-                UrlRegexMatchResult.TIMEOUT to BlockCause.URL_REGEX_TIMEOUT,
-                UrlRegexMatchResult.ERROR to BlockCause.URL_REGEX_ERROR,
+                listOf("(") to emptyList(),
+                listOf("example") to listOf("("),
             )) {
-            // A failed blacklist evaluation must still block, but must not
-            // claim that the URL actually matched the blacklist.
-            assertEquals(
-                cause,
-                urlRegexBlockCause(url, listOf(blacklist), emptyList()) { _, _, _ ->
-                    result
-                },
-            )
-            // The same failure while evaluating a whitelist must be identified.
-            assertEquals(
-                cause,
-                urlRegexBlockCause(url, listOf(blacklist), listOf(whitelist)) {
-                    regex,
-                    _,
-                    _ ->
-                    if (regex === blacklist) {
-                        UrlRegexMatchResult.MATCH
-                    } else {
-                        result
-                    }
-                },
-            )
+            val cause = urlRegexBlockCause(url, blacklist, whitelist)
+            assertEquals(BlockCause.URL_REGEX_ERROR, cause)
             assertTrue(
-                blockedPageHtml(settings, url, cause)
-                    .contains("<p>${cause.label}</p>")
+                blockedPageHtml(settings, url, cause!!)
+                    .contains("<p>${BlockCause.URL_REGEX_ERROR.label}</p>")
             )
         }
     }
 
     @Test
-    fun whitelistMatchStillOverridesRegexFailure() {
-        val blacklist = Regex("blacklist")
-        val failingWhitelist = Regex("failing")
-        val allowedWhitelist = Regex("allowed")
-        val url = "https://example.com/"
-
+    fun whitelistMatchOverridesInvalidBlacklistRule() {
         assertNull(
             urlRegexBlockCause(
-                url,
-                listOf(blacklist),
-                listOf(failingWhitelist, allowedWhitelist),
-            ) { regex, _, _ ->
-                when (regex) {
-                    blacklist -> UrlRegexMatchResult.TIMEOUT
-                    failingWhitelist -> UrlRegexMatchResult.ERROR
-                    else -> UrlRegexMatchResult.MATCH
-                }
-            }
-        )
-        assertEquals(
-            BlockCause.BLACKLIST,
-            urlRegexBlockCause(url, listOf(blacklist), listOf(allowedWhitelist)) {
-                regex,
-                _,
-                _ ->
-                if (regex === blacklist) {
-                    UrlRegexMatchResult.MATCH
-                } else {
-                    UrlRegexMatchResult.NO_MATCH
-                }
-            },
+                "https://example.com/allowed",
+                listOf("("),
+                listOf("/allowed"),
+            )
         )
     }
 
     @Test
-    fun expiredEvaluationDeadlineIsReportedAsTimeout() {
+    fun re2MatchesWithPartialMatchingAndInlineFlags() {
+        val blacklist = listOf("(?i)example\\.com")
         assertEquals(
-            UrlRegexMatchResult.TIMEOUT,
-            UrlRegexMatcher.match(Regex("example"), "https://example.com", 0L),
+            BlockCause.BLACKLIST,
+            getBlockInfo(
+                    "https://EXAMPLE.com/page",
+                    blacklist,
+                    emptyList(),
+                    settings,
+                )
+                .second,
+        )
+        assertNull(
+            getBlockInfo("https://other.invalid", blacklist, emptyList(), settings)
+                .second
+        )
+    }
+
+    @Test
+    fun oversizedRuleFailsClosed() {
+        assertEquals(
+            BlockCause.URL_REGEX_ERROR,
+            getBlockInfo(
+                    "https://example.com",
+                    listOf("a".repeat(UrlRegexMatcher.MAX_PATTERN_LENGTH + 1)),
+                    emptyList(),
+                    settings,
+                )
+                .second,
         )
     }
 
@@ -206,7 +184,7 @@ class BlockPageUtilsTest {
     fun keepsADeniedDecodedTargetForTheCallersBlockAction() {
         val source = "https://denied.example/report.pdf"
 
-        val blacklist = listOf(Regex("^https://denied\\.example(?:/|$)"))
+        val blacklist = listOf("^https://denied\\.example(?:/|$)")
         assertEquals(source, resolve(block(pdf(source)), blacklist = blacklist))
         assertEquals(
             BlockCause.BLACKLIST,
@@ -231,7 +209,7 @@ class BlockPageUtilsTest {
 
         assertEquals(
             wrapper,
-            resolve(wrapper, blacklist = listOf(Regex("^webviewkiosk://block"))),
+            resolve(wrapper, blacklist = listOf("^webviewkiosk://block")),
         )
     }
 
@@ -241,7 +219,7 @@ class BlockPageUtilsTest {
 
         assertEquals(
             wrapper,
-            resolve(wrapper, blacklist = listOf(Regex("denied\\.example"))),
+            resolve(wrapper, blacklist = listOf("denied\\.example")),
         )
     }
 
@@ -301,7 +279,7 @@ class BlockPageUtilsTest {
         }
     }
 
-    private fun resolve(url: String, blacklist: List<Regex> = emptyList()) =
+    private fun resolve(url: String, blacklist: List<String> = emptyList()) =
         resolveBlockPageUrl(url, blacklist, emptyList(), settings)
 
     private fun block(url: String) =
