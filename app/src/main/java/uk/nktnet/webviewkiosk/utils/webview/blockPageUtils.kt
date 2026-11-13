@@ -12,7 +12,10 @@ import uk.nktnet.webviewkiosk.utils.webview.html.generateBlockedPageHtml
 
 const val BLOCK_HOST = "block"
 private const val MAX_WRAPPED_URL_DEPTH = 10
-internal const val MAX_NAVIGATION_URL_LENGTH = 16_384
+// Keep website navigation aligned with Chromium while allowing WebView data URLs.
+internal const val MAX_NAVIGATION_URL_LENGTH = 2 * 1024 * 1024
+private const val MAX_DATA_URL_LENGTH = 20 * 1024 * 1024
+private const val MAX_PDF_VIEWER_URL_LENGTH = MAX_NAVIGATION_URL_LENGTH * 9 + 256
 
 enum class SchemeType {
     FILE,
@@ -98,9 +101,33 @@ private fun isMalformedNavigationUrl(url: String, uri: Uri): Boolean {
 
 internal fun isInvalidNavigationUrl(url: String): Boolean {
     if (url.length > MAX_NAVIGATION_URL_LENGTH) {
-        return true
+        val isData = url.startsWith("data:", ignoreCase = true)
+        val pdfViewerOrigin = Constants.PDF_JS_ASSETS_DUMMY_URL
+        val mayBePdfViewer =
+            url.startsWith("$pdfViewerOrigin?", ignoreCase = true) ||
+                url.startsWith("$pdfViewerOrigin/?", ignoreCase = true)
+        if (
+            !(isData && url.length <= MAX_DATA_URL_LENGTH) &&
+                !(mayBePdfViewer && url.length <= MAX_PDF_VIEWER_URL_LENGTH)
+        ) {
+            return true
+        }
     }
-    return runCatching { isMalformedNavigationUrl(url, url.toUri()) }
+    return runCatching {
+            val uri = url.toUri()
+            when {
+                isMalformedNavigationUrl(url, uri) -> true
+                uri.scheme.equals("data", ignoreCase = true) ->
+                    url.length > MAX_DATA_URL_LENGTH
+                url.length <= MAX_NAVIGATION_URL_LENGTH -> false
+                !isPdfViewerUrl(uri) -> true
+                else -> {
+                    // PDF viewer URLs include an encoded copy of the source.
+                    val source = uri.getQueryParameter("wk_pdf_url")
+                    source.isNullOrBlank() || isInvalidNavigationUrl(source)
+                }
+            }
+        }
         .getOrDefault(true)
 }
 
@@ -110,7 +137,11 @@ fun getBlockInfo(
     whitelistRegexes: List<String>,
     userSettings: UserSettings,
 ): Pair<SchemeType, BlockCause?> {
-    if (url.length > MAX_NAVIGATION_URL_LENGTH) {
+    if (
+        url.length > MAX_NAVIGATION_URL_LENGTH &&
+            (!url.startsWith("data:", ignoreCase = true) ||
+                url.length > MAX_DATA_URL_LENGTH)
+    ) {
         return SchemeType.OTHER to BlockCause.INVALID_URL
     }
     val uri =

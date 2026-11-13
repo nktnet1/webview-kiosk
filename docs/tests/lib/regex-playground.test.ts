@@ -1,8 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { testUrlRules } from "#/lib/regex-playground";
+import { isValidWebNavigationUrl, testUrlRules } from "#/lib/regex-playground";
 
 describe("RE2 URL playground", () => {
   const url = "https://example.com/allowed";
+
+  it("uses the Android web navigation URL limit", () => {
+    const prefix = "https://example.com/";
+    expect(
+      isValidWebNavigationUrl(
+        prefix + "a".repeat(2 * 1024 * 1024 - prefix.length),
+      ),
+    ).toBe(true);
+    expect(
+      isValidWebNavigationUrl(
+        prefix + "a".repeat(2 * 1024 * 1024 + 1 - prefix.length),
+      ),
+    ).toBe(false);
+    expect(isValidWebNavigationUrl("https://example.com/%zz")).toBe(false);
+    expect(isValidWebNavigationUrl("https://example.com/hello world")).toBe(
+      false,
+    );
+    expect(isValidWebNavigationUrl("https://localhost/")).toBe(true);
+  });
 
   it("uses partial RE2 matches and whitelist precedence", () => {
     expect(testUrlRules(url, "example\\.com", "/allowed")).toEqual({

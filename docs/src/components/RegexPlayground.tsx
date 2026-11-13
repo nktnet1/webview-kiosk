@@ -4,7 +4,7 @@ import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Textarea } from "#/components/ui/textarea";
-import { testUrlRules } from "#/lib/regex-playground";
+import { isValidWebNavigationUrl, testUrlRules } from "#/lib/regex-playground";
 
 export default function RegexPlayground() {
   const [blacklist, setBlacklist] = useState("");
@@ -12,22 +12,9 @@ export default function RegexPlayground() {
   const [testUrl, setTestUrl] = useState("");
   const [result, setResult] = useState<"blocked" | "allowed" | null>(null);
 
-  function isValidUrl(url: string): boolean {
-    try {
-      const parsed = new URL(url);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-        return false;
-      }
-      const hostname = parsed.hostname;
-      return parsed.protocol === "http:" || /\.[^.]{2,}$/.test(hostname);
-    } catch {
-      return false;
-    }
-  }
-
   function handleValidate() {
-    if (!isValidUrl(testUrl)) {
-      toast.warning("Invalid URL - a valid example is https://example.com");
+    if (!isValidWebNavigationUrl(testUrl)) {
+      toast.warning("Invalid or oversized URL - try https://example.com");
       setResult(null);
       return;
     }
@@ -47,7 +34,7 @@ export default function RegexPlayground() {
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" && isValidUrl(testUrl)) {
+    if (e.key === "Enter" && isValidWebNavigationUrl(testUrl)) {
       e.preventDefault();
       handleValidate();
     }
@@ -58,7 +45,7 @@ export default function RegexPlayground() {
     setResult(null);
   }
 
-  const validUrl = isValidUrl(testUrl);
+  const validUrl = isValidWebNavigationUrl(testUrl);
 
   return (
     <div className="w-full mx-auto space-y-4">

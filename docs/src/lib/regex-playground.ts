@@ -2,6 +2,28 @@ import { RE2JS } from "re2js";
 
 type RuleResult = "match" | "no-match" | "error";
 
+export function isValidWebNavigationUrl(url: string): boolean {
+  if (url.length > 2 * 1024 * 1024 || /%(?![\da-fA-F]{2})/.test(url)) {
+    return false;
+  }
+
+  for (const char of url) {
+    if (char <= " " || char === "\u007f") {
+      return false;
+    }
+  }
+
+  try {
+    const parsed = new URL(url);
+    return (
+      (parsed.protocol === "http:" || parsed.protocol === "https:")
+      && parsed.hostname.length > 0
+    );
+  } catch {
+    return false;
+  }
+}
+
 function parseRules(input: string): string[] {
   return input
     .split("\n")

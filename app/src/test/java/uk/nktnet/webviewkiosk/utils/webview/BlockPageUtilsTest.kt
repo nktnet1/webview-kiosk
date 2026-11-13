@@ -173,6 +173,24 @@ class BlockPageUtilsTest {
     }
 
     @Test
+    fun encodedPdfViewerUrlDoesNotReduceTheSourceUrlLimit() {
+        val target = "https://example.com/report.pdf?query=" + "/?".repeat(3000)
+        val viewerUrl = pdf(target)
+
+        assertTrue(target.length < MAX_NAVIGATION_URL_LENGTH)
+        assertTrue(viewerUrl.length > MAX_NAVIGATION_URL_LENGTH)
+        assertFalse(isInvalidNavigationUrl(viewerUrl))
+        assertEquals(target, resolve(viewerUrl))
+
+        val tooLong = "https://example.com/" + "x".repeat(MAX_NAVIGATION_URL_LENGTH)
+        assertTrue(isInvalidNavigationUrl(pdf(tooLong)))
+        assertNull(resolve(pdf(tooLong)))
+        assertTrue(
+            isInvalidNavigationUrl(viewerUrl.replace("pdf-dummy", "pdf-dummy-evil"))
+        )
+    }
+
+    @Test
     fun malformedWebsiteTargetsAreRejectedWithoutMatching() {
         for (url in
             listOf(
@@ -192,6 +210,11 @@ class BlockPageUtilsTest {
         }
         assertFalse(isInvalidNavigationUrl("https://example.com/path%2Fitem"))
         assertFalse(isInvalidNavigationUrl("data:text/plain,hello world"))
+        assertFalse(
+            isInvalidNavigationUrl(
+                "data:text/plain," + "a".repeat(MAX_NAVIGATION_URL_LENGTH + 1)
+            )
+        )
     }
 
     @Test
