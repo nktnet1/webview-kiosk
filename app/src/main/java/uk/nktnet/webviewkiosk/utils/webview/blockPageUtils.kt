@@ -137,11 +137,7 @@ fun getBlockInfo(
     whitelistRegexes: List<String>,
     userSettings: UserSettings,
 ): Pair<SchemeType, BlockCause?> {
-    if (
-        url.length > MAX_NAVIGATION_URL_LENGTH &&
-            (!url.startsWith("data:", ignoreCase = true) ||
-                url.length > MAX_DATA_URL_LENGTH)
-    ) {
+    if (url.length > MAX_NAVIGATION_URL_LENGTH && isInvalidNavigationUrl(url)) {
         return SchemeType.OTHER to BlockCause.INVALID_URL
     }
     val uri =

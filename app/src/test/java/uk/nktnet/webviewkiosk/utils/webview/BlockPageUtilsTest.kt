@@ -174,12 +174,17 @@ class BlockPageUtilsTest {
 
     @Test
     fun encodedPdfViewerUrlDoesNotReduceTheSourceUrlLimit() {
-        val target = "https://example.com/report.pdf?query=" + "/?".repeat(3000)
+        val target =
+            "https://example.com/report.pdf?query=" +
+                "/?".repeat(MAX_NAVIGATION_URL_LENGTH / 5)
         val viewerUrl = pdf(target)
 
         assertTrue(target.length < MAX_NAVIGATION_URL_LENGTH)
         assertTrue(viewerUrl.length > MAX_NAVIGATION_URL_LENGTH)
         assertFalse(isInvalidNavigationUrl(viewerUrl))
+        assertNull(
+            getBlockInfo(viewerUrl, emptyList(), emptyList(), settings).second
+        )
         assertEquals(target, resolve(viewerUrl))
 
         val tooLong = "https://example.com/" + "x".repeat(MAX_NAVIGATION_URL_LENGTH)
