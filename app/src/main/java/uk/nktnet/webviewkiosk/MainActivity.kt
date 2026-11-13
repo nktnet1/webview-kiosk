@@ -209,13 +209,10 @@ open class MainActivity : AppCompatActivity() {
             )
         WebViewStartup.start(applicationContext)
         createdHosts.add(this)
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-            // On API 23, enableEdgeToEdge() uses legacy systemUiVisibility layout
-            // flags.
-            // AppCompat can overwrite those flags while creating the decor view,
-            // leaving the
-            // content already inset by the framework before Compose applies its own
-            // insets.
+        if (Build.VERSION.SDK_INT in Build.VERSION_CODES.M..Build.VERSION_CODES.Q) {
+            // On API 23-29, edge-to-edge uses legacy layout flags. AppCompat may
+            // overwrite them during onCreate; restore them before Compose applies
+            // system-bar insets, or the bars will be padded twice.
             WindowCompat.setDecorFitsSystemWindows(window, false)
         }
         CustomNotificationManager.init(applicationContext)

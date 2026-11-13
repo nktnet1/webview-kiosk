@@ -71,16 +71,14 @@ fun exitImmersiveMode(activity: Activity) {
         val decorView = activity.window.decorView
         val currentFlags = decorView.systemUiVisibility
 
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val hiddenFlags =
                 (View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
                     View.SYSTEM_UI_FLAG_FULLSCREEN or
                     View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
-            // API 23 needs the edge-to-edge layout flags preserved while the system
-            // bars are
-            // visible. Expanding this workaround to later legacy releases changes
-            // IME resize
-            // behaviour (notably API 29 with a bottom address bar).
+            // Keep edge-to-edge enabled when showing the bars on API 23-29.
+            // Compose applies system-bar insets; clearing these layout flags would
+            // make the framework apply the same insets a second time.
             val edgeToEdgeLayoutFlags =
                 (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
                     View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or

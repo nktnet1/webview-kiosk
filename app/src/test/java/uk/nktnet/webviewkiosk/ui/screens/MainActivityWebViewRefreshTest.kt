@@ -178,6 +178,23 @@ class MainActivityWebViewRefreshTest {
 
     @Suppress("DEPRECATION")
     @Test
+    fun defaultWebViewKeepsEdgeToEdgeLayoutWhenSystemBarsAreVisible() {
+        val layoutFlags =
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        val hiddenFlags =
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        val currentFlags = activity.window.decorView.systemUiVisibility
+
+        assertEquals(layoutFlags, currentFlags and layoutFlags)
+        assertEquals(0, currentFlags and hiddenFlags)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
     fun regainingWindowFocusRestoresStickyImmersiveBarsOnWebView() {
         UserSettings(activity).immersiveMode = ImmersiveModeOption.ALWAYS_ON
         val decorView = activity.window.decorView
