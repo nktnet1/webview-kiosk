@@ -6,6 +6,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -22,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("asset_exporter", ROOT / "scripts/android/export_android_test_assets.py")
 ASSETS = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ASSETS)
+MAVEN_DOWNLOADS = 4 * len(ASSETS.ROBOLECTRIC_VERSIONS)
 
 
 def write(path, value, *, executable=False):
@@ -33,6 +35,26 @@ def write(path, value, *, executable=False):
 
 
 class ArchiveTest(unittest.TestCase):
+    def test_robolectric_export_covers_every_configured_test_sdk(self):
+        default = (ROOT / "app/src/test/resources/robolectric.properties").read_text()
+        required = {int(re.search(r"(?m)^sdk=(\d+)$", default).group(1))}
+        aliases = {"P": 28, "Q": 29}
+        for source in (ROOT / "app/src/test").rglob("*.kt"):
+            for annotation in re.findall(r"@Config\((.*?)\)", source.read_text(), re.S):
+                match = re.search(r"\bsdk\s*=\s*\[([^\]]+)\]", annotation)
+                if match:
+                    for sdk in match.group(1).split(","):
+                        sdk = sdk.strip()
+                        if sdk:
+                            required.add(
+                                int(sdk) if sdk.isdecimal()
+                                else aliases[sdk.removeprefix("Build.VERSION_CODES.")]
+                            )
+        self.assertFalse(
+            required - ASSETS.ROBOLECTRIC_SDK_VERSIONS.keys(),
+            "Export Maven runtimes for every SDK used by the Android tests",
+        )
+
     def test_stream_limits_and_reconstruction(self):
         self.assertEqual(180_000_000, ASSETS.MAX_ARCHIVE_BYTES)
         with tempfile.TemporaryDirectory() as directory:
@@ -247,7 +269,7 @@ else:
             write(self.output / name, "obsolete")
         write(self.output / "unrelated.txt", "keep")
         self.assertEqual(0, self.export(), self.error)
-        self.assertEqual(12, len(self.downloads))
+        self.assertEqual(MAVEN_DOWNLOADS, len(self.downloads))
         with self.archive("android-sdk") as archive:
             self.assertIn("platforms/android-37.0/android.jar", archive.getnames())
             self.assertFalse(any("ndk/" in name for name in archive.getnames()))
@@ -257,7 +279,8 @@ else:
             self.assertIn("caches/modules-2/metadata-2.107/module-artifact.bin", names)
             self.assertFalse(any(name.endswith((".lock", "gc.properties", "gradle.properties")) for name in names))
         with self.archive("robolectric-maven") as archive:
-            self.assertEqual(6, sum(name.endswith((".jar", ".pom")) for name in archive.getnames()))
+            self.assertEqual(2 * len(ASSETS.ROBOLECTRIC_VERSIONS),
+                             sum(name.endswith((".jar", ".pom")) for name in archive.getnames()))
             android_11 = "org/robolectric/android-all-instrumented/11-robolectric-6757853-i7"
             self.assertIn(
                 f"{android_11}/android-all-instrumented-11-robolectric-6757853-i7.jar",
@@ -280,14 +303,14 @@ else:
         args = ("--gradle-user-home", str(home))
         self.assertEqual(0, self.export("gradle", *args), self.error)
         self.assertEqual(0, self.export("gradle", *args), self.error)
-        self.assertEqual(12, len(self.downloads))
+        self.assertEqual(MAVEN_DOWNLOADS, len(self.downloads))
         with self.archive("gradle-deps") as archive:
             self.assertIn("caches/modules-2/files-2.1/preexisting/library.jar", archive.getnames())
         next((home / "robolectric-maven").rglob("*.jar")).write_bytes(b"corrupted")
         # Malformed checksum bytes must also trigger a fresh download.
         next((home / "robolectric-maven").rglob("*.pom.sha512")).write_bytes(b"\xff")
         self.assertEqual(0, self.export("gradle", *args), self.error)
-        self.assertEqual(16, len(self.downloads))
+        self.assertEqual(MAVEN_DOWNLOADS + 4, len(self.downloads))
 
     def test_failed_resolution_and_missing_cache_do_not_replace_exports(self):
         for environment, message in (({"FAIL_RESOLVE": "1"}, "could not resolve"),
@@ -333,7 +356,7 @@ else:
               'sdk = pathlib.Path(os.environ["ANDROID_SDK_ROOT"])\n'
               '(sdk / "platforms/android-37.0/android.jar").write_text("installed")\n', executable=True)
         self.assertEqual(0, self.export(), self.error)
-        self.assertEqual(12, len(self.downloads))  # Only Maven requests; no SDK bootstrap.
+        self.assertEqual(MAVEN_DOWNLOADS, len(self.downloads))  # Only Maven requests; no SDK bootstrap.
 
     def test_relative_sdk_properties_resolve_from_checkout(self):
         shutil.copytree(self.sdk, self.project / "sdk")
@@ -418,7 +441,7 @@ else:
         self.assertTrue((self.output / "gradle-deps.tar.gz").is_file())
         self.assertFalse((self.output / "docs").exists())
         self.assertFalse((self.output / "tools").exists())
-        self.assertEqual(12, len(self.downloads))  # Robolectric only
+        self.assertEqual(MAVEN_DOWNLOADS, len(self.downloads))  # Robolectric only
         self.verify_checksums()
         self.assertIn("androidLintTool", (self.output / "CONTENTS.txt").read_text())
 

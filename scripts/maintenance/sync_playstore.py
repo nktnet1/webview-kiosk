@@ -25,6 +25,29 @@ def main() -> int:
         def git(*args: str) -> None:
             subprocess.run(["git", *args], cwd=repo, check=True)
 
+        if subprocess.check_output(
+            ["git", "status", "--porcelain", "--untracked-files=normal"],
+            cwd=repo, text=True,
+        ).strip():
+            print("Error: commit or stash working-tree changes before syncing playstore.", file=sys.stderr)
+            return 1
+
+        def configured(key: str) -> str:
+            result = subprocess.run(
+                ["git", "config", "--get", key], cwd=repo, text=True, capture_output=True,
+            )
+            if result.returncode == 1:
+                return ""
+            result.check_returncode()
+            return result.stdout.strip()
+
+        push_remote = (
+            configured("branch.playstore.pushRemote")
+            or configured("remote.pushDefault")
+            or configured("branch.playstore.remote")
+            or "origin"
+        )
+
         git("switch", "playstore")
         git("reset", "--hard", "main")
 
@@ -45,7 +68,7 @@ def main() -> int:
 
         git("add", "--", "app/build.gradle.kts")
         git("commit", "-m", "fix: playstore application ID")
-        git("push", "--force")
+        git("push", "--force-with-lease", "--", push_remote, "HEAD:refs/heads/playstore")
     except (OSError, subprocess.CalledProcessError) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
