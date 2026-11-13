@@ -25,16 +25,47 @@ fun isBlockedUrl(
     url: String,
     blacklistRegexes: List<Regex>,
     whitelistRegexes: List<Regex>,
-): Boolean {
-    // A whitelist cannot affect the decision unless the blacklist matches.
-    // Checking it first can evaluate an expensive regex even with no blacklist.
+): Boolean = urlRegexBlockCause(url, blacklistRegexes, whitelistRegexes) != null
+
+internal fun urlRegexBlockCause(
+    url: String,
+    blacklistRegexes: List<Regex>,
+    whitelistRegexes: List<Regex>,
+    match: (Regex, String, Long) -> UrlRegexMatchResult = UrlRegexMatcher::match,
+): BlockCause? {
+    // Match the blacklist first: whitelist rules only affect blocked URLs.
+    // Use one shared evaluation deadline, as before.
     val deadlineNanos = UrlRegexMatcher.deadlineNanos()
-    return blacklistRegexes.any {
-        UrlRegexMatcher.matches(it, url, deadlineNanos, failClosed = true)
-    } &&
-        whitelistRegexes.none {
-            UrlRegexMatcher.matches(it, url, deadlineNanos, failClosed = false)
+    val blacklistCause =
+        blacklistRegexes.firstNotNullOfOrNull { regex ->
+            when (match(regex, url, deadlineNanos)) {
+                UrlRegexMatchResult.MATCH -> BlockCause.BLACKLIST
+                UrlRegexMatchResult.TIMEOUT -> BlockCause.URL_REGEX_TIMEOUT
+                UrlRegexMatchResult.ERROR -> BlockCause.URL_REGEX_ERROR
+                UrlRegexMatchResult.NO_MATCH -> null
+            }
+        } ?: return null
+
+    var cause = blacklistCause
+    for (regex in whitelistRegexes) {
+        when (match(regex, url, deadlineNanos)) {
+            // Explicit whitelist matches retain their existing precedence,
+            // even when a different rule failed closed.
+            UrlRegexMatchResult.MATCH -> return null
+            UrlRegexMatchResult.NO_MATCH -> Unit
+            UrlRegexMatchResult.TIMEOUT -> {
+                if (cause == BlockCause.BLACKLIST) {
+                    cause = BlockCause.URL_REGEX_TIMEOUT
+                }
+            }
+            UrlRegexMatchResult.ERROR -> {
+                if (cause == BlockCause.BLACKLIST) {
+                    cause = BlockCause.URL_REGEX_ERROR
+                }
+            }
         }
+    }
+    return cause
 }
 
 fun getBlockInfo(
@@ -55,10 +86,10 @@ fun getBlockInfo(
             else -> SchemeType.OTHER
         }
 
+    val regexBlockCause = urlRegexBlockCause(url, blacklistRegexes, whitelistRegexes)
     val blockCause =
         when {
-            isBlockedUrl(url, blacklistRegexes, whitelistRegexes) ->
-                BlockCause.BLACKLIST
+            regexBlockCause != null -> regexBlockCause
             (schemeType == SchemeType.FILE || uri.isLocalFileLink()) &&
                 !userSettings.allowLocalFiles -> BlockCause.LOCAL_FILE
             else -> null

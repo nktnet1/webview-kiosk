@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
+import android.util.Log
 import com.google.re2j.Pattern
 import java.util.Collections
 import java.util.WeakHashMap
@@ -18,7 +19,15 @@ import java.util.concurrent.atomic.AtomicBoolean
  * by executing unsupported patterns on a bounded worker with a strict deadline
  * instead of the UI thread.
  */
+internal enum class UrlRegexMatchResult {
+    MATCH,
+    NO_MATCH,
+    TIMEOUT,
+    ERROR,
+}
+
 internal object UrlRegexMatcher {
+    private const val TAG = "UrlRegexMatcher"
     private const val MATCH_BUDGET_MS = 100L
     private const val MAX_FAST_PATTERN_LENGTH = 512
     private const val MAX_FAST_URL_LENGTH = 8192
@@ -53,14 +62,13 @@ internal object UrlRegexMatcher {
     fun deadlineNanos(): Long =
         System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(MATCH_BUDGET_MS)
 
-    fun matches(
+    fun match(
         regex: Regex,
         url: String,
         deadlineNanos: Long,
-        failClosed: Boolean,
-    ): Boolean {
+    ): UrlRegexMatchResult {
         if (deadlineNanos - System.nanoTime() <= 0) {
-            return failClosed
+            return UrlRegexMatchResult.TIMEOUT
         }
 
         val fast =
@@ -89,15 +97,19 @@ internal object UrlRegexMatcher {
                     .fastPattern
             }
         if (fast != null && url.length <= MAX_FAST_URL_LENGTH) {
-            return fast.matcher(url).find()
+            return if (fast.matcher(url).find()) {
+                UrlRegexMatchResult.MATCH
+            } else {
+                UrlRegexMatchResult.NO_MATCH
+            }
         }
 
         if (timedOut.contains(regex)) {
-            return failClosed
+            return UrlRegexMatchResult.TIMEOUT
         }
         val remainingNanos = deadlineNanos - System.nanoTime()
         if (remainingNanos <= 0) {
-            return failClosed
+            return UrlRegexMatchResult.TIMEOUT
         }
 
         val started = AtomicBoolean(false)
@@ -111,23 +123,33 @@ internal object UrlRegexMatcher {
         }
         try {
             fallback.execute(task)
-            return task.get(remainingNanos, TimeUnit.NANOSECONDS)
+            return if (task.get(remainingNanos, TimeUnit.NANOSECONDS)) {
+                UrlRegexMatchResult.MATCH
+            } else {
+                UrlRegexMatchResult.NO_MATCH
+            }
         } catch (_: TimeoutException) {
             // A slow native regex may ignore interrupts. Skip this rule next time,
             // rather than repeatedly occupying more worker threads with it.
             if (started.get()) {
                 timedOut.add(regex)
             }
+            Log.w(TAG, "URL regex evaluation timed out")
+            return UrlRegexMatchResult.TIMEOUT
         } catch (_: RejectedExecutionException) {
             // All bounded fallback workers are busy; do not block WebView
             // navigation.
-        } catch (_: ExecutionException) {
-            // A malformed or excessive regex cannot grant access by failing.
+            Log.w(TAG, "URL regex worker unavailable")
+            return UrlRegexMatchResult.ERROR
+        } catch (error: ExecutionException) {
+            Log.w(TAG, "URL regex evaluation failed", error.cause ?: error)
+            return UrlRegexMatchResult.ERROR
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
+            Log.w(TAG, "URL regex evaluation interrupted")
+            return UrlRegexMatchResult.ERROR
         } finally {
             task.cancel(true)
         }
-        return failClosed
     }
 }

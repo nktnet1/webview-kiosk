@@ -91,6 +91,89 @@ class BlockPageUtilsTest {
     }
 
     @Test
+    fun regexTimeoutAndErrorHaveDistinctBlockPageCauses() {
+        val blacklist = Regex("blacklist")
+        val whitelist = Regex("whitelist")
+        val url = "https://example.com/"
+
+        for ((result, cause) in
+            listOf(
+                UrlRegexMatchResult.TIMEOUT to BlockCause.URL_REGEX_TIMEOUT,
+                UrlRegexMatchResult.ERROR to BlockCause.URL_REGEX_ERROR,
+            )) {
+            // A failed blacklist evaluation must still block, but must not
+            // claim that the URL actually matched the blacklist.
+            assertEquals(
+                cause,
+                urlRegexBlockCause(url, listOf(blacklist), emptyList()) { _, _, _ ->
+                    result
+                },
+            )
+            // The same failure while evaluating a whitelist must be identified.
+            assertEquals(
+                cause,
+                urlRegexBlockCause(url, listOf(blacklist), listOf(whitelist)) {
+                    regex,
+                    _,
+                    _ ->
+                    if (regex === blacklist) {
+                        UrlRegexMatchResult.MATCH
+                    } else {
+                        result
+                    }
+                },
+            )
+            assertTrue(
+                blockedPageHtml(settings, url, cause)
+                    .contains("<p>${cause.label}</p>")
+            )
+        }
+    }
+
+    @Test
+    fun whitelistMatchStillOverridesRegexFailure() {
+        val blacklist = Regex("blacklist")
+        val failingWhitelist = Regex("failing")
+        val allowedWhitelist = Regex("allowed")
+        val url = "https://example.com/"
+
+        assertNull(
+            urlRegexBlockCause(
+                url,
+                listOf(blacklist),
+                listOf(failingWhitelist, allowedWhitelist),
+            ) { regex, _, _ ->
+                when (regex) {
+                    blacklist -> UrlRegexMatchResult.TIMEOUT
+                    failingWhitelist -> UrlRegexMatchResult.ERROR
+                    else -> UrlRegexMatchResult.MATCH
+                }
+            }
+        )
+        assertEquals(
+            BlockCause.BLACKLIST,
+            urlRegexBlockCause(url, listOf(blacklist), listOf(allowedWhitelist)) {
+                regex,
+                _,
+                _ ->
+                if (regex === blacklist) {
+                    UrlRegexMatchResult.MATCH
+                } else {
+                    UrlRegexMatchResult.NO_MATCH
+                }
+            },
+        )
+    }
+
+    @Test
+    fun expiredEvaluationDeadlineIsReportedAsTimeout() {
+        assertEquals(
+            UrlRegexMatchResult.TIMEOUT,
+            UrlRegexMatcher.match(Regex("example"), "https://example.com", 0L),
+        )
+    }
+
+    @Test
     fun appliesTheLocalFilePolicyToFileUrlsAndAssetLoaderLinks() {
         val urls =
             listOf(
