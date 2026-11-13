@@ -1,4 +1,4 @@
-@file:Suppress("UsePropertyAccessSyntax", "DEPRECATION")
+@file:Suppress("DEPRECATION")
 
 package uk.nktnet.webviewkiosk.utils
 
@@ -125,7 +125,10 @@ class LegacyWebViewClientTest {
                     events += "resource:${error.errorCode}"
                 }
 
-                @Deprecated("For API < 23")
+                @Deprecated(
+                    "For API < 23",
+                    ReplaceWith("events += \"legacy-resource:\$errorCode\""),
+                )
                 override fun onReceivedError(
                     view: WebView?,
                     errorCode: Int,
