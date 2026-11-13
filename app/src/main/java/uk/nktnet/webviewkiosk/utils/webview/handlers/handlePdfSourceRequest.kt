@@ -23,6 +23,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.utils.isLocalFileLink
 import uk.nktnet.webviewkiosk.utils.resolveLocalFileLink
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
+import uk.nktnet.webviewkiosk.utils.webview.MAX_NAVIGATION_URL_LENGTH
 import uk.nktnet.webviewkiosk.utils.webview.PdfTlsState
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SslErrorRequest
@@ -144,8 +145,8 @@ fun handlePdfSourceRequest(
     request: WebResourceRequest,
     userAgent: String?,
     userSettings: UserSettings,
-    blacklistRegexes: List<Regex>,
-    whitelistRegexes: List<Regex>,
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
     isDocumentBlocked: (String) -> Boolean,
     documentUrl: (String) -> String = { it },
     onAuthenticationRequired:
@@ -247,7 +248,7 @@ fun handlePdfSourceRequest(
         if (source?.tls?.hasPendingRequests == true) {
             return errorResponse(401, "Waiting for TLS authentication")
         }
-        Log.e(Constants.APP_SCHEME, "Failed to load PDF source: ${source?.url}", e)
+        Log.e(Constants.APP_SCHEME, "Failed to load PDF source", e)
         errorResponse(502, "Failed to load PDF")
     }
 }
@@ -270,8 +271,8 @@ private fun remotePdfResponse(
     request: WebResourceRequest,
     userAgent: String?,
     userSettings: UserSettings,
-    blacklistRegexes: List<Regex>,
-    whitelistRegexes: List<Regex>,
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
     sourceToken: String,
     source: RegisteredPdfSource,
     onAuthenticationRequired: (String, String, HttpAuthRequest) -> Unit,
@@ -302,7 +303,7 @@ private fun remotePdfResponse(
                 blockCause != null ||
                 isDocumentBlocked(currentUrl)
         ) {
-            throw PdfSourceBlockedException("Blocked redirect target: $currentUrl")
+            throw PdfSourceBlockedException("Blocked PDF redirect target")
         }
 
         val cleanedUrl = documentUrl(currentUrl)
@@ -319,7 +320,7 @@ private fun remotePdfResponse(
                     cleanedCause != null ||
                     isDocumentBlocked(cleanedUrl)
             ) {
-                throw PdfSourceBlockedException("Blocked cleaned URL: $cleanedUrl")
+                throw PdfSourceBlockedException("Blocked cleaned PDF URL")
             }
             currentUrl = cleanedUrl
         }
@@ -375,7 +376,10 @@ private fun remotePdfResponse(
             if (statusCode in setOf(301, 302, 303, 307, 308)) {
                 val location = connection.getHeaderField("Location")
 
-                if (location.isNullOrBlank()) {
+                if (
+                    location.isNullOrBlank() ||
+                        location.length > MAX_NAVIGATION_URL_LENGTH
+                ) {
                     return errorResponse(502, "Invalid PDF redirect")
                 }
                 if (redirectCount++ >= MAX_REDIRECTS) {
@@ -526,8 +530,7 @@ private fun requestPdfAuthentication(
 }
 
 private fun parseBasicChallenge(header: String): BasicChallenge? {
-    // Split only outside quoted strings; realms can contain commas or escaped
-    // quotes.
+    // A quoted realm may contain commas or escaped quotes.
     val parts = mutableListOf<String>()
     var start = 0
     var quoted = false

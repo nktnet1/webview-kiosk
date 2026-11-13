@@ -4,6 +4,7 @@ import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Textarea } from "#/components/ui/textarea";
+import { isValidWebNavigationUrl, testUrlRules } from "#/lib/regex-playground";
 
 export default function RegexPlayground() {
   const [blacklist, setBlacklist] = useState("");
@@ -11,67 +12,29 @@ export default function RegexPlayground() {
   const [testUrl, setTestUrl] = useState("");
   const [result, setResult] = useState<"blocked" | "allowed" | null>(null);
 
-  function parseRegexList(input: string): RegExp[] {
-    return input
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0)
-      .map((line) => {
-        try {
-          return new RegExp(line);
-        } catch {
-          return null;
-        }
-      })
-      .filter((r): r is RegExp => r !== null);
-  }
-
-  function isValidUrl(url: string): boolean {
-    try {
-      const parsed = new URL(url);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-        return false;
-      }
-      const hostname = parsed.hostname;
-      return parsed.protocol === "http:" || /\.[^.]{2,}$/.test(hostname);
-    } catch {
-      return false;
-    }
-  }
-
-  function isBlockedUrl(
-    url: string,
-    blacklistRegexes: RegExp[],
-    whitelistRegexes: RegExp[],
-  ): boolean {
-    if (whitelistRegexes.some((re) => re.test(url))) {
-      return false;
-    }
-    return blacklistRegexes.some((re) => re.test(url));
-  }
-
   function handleValidate() {
-    if (!isValidUrl(testUrl)) {
-      toast.warning("Invalid URL - a valid example is https://example.com");
+    if (!isValidWebNavigationUrl(testUrl)) {
+      toast.warning("Invalid or oversized URL - try https://example.com");
       setResult(null);
       return;
     }
 
-    const blacklistRegexes = parseRegexList(blacklist);
-    const whitelistRegexes = parseRegexList(whitelist);
-
-    const blocked = isBlockedUrl(testUrl, blacklistRegexes, whitelistRegexes);
+    const { blocked, ruleError } = testUrlRules(testUrl, blacklist, whitelist);
     setResult(blocked ? "blocked" : "allowed");
 
     if (blocked) {
-      toast.error(`URL is Blocked: ${testUrl}`);
+      toast.error(
+        ruleError
+          ? `URL is Blocked (RE2 rule evaluation failed): ${testUrl}`
+          : `URL is Blocked: ${testUrl}`,
+      );
     } else {
       toast.success(`URL is Allowed: ${testUrl}`);
     }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" && isValidUrl(testUrl)) {
+    if (e.key === "Enter" && isValidWebNavigationUrl(testUrl)) {
       e.preventDefault();
       handleValidate();
     }
@@ -82,10 +45,13 @@ export default function RegexPlayground() {
     setResult(null);
   }
 
-  const validUrl = isValidUrl(testUrl);
+  const validUrl = isValidWebNavigationUrl(testUrl);
 
   return (
     <div className="w-full mx-auto space-y-4">
+      <p className="text-sm text-muted-foreground">
+        URL rules use RE2-based matching, as in the Android app.
+      </p>
       <Card>
         <CardContent className="space-y-4">
           <div>

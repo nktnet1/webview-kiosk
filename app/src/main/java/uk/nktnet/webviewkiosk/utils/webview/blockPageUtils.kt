@@ -12,6 +12,10 @@ import uk.nktnet.webviewkiosk.utils.webview.html.generateBlockedPageHtml
 
 const val BLOCK_HOST = "block"
 private const val MAX_WRAPPED_URL_DEPTH = 10
+// Keep website navigation aligned with Chromium while allowing WebView data URLs.
+internal const val MAX_NAVIGATION_URL_LENGTH = 2 * 1024 * 1024
+private const val MAX_DATA_URL_LENGTH = 20 * 1024 * 1024
+private const val MAX_PDF_VIEWER_URL_LENGTH = MAX_NAVIGATION_URL_LENGTH * 9 + 256
 
 enum class SchemeType {
     FILE,
@@ -23,24 +27,122 @@ enum class SchemeType {
 
 fun isBlockedUrl(
     url: String,
-    blacklistRegexes: List<Regex>,
-    whitelistRegexes: List<Regex>,
-): Boolean {
-    return !whitelistRegexes.any {
-        it.containsMatchIn(url)
-    } &&
-        blacklistRegexes.any {
-            it.containsMatchIn(url)
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
+): Boolean = urlRegexBlockCause(url, blacklistRegexes, whitelistRegexes) != null
+
+internal fun urlRegexBlockCause(
+    url: String,
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
+    match: ((String, String) -> UrlRegexMatchResult)? = null,
+): BlockCause? {
+    val evaluate =
+        match
+            ?: run {
+                val rules =
+                    UrlRegexMatcher.forRules(blacklistRegexes, whitelistRegexes)
+                val matcher: (String, String) -> UrlRegexMatchResult =
+                    { source, target ->
+                        rules.match(source, target)
+                    }
+                matcher
+            }
+    val blacklistCause =
+        blacklistRegexes.firstNotNullOfOrNull { regex ->
+            when (evaluate(regex, url)) {
+                UrlRegexMatchResult.MATCH -> BlockCause.BLACKLIST
+                UrlRegexMatchResult.ERROR -> BlockCause.URL_REGEX_ERROR
+                UrlRegexMatchResult.NO_MATCH -> null
+            }
+        } ?: return null
+
+    var cause = blacklistCause
+    for (regex in whitelistRegexes) {
+        when (evaluate(regex, url)) {
+            UrlRegexMatchResult.MATCH -> return null
+            UrlRegexMatchResult.NO_MATCH -> Unit
+            UrlRegexMatchResult.ERROR -> {
+                if (cause == BlockCause.BLACKLIST) {
+                    cause = BlockCause.URL_REGEX_ERROR
+                }
+            }
         }
+    }
+    return cause
+}
+
+private fun hasInvalidPercentEscape(url: String): Boolean =
+    url.indices.any { index ->
+        url[index] == '%' &&
+            (index + 2 >= url.length ||
+                !url[index + 1].isHexDigit() ||
+                !url[index + 2].isHexDigit())
+    }
+
+private fun Char.isHexDigit(): Boolean =
+    this in '0'..'9' || this in 'a'..'f' || this in 'A'..'F'
+
+private fun isMalformedNavigationUrl(url: String, uri: Uri): Boolean {
+    if (url.any { it < ' ' || it == '\u007f' }) {
+        return true
+    }
+    val isWeb =
+        uri.scheme.equals("http", ignoreCase = true) ||
+            uri.scheme.equals("https", ignoreCase = true)
+    if (isWeb && (uri.host.isNullOrBlank() || ' ' in url)) {
+        return true
+    }
+    val isBlockPage =
+        uri.scheme.equals(Constants.APP_SCHEME, ignoreCase = true) &&
+            uri.host == BLOCK_HOST
+    return (isWeb || isBlockPage) && hasInvalidPercentEscape(url)
+}
+
+internal fun isInvalidNavigationUrl(url: String): Boolean {
+    if (url.length > MAX_NAVIGATION_URL_LENGTH) {
+        val isData = url.startsWith("data:", ignoreCase = true)
+        val pdfViewerOrigin = Constants.PDF_JS_ASSETS_DUMMY_URL
+        val mayBePdfViewer =
+            url.startsWith("$pdfViewerOrigin?", ignoreCase = true) ||
+                url.startsWith("$pdfViewerOrigin/?", ignoreCase = true)
+        if (
+            !(isData && url.length <= MAX_DATA_URL_LENGTH) &&
+                !(mayBePdfViewer && url.length <= MAX_PDF_VIEWER_URL_LENGTH)
+        ) {
+            return true
+        }
+    }
+    return runCatching {
+            val uri = url.toUri()
+            when {
+                isMalformedNavigationUrl(url, uri) -> true
+                uri.scheme.equals("data", ignoreCase = true) ->
+                    url.length > MAX_DATA_URL_LENGTH
+                url.length <= MAX_NAVIGATION_URL_LENGTH -> false
+                !isPdfViewerUrl(uri) -> true
+                else -> {
+                    // PDF viewer URLs include an encoded copy of the source.
+                    val source = uri.getQueryParameter("wk_pdf_url")
+                    source.isNullOrBlank() || isInvalidNavigationUrl(source)
+                }
+            }
+        }
+        .getOrDefault(true)
 }
 
 fun getBlockInfo(
     url: String,
-    blacklistRegexes: List<Regex>,
-    whitelistRegexes: List<Regex>,
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
     userSettings: UserSettings,
 ): Pair<SchemeType, BlockCause?> {
-    val uri = url.toUri()
+    if (url.length > MAX_NAVIGATION_URL_LENGTH && isInvalidNavigationUrl(url)) {
+        return SchemeType.OTHER to BlockCause.INVALID_URL
+    }
+    val uri =
+        runCatching { url.toUri() }.getOrNull()
+            ?: return SchemeType.OTHER to BlockCause.INVALID_URL
     val scheme = uri.scheme?.lowercase() ?: ""
     val schemeType =
         when (scheme) {
@@ -52,10 +154,13 @@ fun getBlockInfo(
             else -> SchemeType.OTHER
         }
 
+    if (runCatching { isMalformedNavigationUrl(url, uri) }.getOrDefault(true)) {
+        return schemeType to BlockCause.INVALID_URL
+    }
+    val regexBlockCause = urlRegexBlockCause(url, blacklistRegexes, whitelistRegexes)
     val blockCause =
         when {
-            isBlockedUrl(url, blacklistRegexes, whitelistRegexes) ->
-                BlockCause.BLACKLIST
+            regexBlockCause != null -> regexBlockCause
             (schemeType == SchemeType.FILE || uri.isLocalFileLink()) &&
                 !userSettings.allowLocalFiles -> BlockCause.LOCAL_FILE
             else -> null
@@ -63,18 +168,35 @@ fun getBlockInfo(
     return schemeType to blockCause
 }
 
+internal data class ResolvedBlockPageTarget(
+    val url: String,
+    val schemeType: SchemeType,
+    val blockCause: BlockCause?,
+)
+
 fun resolveBlockPageUrl(
     url: String,
-    blacklistRegexes: List<Regex>,
-    whitelistRegexes: List<Regex>,
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
     userSettings: UserSettings,
-): String? {
+): String? =
+    resolveBlockPageTarget(url, blacklistRegexes, whitelistRegexes, userSettings)
+        ?.url
+
+internal fun resolveBlockPageTarget(
+    url: String,
+    blacklistRegexes: List<String>,
+    whitelistRegexes: List<String>,
+    userSettings: UserSettings,
+): ResolvedBlockPageTarget? {
     var targetUrl = url
     var depth = 0
     while (true) {
+        if (isInvalidNavigationUrl(targetUrl)) {
+            return null
+        }
         val uri = targetUrl.toUri()
         if (isPdfViewerUrl(uri)) {
-            // The viewer is an internal document. Apply URL policy to its source.
             if (depth++ >= MAX_WRAPPED_URL_DEPTH) {
                 return null
             }
@@ -84,18 +206,10 @@ fun resolveBlockPageUrl(
             continue
         }
         val (schemeType, blockCause) =
-            getBlockInfo(
-                targetUrl,
-                blacklistRegexes,
-                whitelistRegexes,
-                userSettings,
-            )
-        // Keep a denied URL so the caller can apply its usual block action.
+            getBlockInfo(targetUrl, blacklistRegexes, whitelistRegexes, userSettings)
         if (blockCause != null || !isCustomBlockPageUrl(schemeType, uri)) {
-            return targetUrl
+            return ResolvedBlockPageTarget(targetUrl, schemeType, blockCause)
         }
-        // Do not let malformed or excessively nested wrappers trigger unchecked
-        // loads.
         if (depth++ >= MAX_WRAPPED_URL_DEPTH) {
             return null
         }
@@ -120,8 +234,16 @@ fun loadBlockedPage(
     url: String,
     blockCause: BlockCause,
 ) {
+    val displayUrl =
+        if (blockCause == BlockCause.INVALID_URL) {
+            url.take(2048)
+        } else {
+            url
+        }
     val baseUrl =
-        if (url.toUri().scheme !in setOf("http", "https", "file")) {
+        if (blockCause == BlockCause.INVALID_URL) {
+            "about:blank"
+        } else if (url.toUri().scheme !in setOf("http", "https", "file")) {
             "${Constants.APP_SCHEME}://${BLOCK_HOST}?cause=${blockCause.name}&url=${URLEncoder.encode(url, "UTF-8")}"
         } else {
             url
@@ -129,7 +251,7 @@ fun loadBlockedPage(
 
     webView?.loadDataWithBaseURL(
         baseUrl,
-        blockedPageHtml(userSettings, url, blockCause),
+        blockedPageHtml(userSettings, displayUrl, blockCause),
         "text/html",
         "UTF-8",
         null,

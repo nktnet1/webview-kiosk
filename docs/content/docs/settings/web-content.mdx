@@ -14,11 +14,17 @@ Configure the Home URL, which can be returned to as per <a href="/docs/settings/
 
 ## 2. Blacklist & Whitelist Regex [#blacklist-and-whitelist-regex]
 
-Specify regular expressions (regex), one per line.
+Specify regular expressions (regex), one per line. URL rules use the
+[RE2](https://github.com/google/re2/wiki/syntax) regex engine. Test complex
+patterns before deploying them, as RE2 does not guarantee cheap compilation.
+
+The app rejects malformed navigation URLs and URLs longer than 16,384 characters,
+including website redirects and decoded block-page or PDF viewer targets.
+
 Escaping is required for special characters in regex like `.` and `?`.
 
-These patterns also use partial matching.
-If you need strict control, anchor your regex with `^` and `$`.
+These patterns also use partial matching. If you need strict control, anchor
+your regex with `^` and `$`.
 
 Whitelist patterns take precedence over blacklist patterns.
 

@@ -189,6 +189,7 @@ dependencies {
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
+    implementation(libs.re2j)
     implementation(libs.hivemq.mqtt.client)
     // HiveMQ references the SLF4J API directly; do not mask missing classes in R8.
     implementation(libs.slf4j.api)

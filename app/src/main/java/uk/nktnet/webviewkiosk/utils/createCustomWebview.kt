@@ -91,10 +91,12 @@ import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.NfcInterface
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
+import uk.nktnet.webviewkiosk.utils.webview.isInvalidNavigationUrl
 import uk.nktnet.webviewkiosk.utils.webview.isPdfViewerUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.parseFileChooserResult
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
+import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageTarget
 import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.sameNavigationUrl
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDarkReaderScript
@@ -145,8 +147,8 @@ private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boole
 /**
  * WebView 67-72 can crash in the compat HTTP-error bridge when a response has no
  * reason phrase. Use a framework client on API 24+, where request-aware navigation
- * is available. On API 21-23 keep the compat client to preserve iframe navigation;
- * those devices retain the original crash risk if their provider is vulnerable.
+ * is available. On API 21-23 keep the compat client to preserve iframe navigation.
+ * Those devices retain the original crash risk if their provider is vulnerable.
  */
 internal fun needsFrameworkWebViewClient(
     sdkInt: Int,
@@ -195,8 +197,8 @@ private fun isWebPdf(
 data class WebViewConfig(
     val systemSettings: SystemSettings,
     val userSettings: UserSettings,
-    val blacklistRegexes: List<Regex>,
-    val whitelistRegexes: List<Regex>,
+    val blacklistRegexes: List<String>,
+    val whitelistRegexes: List<String>,
     val isActive: () -> Boolean,
     val setLastErrorUrl: (errorUrl: String) -> Unit,
     val onLocalNetworkPermissionMissing: () -> Unit,
@@ -810,6 +812,18 @@ fun createCustomWebview(
                                 if (!navigation.acceptsPageStart(url)) {
                                     return
                                 }
+                                // Some redirects and POST loads bypass
+                                // shouldOverrideUrlLoading.
+                                if (url != null && isInvalidNavigationUrl(url)) {
+                                    view?.stopLoading()
+                                    loadBlockedPage(
+                                        view,
+                                        userSettings,
+                                        url,
+                                        BlockCause.INVALID_URL,
+                                    )
+                                    return
+                                }
                                 val pdfToken =
                                     getTag(R.id.pdf_source_token) as? String
                                 val isCurrentPdfNavigation =
@@ -1143,10 +1157,8 @@ fun createCustomWebview(
                                         }
                                     }
 
-                                    // Preserve the app's PDF and local-file
-                                    // handlers; only inspect
-                                    // normal web requests after those have
-                                    // declined the request.
+                                    // Preserve PDF and local-file handling before
+                                    // applying document filters to web requests.
                                     WebViewBlocker.intercept(
                                             request,
                                             contentBlocker,
@@ -1214,21 +1226,15 @@ fun createCustomWebview(
                                 if (requestUrl.isNullOrEmpty()) {
                                     return false
                                 }
-                                val resolvedUrl =
-                                    resolveBlockPageUrl(
+                                val resolved =
+                                    resolveBlockPageTarget(
                                         requestUrl,
                                         config.blacklistRegexes,
                                         config.whitelistRegexes,
                                         userSettings,
                                     ) ?: return true
-                                val originalPolicy =
-                                    getBlockInfo(
-                                            resolvedUrl,
-                                            config.blacklistRegexes,
-                                            config.whitelistRegexes,
-                                            userSettings,
-                                        )
-                                        .second
+                                val resolvedUrl = resolved.url
+                                val originalPolicy = resolved.blockCause
                                 val navigationUrl =
                                     if (
                                         isMainFrame &&
@@ -1256,12 +1262,18 @@ fun createCustomWebview(
                                 }
 
                                 val (schemeType, policyBlockCause) =
-                                    getBlockInfo(
-                                        url = navigationUrl,
-                                        blacklistRegexes = config.blacklistRegexes,
-                                        whitelistRegexes = config.whitelistRegexes,
-                                        userSettings = userSettings,
-                                    )
+                                    if (navigationUrl == resolvedUrl) {
+                                        resolved.schemeType to resolved.blockCause
+                                    } else {
+                                        getBlockInfo(
+                                            url = navigationUrl,
+                                            blacklistRegexes =
+                                                config.blacklistRegexes,
+                                            whitelistRegexes =
+                                                config.whitelistRegexes,
+                                            userSettings = userSettings,
+                                        )
+                                    }
                                 val blockCause =
                                     originalPolicy
                                         ?: policyBlockCause
@@ -1339,10 +1351,8 @@ fun createCustomWebview(
                                         isRedirect,
                                     )
                                     clearPdfNavigation()
-                                    // Legacy callbacks may represent iframes; wait
-                                    // for
-                                    // onPageStarted when frame metadata is
-                                    // unavailable.
+                                    // Without frame metadata, onPageStarted is
+                                    // responsible for progress tracking.
                                     // Fragment-only changes do not load a document.
                                     val currentUrl = view?.url
                                     if (
@@ -1370,6 +1380,16 @@ fun createCustomWebview(
                                         this@apply.url,
                                     ) || url == null
                                 ) {
+                                    return
+                                }
+                                if (isInvalidNavigationUrl(url)) {
+                                    view?.stopLoading()
+                                    loadBlockedPage(
+                                        view,
+                                        userSettings,
+                                        url,
+                                        BlockCause.INVALID_URL,
+                                    )
                                     return
                                 }
                                 val nativeHistory = copyBackForwardList()

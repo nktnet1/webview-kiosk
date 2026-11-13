@@ -12,7 +12,7 @@ function RegexToolPage() {
         <h1 className="text-3xl font-bold tracking-tight">Regex Playground</h1>
         <p className="text-muted-foreground">
           Test Web Content URL blacklist and whitelist patterns. A matching
-          whitelist rule takes precedence over the blacklist.
+          whitelist rule takes precedence over the blacklist. Patterns use RE2.
         </p>
       </header>
       <RegexPlayground />
