@@ -7,6 +7,7 @@ import uk.nktnet.webviewkiosk.config.option.ThemeOption
 enum class BlockCause(val label: String) {
     BLACKLIST("URL matches blacklist"),
     URL_REGEX_ERROR("URL blocking rule evaluation failed"),
+    INVALID_URL("URL is malformed or too long"),
     CONTENT_BLOCKING("URL matches a content blocking filter"),
     LOCAL_FILE("Local files are forbidden");
 

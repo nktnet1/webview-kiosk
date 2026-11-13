@@ -121,7 +121,7 @@ import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.clearSelectedResetData
-import uk.nktnet.webviewkiosk.utils.webview.getBlockInfoWithBudget
+import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.handlers.registerPdfSource
 import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
@@ -461,12 +461,11 @@ fun WebviewScreen(navController: NavController) {
             if (url == resolvedUrl) {
                 resolved.schemeType to resolved.blockCause
             } else {
-                getBlockInfoWithBudget(
+                getBlockInfo(
                     url = url,
                     blacklistRegexes = blacklistRegexes,
                     whitelistRegexes = whitelistRegexes,
                     userSettings = userSettings,
-                    budget = resolved.regexMatchBudget,
                 )
             }
         val blockCause =

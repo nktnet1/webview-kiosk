@@ -138,136 +138,89 @@ class BlockPageUtilsTest {
     }
 
     @Test
-    fun expensiveCountedRepetitionsFailClosedBeforeCompilation() {
-        for (pattern in listOf("(a{1000}){1000}", "(a{1000}|b{1000}){1000}")) {
-            assertFalse(UrlRegexComplexity.isWithinBudget(pattern))
-            assertEquals(
-                BlockCause.URL_REGEX_ERROR,
-                getBlockInfo(
-                        "https://example.com",
-                        listOf(pattern),
-                        emptyList(),
-                        settings,
-                    )
-                    .second,
-            )
-        }
-        assertTrue(UrlRegexComplexity.isWithinBudget("(ab{3}){4}"))
-        assertFalse(
-            UrlRegexComplexity.isWithinBudget("(".repeat(65) + "a" + ")".repeat(65))
-        )
-    }
+    fun configuredPatternsAreNotRejectedByAnEstimate() {
+        val literal = "a".repeat(4200)
+        val url = "https://example.com/$literal"
 
-    @Test
-    fun safeLargePatternsAndUrlsAreNotRejectedByArbitraryLengthLimits() {
-        val pattern = "a".repeat(4200)
-        val url = "https://example.com/" + "a".repeat(70_000) + "/allowed"
         assertEquals(
             BlockCause.BLACKLIST,
+            getBlockInfo(url, listOf(literal), emptyList(), settings).second,
+        )
+        assertNull(
             getBlockInfo(
-                    "https://example.com/$pattern",
-                    listOf(pattern),
+                    "https://other.example/",
+                    listOf(literal),
                     emptyList(),
                     settings,
                 )
-                .second,
-        )
-        assertNull(
-            getBlockInfo(url, listOf("/denied$"), emptyList(), settings).second
-        )
-        assertEquals(
-            BlockCause.BLACKLIST,
-            getBlockInfo(url, listOf("/allowed$"), emptyList(), settings).second,
+                .second
         )
     }
 
     @Test
-    fun largeRegexAndUrlFailClosedBeforeExpensiveMatching() {
-        // RE2/J is linear in URL length, but can still run for seconds when
-        // multiplied by thousands of program states. The compile guard alone
-        // accepts both of these rules.
-        val url = "https://example.com/" + "a".repeat(70_000)
-        val optional = "a?".repeat(4000) + "b"
-        val literal = "a".repeat(4200) + "b"
-        assertTrue(UrlRegexComplexity.isWithinBudget(optional))
-        assertTrue(UrlRegexComplexity.isWithinBudget(literal))
+    fun longNavigationUrlsAreRejectedBeforeRegexEvaluation() {
+        val prefix = "https://example.com/"
+        val valid = prefix + "x".repeat(MAX_NAVIGATION_URL_LENGTH - prefix.length)
+        val oversized = "$valid!"
 
-        val started = System.nanoTime()
-        for (pattern in listOf(optional, literal)) {
+        assertNull(getBlockInfo(valid, emptyList(), emptyList(), settings).second)
+        assertEquals(
+            BlockCause.INVALID_URL,
+            getBlockInfo(oversized, listOf("("), emptyList(), settings).second,
+        )
+        assertTrue(isInvalidNavigationUrl(oversized))
+        assertNull(resolve(oversized))
+    }
+
+    @Test
+    fun malformedWebsiteTargetsAreRejectedWithoutMatching() {
+        for (url in
+            listOf(
+                "https://",
+                "https://example.com/%zz",
+                "http://example.com/%",
+                "https://example.com/hello world",
+                "https://example.com/a\u0000b",
+            )) {
             assertEquals(
-                BlockCause.URL_REGEX_ERROR,
-                getBlockInfo(url, listOf(pattern), emptyList(), settings).second,
+                url,
+                BlockCause.INVALID_URL,
+                getBlockInfo(url, listOf("("), emptyList(), settings).second,
             )
+            assertTrue(url, isInvalidNavigationUrl(url))
+            assertNull(url, resolve(url))
         }
-        assertTrue(
-            "Expensive matches should be rejected before the WebView can freeze",
-            System.nanoTime() - started <
-                java.util.concurrent.TimeUnit.SECONDS.toNanos(2),
-        )
+        assertFalse(isInvalidNavigationUrl("https://example.com/path%2Fitem"))
+        assertFalse(isInvalidNavigationUrl("data:text/plain,hello world"))
     }
 
     @Test
-    fun matchWorkBudgetIsSharedAcrossBlacklistRules() {
-        val url = "https://example.com/" + "a".repeat(4200)
-        val harmlessButLarge = listOf("b".repeat(4200), "c".repeat(4200))
+    fun rejectsLongOrMalformedUrlsWithinWrappers() {
+        val prefix = "https://example.com/"
+        val longTarget = prefix + "a".repeat(MAX_NAVIGATION_URL_LENGTH)
+        assertNull(resolve(block(longTarget)))
+        assertNull(resolve(pdf(longTarget)))
+        assertNull(resolve("${Constants.APP_SCHEME}://block?url=https%XX"))
+        assertNull(resolve("${Constants.PDF_JS_ASSETS_DUMMY_URL}/?wk_pdf_url=%XX"))
         assertEquals(
-            BlockCause.URL_REGEX_ERROR,
-            urlRegexBlockCause(url, harmlessButLarge, emptyList()),
+            "https://example.com/path%2Fitem",
+            resolve(block("https://example.com/path%2Fitem")),
         )
     }
 
     @Test
-    fun anchoredNonMatchesDoNotExhaustTheBudgetOnLongUrls() {
+    fun manyValidRulesDoNotCauseFalseBlocks() {
         val blacklist = (0..256).map { "^https://denied\\.example/$it$" }
         val url = "https://denied.example/allowed?" + "x".repeat(4000)
-
-        // Each entry is a valid, inexpensive anchored non-match. Charging
-        // every rule by its length * the full URL length incorrectly blocks it.
         assertNull(urlRegexBlockCause(url, blacklist, emptyList()))
         assertEquals(
             BlockCause.BLACKLIST,
-            urlRegexBlockCause(
-                "https://denied.example/256",
-                blacklist,
-                emptyList(),
-            ),
-        )
-    }
-
-    @Test
-    fun anchoredPrefixDoesNotGuessThroughRegexConstructs() {
-        assertEquals(
-            "abc.def",
-            UrlRegexComplexity.anchoredLiteralPrefix("^abc\\.def.*"),
-        )
-        assertEquals("abc", UrlRegexComplexity.anchoredLiteralPrefix("^abc(?i)def"))
-        assertNull(UrlRegexComplexity.anchoredLiteralPrefix("(?m)^abc"))
-        assertNull(UrlRegexComplexity.anchoredLiteralPrefix("^\\d+"))
-        assertNull(UrlRegexComplexity.anchoredLiteralPrefix("^blocked|allowed"))
-        assertEquals(
-            BlockCause.BLACKLIST,
-            urlRegexBlockCause("abc.def123", listOf("^abc\\.def.*"), emptyList()),
+            urlRegexBlockCause("https://denied.example/256", blacklist, emptyList()),
         )
         assertEquals(
             BlockCause.BLACKLIST,
             urlRegexBlockCause("allowed", listOf("^blocked|allowed"), emptyList()),
         )
-    }
-
-    @Test
-    fun sharesTheMatchBudgetAcrossNestedBlockPageWrappers() {
-        var url = "https://example.com/" + "a".repeat(2400)
-        repeat(10) {
-            url = block(url)
-        }
-        val result =
-            resolveBlockPageTarget(
-                url,
-                listOf("a?".repeat(2000) + "Z"),
-                emptyList(),
-                settings,
-            )
-        assertEquals(BlockCause.URL_REGEX_ERROR, result?.blockCause)
     }
 
     @Test

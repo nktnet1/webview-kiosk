@@ -43,34 +43,14 @@ describe("RE2 URL playground", () => {
     });
   });
 
-  it("fails closed on expensive counted repetitions", () => {
-    expect(testUrlRules(url, "(a{1000}){1000}", "")).toEqual({
-      blocked: true,
-      ruleError: true,
-    });
-    expect(testUrlRules(url, "example", "(a{1000}|b{1000}){1000}")).toEqual({
-      blocked: true,
-      ruleError: true,
-    });
-    expect(testUrlRules(url, "example", "/allowed")).toEqual({
-      blocked: false,
-      ruleError: false,
-    });
-  });
-
-  it("allows long URLs when the rule is safe", () => {
-    const longUrl = `https://example.com/${"a".repeat(70_000)}/allowed`;
-    expect(testUrlRules(longUrl, "/denied$", "")).toEqual({
-      blocked: false,
-      ruleError: false,
-    });
-    expect(testUrlRules(longUrl, "/allowed$", "")).toEqual({
+  it("accepts valid counted repetitions", () => {
+    expect(testUrlRules("https://example.com/aaaa", "a{4}", "")).toEqual({
       blocked: true,
       ruleError: false,
     });
   });
 
-  it("accepts safe patterns longer than the previous character limit", () => {
+  it("does not reject long URLs or valid configured patterns by an estimate", () => {
     const literal = "a".repeat(4200);
     expect(testUrlRules(`https://example.com/${literal}`, literal, "")).toEqual(
       {
@@ -80,53 +60,23 @@ describe("RE2 URL playground", () => {
     );
   });
 
-  it("rejects large RE2 programs on long URLs before matching", () => {
-    const longUrl = `https://example.com/${"a".repeat(70_000)}`;
-    for (const pattern of [`${"a?".repeat(4000)}b`, `${"a".repeat(4200)}b`]) {
-      expect(testUrlRules(longUrl, pattern, "")).toEqual({
-        blocked: true,
-        ruleError: true,
-      });
-    }
-  });
-
-  it("shares a match work budget across the blacklist", () => {
-    const mediumUrl = `https://example.com/${"a".repeat(4200)}`;
-    const blacklist = ["b".repeat(4200), "c".repeat(4200)].join("\n");
-    expect(testUrlRules(mediumUrl, blacklist, "")).toEqual({
-      blocked: true,
-      ruleError: true,
-    });
-  });
-
-  it("does not exhaust the budget for anchored non-matches on long URLs", () => {
-    const blacklist = Array.from(
+  it("evaluates large lists of harmless rules without a shared budget", () => {
+    const patterns = Array.from(
       { length: 257 },
       (_, index) => `^https://denied\\.example/${index}$`,
     ).join("\n");
-    expect(
-      testUrlRules(
-        `https://denied.example/allowed?${"x".repeat(4000)}`,
-        blacklist,
-        "",
-      ),
-    ).toEqual({ blocked: false, ruleError: false });
-    expect(testUrlRules("https://denied.example/256", blacklist, "")).toEqual({
+    const url = `https://denied.example/allowed?${"x".repeat(4000)}`;
+    expect(testUrlRules(url, patterns, "")).toEqual({
+      blocked: false,
+      ruleError: false,
+    });
+    expect(testUrlRules("https://denied.example/256", patterns, "")).toEqual({
       blocked: true,
       ruleError: false,
     });
     expect(testUrlRules("allowed", "^blocked|allowed", "")).toEqual({
       blocked: true,
       ruleError: false,
-    });
-  });
-
-  it("rejects excessive grouping depth", () => {
-    expect(
-      testUrlRules(url, `${"(".repeat(65)}a${")".repeat(65)}`, ""),
-    ).toEqual({
-      blocked: true,
-      ruleError: true,
     });
   });
 
