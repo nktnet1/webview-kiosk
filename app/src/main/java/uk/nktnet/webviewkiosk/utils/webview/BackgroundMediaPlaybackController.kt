@@ -781,6 +781,9 @@ internal const val DOCUMENT_START_SCRIPT =
         document.addEventListener(event, report, true);
       });
       document.addEventListener('DOMContentLoaded', report);
+      // A removed player's pause event cannot reach the document listener.
+      // Reconcile DOM changes so a notification cannot stay falsely playing.
+      window.setInterval(report, 2000);
       document.addEventListener('visibilitychange', function () {
         lastPlaying = null; report();
       });
