@@ -64,11 +64,24 @@ class ImmersiveModeUtilsTest {
     }
 
     @Test
-    fun legacyExitStillRemovesOnlyImmersiveAndFullscreenLayoutFlags() {
+    fun legacyExitShowsBarsWithoutDroppingEdgeToEdgeLayout() {
         activity.window.decorView.systemUiVisibility = unrelatedFlags
         enterImmersiveMode(activity)
         exitImmersiveMode(activity)
-        assertEquals(unrelatedFlags, activity.window.decorView.systemUiVisibility)
+        assertEquals(
+            unrelatedFlags or layoutFlags,
+            activity.window.decorView.systemUiVisibility,
+        )
+    }
+
+    @Test
+    fun legacyExitRestoresLayoutFlagsWhenTheBarsAreAlreadyVisible() {
+        activity.window.decorView.systemUiVisibility = unrelatedFlags
+        exitImmersiveMode(activity)
+        assertEquals(
+            unrelatedFlags or layoutFlags,
+            activity.window.decorView.systemUiVisibility,
+        )
     }
 
     @Test
