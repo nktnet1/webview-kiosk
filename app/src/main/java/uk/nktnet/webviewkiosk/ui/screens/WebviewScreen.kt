@@ -131,15 +131,9 @@ import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 
-fun Modifier.imePaddingCompat(): Modifier =
-    if (
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
-            Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
-    ) {
-        this.imePadding()
-    } else {
-        this
-    }
+// All API levels use Compose IME insets when edge-to-edge is active. API 29
+// previously relied on framework resize only because edge-to-edge was cleared.
+fun Modifier.imePaddingCompat(): Modifier = this.imePadding()
 
 @Composable
 fun WebviewScreen(navController: NavController) {
