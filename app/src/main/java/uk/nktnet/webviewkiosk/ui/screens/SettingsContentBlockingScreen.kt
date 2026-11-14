@@ -44,6 +44,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
@@ -77,6 +78,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -105,6 +107,9 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.blocking.BlockingStatus
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.FilterListBatchAction
+import uk.nktnet.webviewkiosk.blocking.FilterListBatchProgress
+import uk.nktnet.webviewkiosk.blocking.FilterListDownloadProgress
+import uk.nktnet.webviewkiosk.blocking.FilterListDownloadStage
 import uk.nktnet.webviewkiosk.blocking.FilterListInfo
 import uk.nktnet.webviewkiosk.blocking.FilterListStore
 import uk.nktnet.webviewkiosk.blocking.FilterListType
@@ -166,6 +171,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     }
     var working by remember { mutableStateOf(false) }
     var workingMessage by remember { mutableStateOf<String?>(null) }
+    var downloadProgress by remember {
+        mutableStateOf<FilterListBatchProgress?>(null)
+    }
     val busy = working
     var bulkActionsExpanded by remember { mutableStateOf(false) }
     var managing by rememberSaveable { mutableStateOf(false) }
@@ -233,6 +241,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         affectsRules: Boolean = true,
         successMessage: String? = null,
         progressMessage: String? = null,
+        initialProgress: FilterListBatchProgress? = null,
         onStored: (() -> Unit)? = null,
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null,
@@ -243,6 +252,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         }
         working = true
         workingMessage = progressMessage
+        downloadProgress = initialProgress
         editError = null
         scope.launch {
             try {
@@ -260,6 +270,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 onStored?.invoke()
                 working = false
                 workingMessage = null
+                downloadProgress = null
                 onSuccess?.invoke()
                 successMessage?.let { notify(it) }
             } catch (e: CancellationException) {
@@ -275,9 +286,32 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             } finally {
                 working = false
                 workingMessage = null
+                downloadProgress = null
             }
         }
     }
+
+    fun startingProgress(name: String, total: Int = 1) =
+        FilterListBatchProgress(
+            name = name,
+            current = 1,
+            total = total,
+            completed = 0,
+            download =
+                FilterListDownloadProgress(FilterListDownloadStage.CONNECTING),
+        )
+
+    fun singleDownloadProgress(name: String): (FilterListDownloadProgress) -> Unit =
+        { progress ->
+            downloadProgress =
+                FilterListBatchProgress(
+                    name = name,
+                    current = 1,
+                    total = 1,
+                    completed = 0,
+                    download = progress,
+                )
+        }
 
     fun toggleList(item: ImportedFilterList, enabled: Boolean) {
         if (working || item.id in savingSwitchIds) {
@@ -321,34 +355,53 @@ fun SettingsContentBlockingScreen(navController: NavController) {
 
     fun downloadDefaults(requested: List<SuggestedFilterList>) {
         var summary = FilterRefreshResult(0, 0, emptyList())
+        val pending = requested.filterNot { preset ->
+            lists.any { it.sourceUrl == preset.url }
+        }
         update(
             progressMessage =
                 context.getString(R.string.ui_downloading_ublock_origin_defaults),
+            initialProgress =
+                pending.firstOrNull()?.let {
+                    startingProgress(it.name, pending.size)
+                },
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.ADD_DEFAULTS) {
                     downloadDefaults(requested)
                 }
             },
         ) {
-            summary = downloader.downloadDefaults(store, requested)
+            summary =
+                downloader.downloadDefaults(store, requested) { progress ->
+                    downloadProgress = progress
+                }
         }
     }
 
     fun refreshAll() {
         var summary = FilterRefreshResult(0, 0, emptyList())
+        val pending = lists.filter { it.sourceUrl != null }
         update(
             progressMessage =
                 context.getString(R.string.ui_downloading_filter_lists),
+            initialProgress =
+                pending.firstOrNull()?.let {
+                    startingProgress(it.displayName(), pending.size)
+                },
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.REFRESH) { refreshAll() }
             },
         ) {
-            summary = downloader.refreshAll(store)
+            summary =
+                downloader.refreshAll(store) { progress ->
+                    downloadProgress = progress
+                }
         }
     }
 
     fun refreshSelected(ids: Set<String>) {
         var summary = FilterRefreshResult(0, 0, emptyList())
+        val pending = lists.filter { it.id in ids && it.sourceUrl != null }
         update(
             affectsRules =
                 lists.any {
@@ -356,13 +409,20 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 },
             progressMessage =
                 context.getString(R.string.ui_downloading_selected_filter_lists),
+            initialProgress =
+                pending.firstOrNull()?.let {
+                    startingProgress(it.displayName(), pending.size)
+                },
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.REFRESH) {
                     refreshSelected(ids)
                 }
             },
         ) {
-            summary = downloader.refreshSelected(store, ids)
+            summary =
+                downloader.refreshSelected(store, ids) { progress ->
+                    downloadProgress = progress
+                }
         }
     }
 
@@ -903,11 +963,20 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                                 progressMessage =
                                                     context.getString(
                                                         R.string
-                                                            .ui_downloading_value,
-                                                        item.displayName(),
+                                                            .ui_downloading_filter_list
+                                                    ),
+                                                initialProgress =
+                                                    startingProgress(
+                                                        item.displayName()
                                                     ),
                                             ) {
-                                                downloader.refresh(item, store)
+                                                downloader.refresh(
+                                                    item,
+                                                    store,
+                                                    singleDownloadProgress(
+                                                        item.displayName()
+                                                    ),
+                                                )
                                             }
                                         },
                                         onEdit = { openEditor(item) },
@@ -963,44 +1032,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 }
             }
             if (working && workingMessage != null) {
-                Box(
-                    modifier =
-                        Modifier.matchParentSize()
-                            .background(
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
-                            )
-                            .pointerInput(Unit) {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        awaitPointerEvent().changes.forEach {
-                                            it.consume()
-                                        }
-                                    }
-                                }
-                            },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(
-                        modifier =
-                            Modifier.padding(24.dp).semantics {
-                                liveRegion = LiveRegionMode.Polite
-                            },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(28.dp),
-                            strokeWidth = 3.dp,
-                        )
-                        Text(
-                            workingMessage.orEmpty(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontStyle = FontStyle.Italic,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
+                FilterListProgressOverlay(
+                    message = workingMessage.orEmpty(),
+                    progress = downloadProgress,
+                    modifier = Modifier.matchParentSize(),
+                )
             }
             SnackbarHost(
                 hostState = snackbar,
@@ -1161,6 +1197,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 },
             busy = busy,
             canSave = canSave,
+            progressMessage = workingMessage.orEmpty(),
+            downloadProgress = downloadProgress,
             onDismiss = {
                 if (!busy) {
                     pendingEdit = null
@@ -1189,8 +1227,18 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     onFailure = { editError = it },
                     progressMessage =
                         context.getString(
-                            R.string.ui_validating_and_saving_the_filter_list
+                            if (item.type == FilterListType.URL && changedUrl) {
+                                R.string.ui_downloading_filter_list
+                            } else {
+                                R.string.ui_validating_and_saving_the_filter_list
+                            }
                         ),
+                    initialProgress =
+                        if (item.type == FilterListType.URL && changedUrl) {
+                            startingProgress(name)
+                        } else {
+                            null
+                        },
                     onStored = { pendingEdit = null },
                 ) {
                     when (item.type) {
@@ -1217,7 +1265,13 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         }
 
                         FilterListType.URL ->
-                            downloader.editUrl(item, name, url, store)
+                            downloader.editUrl(
+                                item,
+                                name,
+                                url,
+                                store,
+                                singleDownloadProgress(name),
+                            )
 
                         FilterListType.PRESET ->
                             throw IllegalArgumentException(
@@ -1236,6 +1290,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             lists = lists,
             busy = busy,
             progressMessage = workingMessage.orEmpty(),
+            downloadProgress = downloadProgress,
             error = addError,
             onClearError = { addError = null },
             onDismiss = {
@@ -1273,27 +1328,237 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     successMessage = context.getString(R.string.ui_list_added),
                     progressMessage =
                         context.getString(R.string.ui_downloading_filter_list),
+                    initialProgress = startingProgress(name),
                     onStored = { showAddDialog = false },
                     onFailure = { addError = it },
                 ) {
-                    downloader.downloadUrl(url, name, store)
+                    downloader.downloadUrl(
+                        url,
+                        name,
+                        store,
+                        singleDownloadProgress(name),
+                    )
                 }
             },
             onDownloadPreset = { suggestion ->
                 update(
                     successMessage = context.getString(R.string.ui_list_added),
                     progressMessage =
-                        context.getString(
-                            R.string.ui_downloading_value,
-                            suggestion.name,
-                        ),
+                        context.getString(R.string.ui_downloading_filter_list),
+                    initialProgress = startingProgress(suggestion.name),
                     onStored = { showAddDialog = false },
                     onFailure = { addError = it },
                 ) {
-                    downloader.download(suggestion, store)
+                    downloader.download(
+                        suggestion,
+                        store,
+                        singleDownloadProgress(suggestion.name),
+                    )
                 }
             },
         )
+    }
+}
+
+/**
+ * Displays progress above the existing content without changing its measured size.
+ */
+@Composable
+private fun FilterListProgressOverlay(
+    message: String,
+    progress: FilterListBatchProgress?,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.88f))
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            awaitPointerEvent().changes.forEach { it.consume() }
+                        }
+                    }
+                },
+        contentAlignment = Alignment.Center,
+    ) {
+        FilterListDownloadStatus(
+            message = message,
+            progress = progress,
+            modifier = Modifier.padding(12.dp).widthIn(max = 400.dp),
+        )
+    }
+}
+
+/**
+ * Shows completed-list count and actual transferred bytes, never estimated
+ * percentages.
+ */
+@Composable
+internal fun FilterListDownloadStatus(
+    message: String,
+    progress: FilterListBatchProgress?,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val transfer = progress?.download
+    val batch = progress?.takeIf { it.total > 1 }
+    val stage =
+        when (transfer?.stage) {
+            FilterListDownloadStage.CONNECTING ->
+                stringResource(R.string.ui_connecting_to_filter_list)
+            FilterListDownloadStage.DOWNLOADING ->
+                stringResource(R.string.ui_downloading_filter_list)
+            FilterListDownloadStage.SAVING ->
+                stringResource(R.string.ui_validating_and_saving_the_filter_list)
+            FilterListDownloadStage.FINISHED ->
+                stringResource(R.string.ui_filter_list_processed)
+            null -> stringResource(R.string.ui_preparing_filter_list)
+        }
+    val bytes =
+        if (transfer?.stage == FilterListDownloadStage.DOWNLOADING) {
+            val received = Formatter.formatShortFileSize(context, transfer.bytesRead)
+            transfer.totalBytes?.let { total ->
+                stringResource(
+                    R.string.ui_filter_list_current_file_bytes,
+                    received,
+                    Formatter.formatShortFileSize(context, total),
+                )
+            }
+                ?: if (transfer.bytesRead > 0) {
+                    stringResource(
+                        R.string.ui_filter_list_current_file_received,
+                        received,
+                    )
+                } else {
+                    ""
+                }
+        } else {
+            ""
+        }
+    Surface(
+        modifier = modifier.fillMaxWidth().testTag("filter_list_download_status"),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 3.dp,
+        shadowElevation = 6.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Icon(
+                        painter =
+                            painterResource(R.drawable.outline_cloud_download_24),
+                        contentDescription = null,
+                        modifier = Modifier.padding(10.dp).size(24.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        message,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        if (batch != null) {
+                            stringResource(
+                                R.string.ui_filter_list_progress_count,
+                                batch.current,
+                                batch.total,
+                            )
+                        } else {
+                            stringResource(R.string.ui_filter_list_current_progress)
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Text(
+                progress?.name ?: stringResource(R.string.ui_preparing_filter_list),
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+            if (batch != null) {
+                val overallDescription =
+                    stringResource(R.string.ui_filter_list_overall_progress)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        overallDescription,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        "${batch.completed}/${batch.total}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                LinearProgressIndicator(
+                    progress = { batch.completed.toFloat() / batch.total },
+                    modifier =
+                        Modifier.fillMaxWidth().semantics {
+                            contentDescription = overallDescription
+                        },
+                )
+            }
+            Text(
+                stage,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            val currentDescription =
+                stringResource(R.string.ui_filter_list_current_progress)
+            val currentProgressModifier =
+                Modifier.fillMaxWidth().semantics {
+                    contentDescription = currentDescription
+                }
+            when {
+                transfer?.stage == FilterListDownloadStage.FINISHED ->
+                    LinearProgressIndicator(
+                        progress = { 1f },
+                        modifier = currentProgressModifier,
+                    )
+
+                transfer?.stage == FilterListDownloadStage.DOWNLOADING &&
+                    transfer.totalBytes != null ->
+                    LinearProgressIndicator(
+                        progress = {
+                            (transfer.bytesRead.toFloat() / transfer.totalBytes)
+                                .coerceIn(0f, 1f)
+                        },
+                        modifier = currentProgressModifier,
+                    )
+
+                else -> LinearProgressIndicator(modifier = currentProgressModifier)
+            }
+            Text(
+                bytes,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                minLines = 1,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
@@ -1959,6 +2224,7 @@ private fun AddFilterListDialog(
     lists: List<ImportedFilterList>,
     busy: Boolean,
     progressMessage: String,
+    downloadProgress: FilterListBatchProgress?,
     error: String?,
     onClearError: () -> Unit,
     onDismiss: () -> Unit,
@@ -1983,13 +2249,14 @@ private fun AddFilterListDialog(
     var selectedFileName by remember { mutableStateOf(selectedFileLabel) }
     var text by rememberSaveable { mutableStateOf("") }
     var textError by rememberSaveable { mutableStateOf<String?>(null) }
-    var suggestion by remember { mutableStateOf(SuggestedFilterLists.all.first()) }
+    var selectedPresetUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var presetsExpanded by remember { mutableStateOf(false) }
     var presetDropdownWidth by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
-    val installed = lists.any {
-        it.type == FilterListType.PRESET && it.sourceUrl == suggestion.url
-    }
+    val availablePresets = SuggestedFilterLists.availablePresets(lists)
+    val suggestion =
+        availablePresets.firstOrNull { it.url == selectedPresetUrl }
+            ?: availablePresets.firstOrNull()
     val duplicateUrl = lists.hasUrlList(url)
     val picker =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
@@ -2033,11 +2300,13 @@ private fun AddFilterListDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.ui_add_filter_list)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(
+                modifier =
+                    Modifier.fillMaxWidth().heightIn(min = 240.dp, max = 460.dp)
+            ) {
                 Column(
                     modifier =
-                        Modifier.weight(1f, fill = false)
-                            .heightIn(max = 460.dp)
+                        Modifier.fillMaxWidth()
                             .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -2235,7 +2504,8 @@ private fun AddFilterListDialog(
                                 ) {
                                     OutlinedButton(
                                         onClick = { presetsExpanded = true },
-                                        enabled = !busy,
+                                        enabled =
+                                            !busy && availablePresets.isNotEmpty(),
                                         shape = RoundedCornerShape(12.dp),
                                         modifier =
                                             Modifier.fillMaxWidth().semantics {
@@ -2244,7 +2514,11 @@ private fun AddFilterListDialog(
                                             },
                                     ) {
                                         Text(
-                                            suggestion.name,
+                                            suggestion?.name
+                                                ?: stringResource(
+                                                    R.string
+                                                        .ui_all_preset_lists_added
+                                                ),
                                             modifier = Modifier.weight(1f),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
@@ -2269,7 +2543,7 @@ private fun AddFilterListDialog(
                                                 }
                                             ),
                                     ) {
-                                        SuggestedFilterLists.all.forEach { preset ->
+                                        availablePresets.forEach { preset ->
                                             DropdownMenuItem(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 text = {
@@ -2281,7 +2555,7 @@ private fun AddFilterListDialog(
                                                     )
                                                 },
                                                 onClick = {
-                                                    suggestion = preset
+                                                    selectedPresetUrl = preset.url
                                                     presetsExpanded = false
                                                     onClearError()
                                                 },
@@ -2290,78 +2564,77 @@ private fun AddFilterListDialog(
                                     }
                                 }
                             }
-                            Surface(
-                                color =
-                                    MaterialTheme.colorScheme.surfaceContainerLow,
-                                shape = MaterialTheme.shapes.medium,
-                            ) {
-                                Column(
-                                    modifier =
-                                        Modifier.fillMaxWidth().padding(12.dp),
-                                    verticalArrangement =
-                                        Arrangement.spacedBy(12.dp),
+                            if (suggestion != null) {
+                                Surface(
+                                    color =
+                                        MaterialTheme.colorScheme
+                                            .surfaceContainerLow,
+                                    shape = MaterialTheme.shapes.medium,
                                 ) {
                                     Column(
+                                        modifier =
+                                            Modifier.fillMaxWidth().padding(12.dp),
                                         verticalArrangement =
-                                            Arrangement.spacedBy(2.dp)
+                                            Arrangement.spacedBy(12.dp),
                                     ) {
-                                        Text(
-                                            stringResource(R.string.ui_category),
-                                            style =
-                                                MaterialTheme.typography.labelSmall,
-                                            color =
-                                                MaterialTheme.colorScheme
-                                                    .onSurfaceVariant,
-                                        )
-                                        Text(
-                                            suggestion.description,
-                                            style =
-                                                MaterialTheme.typography.bodyMedium,
-                                        )
-                                    }
-                                    Column(
-                                        verticalArrangement =
-                                            Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        Text(
-                                            stringResource(R.string.ui_source_url),
-                                            style =
-                                                MaterialTheme.typography.labelSmall,
-                                            color =
-                                                MaterialTheme.colorScheme
-                                                    .onSurfaceVariant,
-                                        )
-                                        SelectionContainer {
+                                        Column(
+                                            verticalArrangement =
+                                                Arrangement.spacedBy(2.dp)
+                                        ) {
                                             Text(
-                                                suggestion.url,
+                                                stringResource(R.string.ui_category),
                                                 style =
                                                     MaterialTheme.typography
-                                                        .bodySmall,
-                                                modifier = Modifier.fillMaxWidth(),
+                                                        .labelSmall,
+                                                color =
+                                                    MaterialTheme.colorScheme
+                                                        .onSurfaceVariant,
                                             )
+                                            Text(
+                                                suggestion.description,
+                                                style =
+                                                    MaterialTheme.typography
+                                                        .bodyMedium,
+                                            )
+                                        }
+                                        Column(
+                                            verticalArrangement =
+                                                Arrangement.spacedBy(2.dp)
+                                        ) {
+                                            Text(
+                                                stringResource(
+                                                    R.string.ui_source_url
+                                                ),
+                                                style =
+                                                    MaterialTheme.typography
+                                                        .labelSmall,
+                                                color =
+                                                    MaterialTheme.colorScheme
+                                                        .onSurfaceVariant,
+                                            )
+                                            SelectionContainer {
+                                                Text(
+                                                    suggestion.url,
+                                                    style =
+                                                        MaterialTheme.typography
+                                                            .bodySmall,
+                                                    modifier =
+                                                        Modifier.fillMaxWidth(),
+                                                )
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                    if (busy) {
-                        Text(
-                            progressMessage,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontStyle = FontStyle.Italic,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 }
-                if (type == FilterListType.PRESET && installed) {
-                    Text(
-                        stringResource(R.string.ui_already_added),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.End,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium,
+                if (busy && progressMessage.isNotBlank()) {
+                    FilterListProgressOverlay(
+                        message = progressMessage,
+                        progress = downloadProgress,
+                        modifier = Modifier.matchParentSize(),
                     )
                 }
             }
@@ -2379,7 +2652,7 @@ private fun AddFilterListDialog(
 
                         FilterListType.URL -> onDownloadUrl(url.trim(), name.trim())
 
-                        FilterListType.PRESET -> onDownloadPreset(suggestion)
+                        FilterListType.PRESET -> suggestion?.let(onDownloadPreset)
                     }
                 },
                 enabled =
@@ -2395,16 +2668,9 @@ private fun AddFilterListDialog(
                                     validListName(name) &&
                                     !duplicateUrl
 
-                            FilterListType.PRESET -> !installed
+                            FilterListType.PRESET -> suggestion != null
                         },
             ) {
-                if (busy) {
-                    CircularProgressIndicator(
-                        Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
-                    )
-                    Spacer(Modifier.width(6.dp))
-                }
                 Text(
                     if (type == FilterListType.FILE) {
                         stringResource(R.string.ui_add)
@@ -2438,6 +2704,8 @@ private fun EditFilterListDialog(
     error: String?,
     busy: Boolean,
     canSave: Boolean,
+    progressMessage: String,
+    downloadProgress: FilterListBatchProgress?,
     onDismiss: () -> Unit,
     onSave: () -> Unit,
 ) {
@@ -2445,87 +2713,101 @@ private fun EditFilterListDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.ui_edit_filter_list)) },
         text = {
-            Column(
+            Box(
                 modifier =
-                    Modifier.heightIn(max = 460.dp)
-                        .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    Modifier.fillMaxWidth().heightIn(min = 240.dp, max = 380.dp)
             ) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = onNameChange,
-                    label = { Text(stringResource(R.string.ui_name)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    enabled = !busy,
-                    isError = !validListName(name),
-                )
-                if (item.type != FilterListType.FILE) {
+                Column(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     OutlinedTextField(
-                        value = url,
-                        onValueChange = onUrlChange,
-                        label = { Text(stringResource(R.string.ui_url)) },
+                        value = name,
+                        onValueChange = onNameChange,
+                        label = { Text(stringResource(R.string.ui_name)) },
                         modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
                         enabled = !busy,
-                        maxLines = 3,
+                        isError = !validListName(name),
                     )
-                } else if (!fileLoaded) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                } else {
-                    if (fileText != null) {
+                    if (item.type != FilterListType.FILE) {
                         OutlinedTextField(
-                            value = fileText,
-                            onValueChange = onFileTextChange,
-                            label = {
-                                Text(stringResource(R.string.ui_filter_rules))
-                            },
-                            modifier =
-                                Modifier.fillMaxWidth().heightIn(min = 130.dp),
-                            minLines = 5,
-                            maxLines = 10,
-                            enabled = !busy && replacementName == null,
+                            value = url,
+                            onValueChange = onUrlChange,
+                            label = { Text(stringResource(R.string.ui_url)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !busy,
+                            maxLines = 3,
                         )
+                    } else if (!fileLoaded) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
                     } else {
-                        Text(
-                            stringResource(
-                                R.string
-                                    .ui_this_list_is_too_large_to_edit_inline_choose_a_replace
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    OutlinedButton(
-                        onClick = onPickReplacement,
-                        enabled = !busy,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Text(
-                            if (replacementName == null) {
-                                stringResource(R.string.ui_replace_from_file)
-                            } else {
-                                stringResource(R.string.ui_change_replacement_file)
-                            }
-                        )
-                    }
-                    if (replacementName != null) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                replacementName,
-                                modifier = Modifier.weight(1f),
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
+                        if (fileText != null) {
+                            OutlinedTextField(
+                                value = fileText,
+                                onValueChange = onFileTextChange,
+                                label = {
+                                    Text(stringResource(R.string.ui_filter_rules))
+                                },
+                                modifier =
+                                    Modifier.fillMaxWidth().heightIn(min = 130.dp),
+                                minLines = 5,
+                                maxLines = 10,
+                                enabled = !busy && replacementName == null,
                             )
-                            TextButton(
-                                onClick = onClearReplacement,
-                                enabled = !busy,
-                            ) {
-                                Text(stringResource(R.string.ui_clear))
+                        } else {
+                            Text(
+                                stringResource(
+                                    R.string
+                                        .ui_this_list_is_too_large_to_edit_inline_choose_a_replace
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = onPickReplacement,
+                            enabled = !busy,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                if (replacementName == null) {
+                                    stringResource(R.string.ui_replace_from_file)
+                                } else {
+                                    stringResource(
+                                        R.string.ui_change_replacement_file
+                                    )
+                                }
+                            )
+                        }
+                        if (replacementName != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    replacementName,
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                TextButton(
+                                    onClick = onClearReplacement,
+                                    enabled = !busy,
+                                ) {
+                                    Text(stringResource(R.string.ui_clear))
+                                }
                             }
                         }
                     }
+                    error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 }
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                if (busy && progressMessage.isNotBlank()) {
+                    FilterListProgressOverlay(
+                        message = progressMessage,
+                        progress = downloadProgress,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                }
             }
         },
         confirmButton = {

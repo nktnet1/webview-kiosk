@@ -1,11 +1,13 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.os.Looper
+import android.text.format.Formatter
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewRootForTest
@@ -37,6 +39,9 @@ import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.blocking.FilterListBatchProgress
+import uk.nktnet.webviewkiosk.blocking.FilterListDownloadProgress
+import uk.nktnet.webviewkiosk.blocking.FilterListDownloadStage
 import uk.nktnet.webviewkiosk.blocking.FilterListStore
 import uk.nktnet.webviewkiosk.blocking.FilterListType
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterLists
@@ -106,6 +111,164 @@ class SettingsContentBlockingScreenTest {
         scope.cancel()
         activityController.pause().stop().destroy()
         ViewRootForTest.onViewCreatedCallback = null
+    }
+
+    @Test
+    fun batchDownloadStatusShowsCurrentNameBothProgressBarsAndByteCount() {
+        view.setContent {
+            MaterialTheme {
+                FilterListDownloadStatus(
+                    message = "Adding filter lists…",
+                    progress =
+                        FilterListBatchProgress(
+                            name = "EasyList",
+                            current = 2,
+                            total = 4,
+                            completed = 1,
+                            download =
+                                FilterListDownloadProgress(
+                                    FilterListDownloadStage.DOWNLOADING,
+                                    bytesRead = 512,
+                                    totalBytes = 1024,
+                                ),
+                        ),
+                )
+            }
+        }
+        frames()
+        assertTrue(hasText("EasyList"))
+        assertTrue(hasText(message(R.string.ui_filter_list_progress_count, 2, 4)))
+        assertTrue(
+            hasText(
+                message(
+                    R.string.ui_filter_list_current_file_bytes,
+                    Formatter.formatShortFileSize(activityController.get(), 512),
+                    Formatter.formatShortFileSize(activityController.get(), 1024),
+                )
+            )
+        )
+        val bars =
+            nodes().mapNotNull { node ->
+                node.config.getOrNull(SemanticsProperties.ProgressBarRangeInfo)
+            }
+        assertEquals(listOf(0.25f, 0.5f), bars.map { it.current })
+    }
+
+    @Test
+    fun unknownSingleDownloadStatusDoesNotInventAPercentage() {
+        view.setContent {
+            MaterialTheme {
+                FilterListDownloadStatus(
+                    message = "Downloading filter list…",
+                    progress =
+                        FilterListBatchProgress(
+                            name = "Custom list",
+                            current = 1,
+                            total = 1,
+                            completed = 0,
+                            download =
+                                FilterListDownloadProgress(
+                                    FilterListDownloadStage.DOWNLOADING,
+                                    bytesRead = 2048,
+                                ),
+                        ),
+                )
+            }
+        }
+        frames()
+        assertTrue(hasText("Custom list"))
+        assertFalse(hasText(message(R.string.ui_filter_list_progress_count, 1, 1)))
+        assertTrue(
+            hasText(
+                message(
+                    R.string.ui_filter_list_current_file_received,
+                    Formatter.formatShortFileSize(activityController.get(), 2048),
+                )
+            )
+        )
+        val bars =
+            nodes().mapNotNull {
+                it.config.getOrNull(SemanticsProperties.ProgressBarRangeInfo)
+            }
+        assertEquals(1, bars.size)
+        assertEquals(0f, bars.single().current)
+    }
+
+    @Test
+    fun downloadStatusKeepsItsSizeAsBytesAndStagesChange() {
+        val progress =
+            mutableStateOf(
+                FilterListBatchProgress(
+                    name = "EasyList",
+                    current = 1,
+                    total = 3,
+                    completed = 0,
+                    download =
+                        FilterListDownloadProgress(
+                            FilterListDownloadStage.CONNECTING
+                        ),
+                )
+            )
+        view.setContent {
+            MaterialTheme {
+                FilterListDownloadStatus(
+                    message = "Adding default filter lists…",
+                    progress = progress.value,
+                )
+            }
+        }
+        frames()
+        fun cardHeight() =
+            nodes()
+                .first {
+                    it.config.getOrNull(SemanticsProperties.TestTag) ==
+                        "filter_list_download_status"
+                }
+                .boundsInWindow
+                .height
+
+        val initialHeight = cardHeight()
+        progress.value =
+            progress.value.copy(
+                download =
+                    FilterListDownloadProgress(
+                        stage = FilterListDownloadStage.DOWNLOADING,
+                        bytesRead = 2048,
+                        totalBytes = 4096,
+                    )
+            )
+        frames()
+        assertEquals(initialHeight, cardHeight())
+        progress.value =
+            progress.value.copy(
+                name = "Peter Lowe’s Ad and tracking server list",
+                current = 2,
+                completed = 1,
+                download =
+                    FilterListDownloadProgress(FilterListDownloadStage.SAVING),
+            )
+        frames()
+        assertEquals(initialHeight, cardHeight())
+    }
+
+    @Test
+    fun presetPickerStartsWithAnAvailablePresetInsteadOfAnInstalledOne() {
+        val installed = SuggestedFilterLists.all.first()
+        val next = SuggestedFilterLists.all[1]
+        store.importFrom(
+            "${installed.name}.txt",
+            "||ads.example^".byteInputStream(),
+            installed.url,
+            FilterListType.PRESET,
+        )
+        view.disposeComposition()
+        renderScreen()
+
+        click(message(R.string.ui_add_list))
+        assertTrue(hasText(next.name))
+        clickDescription(message(R.string.ui_preset))
+        assertTrue(hasText(next.name))
+        click(message(R.string.ui_cancel))
     }
 
     @Test

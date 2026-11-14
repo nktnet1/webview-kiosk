@@ -68,6 +68,195 @@ class SuggestedFilterListDownloaderTest {
         )
 
     @Test
+    fun individualDownloadReportsKnownBytesThenValidationAndSave() {
+        val content = buildString {
+            repeat(5_000) { line -> append("||ads$line.example^\n") }
+        }
+        val progress = mutableListOf<FilterListDownloadProgress>()
+        val imported =
+            downloader(content = content).download(preset, store) {
+                progress += it
+            }
+        assertEquals(preset.url, imported.sourceUrl)
+        assertEquals(FilterListDownloadStage.CONNECTING, progress.first().stage)
+        val downloading = progress.filter {
+            it.stage == FilterListDownloadStage.DOWNLOADING
+        }
+        assertEquals(0L, downloading.first().bytesRead)
+        assertEquals(
+            content.toByteArray().size.toLong(),
+            downloading.first().totalBytes,
+        )
+        assertTrue(
+            downloading.any {
+                it.bytesRead in 1 until content.toByteArray().size.toLong()
+            }
+        )
+        assertEquals(
+            content.toByteArray().size.toLong(),
+            downloading.last().bytesRead,
+        )
+        assertEquals(FilterListDownloadStage.SAVING, progress.last().stage)
+    }
+
+    @Test
+    fun unknownHttpLengthReportsBytesWithoutInventingATotal() {
+        val content = "||ads.example^\n"
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        val body =
+                            object : ResponseBody() {
+                                override fun contentType() =
+                                    "text/plain".toMediaType()
+
+                                override fun contentLength() = -1L
+
+                                override fun source(): BufferedSource =
+                                    Buffer().writeUtf8(content)
+                            }
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("OK")
+                            .body(body)
+                            .build()
+                    }
+                    .build()
+            )
+        val progress = mutableListOf<FilterListDownloadProgress>()
+        client.downloadUrl("https://example.org/list.txt", "Custom", store) {
+            progress += it
+        }
+        val transfer = progress.filter {
+            it.stage == FilterListDownloadStage.DOWNLOADING
+        }
+        assertTrue(transfer.isNotEmpty())
+        assertTrue(transfer.all { it.totalBytes == null })
+        assertEquals(content.toByteArray().size.toLong(), transfer.last().bytesRead)
+        assertEquals(FilterListDownloadStage.SAVING, progress.last().stage)
+    }
+
+    @Test
+    fun defaultBatchProgressIdentifiesCurrentListAndCountsFailuresAsProcessed() {
+        val requested = SuggestedFilterLists.defaults.take(3)
+        val alreadyAdded = requested.first()
+        store.importFrom(
+            "Existing",
+            "||existing.example^".byteInputStream(),
+            alreadyAdded.url,
+            FilterListType.URL,
+        )
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        val fail = chain.request().url.toString() == requested[1].url
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(
+                                if (fail) {
+                                    503
+                                } else {
+                                    200
+                                }
+                            )
+                            .message(
+                                if (fail) {
+                                    "Unavailable"
+                                } else {
+                                    "OK"
+                                }
+                            )
+                            .body(
+                                "||ads.example^"
+                                    .toResponseBody("text/plain".toMediaType())
+                            )
+                            .build()
+                    }
+                    .build()
+            )
+        val progress = mutableListOf<FilterListBatchProgress>()
+        val result = client.downloadDefaults(store, requested) { progress += it }
+        assertEquals(1, result.updated)
+        assertEquals(2, result.total)
+        assertEquals(listOf(requested[1].name), result.failures.map { it.name })
+        assertEquals(
+            requested.drop(1).map { it.name },
+            progress
+                .filter { it.download.stage == FilterListDownloadStage.FINISHED }
+                .map { it.name },
+        )
+        assertEquals(
+            listOf(1, 2),
+            progress
+                .filter { it.download.stage == FilterListDownloadStage.FINISHED }
+                .map { it.completed },
+        )
+        assertTrue(progress.all { it.total == 2 })
+        assertEquals(1, progress.first().current)
+        assertEquals(0, progress.first().completed)
+        assertEquals(2, progress.last().current)
+        assertEquals(2, progress.last().completed)
+    }
+
+    @Test
+    fun refreshSelectedReportsOnlyDownloadableListsInOrder() {
+        val first =
+            store.importFrom(
+                "One",
+                "||old.example^".byteInputStream(),
+                "https://example.org/one.txt",
+            )
+        val local = store.importFrom("Local", "||local.example^".byteInputStream())
+        val second =
+            store.importFrom(
+                "Two",
+                "||old.example^".byteInputStream(),
+                "https://example.org/two.txt",
+            )
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("OK")
+                            .body(
+                                "||new.example^"
+                                    .toResponseBody("text/plain".toMediaType())
+                            )
+                            .build()
+                    }
+                    .build()
+            )
+        val progress = mutableListOf<FilterListBatchProgress>()
+        val result =
+            client.refreshSelected(store, setOf(first.id, local.id, second.id)) {
+                progress += it
+            }
+        assertEquals(2, result.updated)
+        assertEquals(2, result.total)
+        assertEquals(
+            listOf("One", "Two"),
+            progress
+                .filter { it.download.stage == FilterListDownloadStage.FINISHED }
+                .map { it.name },
+        )
+        assertEquals(
+            listOf(1, 2),
+            progress
+                .filter { it.download.stage == FilterListDownloadStage.FINISHED }
+                .map { it.completed },
+        )
+    }
+
+    @Test
     fun confirmationBatchAddsOnlyTheRequestedMissingDefaults() {
         val requested = SuggestedFilterLists.defaults.take(2)
         val first =
@@ -200,7 +389,15 @@ class SuggestedFilterListDownloaderTest {
                     }
                     .build()
             )
-        client.download(ublock, store)
+        val progress = mutableListOf<FilterListDownloadProgress>()
+        client.download(ublock, store) { progress += it }
+        assertEquals(
+            4,
+            progress.count {
+                it.stage == FilterListDownloadStage.DOWNLOADING && it.bytesRead == 0L
+            },
+        )
+        assertEquals(FilterListDownloadStage.SAVING, progress.last().stage)
         assertEquals(4, requested.size)
         assertTrue(
             requested.all { it.startsWith("https://ublockorigin.github.io/") }
@@ -522,6 +719,35 @@ class SuggestedFilterListDownloaderTest {
         assertTrue(runCatching { client.download(preset, store) }.isFailure)
         assertEquals(1, calls.get())
         assertEquals(1, store.list().size)
+    }
+
+    @Test
+    fun presetPickerExcludesInstalledPresetsAndRestoresThemWhenRemoved() {
+        val available = SuggestedFilterLists.all
+        assertEquals(available, SuggestedFilterLists.availablePresets(store.list()))
+
+        val urlList =
+            store.importFrom(
+                "Custom URL",
+                "||ads.example^".byteInputStream(),
+                preset.url,
+                FilterListType.URL,
+            )
+        assertEquals(available, SuggestedFilterLists.availablePresets(store.list()))
+
+        val installed = downloader().download(preset, store)
+        assertEquals(
+            available.drop(1),
+            SuggestedFilterLists.availablePresets(store.list()),
+        )
+        val allInstalled = available.map { suggestion ->
+            installed.copy(sourceUrl = suggestion.url)
+        }
+        assertTrue(SuggestedFilterLists.availablePresets(allInstalled).isEmpty())
+
+        store.remove(installed.id)
+        assertEquals(available, SuggestedFilterLists.availablePresets(store.list()))
+        assertEquals(urlList, store.list().single())
     }
 
     @Test

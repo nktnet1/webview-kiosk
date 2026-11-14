@@ -7,7 +7,6 @@
     <string name="ui_add_list" formatted="false">"Add list"</string>
     <string name="ui_all_lists_disabled" formatted="false">"All lists disabled"</string>
     <string name="ui_all_lists_enabled" formatted="false">"All lists enabled"</string>
-    <string name="ui_already_added" formatted="false">"Already added"</string>
     <string name="ui_applies_to_intercepted_network_requests_and_page_navig_2" formatted="false">"Applies to intercepted network requests and page navigation. Popup and inline script/font filtering are unavailable."</string>
     <string name="ui_blocking_couldn_t_be_updated" formatted="false">"Blocking couldn\'t be updated."</string>
     <string name="ui_bullet" formatted="false">"•"</string>
@@ -17,10 +16,19 @@
     <string name="ui_cosmetic" formatted="false">"Cosmetic"</string>
     <string name="ui_couldn_t_open_this_list_please_try_again" formatted="false">"Couldn\'t open this list. Please try again."</string>
     <string name="ui_disable_selected" formatted="false">"Disable selected"</string>
+    <string name="ui_connecting_to_filter_list" formatted="false">"Connecting to download source…"</string>
+    <string name="ui_filter_list_overall_progress" formatted="false">"Overall list progress"</string>
+    <string name="ui_filter_list_current_progress" formatted="false">"Current list progress"</string>
+    <string name="ui_filter_list_progress_count">"List %1$d of %2$d"</string>
+    <string name="ui_filter_list_processed" formatted="false">"List processed"</string>
+    <string name="ui_preparing_filter_list" formatted="false">"Preparing filter list…"</string>
+    <string name="ui_all_preset_lists_added" formatted="false">"All preset lists have been added"</string>
+    <string name="ui_filter_list_current_file_bytes">"Current file: %1$s of %2$s received"</string>
+    <string name="ui_filter_list_current_file_received">"Current file: %1$s received"</string>
     <string name="ui_downloading_filter_list" formatted="false">"Downloading filter list…"</string>
     <string name="ui_downloading_filter_lists" formatted="false">"Downloading filter lists…"</string>
     <string name="ui_downloading_selected_filter_lists" formatted="false">"Downloading selected filter lists…"</string>
-    <string name="ui_downloading_ublock_origin_defaults" formatted="false">"Downloading uBlock Origin defaults…"</string>
+    <string name="ui_downloading_ublock_origin_defaults" formatted="false">"Adding default filter lists…"</string>
     <string name="ui_downloading_value">"Downloading %1$s…"</string>
     <string name="ui_e_g_my_filters" formatted="false">"e.g. My filters"</string>
     <string name="ui_edit_filter_list" formatted="false">"Edit filter list"</string>
