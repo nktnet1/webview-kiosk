@@ -109,3 +109,71 @@ adb shell dpm set-profile-owner --user 0 uk.nktnet.webviewkiosk.debug/uk.nktnet.
 
 Open **Settings → Device → Manage Device Policies**. Confirm the expected owner
 role, full-user scope, and available policies.
+
+## 4. Troubleshooting
+
+If you encounter activation issues regarding existing accounts, proceed with
+the following steps:
+
+<Steps>
+  <Step>
+    Remove all
+    [additional users](https://source.android.com/docs/devices/admin/multi-user)
+    on your device. You can view existing users using the command:
+
+    ```sh
+    adb shell dumpsys user | grep 'UserInfo{.*}'
+    ```
+    
+    The goal is to only have a single main user:
+
+    ```
+    UserInfo{0:null:4c13} serialNo=0 isPrimary=true
+    ```
+
+  </Step>
+
+  <Step>
+    Find all
+    [accounts](https://source.android.com/docs/automotive/users_accounts/accounts)
+    on your device, e.g. in your device settings or using an application like
+    [AndroidAccounts](https://github.com/iamr0s/AndroidAccounts). To also detect
+    accounts in disabled applications, it's recommended that you run the command:
+
+    ```sh
+    adb shell dumpsys account list
+    ```
+
+    Our goal is to have the following in the output:
+
+    ```
+    User UserInfo{0:User:4c13}:
+      Accounts: 0
+
+      ...
+
+      Active Sessions: 0
+    ```
+  </Step>
+
+  <Step>
+    Freeze all applications that uses accounts, e.g. Whatsapp. You can do this
+    using an application like
+    [Hail](https://github.com/aistra0528/Hail/blob/master/README_EN.md).
+  </Step>
+
+  <Step>
+    Remove all accounts. If there are accounts stored in disabled applications,
+    you will need to first enable them again before freezing the app and
+    removing the account.
+  </Step>
+
+  <Step>
+    Attempt to set {APP_NAME} as the device owner or profile owner again.
+  </Step>
+</Steps>
+
+It is also worth taking a look at the
+[Dhizuku activation guide](https://github.com/iamr0s/Dhizuku/discussions/19),
+which includes other helpful debugging steps when setting up a device owner
+application.
