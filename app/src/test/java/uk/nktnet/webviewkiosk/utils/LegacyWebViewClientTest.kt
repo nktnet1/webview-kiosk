@@ -127,7 +127,7 @@ class LegacyWebViewClientTest {
 
                 @Deprecated(
                     "For API < 23",
-                    ReplaceWith("events += \"legacy-resource:\$errorCode\""),
+                    ReplaceWith($$"events += \"legacy-resource:$errorCode\""),
                 )
                 override fun onReceivedError(
                     view: WebView?,
