@@ -1,0 +1,8 @@
+## Changes
+
+- Added settings search
+- Added profile owner support (main user)
+- Added Shizuku activation on Android 6+, with bypass for existing users/accounts (Android 12+)
+- Added background media playback (supports YouTube)
+- Fixed kiosk launch, system-bar padding (Android 7-10), page refresh and legacy WebView errors
+- Changed blacklist/whitelist regex engine to RE2/J
