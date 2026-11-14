@@ -10,6 +10,7 @@
     <string name="settings_search_alias_fullscreen">Fullscreen, full screen</string>
     <string name="settings_search_alias_blocklist">Blocklist, block list, denylist, deny list</string>
     <string name="settings_search_alias_allowlist">Allowlist, allow list</string>
+    <string name="settings_search_alias_adblock">Adblock, ad block</string>
     <string name="settings_search_alias_userscript">Userscript, user script</string>
     <string name="settings_search_import_description">Restore settings from a configuration backup</string>
     <string name="settings_search_export_description">Export settings as a configuration backup file</string>

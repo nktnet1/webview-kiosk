@@ -105,6 +105,19 @@ class SettingsSearchIndexTest {
     }
 
     @Test
+    fun adblockAliasOpensContentBlockingPage() {
+        for (query in listOf("adblock", "Ad Block")) {
+            val result =
+                searchSettings(context, query).single {
+                    it.kind == SettingsSearchResultKind.PAGE &&
+                        it.route == Screen.SettingsContentBlocking.route
+                }
+            assertEquals(Screen.SettingsContentBlocking.route, result.route)
+            assertEquals(null, result.targetId)
+        }
+    }
+
+    @Test
     fun findsDescriptionsAliasesAndOptionLabels() {
         assertTrue(
             searchSettings(context, "keep device awake").any {

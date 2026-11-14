@@ -174,6 +174,7 @@ internal val settingsPages: List<SettingsPage> = buildList {
             titleRes = R.string.settings_content_blocking_title,
             parent = settingsWebContent.hierarchy,
             descriptionRes = R.string.settings_content_blocking_description,
+            aliasesRes = R.string.settings_search_alias_adblock,
         ) {
             SettingsContentBlockingScreen(it)
         }
