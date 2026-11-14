@@ -128,7 +128,7 @@ internal fun isInvalidNavigationUrl(url: String): Boolean {
             return true
         }
         if (isData) {
-            return target.length > MAX_DATA_URL_LENGTH
+            return false
         }
         if (!oversized) {
             return false

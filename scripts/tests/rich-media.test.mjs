@@ -31,6 +31,7 @@ function frame({
   nextButtonEnabled = true,
 } = {}) {
   const snapshots = [];
+  const playbackReports = [];
   const events = new Map();
   const windowEvents = new Map();
   const timers = [];
@@ -114,7 +115,7 @@ function frame({
     navigator: { mediaSession },
     WebviewKioskBackgroundMedia: {
       onMediaInfoChanged(id, info) { snapshots.push([id, JSON.parse(info)]); },
-      onPlaybackStateChanged() {},
+      onPlaybackStateChanged(id, playing) { playbackReports.push([id, playing]); },
       canAutoResume() { return true; },
     },
     addEventListener(name, fn) { windowEvents.set(name, [...(windowEvents.get(name) ?? []), fn]); },
@@ -133,10 +134,17 @@ function frame({
   vm.runInNewContext(recoveryScript, sandbox);
   vm.runInNewContext(richScript, sandbox);
   return {
-    window, snapshots, commands, media, mediaSession, player: root, frameId: window.__wvkFrameId,
+    window, snapshots, playbackReports, commands, media, mediaSession, player: root, frameId: window.__wvkFrameId,
     replaceMedia(replacement) {
       media.isConnected = false;
       elements = [replacement];
+    },
+    removeMedia() {
+      media.isConnected = false;
+      media.paused = true;
+      elements = [];
+      // A detached element's pause event no longer reaches the document's
+      // capture listener, even though the browser stops playback.
     },
     tick() { for (const fn of timers) fn(); },
     advance(ms) { now += ms; for (const fn of timers) fn(); },
@@ -382,6 +390,46 @@ test('notification fallback Play still resumes the same source after a site-trig
   assert.equal(f.media.paused, false);
 });
 
+test('notification Play can replay a previously played item after it ends', () => {
+  for (const host of ['music.example.test', 'www.youtube.com']) {
+    const f = frame({ host });
+    f.media.currentTime = f.media.duration;
+    f.media.paused = true;
+    f.media.ended = true;
+    f.emit('ended');
+    assert.equal(f.playbackReports.at(-1)[1], false);
+
+    f.window.__wvkControlRichMedia('play', f.frameId, 0);
+
+    assert.deepEqual(f.commands, ['play'], host);
+  }
+});
+
+test('notification Play after an end still rejects an unplayed replacement source', () => {
+  const f = frame({ host: 'music.example.test' });
+  f.media.paused = true;
+  f.media.ended = true;
+  f.emit('ended');
+  f.media.src = f.media.currentSrc = 'https://media.example.test/unplayed.mp4';
+  f.emit('emptied');
+
+  f.window.__wvkControlRichMedia('play', f.frameId, 0);
+
+  assert.deepEqual(f.commands, []);
+});
+
+test('removing the playing element updates playback without a document navigation', () => {
+  const f = frame({ host: 'music.example.test' });
+  assert.equal(f.playbackReports.at(-1)[1], true);
+  f.removeMedia();
+
+  f.tick();
+
+  assert.equal(f.playbackReports.at(-1)[1], false);
+  const reports = f.playbackReports.length;
+  f.tick();
+  assert.equal(f.playbackReports.length, reports, 'unchanged states are not posted repeatedly');
+});
 
 test('a newly played source becomes eligible for notification fallback Play', () => {
   const f = frame({ host: 'music.example.test' });

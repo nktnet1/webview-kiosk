@@ -378,7 +378,8 @@ internal const val RICH_MEDIA_SCRIPT =
           var requested = requestedPlayback &&
             mediaIdentity.matches(requestedPlayback.identity, element) &&
             (!requestedPlayback.videoId || requestedPlayback.videoId === videoIdentity(root));
-          if ((mediaIdentity.matches(lastPlayback, element) || requested) && element.paused && !element.ended) {
+          // An explicit Play can restart the same item after it finishes.
+          if ((mediaIdentity.matches(lastPlayback, element) || requested) && (element.paused || element.ended)) {
             if (root && typeof root.playVideo === 'function') root.playVideo();
             else if (typeof element.play === 'function') {
               var pending = element.play();
