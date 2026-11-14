@@ -18,6 +18,21 @@ Specify regular expressions (regex), one per line. URL rules use the
 [RE2](https://github.com/google/re2/wiki/syntax) regex engine. Test complex
 patterns before deploying them, as RE2 does not guarantee cheap compilation.
 
+<Callout title="Upgrading from 0.26.26 or earlier" type="warn">
+
+URL rules previously used Android's Java regex engine. RE2/J does not support
+lookahead, lookbehind, or backreferences. Review existing blacklist and whitelist
+rules before upgrading, including rules supplied through managed configurations.
+Unsupported or invalid blacklist rules fail closed when evaluated and can
+block navigation with a `URL_REGEX_ERROR` page. Invalid whitelist rules do not
+block URLs on their own, but cannot override a blacklist rule. A matching valid
+whitelist rule still takes precedence.
+
+Use the [Regex Playground](/tools/regex) to check replacement rules before
+deploying them.
+
+</Callout>
+
 The app rejects malformed navigation URLs. Normal navigation URLs, including
 website redirects and decoded block-page or PDF viewer targets, are limited to
 2,097,152 characters. Data URLs may contain up to 20,971,520 characters. Internal

@@ -3,19 +3,29 @@ title: Shizuku
 description: Activate Device Owner or main-user Profile Owner from the app.
 ---
 
-<Callout title="Activate without removing accounts or freezing apps" type="success">
+## 1. Requirements [#requirements]
 
-The activation method below automates the process outlined in the following
+<Callout title="Account workaround on Android 12+" type="info">
+
+On Android 12+, activation attempts the setup-state workaround outlined in this
 [XDA guide](https://xdaforums.com/t/how-i-got-device-owner-without-factory-reset.4745834/#post-90768446).
+The app restores the original setup state after the attempt. Android and OEM
+ownership restrictions can still prevent activation.
 
 </Callout>
 
-## 1. Requirements [#requirements]
-
-Your device should be running **Android 12+** with
+Your device should be running **Android 6+** with
 [Shizuku](https://shizuku.rikka.app/download/)
 active. For more details, refer to
 [Shizuku's User Manual](https://shizuku.rikka.app/guide/setup/).
+
+On Android 6-11, activation uses the normal Android ownership commands without
+changing setup state. Existing accounts or ownership can prevent activation -
+follow the [ADB activation guide](/docs/activation/adb) if Android rejects it.
+
+Activate from the device's main user (typically id 0). Automatic activation is
+unavailable on headless-system-user devices prior to Android 14, since the main
+user cannot be identified by {APP_NAME}.
 
 ## 2. Activate ownership [#activate]
 
