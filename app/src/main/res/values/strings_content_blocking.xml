@@ -29,7 +29,6 @@
     <string name="ui_downloading_filter_lists" formatted="false">"Downloading filter lists…"</string>
     <string name="ui_downloading_selected_filter_lists" formatted="false">"Downloading selected filter lists…"</string>
     <string name="ui_downloading_ublock_origin_defaults" formatted="false">"Adding default filter lists…"</string>
-    <string name="ui_downloading_value">"Downloading %1$s…"</string>
     <string name="ui_e_g_my_filters" formatted="false">"e.g. My filters"</string>
     <string name="ui_edit_filter_list" formatted="false">"Edit filter list"</string>
     <string name="ui_enable_selected" formatted="false">"Enable selected"</string>

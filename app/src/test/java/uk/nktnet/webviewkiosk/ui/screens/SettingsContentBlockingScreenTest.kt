@@ -542,6 +542,36 @@ class SettingsContentBlockingScreenTest {
     }
 
     @Test
+    fun selectedCountLabelTogglesSelectAllJustLikeTheCheckbox() {
+        enterManage()
+        click(message(R.string.ui_value_selected, "0"))
+        assertTrue(hasText(message(R.string.ui_value_selected, "3")))
+        assertEquals(
+            ToggleableState.On,
+            selectionState(message(R.string.ui_select_all_filter_lists)),
+        )
+
+        click(message(R.string.ui_value_selected, "3"))
+        assertTrue(hasText(message(R.string.ui_value_selected, "0")))
+        assertEquals(
+            ToggleableState.Off,
+            selectionState(message(R.string.ui_select_all_filter_lists)),
+        )
+
+        clickDescription(message(R.string.ui_select_value, "First"))
+        assertEquals(
+            ToggleableState.Indeterminate,
+            selectionState(message(R.string.ui_select_all_filter_lists)),
+        )
+        click(message(R.string.ui_value_selected, "1"))
+        assertTrue(hasText(message(R.string.ui_value_selected, "3")))
+        assertEquals(
+            ToggleableState.On,
+            selectionState(message(R.string.ui_select_all_filter_lists)),
+        )
+    }
+
+    @Test
     fun selectAllTogglesTheSelectionAndDoneClearsIt() {
         enterManage()
         clickDescription(message(R.string.ui_select_value, "First"))

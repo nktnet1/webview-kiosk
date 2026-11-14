@@ -8,6 +8,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -861,6 +863,15 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 }
                 if (managing) {
                     item(key = "selection") {
+                        val selectionEnabled = !busy && lists.isNotEmpty()
+                        val toggleAllSelection = {
+                            selectedIds =
+                                if (selectedLists.size == lists.size) {
+                                    emptySet()
+                                } else {
+                                    lists.map { it.id }.toSet()
+                                }
+                        }
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 TriStateCheckbox(
@@ -872,15 +883,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                                 ToggleableState.On
                                             else -> ToggleableState.Indeterminate
                                         },
-                                    enabled = !busy && lists.isNotEmpty(),
-                                    onClick = {
-                                        selectedIds =
-                                            if (selectedLists.size == lists.size) {
-                                                emptySet()
-                                            } else {
-                                                lists.map { it.id }.toSet()
-                                            }
-                                    },
+                                    enabled = selectionEnabled,
+                                    onClick = toggleAllSelection,
                                     modifier =
                                         Modifier.semantics {
                                             contentDescription = selectAllDescription
@@ -891,6 +895,16 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                         R.string.ui_value_selected,
                                         selectedLists.size,
                                     ),
+                                    modifier =
+                                        Modifier.clickable(
+                                            enabled = selectionEnabled,
+                                            indication = null,
+                                            interactionSource =
+                                                remember {
+                                                    MutableInteractionSource()
+                                                },
+                                            onClick = toggleAllSelection,
+                                        ),
                                     style = MaterialTheme.typography.bodyMedium,
                                 )
                             }
@@ -1531,15 +1545,14 @@ internal fun FilterListDownloadStatus(
                 Modifier.fillMaxWidth().semantics {
                     contentDescription = currentDescription
                 }
-            when {
-                transfer?.stage == FilterListDownloadStage.FINISHED ->
+            when (transfer?.stage) {
+                FilterListDownloadStage.FINISHED ->
                     LinearProgressIndicator(
                         progress = { 1f },
                         modifier = currentProgressModifier,
                     )
 
-                transfer?.stage == FilterListDownloadStage.DOWNLOADING &&
-                    transfer.totalBytes != null ->
+                FilterListDownloadStage.DOWNLOADING if transfer.totalBytes != null ->
                     LinearProgressIndicator(
                         progress = {
                             (transfer.bytesRead.toFloat() / transfer.totalBytes)
