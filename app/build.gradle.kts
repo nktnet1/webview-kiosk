@@ -21,7 +21,7 @@ android {
     defaultConfig {
         testInstrumentationRunner =
             "uk.nktnet.webviewkiosk.r8.R8RuntimeInstrumentation"
-        applicationId = "uk.nktnet.webviewkiosk"
+        applicationId = "com.nktnet.webview_kiosk"
         minSdk = 21
         targetSdk = 37
         versionCode = 142
