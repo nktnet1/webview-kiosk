@@ -211,6 +211,8 @@
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
                 <action android:name="android.app.action.DEVICE_ADMIN_DISABLE_REQUESTED" />
                 <action android:name="android.app.action.DEVICE_ADMIN_DISABLED" />
+                <action android:name="android.app.action.LOCK_TASK_ENTERING" />
+                <action android:name="android.app.action.LOCK_TASK_EXITING" />
                 <action android:name="android.app.action.PROVISIONING_SUCCESSFUL" />
             </intent-filter>
         </receiver>

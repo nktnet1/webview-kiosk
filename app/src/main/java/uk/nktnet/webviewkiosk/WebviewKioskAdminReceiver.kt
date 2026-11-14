@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.webview.mutualTlsSiteKey
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
@@ -15,6 +16,20 @@ class WebviewKioskAdminReceiver : DeviceAdminReceiver() {
         DeviceOwnerManager.init(context)
         setupLockTaskPackage(context)
         super.onEnabled(context, intent)
+    }
+
+    override fun onLockTaskModeEntering(
+        context: Context,
+        intent: Intent,
+        pkg: String,
+    ) {
+        LockStateSingleton.onLockTaskModeChanged(true)
+        super.onLockTaskModeEntering(context, intent, pkg)
+    }
+
+    override fun onLockTaskModeExiting(context: Context, intent: Intent) {
+        LockStateSingleton.onLockTaskModeChanged(false)
+        super.onLockTaskModeExiting(context, intent)
     }
 
     override fun onChoosePrivateKeyAlias(

@@ -9,8 +9,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.config.data.ManagementOwner
 import uk.nktnet.webviewkiosk.config.option.LockStateType
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.utils.getIsLocked
 
@@ -18,11 +22,46 @@ object LockStateSingleton {
     private val _isLocked = mutableStateOf(false)
     val isLocked: State<Boolean> = _isLocked
 
-    private var previousIsLocked: Boolean = _isLocked.value
-
     private var monitoringJob: Job? = null
     private var isStarted = false
     private lateinit var activityManager: ActivityManager
+
+    private val dhizukuMonitor =
+        DhizukuLockTaskModeMonitor(onChanged = ::onLockTaskModeChanged)
+
+    /** Called by the native DPC receiver or Dhizuku's forwarded DPC callback. */
+    fun onLockTaskModeChanged(entering: Boolean) {
+        setLockState(
+            entering,
+            if (entering) {
+                LockStateType.LOCK_TASK
+            } else {
+                LockStateType.NONE
+            },
+        )
+    }
+
+    @Synchronized
+    private fun setLockState(locked: Boolean, type: LockStateType) {
+        if (_isLocked.value == locked) {
+            return
+        }
+        _isLocked.value = locked
+        if (MqttManager.isConnected()) {
+            if (locked) {
+                MqttManager.publishLockEvent(type)
+            } else {
+                MqttManager.publishUnlockEvent()
+            }
+        }
+    }
+
+    internal fun refreshFromActivityManager(manager: ActivityManager) {
+        setLockState(
+            getIsLocked(manager),
+            LockStateType.fromActivityManager(manager),
+        )
+    }
 
     fun startMonitoring(application: Application) {
         if (isStarted) {
@@ -33,25 +72,24 @@ object LockStateSingleton {
             application.getSystemService(Application.ACTIVITY_SERVICE)
                 as ActivityManager
 
-        monitoringJob =
-            CoroutineScope(Dispatchers.Default).launch {
-                while (true) {
-                    previousIsLocked = _isLocked.value
-                    _isLocked.value = getIsLocked(activityManager)
-                    if (
-                        MqttManager.isConnected() &&
-                            previousIsLocked != _isLocked.value
-                    ) {
-                        if (_isLocked.value) {
-                            val state =
-                                LockStateType.fromActivityManager(activityManager)
-                            MqttManager.publishLockEvent(state)
-                        } else {
-                            MqttManager.publishUnlockEvent()
-                        }
-                    }
-                    delay(1000.milliseconds)
-                }
+        val scope = CoroutineScope(Dispatchers.Default)
+        monitoringJob = scope.launch {
+            // Keep this independent of Dhizuku registration and callbacks.
+            while (isActive) {
+                refreshFromActivityManager(activityManager)
+                delay(1000.milliseconds)
             }
+        }
+        scope.launch(Dispatchers.IO) {
+            while (isActive) {
+                val status = DeviceOwnerManager.status.value
+                dhizukuMonitor.refresh(
+                    status.mode == DeviceOwnerMode.Dhizuku &&
+                        (status.owner == ManagementOwner.DeviceOwner ||
+                            status.owner == ManagementOwner.ProfileOwner)
+                )
+                delay(1000.milliseconds)
+            }
+        }
     }
 }
