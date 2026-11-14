@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.os.Looper
+import android.text.format.Formatter
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +38,9 @@ import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.blocking.FilterListBatchProgress
+import uk.nktnet.webviewkiosk.blocking.FilterListDownloadProgress
+import uk.nktnet.webviewkiosk.blocking.FilterListDownloadStage
 import uk.nktnet.webviewkiosk.blocking.FilterListStore
 import uk.nktnet.webviewkiosk.blocking.FilterListType
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterLists
@@ -106,6 +110,87 @@ class SettingsContentBlockingScreenTest {
         scope.cancel()
         activityController.pause().stop().destroy()
         ViewRootForTest.onViewCreatedCallback = null
+    }
+
+    @Test
+    fun batchDownloadStatusShowsCurrentNameBothProgressBarsAndByteCount() {
+        view.setContent {
+            MaterialTheme {
+                FilterListDownloadStatus(
+                    message = "Adding filter lists…",
+                    progress =
+                        FilterListBatchProgress(
+                            name = "EasyList",
+                            current = 2,
+                            total = 4,
+                            completed = 1,
+                            download =
+                                FilterListDownloadProgress(
+                                    FilterListDownloadStage.DOWNLOADING,
+                                    bytesRead = 512,
+                                    totalBytes = 1024,
+                                ),
+                        ),
+                )
+            }
+        }
+        frames()
+        assertTrue(hasText("EasyList"))
+        assertTrue(hasText(message(R.string.ui_filter_list_progress_count, 2, 4)))
+        assertTrue(
+            hasText(
+                message(
+                    R.string.ui_filter_list_current_file_bytes,
+                    Formatter.formatShortFileSize(activityController.get(), 512),
+                    Formatter.formatShortFileSize(activityController.get(), 1024),
+                )
+            )
+        )
+        val bars =
+            nodes().mapNotNull { node ->
+                node.config.getOrNull(SemanticsProperties.ProgressBarRangeInfo)
+            }
+        assertEquals(listOf(0.25f, 0.5f), bars.map { it.current })
+    }
+
+    @Test
+    fun unknownSingleDownloadStatusDoesNotInventAPercentage() {
+        view.setContent {
+            MaterialTheme {
+                FilterListDownloadStatus(
+                    message = "Downloading filter list…",
+                    progress =
+                        FilterListBatchProgress(
+                            name = "Custom list",
+                            current = 1,
+                            total = 1,
+                            completed = 0,
+                            download =
+                                FilterListDownloadProgress(
+                                    FilterListDownloadStage.DOWNLOADING,
+                                    bytesRead = 2048,
+                                ),
+                        ),
+                )
+            }
+        }
+        frames()
+        assertTrue(hasText("Custom list"))
+        assertFalse(hasText(message(R.string.ui_filter_list_progress_count, 1, 1)))
+        assertTrue(
+            hasText(
+                message(
+                    R.string.ui_filter_list_current_file_received,
+                    Formatter.formatShortFileSize(activityController.get(), 2048),
+                )
+            )
+        )
+        val bars =
+            nodes().mapNotNull {
+                it.config.getOrNull(SemanticsProperties.ProgressBarRangeInfo)
+            }
+        assertEquals(1, bars.size)
+        assertEquals(0f, bars.single().current)
     }
 
     @Test
