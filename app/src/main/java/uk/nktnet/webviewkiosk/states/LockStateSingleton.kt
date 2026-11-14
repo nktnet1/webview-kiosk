@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.states
 
 import android.app.ActivityManager
 import android.app.Application
+import android.os.Build
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import kotlin.time.Duration.Companion.milliseconds
@@ -26,8 +27,10 @@ object LockStateSingleton {
     private var isStarted = false
     private lateinit var activityManager: ActivityManager
 
-    private val dhizukuMonitor =
+    // Dhizuku requires API 23+. Do not load its listener on Android 5.x.
+    private val dhizukuMonitor by lazy {
         DhizukuLockTaskModeMonitor(onChanged = ::onLockTaskModeChanged)
+    }
 
     /** Called by the native DPC receiver or Dhizuku's forwarded DPC callback. */
     fun onLockTaskModeChanged(entering: Boolean) {
@@ -80,15 +83,17 @@ object LockStateSingleton {
                 delay(1000.milliseconds)
             }
         }
-        scope.launch(Dispatchers.IO) {
-            while (isActive) {
-                val status = DeviceOwnerManager.status.value
-                dhizukuMonitor.refresh(
-                    status.mode == DeviceOwnerMode.Dhizuku &&
-                        (status.owner == ManagementOwner.DeviceOwner ||
-                            status.owner == ManagementOwner.ProfileOwner)
-                )
-                delay(1000.milliseconds)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            scope.launch(Dispatchers.IO) {
+                while (isActive) {
+                    val status = DeviceOwnerManager.status.value
+                    dhizukuMonitor.refresh(
+                        status.mode == DeviceOwnerMode.Dhizuku &&
+                            (status.owner == ManagementOwner.DeviceOwner ||
+                                status.owner == ManagementOwner.ProfileOwner)
+                    )
+                    delay(1000.milliseconds)
+                }
             }
         }
     }
