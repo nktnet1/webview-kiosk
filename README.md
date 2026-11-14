@@ -63,26 +63,28 @@ and standalone Kiosk solution.
 
 ## Permissions
 
-- <b>INTERNET</b>: for general web browsing
-- <b>ACCESS_NETWORK_STATE</b>: to refresh web pages when network connectivity is restored
-- <b>ACCESS_LOCAL_NETWORK</b>: (optional, Android 17+) for web apps that access the local network
-- <b>CAMERA</b>: (optional) for use with web apps that requires photo/video capture
-- <b>RECORD_AUDIO</b>: (optional) for use with web apps that requires audio capture
-- <b>MODIFY_AUDIO_SETTINGS</b>: for routing audio (microphone will not work without this)
-- <b>ACCESS_FINE_LOCATION</b>: (optional) for web apps that needs precise geolocation
-- <b>ACCESS_COARSE_LOCATION</b>: (optional) for web apps that needs approximate geolocation
-- <b>NFC</b>: for reading and writing NFC tags using the device's NFC hardware
-- <b>VIBRATE</b>: (optional) for navigator.vibrate(pattern) when enabled
-- <b>INSTALL_SHORTCUT</b>: for adding home screen launcher shortcuts on Android 7.1 and below
-- <b>QUERY_ALL_PACKAGES</b>: to find launchable apps, device owners and lock task packages
-- <b>POST_NOTIFICATIONS</b>: (optional) for lock task mode (kiosk) launches and MQTT
-- <b>FOREGROUND_SERVICE</b>: for persistent notification and management with lock task and MQTT
-- <b>FOREGROUND_SERVICE_SPECIAL_USE</b>: provides a return mechanism for opening apps in kiosk
+- <b>INTERNET</b>: general web browsing
+- <b>ACCESS_NETWORK_STATE</b>: refresh web pages when network connectivity is restored
+- <b>ACCESS_LOCAL_NETWORK</b>: (optional, Android 17+) web apps needing LAN
+- <b>CAMERA</b>: (optional) web apps requiring photo/video capture
+- <b>RECORD_AUDIO</b>: (optional) web apps requiring audio capture
+- <b>MODIFY_AUDIO_SETTINGS</b>: routing audio - needed for microphone
+- <b>ACCESS_FINE_LOCATION</b>: (optional) web apps requiring precise geolocation
+- <b>ACCESS_COARSE_LOCATION</b>: (optional) web apps requiring approximate geolocation
+- <b>NFC</b>: read/write NFC tags using hardware
+- <b>VIBRATE</b>: (optional) web apps requiring navigator.vibrate(pattern)
+- <b>INSTALL_SHORTCUT</b>: home screen launcher shortcuts on Android 7.1 and below
+- <b>QUERY_ALL_PACKAGES</b>: find launchable apps, device owners and lock task packages
+- <b>POST_NOTIFICATIONS</b>: (optional) for lock task mode launches and MQTT
+- <b>FOREGROUND_SERVICE</b>: persistent notification for required services
+- <b>FOREGROUND_SERVICE_SPECIAL_USE</b>: return mechanism after opening apps in kiosk
+- <b>FOREGROUND_SERVICE_MEDIA_PLAYBACK</b>: background audio/video streaming, e.g. YouTube
 - <b>USE_BIOMETRIC</b>: replaces USE_FINGERPRINT from Android 9.0 onwards
-- <b>USE_FINGERPRINT</b>: use fingerprint hardware when accessing settings or unlocking kiosk
-- <b>WAKE_LOCK</b>: to optionally wake the screen when receiving MQTT commands
-- <b>WRITE_EXTERNAL_STORAGE</b>: for downloading files in Android 9.0 and below
-- <b>API (Dhizuku)</b>: to request shared device owner privileges
+- <b>USE_FINGERPRINT</b>: fingerprint hardware for authentication
+- <b>WAKE_LOCK</b>: (optional) wake screen when receiving MQTT commands
+- <b>WRITE_EXTERNAL_STORAGE</b>: download files in Android 9.0 and below
+- <b>API (Dhizuku)</b>: request shared owner privileges
+- <b>API_23 (Shizuku)</b>: auto-activate device/profile owner
 
 ## Installation Notes
 
