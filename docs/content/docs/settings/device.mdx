@@ -39,10 +39,18 @@ Use -1 to disable (i.e. the system default brightness will be used).
 
 Set to true to give WebView access to your device's camera.
 
-You will need to grant the [CAMERA](https://developer.android.com/reference/android/Manifest.permission#CAMERA)
+You will need to grant the
+[CAMERA](https://developer.android.com/reference/android/Manifest.permission#CAMERA)
 permission, which is required for the WebView's
 [RESOURCE_VIDEO_CAPTURE](https://developer.android.com/reference/android/webkit/PermissionRequest#RESOURCE_VIDEO_CAPTURE)
 feature.
+
+When in
+[Lock Task Mode](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode)
+(kiosk), to access the camera, your camera app will need to be in the
+allowlist for lock task packages. If {APP_NAME} is set as the device owner or
+profile owner (main user), this can be done by going to
+`Settings -> Device -> Manage Device Policies -> Manage Lock Task Packages`.
 
 **Default:** false
 

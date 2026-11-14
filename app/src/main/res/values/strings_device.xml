@@ -3,7 +3,9 @@
     <!-- Settings help text -->
     <string name="setting_info_allow_camera" formatted="false">"Set to true to give WebView access to your device\'s camera.
 
-You will need to grant the CAMERA permission, which is required for the WebView\'s RESOURCE_VIDEO_CAPTURE feature."</string>
+You will need to grant the CAMERA permission, which is required for the WebView\'s RESOURCE_VIDEO_CAPTURE feature.
+
+When in Lock Task Mode, to access the camera, your camera app will need to be in the allowlist for lock task packages. This can be done in "Settings → Device → Manage Device Policies → Manage Lock Task Packages".</string>
     <string name="setting_info_allow_location" formatted="false">"When enabled, websites can request the device\'s location.
 
 You can choose to request precise location (FINE) or approximate location (COARSE).
