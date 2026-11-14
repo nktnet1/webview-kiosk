@@ -722,6 +722,35 @@ class SuggestedFilterListDownloaderTest {
     }
 
     @Test
+    fun presetPickerExcludesInstalledPresetsAndRestoresThemWhenRemoved() {
+        val available = SuggestedFilterLists.all
+        assertEquals(available, SuggestedFilterLists.availablePresets(store.list()))
+
+        val urlList =
+            store.importFrom(
+                "Custom URL",
+                "||ads.example^".byteInputStream(),
+                preset.url,
+                FilterListType.URL,
+            )
+        assertEquals(available, SuggestedFilterLists.availablePresets(store.list()))
+
+        val installed = downloader().download(preset, store)
+        assertEquals(
+            available.drop(1),
+            SuggestedFilterLists.availablePresets(store.list()),
+        )
+        val allInstalled = available.map { suggestion ->
+            installed.copy(sourceUrl = suggestion.url)
+        }
+        assertTrue(SuggestedFilterLists.availablePresets(allInstalled).isEmpty())
+
+        store.remove(installed.id)
+        assertEquals(available, SuggestedFilterLists.availablePresets(store.list()))
+        assertEquals(urlList, store.list().single())
+    }
+
+    @Test
     fun presetAndUrlCanShareASourceAndDuplicateTypesAreRejectedBeforeFetching() {
         for (presetFirst in listOf(true, false)) {
             val calls = AtomicInteger()

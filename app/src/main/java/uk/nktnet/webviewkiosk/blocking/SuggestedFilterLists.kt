@@ -117,6 +117,18 @@ internal object SuggestedFilterLists {
     // Regional and optional annoyance lists depend on user preference.
     val defaults = ublock + others.take(4)
 
+    /** Presets already installed stay out of the picker until they are removed. */
+    fun availablePresets(
+        lists: List<ImportedFilterList>
+    ): List<SuggestedFilterList> {
+        val installed =
+            lists
+                .filter { it.type == FilterListType.PRESET }
+                .mapNotNull { it.sourceUrl }
+                .toSet()
+        return all.filterNot { it.url in installed }
+    }
+
     fun missingDefaults(lists: List<ImportedFilterList>): List<SuggestedFilterList> {
         val existing = lists.mapNotNull { it.sourceUrl }.toSet()
         return defaults.filterNot { it.url in existing }
