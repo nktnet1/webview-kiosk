@@ -60,6 +60,7 @@ Start the profile and install the work copy using the tab matching your app:
 adb shell am start-user 10
 adb shell pm install-existing --user 10 uk.nktnet.webviewkiosk
 adb shell dpm set-profile-owner --user 10 uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
+adb shell settings --user 10 put secure user_setup_complete 1
 adb shell am start --user 10 -n uk.nktnet.webviewkiosk/.MainActivity
 ```
 
@@ -70,6 +71,7 @@ adb shell am start --user 10 -n uk.nktnet.webviewkiosk/.MainActivity
 adb shell am start-user 10
 adb shell pm install-existing --user 10 com.nktnet.webview_kiosk
 adb shell dpm set-profile-owner --user 10 com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+adb shell settings --user 10 put secure user_setup_complete 1
 adb shell am start --user 10 -n com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.MainActivity
 ```
 
@@ -80,6 +82,10 @@ adb shell am start --user 10 -n com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.
 adb shell am start-user 10
 adb shell pm install-existing --user 10 uk.nktnet.webviewkiosk.debug
 adb shell dpm set-profile-owner --user 10 uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+
+# Needed for work apps to appear in "Recents"
+adb shell settings --user 10 put secure user_setup_complete 1
+
 adb shell am start --user 10 -n uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewkiosk.MainActivity
 ```
 
