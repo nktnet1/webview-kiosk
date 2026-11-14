@@ -45,12 +45,15 @@ permission, which is required for the WebView's
 [RESOURCE_VIDEO_CAPTURE](https://developer.android.com/reference/android/webkit/PermissionRequest#RESOURCE_VIDEO_CAPTURE)
 feature.
 
-When in
+When a website opens a separate camera app for photo or video capture (for
+example, from a file-upload capture control),
 [Lock Task Mode](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode)
-(kiosk), to access the camera, your camera app will need to be in the
-allowlist for lock task packages. If {APP_NAME} is set as the device owner or
-profile owner (main user), this can be done by going to
-`Settings -> Device -> Manage Device Policies -> Manage Lock Task Packages`.
+may block it unless the camera app is allowlisted. Camera access directly inside
+WebView via `RESOURCE_VIDEO_CAPTURE` does not require a separate app or this
+allowlisting.
+
+If {APP_NAME} can manage device policies, add the camera app under
+**Settings → Device → Manage Device Policies → Manage Lock Task Packages**.
 
 **Default:** false
 

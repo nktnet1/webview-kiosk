@@ -21,7 +21,13 @@ class UiStringResourcesTest {
         assertEquals(
             "Set to true to give WebView access to your device's camera.\n\n" +
                 "You will need to grant the CAMERA permission, which is required for the " +
-                "WebView's RESOURCE_VIDEO_CAPTURE feature.",
+                "WebView's RESOURCE_VIDEO_CAPTURE feature.\n\n" +
+                "When a website launches a separate camera app for photo or video " +
+                "capture, Lock Task Mode may block it unless that app is " +
+                "allowlisted. This is not required for camera access directly " +
+                "inside WebView. If device policy controls are available, manage " +
+                "the allowlist under Settings → Device → Manage Device Policies " +
+                "→ Manage Lock Task Packages.",
             context.getString(R.string.setting_info_allow_camera),
         )
         assertEquals(

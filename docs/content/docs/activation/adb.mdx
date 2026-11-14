@@ -124,7 +124,7 @@ the following steps:
     ```sh
     adb shell dumpsys user | grep 'UserInfo{.*}'
     ```
-    
+
     The goal is to only have a single main user:
 
     ```
@@ -157,15 +157,17 @@ the following steps:
   </Step>
 
   <Step>
-    Freeze all applications that uses accounts, e.g. Whatsapp. You can do this
-    using an application like
-    [Hail](https://github.com/aistra0528/Hail/blob/master/README_EN.md).
+    Remove the listed accounts using your device settings. If an account belongs
+    to a disabled app, temporarily re-enable that app so you can remove its
+    account.
   </Step>
 
   <Step>
-    Remove all accounts. If there are accounts stored in disabled applications,
-    you will need to first enable them again before freezing the app and
-    removing the account.
+    If apps keep re-creating accounts, temporarily disable those apps (for
+    example, using [Hail](https://github.com/aistra0528/Hail/blob/master/README_EN.md)).
+    Do not disable essential system apps. Run `adb shell dumpsys account list`
+    again and confirm it reports no accounts. Re-enable any apps you disabled
+    after activation.
   </Step>
 
   <Step>

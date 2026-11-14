@@ -23,8 +23,10 @@ patterns before deploying them, as RE2 does not guarantee cheap compilation.
 URL rules previously used Android's Java regex engine. RE2/J does not support
 lookahead, lookbehind, or backreferences. Review existing blacklist and whitelist
 rules before upgrading, including rules supplied through managed configurations.
-Unsupported or invalid rules fail closed when evaluated and can block navigation
-with a `URL_REGEX_ERROR` page. A matching whitelist rule still takes precedence.
+Unsupported or invalid blacklist rules fail closed when evaluated and can
+block navigation with a `URL_REGEX_ERROR` page. Invalid whitelist rules do not
+block URLs on their own, but cannot override a blacklist rule. A matching valid
+whitelist rule still takes precedence.
 
 Use the [Regex Playground](/tools/regex) to check replacement rules before
 deploying them.
