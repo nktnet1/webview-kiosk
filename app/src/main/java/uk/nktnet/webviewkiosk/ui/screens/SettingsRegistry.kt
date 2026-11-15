@@ -713,6 +713,8 @@ internal val settingsPages: List<SettingsPage> = buildList {
             screen = Screen.SettingsDeviceOwner,
             titleRes = R.string.settings_device_owner_title,
             parent = settingsDevice.hierarchy,
+            descriptionRes = R.string.settings_device_owner_description,
+            aliasesRes = R.string.settings_search_alias_lock_task_mode,
             settings =
                 listOf(
                     SettingDefinition(

@@ -148,6 +148,28 @@ class SettingsSearchIndexTest {
     }
 
     @Test
+    fun lockTaskSearchIncludesDevicePoliciesPage() {
+        for (query in
+            listOf(
+                "lock task mode",
+                "LOCK-TASK MODE",
+                "lock_task_mode",
+                "manage lock task packages",
+                "MANAGE-LOCK-TASK-PACKAGES",
+                "manage_lock_task_packages",
+            )) {
+            val result =
+                searchSettings(context, query).single {
+                    it.kind == SettingsSearchResultKind.PAGE &&
+                        it.route == Screen.SettingsDeviceOwner.route
+                }
+            assertEquals(R.string.settings_device_owner_title, result.titleRes)
+            assertEquals(null, result.targetId)
+            assertEquals(null, result.settingKey)
+        }
+    }
+
+    @Test
     fun findsDescriptionsAliasesAndOptionLabels() {
         assertTrue(
             searchSettings(context, "keep device awake").any {
