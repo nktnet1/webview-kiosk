@@ -6,8 +6,11 @@ enum class SettingsAuthRequirementOption(val label: String) {
     REQUIRE("Require");
 
     companion object {
-        // Managed restrictions use exact option codes, not translated labels.
-        fun fromString(value: String?): SettingsAuthRequirementOption =
-            entries.find { it.name == value } ?: REQUIRE
+        fun fromString(value: String?): SettingsAuthRequirementOption {
+            return entries.find {
+                it.name.equals(value, ignoreCase = true) ||
+                    it.label.equals(value, ignoreCase = true)
+            } ?: REQUIRE
+        }
     }
 }

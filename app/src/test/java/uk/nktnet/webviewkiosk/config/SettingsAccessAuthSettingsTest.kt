@@ -42,6 +42,28 @@ class SettingsAccessAuthSettingsTest {
     }
 
     @Test
+    fun optionParsingAcceptsNamesAndLabelsCaseInsensitively() {
+        for (value in listOf("OFF", "Off", "off", "oFf")) {
+            assertEquals(
+                SettingsAuthRequirementOption.OFF,
+                SettingsAuthRequirementOption.fromString(value),
+            )
+        }
+        for (value in listOf("REQUIRE", "Require", "require", "rEqUiRe")) {
+            assertEquals(
+                SettingsAuthRequirementOption.REQUIRE,
+                SettingsAuthRequirementOption.fromString(value),
+            )
+        }
+        for (value in listOf(null, "", "DEFAULT", "false", "true", "UNKNOWN")) {
+            assertEquals(
+                SettingsAuthRequirementOption.REQUIRE,
+                SettingsAuthRequirementOption.fromString(value),
+            )
+        }
+    }
+
+    @Test
     fun defaultsOnAndPersistsBothValues() {
         assertEquals("device.settings_auth_requirement", key)
         assertEquals(
@@ -138,9 +160,22 @@ class SettingsAccessAuthSettingsTest {
     }
 
     @Test
+    fun managedChoiceNamesAndLabelsAreCaseInsensitive() {
+        settings.settingsAuthRequirement = SettingsAuthRequirementOption.REQUIRE
+        for (value in listOf("OFF", "Off", "off", "oFf")) {
+            shadowOf(restrictions)
+                .setApplicationRestrictions(Bundle().apply { putString(key, value) })
+            assertEquals(
+                SettingsAuthRequirementOption.OFF,
+                settings.settingsAuthRequirement,
+            )
+        }
+    }
+
+    @Test
     fun invalidManagedChoiceFailsClosedToRequire() {
         settings.settingsAuthRequirement = SettingsAuthRequirementOption.OFF
-        for (invalidValue in listOf("", "off", "false", "DEFAULT", "UNKNOWN")) {
+        for (invalidValue in listOf("", "false", "DEFAULT", "UNKNOWN")) {
             shadowOf(restrictions)
                 .setApplicationRestrictions(
                     Bundle().apply { putString(key, invalidValue) }
