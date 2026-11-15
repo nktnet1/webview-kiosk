@@ -16,11 +16,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SettingListItem(title: String, description: String, onClick: () -> Unit) {
+fun SettingListItem(
+    title: String,
+    description: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier =
-            Modifier.fillMaxWidth()
+            modifier
+                .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
                 .border(
                     width = 1.dp,

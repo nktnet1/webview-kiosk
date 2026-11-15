@@ -4,15 +4,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -22,6 +19,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AddressBarActionsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AllowBackwardsNavigationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AllowBookmarkAccessSetting
@@ -76,18 +74,18 @@ fun SettingsWebBrowsingScreen(navController: NavController) {
             SearchProviderUrlSetting()
             SearchSuggestionEngineSetting()
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
+            SettingListItem(
+                title = stringResource(R.string.settings_site_permissions_title),
+                description =
+                    stringResource(R.string.settings_site_permissions_description),
                 onClick = {
                     navController.navigate(
                         Screen.SettingsWebBrowsingSitePermissions.route
                     )
                 },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.ui_manage_site_permissions))
-            }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
         }

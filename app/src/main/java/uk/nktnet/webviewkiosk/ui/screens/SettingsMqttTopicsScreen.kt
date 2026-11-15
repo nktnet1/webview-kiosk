@@ -26,7 +26,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
 import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
-import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogCard
 
 @Composable
 fun SettingsMqttTopicsScreen(navController: NavController) {
@@ -138,6 +138,6 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
         }
         Spacer(modifier = Modifier.height(12.dp))
 
-        MqttDebugLogsButton(navController)
+        MqttDebugLogCard(navController)
     }
 }

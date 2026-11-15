@@ -34,7 +34,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.M
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUsernameSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttWebSocketServerPathSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
-import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogCard
 
 @Composable
 fun SettingsMqttConnectionScreen(navController: NavController) {
@@ -76,6 +76,6 @@ fun SettingsMqttConnectionScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(6.dp))
         }
 
-        MqttDebugLogsButton(navController)
+        MqttDebugLogCard(navController)
     }
 }

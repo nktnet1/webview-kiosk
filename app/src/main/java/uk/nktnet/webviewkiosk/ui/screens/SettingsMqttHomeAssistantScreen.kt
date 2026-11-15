@@ -24,7 +24,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.homeassistan
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.homeassistant.MqttHomeAssistantEnableDiscoverySetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.homeassistant.MqttHomeAssistantStatusTopicSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
-import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogCard
 
 @Composable
 fun SettingsMqttHomeAssistantScreen(navController: NavController) {
@@ -55,6 +55,6 @@ fun SettingsMqttHomeAssistantScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        MqttDebugLogsButton(navController)
+        MqttDebugLogCard(navController)
     }
 }

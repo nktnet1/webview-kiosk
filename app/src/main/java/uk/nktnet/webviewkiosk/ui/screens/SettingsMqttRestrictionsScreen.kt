@@ -28,7 +28,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsSendTopicAliasMaximumSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsTopicAliasMaximumSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
-import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogCard
 
 @Composable
 fun SettingsMqttRestrictionsScreen(navController: NavController) {
@@ -63,6 +63,6 @@ fun SettingsMqttRestrictionsScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        MqttDebugLogsButton(navController)
+        MqttDebugLogCard(navController)
     }
 }
