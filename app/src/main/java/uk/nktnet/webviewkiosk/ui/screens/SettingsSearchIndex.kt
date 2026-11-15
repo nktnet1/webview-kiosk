@@ -6,12 +6,12 @@ import java.text.Normalizer
 import java.util.Locale
 import uk.nktnet.webviewkiosk.config.Screen
 
-/** Search priority is independent of how closely a result matches the query. */
+/** Break ties in text relevance, preferring editable settings over other results. */
 internal enum class SettingsSearchResultKind(val searchPriority: Int) {
     SETTING(4),
     INFORMATION(1),
-    ACTION(2),
-    PAGE(3),
+    ACTION(3),
+    PAGE(2),
 }
 
 internal data class SettingsSearchResult(
@@ -49,7 +49,7 @@ internal class SettingsSearchIndex(context: Context) {
         val key: String,
         val heading: String,
         val description: String,
-        val aliases: String,
+        val aliases: List<String>,
         val options: String,
     )
 
@@ -67,6 +67,17 @@ internal class SettingsSearchIndex(context: Context) {
                 }
                 .orEmpty()
 
+        // Comma-separated aliases are independent search phrases, not one label.
+        fun aliases(@StringRes res: Int?): List<String> =
+            res?.let {
+                    context
+                        .getString(it)
+                        .split(',')
+                        .map(::normaliseSettingsSearch)
+                        .filter { alias -> alias.isNotEmpty() }
+                }
+                .orEmpty()
+
         for (page in settingsPages) {
             val heading = normaliseSettingsSearch(page.breadcrumb(context))
             if (page.screen != Screen.Settings) {
@@ -81,7 +92,7 @@ internal class SettingsSearchIndex(context: Context) {
                         "",
                         heading,
                         text(page.descriptionRes),
-                        text(page.aliasesRes),
+                        aliases(page.aliasesRes),
                         "",
                     )
                 )
@@ -101,7 +112,7 @@ internal class SettingsSearchIndex(context: Context) {
                         normaliseSettingsSearch(key),
                         heading,
                         text(descriptionRes),
-                        text(aliasesRes),
+                        aliases(aliasesRes),
                         optionLabelRes.joinToString(" ") { text(it) },
                     )
                 )
@@ -124,7 +135,7 @@ internal class SettingsSearchIndex(context: Context) {
                         "",
                         heading,
                         text(descriptionRes),
-                        "",
+                        emptyList(),
                         "",
                     )
                 )
@@ -140,7 +151,8 @@ internal class SettingsSearchIndex(context: Context) {
         val words = normalised.split(' ').distinct()
         val matches = documents.mapNotNull { doc ->
             val direct =
-                listOf(doc.label, doc.key, doc.aliases, doc.options, doc.description)
+                listOf(doc.label, doc.key, doc.options, doc.description) +
+                    doc.aliases
             // Ancestors supply context, but must not return every child for a
             // section-only query. Page descriptions match pages, not unrelated rows.
             if (
@@ -151,35 +163,54 @@ internal class SettingsSearchIndex(context: Context) {
             }
             val score =
                 when {
-                    normalised == doc.key || normalised == doc.label -> 1_000
-                    doc.label.startsWith(normalised) -> 800
+                    normalised == doc.key ||
+                        normalised == doc.label ||
+                        normalised in doc.aliases -> 1_000
+                    doc.label.startsWith(normalised) ||
+                        doc.aliases.any { it.startsWith(normalised) } -> 800
                     words.all { it in doc.label || it in doc.key } -> 700
                     words.all {
                         it in doc.label || it in doc.key || it in doc.heading
                     } && words.any { it in doc.label || it in doc.key } -> 600
-                    words.all {
-                        it in doc.aliases || it in doc.label || it in doc.heading
+                    words.all { word ->
+                        word in doc.label ||
+                            word in doc.heading ||
+                            doc.aliases.any { word in it }
                     } -> 500
                     words.any { it in doc.options } -> 300
                     else -> 100
                 }
             doc.result to score
         }
-        // Prioritise editable settings, then pages, actions, and information.
-        // Within each type, prefer stronger matches and keep registry order for
-        // ties. Group afterwards so each breadcrumb section stays together.
-        return matches
-            .sortedWith(
-                compareByDescending<Pair<SettingsSearchResult, Int>> {
-                        it.first.kind.searchPriority
-                    }
-                    .thenByDescending { it.second }
-            )
-            .groupBy { it.first.route }
-            .values
-            .flatten()
-            .map { it.first }
+        return rankSettingsSearchMatches(matches)
     }
+}
+
+/**
+ * Rank breadcrumb sections by their strongest hit, then sort rows within each
+ * section.
+ */
+internal fun rankSettingsSearchMatches(
+    matches: List<Pair<SettingsSearchResult, Int>>
+): List<SettingsSearchResult> {
+    // Relevance is primary: an exact information title or page alias beats a
+    // setting mentioned only in help text. Type priority breaks equal scores.
+    val byRank =
+        compareByDescending<Pair<SettingsSearchResult, Int>> { it.second }
+            .thenByDescending { it.first.kind.searchPriority }
+    // Stable sorting preserves registry order for ties. Keep each breadcrumb
+    // section together even if one of its weaker rows trails another section.
+    return matches
+        .groupBy { it.first.route }
+        .values
+        .map { it.sortedWith(byRank) }
+        .sortedWith(
+            compareByDescending<List<Pair<SettingsSearchResult, Int>>> {
+                    it.first().second
+                }
+                .thenByDescending { it.first().first.kind.searchPriority }
+        )
+        .flatMap { group -> group.map { it.first } }
 }
 
 internal fun searchSettings(
