@@ -40,7 +40,7 @@ For user-owned devices that use screen pinning, this will only work if you are u
 Device-level unpin methods (e.g. gestures/holding overview + back button simultaneously) will bypass this setting. To enhance security, please see: %1$s/security
 
 Leave this setting blank to use your device\'s biometrics or credentials."</string>
-    <string name="setting_info_require_auth_for_settings">"Choose whether Settings requires a custom password, device credentials, or biometrics:
+    <string name="setting_info_settings_auth_requirement">"Choose whether Settings requires a custom password, device credentials, or biometrics:
 - Off: Open Settings without authentication
 - Require: Authenticate before opening Settings (default)
 

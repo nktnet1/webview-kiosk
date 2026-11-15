@@ -54,7 +54,7 @@ data class HomeAssistantSetting(
                     val key = xml.getAttributeValue(ANDROID_NS, "key") ?: continue
                     // Remote changes cannot complete the required local
                     // reauthentication; do not expose a nonfunctional switch.
-                    if (key == UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS) {
+                    if (key == UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT) {
                         continue
                     }
                     val title = xml.getAttributeResourceValue(ANDROID_NS, "title", 0)

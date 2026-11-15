@@ -25,6 +25,7 @@ import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
@@ -48,7 +49,12 @@ fun RequireAuthWrapper(
     val context = androidx.compose.ui.platform.LocalContext.current
     val userSettings = remember(context) { UserSettings(context) }
     val requiresAuth =
-        remember(context) { mutableStateOf(userSettings.requireAuthForSettings) }
+        remember(context) {
+            mutableStateOf(
+                userSettings.settingsAuthRequirement ==
+                    SettingsAuthRequirementOption.REQUIRE
+            )
+        }
     // Reading SharedPreferences is not observable by Compose. Without a listener,
     // changing Off to Require while Settings remains open can leave the bypass
     // branch mounted until an unrelated recomposition or navigation occurs.
@@ -59,14 +65,18 @@ fun RequireAuthWrapper(
                 Context.MODE_PRIVATE,
             )
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS) {
-                requiresAuth.value = userSettings.requireAuthForSettings
+            if (key == UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT) {
+                requiresAuth.value =
+                    userSettings.settingsAuthRequirement ==
+                        SettingsAuthRequirementOption.REQUIRE
             }
         }
         val restrictionsReceiver =
             object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
-                    requiresAuth.value = userSettings.requireAuthForSettings
+                    requiresAuth.value =
+                        userSettings.settingsAuthRequirement ==
+                            SettingsAuthRequirementOption.REQUIRE
                 }
             }
         prefs.registerOnSharedPreferenceChangeListener(listener)
@@ -77,7 +87,9 @@ fun RequireAuthWrapper(
             ContextCompat.RECEIVER_EXPORTED,
         )
         // Also close the gap between the first preference read and registration.
-        requiresAuth.value = userSettings.requireAuthForSettings
+        requiresAuth.value =
+            userSettings.settingsAuthRequirement ==
+                SettingsAuthRequirementOption.REQUIRE
         onDispose {
             prefs.unregisterOnSharedPreferenceChangeListener(listener)
             context.unregisterReceiver(restrictionsReceiver)

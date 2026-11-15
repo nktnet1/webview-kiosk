@@ -56,9 +56,11 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.AuthenticationSession
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.SettingsAuthRequirementSetting
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -201,7 +203,8 @@ class RequireAuthWrapperTest {
 
     @Test
     fun settingsOpenWithoutAuthenticationWhenPreferenceIsDisabled() {
-        UserSettings(activity).requireAuthForSettings = false
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.OFF
         owner.registry.currentState = Lifecycle.State.RESUMED
         composeWrapper()
 
@@ -213,12 +216,14 @@ class RequireAuthWrapperTest {
 
     @Test
     fun enablingSettingsProtectionGatesTheNextComposition() {
-        UserSettings(activity).requireAuthForSettings = false
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.OFF
         owner.registry.currentState = Lifecycle.State.RESUMED
         composeWrapper()
         assertEquals(1, protectedMounts)
 
-        UserSettings(activity).requireAuthForSettings = true
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.REQUIRE
         pumpFrames()
 
         assertLoading()
@@ -231,7 +236,7 @@ class RequireAuthWrapperTest {
         val restrictions =
             activity.getSystemService(Context.RESTRICTIONS_SERVICE)
                 as RestrictionsManager
-        val key = UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS
+        val key = UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT
         shadowOf(restrictions)
             .setApplicationRestrictions(Bundle().apply { putString(key, "OFF") })
         owner.registry.currentState = Lifecycle.State.RESUMED
@@ -260,19 +265,19 @@ class RequireAuthWrapperTest {
         assertTrue(
             texts()
                 .contains(
-                    message(
-                        R.string
-                            .option_display_unlock_auth_requirement_option_require
-                    )
+                    message(SettingsAuthRequirementOption.REQUIRE.displayLabelRes)
                 )
         )
         assertFalse(texts().contains(message(R.string.ui_true)))
-        click(message(R.string.device_require_auth_for_settings_title))
+        click(message(R.string.device_settings_auth_requirement_title))
         expandSettingsAuthDropdown()
-        click(message(R.string.option_display_unlock_auth_requirement_option_off))
+        click(message(SettingsAuthRequirementOption.OFF.displayLabelRes))
         click(message(R.string.ui_save))
 
-        assertTrue(UserSettings(activity).requireAuthForSettings)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
         assertEquals(1, prompts.size)
         assertEquals(
             message(R.string.ui_please_reauthenticate_to_change_settings_auth),
@@ -281,7 +286,10 @@ class RequireAuthWrapperTest {
 
         prompts.single().succeed()
         pumpFrames()
-        assertFalse(UserSettings(activity).requireAuthForSettings)
+        assertEquals(
+            SettingsAuthRequirementOption.OFF,
+            UserSettings(activity).settingsAuthRequirement,
+        )
     }
 
     @Test
@@ -289,9 +297,9 @@ class RequireAuthWrapperTest {
         owner.registry.currentState = Lifecycle.State.RESUMED
         composeSettingsAuthRequirement()
 
-        click(message(R.string.device_require_auth_for_settings_title))
+        click(message(R.string.device_settings_auth_requirement_title))
         expandSettingsAuthDropdown()
-        click(message(R.string.option_display_unlock_auth_requirement_option_off))
+        click(message(SettingsAuthRequirementOption.OFF.displayLabelRes))
         click(message(R.string.ui_save))
         val prompt = prompts.single()
 
@@ -300,7 +308,32 @@ class RequireAuthWrapperTest {
         prompt.succeed()
 
         assertEquals(1, prompt.cancelCalls)
-        assertTrue(UserSettings(activity).requireAuthForSettings)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
+    }
+
+    @Test
+    fun dismissingTheDropdownCancelsAnUnfinishedReauthentication() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeSettingsAuthRequirement()
+
+        click(message(R.string.device_settings_auth_requirement_title))
+        expandSettingsAuthDropdown()
+        click(message(SettingsAuthRequirementOption.OFF.displayLabelRes))
+        click(message(R.string.ui_save))
+        val prompt = prompts.single()
+
+        click(message(R.string.ui_cancel))
+        prompt.succeed()
+        pumpFrames()
+
+        assertEquals(1, prompt.cancelCalls)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
     }
 
     @Test
@@ -308,9 +341,9 @@ class RequireAuthWrapperTest {
         owner.registry.currentState = Lifecycle.State.RESUMED
         composeSettingsAuthRequirement()
 
-        click(message(R.string.device_require_auth_for_settings_title))
+        click(message(R.string.device_settings_auth_requirement_title))
         expandSettingsAuthDropdown()
-        click(message(R.string.option_display_unlock_auth_requirement_option_off))
+        click(message(SettingsAuthRequirementOption.OFF.displayLabelRes))
         // Trigger Save and leave before the pending-request state is recomposed.
         val save =
             nodes(merged = true).first { node ->
@@ -328,7 +361,10 @@ class RequireAuthWrapperTest {
         pendingPrompt.succeed()
 
         assertEquals(1, pendingPrompt.cancelCalls)
-        assertTrue(UserSettings(activity).requireAuthForSettings)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
     }
 
     @Test

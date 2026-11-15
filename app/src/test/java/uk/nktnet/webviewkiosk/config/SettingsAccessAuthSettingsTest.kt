@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.RestrictionsManager
 import android.os.Bundle
 import org.json.JSONObject
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -15,6 +16,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -22,7 +24,7 @@ class SettingsAccessAuthSettingsTest {
     private lateinit var context: Context
     private lateinit var settings: UserSettings
     private lateinit var restrictions: RestrictionsManager
-    private val key = UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS
+    private val key = UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT
 
     @Before
     fun setUp() {
@@ -41,65 +43,112 @@ class SettingsAccessAuthSettingsTest {
 
     @Test
     fun defaultsOnAndPersistsBothValues() {
-        assertTrue(settings.requireAuthForSettings)
+        assertEquals("device.settings_auth_requirement", key)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            settings.settingsAuthRequirement,
+        )
         assertFalse(settings.exportJson().has(key))
 
-        settings.requireAuthForSettings = false
-        assertFalse(UserSettings(context).requireAuthForSettings)
+        settings.settingsAuthRequirement = SettingsAuthRequirementOption.OFF
+        assertEquals(
+            "OFF",
+            context
+                .getSharedPreferences(
+                    UserSettingsKeys.PREFS_NAME,
+                    Context.MODE_PRIVATE,
+                )
+                .getString(key, null),
+        )
+        assertEquals(
+            SettingsAuthRequirementOption.OFF,
+            UserSettings(context).settingsAuthRequirement,
+        )
         assertFalse(settings.exportJson().has(key))
 
-        settings.requireAuthForSettings = true
-        assertTrue(UserSettings(context).requireAuthForSettings)
+        settings.settingsAuthRequirement = SettingsAuthRequirementOption.REQUIRE
+        assertEquals(
+            "REQUIRE",
+            context
+                .getSharedPreferences(
+                    UserSettingsKeys.PREFS_NAME,
+                    Context.MODE_PRIVATE,
+                )
+                .getString(key, null),
+        )
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(context).settingsAuthRequirement,
+        )
     }
 
     @Test
     fun importsCannotChangeSettingsAuthenticationRequirement() {
-        assertTrue(settings.importJson(JSONObject().put(key, false).toString()))
-        assertTrue(settings.requireAuthForSettings)
+        assertTrue(settings.importJson(JSONObject().put(key, "OFF").toString()))
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            settings.settingsAuthRequirement,
+        )
 
-        settings.requireAuthForSettings = false
-        assertTrue(settings.importJson(JSONObject().put(key, true).toString()))
-        assertFalse(settings.requireAuthForSettings)
+        settings.settingsAuthRequirement = SettingsAuthRequirementOption.OFF
+        assertTrue(settings.importJson(JSONObject().put(key, "REQUIRE").toString()))
+        assertEquals(
+            SettingsAuthRequirementOption.OFF,
+            settings.settingsAuthRequirement,
+        )
     }
 
     @Test
     fun invalidManagedValueCannotSilentlyDisableSettingsAuthentication() {
-        settings.requireAuthForSettings = false
+        settings.settingsAuthRequirement = SettingsAuthRequirementOption.OFF
         shadowOf(restrictions)
             .setApplicationRestrictions(Bundle().apply { putString(key, "false") })
         assertTrue(settings.isRestricted(key))
-        assertTrue(settings.requireAuthForSettings)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            settings.settingsAuthRequirement,
+        )
     }
 
     @Test
-    fun managedChoiceOffAndRequireOverrideLocalBooleanWithoutOverwritingIt() {
-        settings.requireAuthForSettings = true
+    fun managedChoiceOffAndRequireOverrideLocalEnumWithoutOverwritingIt() {
+        settings.settingsAuthRequirement = SettingsAuthRequirementOption.REQUIRE
         shadowOf(restrictions)
             .setApplicationRestrictions(Bundle().apply { putString(key, "OFF") })
         assertTrue(settings.isRestricted(key))
-        assertFalse(settings.requireAuthForSettings)
+        assertEquals(
+            SettingsAuthRequirementOption.OFF,
+            settings.settingsAuthRequirement,
+        )
 
         // Managed settings are read-only, including while a policy is active.
-        settings.requireAuthForSettings = false
+        settings.settingsAuthRequirement = SettingsAuthRequirementOption.OFF
         shadowOf(restrictions)
             .setApplicationRestrictions(Bundle().apply { putString(key, "REQUIRE") })
-        assertTrue(settings.requireAuthForSettings)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            settings.settingsAuthRequirement,
+        )
 
         shadowOf(restrictions).setApplicationRestrictions(Bundle())
-        assertTrue(settings.requireAuthForSettings)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            settings.settingsAuthRequirement,
+        )
     }
 
     @Test
     fun invalidManagedChoiceFailsClosedToRequire() {
-        settings.requireAuthForSettings = false
+        settings.settingsAuthRequirement = SettingsAuthRequirementOption.OFF
         for (invalidValue in listOf("", "off", "false", "DEFAULT", "UNKNOWN")) {
             shadowOf(restrictions)
                 .setApplicationRestrictions(
                     Bundle().apply { putString(key, invalidValue) }
                 )
-            assertTrue(
+            assertEquals(
                 "Value $invalidValue must not disable access auth",
-                settings.requireAuthForSettings,
+                SettingsAuthRequirementOption.REQUIRE,
+                settings.settingsAuthRequirement,
             )
         }
         // Boolean restrictions are not supported: the MDM contract is a choice.
@@ -108,27 +157,45 @@ class SettingsAccessAuthSettingsTest {
                 .setApplicationRestrictions(
                     Bundle().apply { putBoolean(key, value) }
                 )
-            assertTrue(settings.requireAuthForSettings)
+            assertEquals(
+                SettingsAuthRequirementOption.REQUIRE,
+                settings.settingsAuthRequirement,
+            )
         }
         shadowOf(restrictions)
             .setApplicationRestrictions(Bundle().apply { putInt(key, 0) })
-        assertTrue(settings.requireAuthForSettings)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            settings.settingsAuthRequirement,
+        )
         shadowOf(restrictions).setApplicationRestrictions(Bundle())
-        assertFalse(settings.requireAuthForSettings)
+        assertEquals(
+            SettingsAuthRequirementOption.OFF,
+            settings.settingsAuthRequirement,
+        )
     }
 
     @Test
     fun managedRestrictionsOverrideButDoNotOverwriteLocalPreference() {
-        settings.requireAuthForSettings = true
+        settings.settingsAuthRequirement = SettingsAuthRequirementOption.REQUIRE
         shadowOf(restrictions)
             .setApplicationRestrictions(Bundle().apply { putString(key, "OFF") })
         assertTrue(settings.isRestricted(key))
-        assertFalse(settings.requireAuthForSettings)
-        settings.requireAuthForSettings = false
-        assertTrue(settings.importJson(JSONObject().put(key, true).toString()))
-        assertFalse(settings.requireAuthForSettings)
+        assertEquals(
+            SettingsAuthRequirementOption.OFF,
+            settings.settingsAuthRequirement,
+        )
+        settings.settingsAuthRequirement = SettingsAuthRequirementOption.OFF
+        assertTrue(settings.importJson(JSONObject().put(key, "REQUIRE").toString()))
+        assertEquals(
+            SettingsAuthRequirementOption.OFF,
+            settings.settingsAuthRequirement,
+        )
 
         shadowOf(restrictions).setApplicationRestrictions(Bundle())
-        assertTrue(settings.requireAuthForSettings)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            settings.settingsAuthRequirement,
+        )
     }
 }

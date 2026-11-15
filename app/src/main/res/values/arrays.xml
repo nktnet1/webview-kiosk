@@ -217,15 +217,6 @@
         <item>DISABLED</item>
     </string-array>
 
-    <string-array name="entries_settings_auth_requirement_option">
-        <item>Off</item>
-        <item>Require</item>
-    </string-array>
-    <string-array name="entry_values_settings_auth_requirement_option" translatable="false">
-        <item>OFF</item>
-        <item>REQUIRE</item>
-    </string-array>
-
     <string-array name="entries_unlock_auth_requirement_option">
         <item>Default</item>
         <item>Off</item>
@@ -233,6 +224,15 @@
     </string-array>
     <string-array name="entry_values_unlock_auth_requirement_option" translatable="false">
         <item>DEFAULT</item>
+        <item>OFF</item>
+        <item>REQUIRE</item>
+    </string-array>
+
+    <string-array name="entries_settings_auth_requirement_option">
+        <item>Off</item>
+        <item>Require</item>
+    </string-array>
+    <string-array name="entry_values_settings_auth_requirement_option" translatable="false">
         <item>OFF</item>
         <item>REQUIRE</item>
     </string-array>

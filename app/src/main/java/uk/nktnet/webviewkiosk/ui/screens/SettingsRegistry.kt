@@ -25,6 +25,7 @@ import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.option.RefreshOnNetworkAvailableOption
 import uk.nktnet.webviewkiosk.config.option.ResetActionOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
@@ -684,16 +685,13 @@ internal val settingsPages: List<SettingsPage> = buildList {
                             },
                     ),
                     SettingDefinition(
-                        R.string.device_require_auth_for_settings_title,
-                        UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS,
-                        R.string.setting_info_require_auth_for_settings,
+                        R.string.device_settings_auth_requirement_title,
+                        UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT,
+                        R.string.setting_info_settings_auth_requirement,
                         optionLabelRes =
-                            listOf(
-                                R.string
-                                    .option_display_unlock_auth_requirement_option_off,
-                                R.string
-                                    .option_display_unlock_auth_requirement_option_require,
-                            ),
+                            SettingsAuthRequirementOption.entries.map {
+                                it.displayLabelRes
+                            },
                     ),
                     SettingDefinition(
                         R.string.device_block_screen_capture_title,

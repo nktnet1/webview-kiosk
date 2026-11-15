@@ -23,6 +23,7 @@ import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.option.RefreshOnNetworkAvailableOption
 import uk.nktnet.webviewkiosk.config.option.ResetActionOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
@@ -169,6 +170,16 @@ val UnlockAuthRequirementOption.displayLabelRes: Int
                 R.string.option_display_unlock_auth_requirement_option_off
             UnlockAuthRequirementOption.REQUIRE ->
                 R.string.option_display_unlock_auth_requirement_option_require
+        }
+
+@get:StringRes
+val SettingsAuthRequirementOption.displayLabelRes: Int
+    get() =
+        when (this) {
+            SettingsAuthRequirementOption.OFF ->
+                R.string.option_display_settings_auth_requirement_option_off
+            SettingsAuthRequirementOption.REQUIRE ->
+                R.string.option_display_settings_auth_requirement_option_require
         }
 
 @get:StringRes

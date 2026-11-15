@@ -528,13 +528,13 @@
         android:description="@string/device_unlock_auth_requirement_description"
     />
     <restriction
-        android:key="device.require_auth_for_settings"
+        android:key="device.settings_auth_requirement"
         android:restrictionType="choice"
         android:entries="@array/entries_settings_auth_requirement_option"
         android:entryValues="@array/entry_values_settings_auth_requirement_option"
         android:defaultValue="REQUIRE"
-        android:title="@string/device_require_auth_for_settings_title"
-        android:description="@string/device_require_auth_for_settings_description"
+        android:title="@string/device_settings_auth_requirement_title"
+        android:description="@string/device_settings_auth_requirement_description"
     />
     <restriction
         android:key="device.block_screen_capture"

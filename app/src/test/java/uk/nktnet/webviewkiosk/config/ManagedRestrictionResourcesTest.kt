@@ -13,6 +13,8 @@ import org.xmlpull.v1.XmlPullParser
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.mqtt.HomeAssistantSetting
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 /** Protects the Android managed-configuration contract, not its XML formatting. */
 @RunWith(RobolectricTestRunner::class)
@@ -36,7 +38,7 @@ class ManagedRestrictionResourcesTest {
                 }
                 val key = xml.getAttributeValue(androidNamespace, "key")
                 // Local-only security controls intentionally have no HA entity.
-                if (key == UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS) {
+                if (key == UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT) {
                     continue
                 }
                 restrictions++
@@ -75,7 +77,7 @@ class ManagedRestrictionResourcesTest {
 
     @Test
     fun settingsAuthRequirementManagedRestrictionIsAChoiceNotARemoteControl() {
-        val key = UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS
+        val key = UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT
         var found = false
         context.resources.getXml(R.xml.app_restrictions).use { xml ->
             while (xml.next() != XmlPullParser.END_DOCUMENT) {
@@ -96,7 +98,9 @@ class ManagedRestrictionResourcesTest {
                     ),
                 )
                 assertEquals(
-                    listOf("Off", "Require"),
+                    SettingsAuthRequirementOption.entries.map {
+                        context.getString(it.displayLabelRes)
+                    },
                     context.resources
                         .getStringArray(
                             xml.getAttributeResourceValue(
@@ -108,7 +112,7 @@ class ManagedRestrictionResourcesTest {
                         .toList(),
                 )
                 assertEquals(
-                    listOf("OFF", "REQUIRE"),
+                    SettingsAuthRequirementOption.entries.map { it.name },
                     context.resources
                         .getStringArray(
                             xml.getAttributeResourceValue(

@@ -111,8 +111,8 @@ object UserSettingsKeys {
         const val BACK_BUTTON_HOLD_ACTION = "device.back_button_hold_action"
         const val CUSTOM_UNLOCK_SHORTCUT = "device.custom_unlock_shortcut"
         const val CUSTOM_AUTH_PASSWORD = "device.custom_auth_password"
-        const val REQUIRE_AUTH_FOR_SETTINGS = "device.require_auth_for_settings"
         const val UNLOCK_AUTH_REQUIREMENT = "device.unlock_auth_requirement"
+        const val SETTINGS_AUTH_REQUIREMENT = "device.settings_auth_requirement"
         const val BLOCK_SCREEN_CAPTURE = "device.block_screen_capture"
         const val BLOCK_VOLUME_KEYS = "device.block_volume_keys"
 

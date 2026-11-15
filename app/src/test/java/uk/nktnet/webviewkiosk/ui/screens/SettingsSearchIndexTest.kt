@@ -21,6 +21,8 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -29,14 +31,16 @@ class SettingsSearchIndexTest {
 
     @Test
     fun settingsAuthRequirementUsesOffAndRequireOptionLabels() {
-        val key = UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS
+        val key = UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT
         val definition = settingDefinition(key)
         assertEquals(
             "Settings Auth Requirement",
             context.getString(definition.titleRes),
         )
         assertEquals(
-            listOf("Off", "Require"),
+            SettingsAuthRequirementOption.entries.map {
+                context.getString(it.displayLabelRes)
+            },
             definition.optionLabelRes.map { context.getString(it) },
         )
         assertTrue(

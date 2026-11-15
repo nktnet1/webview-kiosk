@@ -194,9 +194,10 @@ credentials are configured, the existing no-lock fallback opens Settings
 without a prompt even with **Require** selected.
 
 This preference is not imported from settings files or remote settings updates.
-Managed configurations expose only the **Off** (`OFF`) and **Require**
-(`REQUIRE`) choices, with **Require** selected by default. Boolean values are
-not supported. An administrator can override this setting without local
+Managed configurations use the `device.settings_auth_requirement` key and
+expose only the **Off** (`OFF`) and **Require** (`REQUIRE`) choices, with
+**Require** selected by default. These are also the stored enum values; Boolean values
+are not supported. An administrator can override this setting without local
 re-authentication.
 
 **Default:** Require

@@ -28,12 +28,12 @@ import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.option.RefreshOnNetworkAvailableOption
 import uk.nktnet.webviewkiosk.config.option.ResetActionOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
 import uk.nktnet.webviewkiosk.config.option.WebViewInsetOption
 import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
-import uk.nktnet.webviewkiosk.utils.booleanChoicePref
 import uk.nktnet.webviewkiosk.utils.booleanPref
 import uk.nktnet.webviewkiosk.utils.enumListPref
 import uk.nktnet.webviewkiosk.utils.intPref
@@ -651,15 +651,6 @@ class UserSettings(val context: Context) {
             prefs,
             UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD,
         )
-    var requireAuthForSettings by
-        booleanChoicePref(
-            getRestrictions,
-            prefs,
-            UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS,
-            default = true,
-            falseChoice = "OFF",
-            trueChoice = "REQUIRE",
-        )
     var unlockAuthRequirement by
         stringEnumPref(
             getRestrictions,
@@ -667,6 +658,14 @@ class UserSettings(val context: Context) {
             UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT,
             UnlockAuthRequirementOption.DEFAULT.name,
             fromString = UnlockAuthRequirementOption::fromString,
+        )
+    var settingsAuthRequirement by
+        stringEnumPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT,
+            SettingsAuthRequirementOption.REQUIRE.name,
+            fromString = SettingsAuthRequirementOption::fromString,
         )
     var blockScreenCapture by
         booleanPref(
@@ -1483,7 +1482,7 @@ class UserSettings(val context: Context) {
                 )
                 // put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD,
                 // customAuthPassword)
-                // REQUIRE_AUTH_FOR_SETTINGS is omitted: importing an exported
+                // SETTINGS_AUTH_REQUIREMENT is omitted: importing an exported
                 // config must not be able to change a local security boundary.
                 put(
                     UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT,
@@ -2154,7 +2153,7 @@ class UserSettings(val context: Context) {
                     UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD,
                     customAuthPassword,
                 )
-            // Do not import REQUIRE_AUTH_FOR_SETTINGS: imports (including remote
+            // Do not import SETTINGS_AUTH_REQUIREMENT: imports (including remote
             // settings updates) have no fresh local authentication challenge.
             unlockAuthRequirement =
                 UnlockAuthRequirementOption.fromString(
