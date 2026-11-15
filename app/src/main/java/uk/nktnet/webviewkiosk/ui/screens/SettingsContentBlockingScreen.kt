@@ -110,6 +110,7 @@ import uk.nktnet.webviewkiosk.blocking.BlockingStatus
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.FilterListBatchAction
 import uk.nktnet.webviewkiosk.blocking.FilterListBatchProgress
+import uk.nktnet.webviewkiosk.blocking.FilterListDownloadCancellation
 import uk.nktnet.webviewkiosk.blocking.FilterListDownloadProgress
 import uk.nktnet.webviewkiosk.blocking.FilterListDownloadStage
 import uk.nktnet.webviewkiosk.blocking.FilterListInfo
@@ -176,6 +177,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     var downloadProgress by remember {
         mutableStateOf<FilterListBatchProgress?>(null)
     }
+    var activeDownload by remember {
+        mutableStateOf<FilterListDownloadCancellation?>(null)
+    }
+    var cancellingDownload by remember { mutableStateOf(false) }
     val busy = working
     var bulkActionsExpanded by remember { mutableStateOf(false) }
     var managing by rememberSaveable { mutableStateOf(false) }
@@ -247,7 +252,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         onStored: (() -> Unit)? = null,
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null,
-        block: () -> Unit,
+        block: (FilterListDownloadCancellation?) -> Unit,
     ) {
         if (working) {
             return
@@ -255,12 +260,20 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         working = true
         workingMessage = progressMessage
         downloadProgress = initialProgress
+        val cancellation =
+            if (initialProgress != null) {
+                FilterListDownloadCancellation()
+            } else {
+                null
+            }
+        activeDownload = cancellation
+        cancellingDownload = false
         editError = null
         scope.launch {
             try {
                 val savedLists = mutationMutex.withLock {
                     withContext(Dispatchers.IO) {
-                        block()
+                        block(cancellation)
                         if (affectsRules) {
                             blocker.markRulesChanged()
                         }
@@ -276,7 +289,26 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 onSuccess?.invoke()
                 successMessage?.let { notify(it) }
             } catch (e: CancellationException) {
-                throw e
+                if (cancellation?.isCancelled == true) {
+                    // Earlier batch entries may already have been committed. Keep
+                    // them visible and reload the engine after a partial update.
+                    val savedLists = mutationMutex.withLock {
+                        withContext(Dispatchers.IO) {
+                            if (affectsRules) {
+                                blocker.markRulesChanged()
+                            }
+                            store.list()
+                        }
+                    }
+                    lists = savedLists
+                    selectedIds =
+                        selectedIds.intersect(savedLists.map { it.id }.toSet())
+                    notify(
+                        context.getString(R.string.ui_filter_list_download_cancelled)
+                    )
+                } else {
+                    throw e
+                }
             } catch (e: Exception) {
                 Log.w("ContentBlocking", "Filter list update failed", e)
                 val message = filterListFailureMessage(e)
@@ -289,7 +321,16 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 working = false
                 workingMessage = null
                 downloadProgress = null
+                activeDownload = null
+                cancellingDownload = false
             }
+        }
+    }
+
+    fun cancelDownload() {
+        activeDownload?.let { cancellation ->
+            cancellingDownload = true
+            cancellation.cancel()
         }
     }
 
@@ -372,9 +413,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     downloadDefaults(requested)
                 }
             },
-        ) {
+        ) { cancellation ->
             summary =
-                downloader.downloadDefaults(store, requested) { progress ->
+                downloader.downloadDefaults(store, requested, cancellation) {
+                    progress ->
                     downloadProgress = progress
                 }
         }
@@ -393,9 +435,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.REFRESH) { refreshAll() }
             },
-        ) {
+        ) { cancellation ->
             summary =
-                downloader.refreshAll(store) { progress ->
+                downloader.refreshAll(store, cancellation) { progress ->
                     downloadProgress = progress
                 }
         }
@@ -420,9 +462,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     refreshSelected(ids)
                 }
             },
-        ) {
+        ) { cancellation ->
             summary =
-                downloader.refreshSelected(store, ids) { progress ->
+                downloader.refreshSelected(store, ids, cancellation) { progress ->
                     downloadProgress = progress
                 }
         }
@@ -983,10 +1025,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                                     startingProgress(
                                                         item.displayName()
                                                     ),
-                                            ) {
+                                            ) { cancellation ->
                                                 downloader.refresh(
                                                     item,
                                                     store,
+                                                    cancellation,
                                                     singleDownloadProgress(
                                                         item.displayName()
                                                     ),
@@ -1049,6 +1092,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 FilterListProgressOverlay(
                     message = workingMessage.orEmpty(),
                     progress = downloadProgress,
+                    onCancel = activeDownload?.let { { cancelDownload() } },
+                    cancelling = cancellingDownload,
                     modifier = Modifier.matchParentSize(),
                 )
             }
@@ -1213,6 +1258,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             canSave = canSave,
             progressMessage = workingMessage.orEmpty(),
             downloadProgress = downloadProgress,
+            onCancelDownload = activeDownload?.let { { cancelDownload() } },
+            cancellingDownload = cancellingDownload,
             onDismiss = {
                 if (!busy) {
                     pendingEdit = null
@@ -1254,7 +1301,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             null
                         },
                     onStored = { pendingEdit = null },
-                ) {
+                ) { cancellation ->
                     when (item.type) {
                         FilterListType.FILE -> {
                             val input =
@@ -1284,6 +1331,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                 name,
                                 url,
                                 store,
+                                cancellation,
                                 singleDownloadProgress(name),
                             )
 
@@ -1305,6 +1353,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             busy = busy,
             progressMessage = workingMessage.orEmpty(),
             downloadProgress = downloadProgress,
+            onCancelDownload = activeDownload?.let { { cancelDownload() } },
+            cancellingDownload = cancellingDownload,
             error = addError,
             onClearError = { addError = null },
             onDismiss = {
@@ -1345,11 +1395,12 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     initialProgress = startingProgress(name),
                     onStored = { showAddDialog = false },
                     onFailure = { addError = it },
-                ) {
+                ) { cancellation ->
                     downloader.downloadUrl(
                         url,
                         name,
                         store,
+                        cancellation,
                         singleDownloadProgress(name),
                     )
                 }
@@ -1362,10 +1413,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     initialProgress = startingProgress(suggestion.name),
                     onStored = { showAddDialog = false },
                     onFailure = { addError = it },
-                ) {
+                ) { cancellation ->
                     downloader.download(
                         suggestion,
                         store,
+                        cancellation,
                         singleDownloadProgress(suggestion.name),
                     )
                 }
@@ -1381,6 +1433,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
 private fun FilterListProgressOverlay(
     message: String,
     progress: FilterListBatchProgress?,
+    onCancel: (() -> Unit)?,
+    cancelling: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -1399,6 +1453,8 @@ private fun FilterListProgressOverlay(
         FilterListDownloadStatus(
             message = message,
             progress = progress,
+            onCancel = onCancel,
+            cancelling = cancelling,
             modifier = Modifier.padding(12.dp).widthIn(max = 400.dp),
         )
     }
@@ -1412,6 +1468,8 @@ private fun FilterListProgressOverlay(
 internal fun FilterListDownloadStatus(
     message: String,
     progress: FilterListBatchProgress?,
+    onCancel: (() -> Unit)? = null,
+    cancelling: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -1571,6 +1629,23 @@ internal fun FilterListDownloadStatus(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (onCancel != null) {
+                TextButton(
+                    onClick = onCancel,
+                    enabled = !cancelling,
+                    modifier = Modifier.align(Alignment.End),
+                ) {
+                    Text(
+                        stringResource(
+                            if (cancelling) {
+                                R.string.ui_cancelling_filter_list_download
+                            } else {
+                                R.string.ui_cancel
+                            }
+                        )
+                    )
+                }
+            }
         }
     }
 }
@@ -2238,6 +2313,8 @@ private fun AddFilterListDialog(
     busy: Boolean,
     progressMessage: String,
     downloadProgress: FilterListBatchProgress?,
+    onCancelDownload: (() -> Unit)?,
+    cancellingDownload: Boolean,
     error: String?,
     onClearError: () -> Unit,
     onDismiss: () -> Unit,
@@ -2647,6 +2724,8 @@ private fun AddFilterListDialog(
                     FilterListProgressOverlay(
                         message = progressMessage,
                         progress = downloadProgress,
+                        onCancel = onCancelDownload,
+                        cancelling = cancellingDownload,
                         modifier = Modifier.matchParentSize(),
                     )
                 }
@@ -2719,6 +2798,8 @@ private fun EditFilterListDialog(
     canSave: Boolean,
     progressMessage: String,
     downloadProgress: FilterListBatchProgress?,
+    onCancelDownload: (() -> Unit)?,
+    cancellingDownload: Boolean,
     onDismiss: () -> Unit,
     onSave: () -> Unit,
 ) {
@@ -2818,6 +2899,8 @@ private fun EditFilterListDialog(
                     FilterListProgressOverlay(
                         message = progressMessage,
                         progress = downloadProgress,
+                        onCancel = onCancelDownload,
+                        cancelling = cancellingDownload,
                         modifier = Modifier.matchParentSize(),
                     )
                 }

@@ -155,6 +155,33 @@ class SettingsContentBlockingScreenTest {
     }
 
     @Test
+    fun downloadStatusOffersCancelAndDisablesItWhileCancelling() {
+        val cancelling = mutableStateOf(false)
+        var requests = 0
+        view.setContent {
+            MaterialTheme {
+                FilterListDownloadStatus(
+                    message = "Downloading filter list…",
+                    progress = null,
+                    onCancel = {
+                        requests++
+                        cancelling.value = true
+                    },
+                    cancelling = cancelling.value,
+                )
+            }
+        }
+        frames()
+        click(message(R.string.ui_cancel))
+        frames()
+        assertEquals(1, requests)
+        assertTrue(hasText(message(R.string.ui_cancelling_filter_list_download)))
+        assertTrue(
+            disabled(textNode(message(R.string.ui_cancelling_filter_list_download)))
+        )
+    }
+
+    @Test
     fun unknownSingleDownloadStatusDoesNotInventAPercentage() {
         view.setContent {
             MaterialTheme {

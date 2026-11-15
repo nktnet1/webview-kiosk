@@ -6,7 +6,9 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
+import okhttp3.Call
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
@@ -172,6 +174,46 @@ internal data class FilterRefreshResult(
     val failures: List<FilterRefreshFailure>,
 )
 
+/** Cancels the active HTTP call and prevents further downloads or saves. */
+internal class FilterListDownloadCancellation {
+    private val lock = Any()
+    private var cancelled = false
+    private var activeCall: Call? = null
+
+    val isCancelled: Boolean
+        get() = synchronized(lock) { cancelled }
+
+    fun cancel() {
+        synchronized(lock) {
+            cancelled = true
+            activeCall?.cancel()
+        }
+    }
+
+    fun throwIfCancelled() {
+        if (isCancelled) {
+            throw CancellationException("Filter-list download cancelled")
+        }
+    }
+
+    fun register(call: Call) {
+        synchronized(lock) {
+            if (cancelled) {
+                throw CancellationException("Filter-list download cancelled")
+            }
+            activeCall = call
+        }
+    }
+
+    fun unregister(call: Call) {
+        synchronized(lock) {
+            if (activeCall === call) {
+                activeCall = null
+            }
+        }
+    }
+}
+
 /** Performs user-initiated downloads and refreshes. */
 internal class SuggestedFilterListDownloader(
     private val client: OkHttpClient = sharedClient
@@ -194,6 +236,7 @@ internal class SuggestedFilterListDownloader(
     fun download(
         suggestion: SuggestedFilterList,
         store: FilterListStore,
+        cancellation: FilterListDownloadCancellation? = null,
         onProgress: ((FilterListDownloadProgress) -> Unit)? = null,
     ): ImportedFilterList {
         require(suggestion in SuggestedFilterLists.all) {
@@ -202,7 +245,7 @@ internal class SuggestedFilterListDownloader(
         require(!store.containsPreset(suggestion.url)) {
             "This preset has already been added"
         }
-        return fetch(suggestion.url, onProgress) { stream ->
+        return fetch(suggestion.url, cancellation, onProgress) { stream ->
             store.importFrom(
                 name = "${suggestion.name}.txt",
                 input = stream,
@@ -219,6 +262,7 @@ internal class SuggestedFilterListDownloader(
     fun downloadDefaults(
         store: FilterListStore,
         requested: List<SuggestedFilterList> = SuggestedFilterLists.defaults,
+        cancellation: FilterListDownloadCancellation? = null,
         onProgress: ((FilterListBatchProgress) -> Unit)? = null,
     ): FilterRefreshResult {
         require(
@@ -228,10 +272,14 @@ internal class SuggestedFilterListDownloader(
             "Only default presets may be added by this action"
         }
         val missing = requested.filterNot { store.containsSource(it.url) }
-        return processBatch(missing, { it.name }, "Download failed", onProgress) {
-            suggestion,
-            progress ->
-            download(suggestion, store, progress)
+        return processBatch(
+            missing,
+            { it.name },
+            "Download failed",
+            cancellation,
+            onProgress,
+        ) { suggestion, progress ->
+            download(suggestion, store, cancellation, progress)
         }
     }
 
@@ -240,13 +288,14 @@ internal class SuggestedFilterListDownloader(
         url: String,
         name: String,
         store: FilterListStore,
+        cancellation: FilterListDownloadCancellation? = null,
         onProgress: ((FilterListDownloadProgress) -> Unit)? = null,
     ): ImportedFilterList {
         val validated = requireListUrl(url)
         require(!store.containsUrl(validated)) {
             "A URL list with this address already exists"
         }
-        return fetch(validated, onProgress) { stream ->
+        return fetch(validated, cancellation, onProgress) { stream ->
             store.importFrom(name, stream, validated, FilterListType.URL)
         }
     }
@@ -257,6 +306,7 @@ internal class SuggestedFilterListDownloader(
     fun refresh(
         item: ImportedFilterList,
         store: FilterListStore,
+        cancellation: FilterListDownloadCancellation? = null,
         onProgress: ((FilterListDownloadProgress) -> Unit)? = null,
     ): ImportedFilterList {
         val current =
@@ -265,7 +315,7 @@ internal class SuggestedFilterListDownloader(
         val url =
             current.sourceUrl
                 ?: throw IllegalArgumentException("Local lists cannot be refreshed")
-        return fetch(url, onProgress) { stream ->
+        return fetch(url, cancellation, onProgress) { stream ->
             store.replaceFromSource(
                 current.id,
                 url,
@@ -285,6 +335,7 @@ internal class SuggestedFilterListDownloader(
         name: String,
         url: String,
         store: FilterListStore,
+        cancellation: FilterListDownloadCancellation? = null,
         onProgress: ((FilterListDownloadProgress) -> Unit)? = null,
     ): ImportedFilterList {
         val current =
@@ -303,7 +354,7 @@ internal class SuggestedFilterListDownloader(
         require(!store.containsUrl(validated)) {
             "A URL list with this address already exists"
         }
-        return fetch(validated, onProgress) { stream ->
+        return fetch(validated, cancellation, onProgress) { stream ->
             store.updateUrl(current.id, original, validated, name, stream)
         }
     }
@@ -314,21 +365,32 @@ internal class SuggestedFilterListDownloader(
      */
     fun refreshAll(
         store: FilterListStore,
+        cancellation: FilterListDownloadCancellation? = null,
         onProgress: ((FilterListBatchProgress) -> Unit)? = null,
     ): FilterRefreshResult =
-        refreshSelected(store, store.list().map { it.id }.toSet(), onProgress)
+        refreshSelected(
+            store,
+            store.list().map { it.id }.toSet(),
+            cancellation,
+            onProgress,
+        )
 
     /** Refresh only the selected subscriptions; local lists have no download URL. */
     fun refreshSelected(
         store: FilterListStore,
         ids: Set<String>,
+        cancellation: FilterListDownloadCancellation? = null,
         onProgress: ((FilterListBatchProgress) -> Unit)? = null,
     ): FilterRefreshResult {
         val candidates = store.list().filter { it.id in ids && it.sourceUrl != null }
-        return processBatch(candidates, { it.name }, "Update failed", onProgress) {
-            item,
-            progress ->
-            refresh(item, store, progress)
+        return processBatch(
+            candidates,
+            { it.name },
+            "Update failed",
+            cancellation,
+            onProgress,
+        ) { item, progress ->
+            refresh(item, store, cancellation, progress)
         }
     }
 
@@ -336,12 +398,14 @@ internal class SuggestedFilterListDownloader(
         candidates: List<T>,
         name: (T) -> String,
         fallbackError: String,
+        cancellation: FilterListDownloadCancellation?,
         onProgress: ((FilterListBatchProgress) -> Unit)?,
         action: (T, ((FilterListDownloadProgress) -> Unit)?) -> Unit,
     ): FilterRefreshResult {
         val failures = mutableListOf<FilterRefreshFailure>()
         var updated = 0
         candidates.forEachIndexed { index, item ->
+            cancellation?.throwIfCancelled()
             val listName = name(item)
             val progress: ((FilterListDownloadProgress) -> Unit)? =
                 onProgress?.let { callback ->
@@ -363,6 +427,8 @@ internal class SuggestedFilterListDownloader(
             try {
                 action(item, progress)
                 updated++
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 failures +=
                     FilterRefreshFailure(listName, error.message ?: fallbackError)
@@ -392,6 +458,7 @@ internal class SuggestedFilterListDownloader(
      */
     private fun <T> fetch(
         url: String,
+        cancellation: FilterListDownloadCancellation?,
         onProgress: ((FilterListDownloadProgress) -> Unit)?,
         save: (java.io.InputStream) -> T,
     ): T {
@@ -400,7 +467,8 @@ internal class SuggestedFilterListDownloader(
         val seen = mutableSetOf(source.toString())
 
         fun expand(address: HttpUrl, depth: Int): String {
-            val text = fetchText(address, budget, onProgress)
+            cancellation?.throwIfCancelled()
+            val text = fetchText(address, budget, cancellation, onProgress)
             return expandFilterListIncludes(text) { path ->
                 require(depth < MAX_INCLUDE_DEPTH) {
                     "Filter-list includes exceed the nesting limit"
@@ -417,10 +485,16 @@ internal class SuggestedFilterListDownloader(
         require(expanded.size <= FilterListStore.MAX_LIST_BYTES) {
             "Expanded filter list exceeds ${FilterListStore.MAX_LIST_MIB} MiB"
         }
+        cancellation?.throwIfCancelled()
         onProgress?.invoke(
             FilterListDownloadProgress(FilterListDownloadStage.SAVING)
         )
-        return save(ByteArrayInputStream(expanded))
+        cancellation?.throwIfCancelled()
+        val saved = save(ByteArrayInputStream(expanded))
+        // A cancellation during validation may arrive after the atomic save.
+        // Report it as cancelled so the UI reloads any completed changes.
+        cancellation?.throwIfCancelled()
+        return saved
     }
 
     private class IncludeBudget {
@@ -451,6 +525,7 @@ internal class SuggestedFilterListDownloader(
     private fun fetchText(
         url: HttpUrl,
         budget: IncludeBudget,
+        cancellation: FilterListDownloadCancellation?,
         onProgress: ((FilterListDownloadProgress) -> Unit)?,
     ): String {
         require(++budget.requests <= MAX_INCLUDE_REQUESTS) {
@@ -461,89 +536,100 @@ internal class SuggestedFilterListDownloader(
         onProgress?.invoke(
             FilterListDownloadProgress(FilterListDownloadStage.CONNECTING)
         )
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IOException(
-                    "Filter-list download failed (HTTP ${response.code})"
+        val call = client.newCall(request)
+        cancellation?.register(call)
+        try {
+            return call.execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw IOException(
+                        "Filter-list download failed (HTTP ${response.code})"
+                    )
+                }
+                val actual = response.request.url
+                require(
+                    actual.scheme == url.scheme &&
+                        actual.host == url.host &&
+                        actual.port == url.port
+                ) {
+                    "Filter-list redirect crosses the source origin"
+                }
+                if (
+                    response.body.contentLength() >
+                        FilterListStore.MAX_LIST_BYTES - budget.bytes
+                ) {
+                    throw IOException(
+                        "Expanded filter list exceeds ${FilterListStore.MAX_LIST_MIB} MiB"
+                    )
+                }
+                if (
+                    response.body.contentType()?.let {
+                        it.type == "text" && it.subtype == "html"
+                    } == true
+                ) {
+                    throw IOException(
+                        "The server returned an HTML page instead of a filter list"
+                    )
+                }
+                // Content length is per response, not the combined expanded list.
+                // Servers using compression or chunked transfer may omit it.
+                val totalBytes = response.body.contentLength().takeIf { it > 0 }
+                var bytesRead = 0L
+                var lastReportedBytes = 0L
+                onProgress?.invoke(
+                    FilterListDownloadProgress(
+                        FilterListDownloadStage.DOWNLOADING,
+                        0,
+                        totalBytes,
+                    )
                 )
-            }
-            val actual = response.request.url
-            require(
-                actual.scheme == url.scheme &&
-                    actual.host == url.host &&
-                    actual.port == url.port
-            ) {
-                "Filter-list redirect crosses the source origin"
-            }
-            if (
-                response.body.contentLength() >
-                    FilterListStore.MAX_LIST_BYTES - budget.bytes
-            ) {
-                throw IOException(
-                    "Expanded filter list exceeds ${FilterListStore.MAX_LIST_MIB} MiB"
-                )
-            }
-            if (
-                response.body.contentType()?.let {
-                    it.type == "text" && it.subtype == "html"
-                } == true
-            ) {
-                throw IOException(
-                    "The server returned an HTML page instead of a filter list"
-                )
-            }
-            // Content length is per response, not the combined expanded list.
-            // Servers using compression or chunked transfer may omit it.
-            val totalBytes = response.body.contentLength().takeIf { it > 0 }
-            var bytesRead = 0L
-            var lastReportedBytes = 0L
-            onProgress?.invoke(
-                FilterListDownloadProgress(
-                    FilterListDownloadStage.DOWNLOADING,
-                    0,
-                    totalBytes,
-                )
-            )
-            val output = ByteArrayOutputStream()
-            response.body.byteStream().use { stream ->
-                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                while (true) {
-                    val read = stream.read(buffer)
-                    if (read < 0) {
-                        break
-                    }
-                    budget.bytes += read
-                    if (budget.bytes > FilterListStore.MAX_LIST_BYTES) {
-                        throw IOException(
-                            "Expanded filter list exceeds ${FilterListStore.MAX_LIST_MIB} MiB"
-                        )
-                    }
-                    output.write(buffer, 0, read)
-                    bytesRead += read
-                    if (bytesRead - lastReportedBytes >= 64 * 1024) {
-                        onProgress?.invoke(
-                            FilterListDownloadProgress(
-                                FilterListDownloadStage.DOWNLOADING,
-                                bytesRead,
-                                totalBytes,
+                val output = ByteArrayOutputStream()
+                response.body.byteStream().use { stream ->
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    while (true) {
+                        cancellation?.throwIfCancelled()
+                        val read = stream.read(buffer)
+                        if (read < 0) {
+                            break
+                        }
+                        budget.bytes += read
+                        if (budget.bytes > FilterListStore.MAX_LIST_BYTES) {
+                            throw IOException(
+                                "Expanded filter list exceeds ${FilterListStore.MAX_LIST_MIB} MiB"
                             )
-                        )
-                        lastReportedBytes = bytesRead
+                        }
+                        output.write(buffer, 0, read)
+                        bytesRead += read
+                        if (bytesRead - lastReportedBytes >= 64 * 1024) {
+                            onProgress?.invoke(
+                                FilterListDownloadProgress(
+                                    FilterListDownloadStage.DOWNLOADING,
+                                    bytesRead,
+                                    totalBytes,
+                                )
+                            )
+                            lastReportedBytes = bytesRead
+                        }
                     }
                 }
-            }
-            onProgress?.invoke(
-                FilterListDownloadProgress(
-                    FilterListDownloadStage.DOWNLOADING,
-                    bytesRead,
-                    totalBytes,
+                onProgress?.invoke(
+                    FilterListDownloadProgress(
+                        FilterListDownloadStage.DOWNLOADING,
+                        bytesRead,
+                        totalBytes,
+                    )
                 )
-            )
-            return StandardCharsets.UTF_8.newDecoder()
-                .onMalformedInput(CodingErrorAction.REPORT)
-                .onUnmappableCharacter(CodingErrorAction.REPORT)
-                .decode(ByteBuffer.wrap(output.toByteArray()))
-                .toString()
+                cancellation?.throwIfCancelled()
+                StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(output.toByteArray()))
+                    .toString()
+            }
+        } catch (error: Exception) {
+            cancellation?.throwIfCancelled()
+            throw error
+        } finally {
+            cancellation?.unregister(call)
         }
     }
 }

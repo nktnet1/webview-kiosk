@@ -1,11 +1,13 @@
 package uk.nktnet.webviewkiosk.blocking
 
 import java.io.IOException
+import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
+import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -97,6 +99,101 @@ class SuggestedFilterListDownloaderTest {
             downloading.last().bytesRead,
         )
         assertEquals(FilterListDownloadStage.SAVING, progress.last().stage)
+    }
+
+    @Test
+    fun cancellingActiveCallAlsoPreventsAnotherDownload() {
+        val cancellation = FilterListDownloadCancellation()
+        val call =
+            OkHttpClient()
+                .newCall(
+                    Request.Builder().url("https://example.org/list.txt").build()
+                )
+        cancellation.register(call)
+        cancellation.cancel()
+
+        assertTrue(call.isCanceled())
+        assertTrue(cancellation.isCancelled)
+        val requests = AtomicInteger()
+        assertThrows(CancellationException::class.java) {
+            downloader(requests = requests)
+                .download(
+                    preset,
+                    store,
+                    cancellation,
+                )
+        }
+        assertEquals(0, requests.get())
+        assertTrue(store.list().isEmpty())
+        cancellation.unregister(call)
+    }
+
+    @Test
+    fun cancellationDuringTransferDoesNotImportPartialList() {
+        val cancellation = FilterListDownloadCancellation()
+        assertThrows(CancellationException::class.java) {
+            downloader().download(preset, store, cancellation) { progress ->
+                if (progress.stage == FilterListDownloadStage.DOWNLOADING) {
+                    cancellation.cancel()
+                }
+            }
+        }
+        assertTrue(store.list().isEmpty())
+    }
+
+    @Test
+    fun cancellationBeforeSavingPreservesExistingRulesAndMetadata() {
+        val existing =
+            store.importFrom(
+                "Existing",
+                "||old.example^".byteInputStream(),
+                preset.url,
+            )
+        val cancellation = FilterListDownloadCancellation()
+        currentTime += 1000
+        assertThrows(CancellationException::class.java) {
+            downloader().refresh(existing, store, cancellation) { progress ->
+                if (progress.stage == FilterListDownloadStage.SAVING) {
+                    cancellation.cancel()
+                }
+            }
+        }
+        assertEquals(listOf(existing), store.list())
+        assertEquals(listOf("||old.example^"), store.enabledTexts())
+    }
+
+    @Test
+    fun cancellingBatchStopsNextRequestButKeepsCompletedLists() {
+        val requested = SuggestedFilterLists.defaults.take(3)
+        val requests = AtomicInteger()
+        val cancellation = FilterListDownloadCancellation()
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        requests.incrementAndGet()
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("OK")
+                            .body("||ads.example^".toResponseBody())
+                            .build()
+                    }
+                    .build()
+            )
+        assertThrows(CancellationException::class.java) {
+            client.downloadDefaults(store, requested, cancellation) { progress ->
+                if (progress.completed == 1) {
+                    cancellation.cancel()
+                }
+            }
+        }
+        assertEquals(1, requests.get())
+        assertEquals(
+            listOf(requested.first().url),
+            store.list().map { it.sourceUrl },
+        )
     }
 
     @Test
