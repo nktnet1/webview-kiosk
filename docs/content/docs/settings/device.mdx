@@ -186,19 +186,21 @@ to access Settings.
 | Off | Open Settings without authentication. |
 | Require | Authenticate before opening Settings. |
 
-Changing this option in either direction requires a **new** authentication
-challenge; an existing authenticated session is not sufficient. On devices
-without a screen lock or custom authentication password, configure one first.
-Cancelling or failing the prompt leaves the current setting unchanged. When no
-credentials are configured, the existing no-lock fallback opens Settings
-without a prompt even with **Require** selected.
+Changing from **Require** to **Off** in Settings or through a manual settings
+import requires fresh authentication. An existing authenticated session is not
+sufficient. Changing from **Off** to **Require** does not require verification.
+If the device has neither a screen lock nor a custom authentication password,
+configure one before disabling the requirement. Cancelling or failing
+verification leaves the requirement unchanged. Without either credential,
+Settings still uses the existing no-lock fallback even when **Require** is
+selected.
 
-This preference is not imported from settings files or remote settings updates.
-Managed configurations use the `device.settings_auth_requirement` key and
-expose only the **Off** (`OFF`) and **Require** (`REQUIRE`) choices, with
-**Require** selected by default. These are also the stored enum values; Boolean values
-are not supported. An administrator can override this setting without local
-re-authentication.
+Settings exports include this preference. MQTT and UnifiedPush can update it
+without local verification. Managed configurations use the
+`device.settings_auth_requirement` key with **Off** (`OFF`) and **Require**
+(`REQUIRE`) choices, defaulting to **Require**. These are also the stored enum
+values. Boolean values are not supported. An administrator can override this
+setting without local re-authentication.
 
 **Default:** Require
 

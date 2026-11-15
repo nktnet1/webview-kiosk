@@ -1,7 +1,6 @@
 /**
- * Remotely writable setting keys and types mirror app restrictions, except
- * managed-only security restrictions that cannot be changed via MQTT or
- * UnifiedPush. Choice values mirror app/src/main/res/values/arrays.xml.
+ * Remotely writable setting keys and types mirror app restrictions.
+ * Choice values mirror app/src/main/res/values/arrays.xml.
  * Keep in sync when Android restrictions change (verified in tests).
  */
 
@@ -236,6 +235,7 @@ const OPTIONS = {
     "DISABLED",
   ],
   "device.unlock_auth_requirement": ["DEFAULT", "OFF", "REQUIRE"],
+  "device.settings_auth_requirement": ["OFF", "REQUIRE"],
   "mqtt.will.qos": ["AT_MOST_ONCE", "AT_LEAST_ONCE", "EXACTLY_ONCE"],
   "mqtt.publish.event.qos": ["AT_MOST_ONCE", "AT_LEAST_ONCE", "EXACTLY_ONCE"],
   "mqtt.publish.response.qos": [

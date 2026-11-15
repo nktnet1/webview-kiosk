@@ -352,6 +352,49 @@ class AuthenticationManagerTest {
     }
 
     @Test
+    fun reauthenticationReportsFailedAttemptsAndTerminalErrorsButNotExplicitCancellation() {
+        val failures = mutableListOf<AuthenticationManager.ReauthenticationFailure>()
+        var changes = 0
+        val request =
+            manager.requestReauthentication(
+                "Confirm",
+                "Confirm",
+                onVerificationFailed = { failures += it },
+                onAuthenticated = { changes++ },
+            ) as AuthenticationManager.ReauthenticationRequest.Started
+        val prompt = prompts.single()
+        prompt.callback.onAuthenticationFailed()
+        assertEquals(
+            listOf(AuthenticationManager.ReauthenticationFailure.ATTEMPT_FAILED),
+            failures,
+        )
+        assertEquals(0, changes)
+        prompt.callback.onAuthenticationError(1, "cancelled")
+        assertEquals(
+            listOf(
+                AuthenticationManager.ReauthenticationFailure.ATTEMPT_FAILED,
+                AuthenticationManager.ReauthenticationFailure.ENDED,
+            ),
+            failures,
+        )
+        prompt.succeed()
+        assertEquals(0, changes)
+
+        val retry =
+            manager.requestReauthentication(
+                "Retry",
+                "Retry",
+                onVerificationFailed = { failures += it },
+                onAuthenticated = { changes++ },
+            ) as AuthenticationManager.ReauthenticationRequest.Started
+        manager.cancelReauthentication(retry.token)
+        prompts.last().callback.onAuthenticationError(1, "late cancellation")
+        assertEquals(2, failures.size)
+        assertEquals(0, changes)
+        assertTrue(request.token !== retry.token)
+    }
+
+    @Test
     fun reauthenticationWithoutConfiguredCredentialsCannotUseNoLockFallback() {
         shadowOf(keyguardManager).setIsDeviceSecure(false)
         showPrompt()

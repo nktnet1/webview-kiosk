@@ -11,6 +11,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
 import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
@@ -40,22 +41,36 @@ fun SettingsAuthRequirementSetting() {
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.settingsAuthRequirement = it },
         requestSaveApproval = { requestedValue, approve, reportError ->
+            val showError: (Int) -> Unit = { error ->
+                reportError(error)
+                ToastManager.show(context, context.getString(error))
+            }
             when {
                 userSettings.isRestricted(settingKey) -> {
-                    reportError(R.string.ui_this_setting_is_managed_by_your_it_admin)
+                    showError(R.string.ui_this_setting_is_managed_by_your_it_admin)
                 }
-                requestedValue == userSettings.settingsAuthRequirement -> approve()
+                !userSettings.settingsAuthRequirement
+                    .requiresReauthenticationToChangeTo(requestedValue) -> approve()
                 else -> {
                     when (
                         val request =
                             AuthenticationManager.requestReauthentication(
                                 title = promptTitle,
                                 description = promptDescription,
+                                onVerificationFailed = {
+                                    ToastManager.show(
+                                        context,
+                                        context.getString(
+                                            R.string
+                                                .ui_settings_auth_verification_failed
+                                        ),
+                                    )
+                                },
                                 onAuthenticated = {
                                     if (!userSettings.isRestricted(settingKey)) {
                                         approve()
                                     } else {
-                                        reportError(
+                                        showError(
                                             R.string
                                                 .ui_this_setting_is_managed_by_your_it_admin
                                         )
@@ -68,17 +83,15 @@ fun SettingsAuthRequirementSetting() {
                             pendingRequest.value = request.token
                         }
                         AuthenticationManager.ReauthenticationRequest.Busy -> {
-                            reportError(
-                                R.string.ui_authentication_already_in_progress
-                            )
+                            showError(R.string.ui_authentication_already_in_progress)
                         }
                         AuthenticationManager.ReauthenticationRequest
                             .NoCredentials -> {
-                            reportError(R.string.ui_authentication_not_configured)
+                            showError(R.string.ui_authentication_not_configured)
                         }
                         AuthenticationManager.ReauthenticationRequest
                             .Unavailable -> {
-                            reportError(R.string.ui_authentication_unavailable)
+                            showError(R.string.ui_authentication_unavailable)
                         }
                     }
                 }

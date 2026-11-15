@@ -37,10 +37,6 @@ class ManagedRestrictionResourcesTest {
                     continue
                 }
                 val key = xml.getAttributeValue(androidNamespace, "key")
-                // Local-only security controls intentionally have no HA entity.
-                if (key == UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT) {
-                    continue
-                }
                 restrictions++
                 val valuesId =
                     xml.getAttributeResourceValue(androidNamespace, "entryValues", 0)
@@ -76,7 +72,7 @@ class ManagedRestrictionResourcesTest {
     }
 
     @Test
-    fun settingsAuthRequirementManagedRestrictionIsAChoiceNotARemoteControl() {
+    fun settingsAuthRequirementIsAManagedChoiceAndARemoteControl() {
         val key = UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT
         var found = false
         context.resources.getXml(R.xml.app_restrictions).use { xml ->
@@ -130,7 +126,7 @@ class ManagedRestrictionResourcesTest {
             }
         }
         assertTrue("Missing Settings Auth Requirement MDM choice", found)
-        assertFalse(HomeAssistantSetting.load(context).any { it.key == key })
+        assertTrue(HomeAssistantSetting.load(context).any { it.key == key })
     }
 
     @Test

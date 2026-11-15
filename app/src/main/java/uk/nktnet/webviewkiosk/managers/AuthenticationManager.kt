@@ -70,9 +70,15 @@ object AuthenticationManager {
     private class PendingAuthentication(
         val kind: PromptKind,
         val onReauthenticated: (() -> Unit)? = null,
+        val onVerificationFailed: ((ReauthenticationFailure) -> Unit)? = null,
     ) {
         var cancel: (() -> Unit)? = null
         var credentialRequestCode: Int? = null
+    }
+
+    enum class ReauthenticationFailure {
+        ATTEMPT_FAILED,
+        ENDED,
     }
 
     sealed interface ReauthenticationRequest {
@@ -183,6 +189,7 @@ object AuthenticationManager {
     fun requestReauthentication(
         title: String,
         description: String,
+        onVerificationFailed: ((ReauthenticationFailure) -> Unit)? = null,
         onAuthenticated: () -> Unit,
     ): ReauthenticationRequest {
         if (pendingAuthentication != null) {
@@ -192,8 +199,12 @@ object AuthenticationManager {
             return ReauthenticationRequest.Unavailable
         }
         val pending =
-            startAuthenticationPrompt(title, description, onAuthenticated)
-                ?: return ReauthenticationRequest.NoCredentials
+            startAuthenticationPrompt(
+                title,
+                description,
+                onAuthenticated,
+                onVerificationFailed,
+            ) ?: return ReauthenticationRequest.NoCredentials
         if (pendingAuthentication !== pending) {
             // Launching the system challenge itself failed. Do not tell the
             // caller a prompt is pending when no prompt can complete.
@@ -222,6 +233,7 @@ object AuthenticationManager {
         title: String,
         description: String,
         onReauthenticated: (() -> Unit)? = null,
+        onVerificationFailed: ((ReauthenticationFailure) -> Unit)? = null,
     ): PendingAuthentication? {
         if (pendingAuthentication != null) {
             return null
@@ -240,7 +252,12 @@ object AuthenticationManager {
 
         val customAuthPassword = UserSettings(activity).customAuthPassword
         if (customAuthPassword.isNotEmpty()) {
-            val pending = PendingAuthentication(PromptKind.CUSTOM, onReauthenticated)
+            val pending =
+                PendingAuthentication(
+                    PromptKind.CUSTOM,
+                    onReauthenticated,
+                    onVerificationFailed,
+                )
             pendingAuthentication = pending
             _customAuthRequest.value = pending
             if (onReauthenticated == null) {
@@ -279,6 +296,7 @@ object AuthenticationManager {
                     PromptKind.DEVICE_CREDENTIAL
                 },
                 onReauthenticated,
+                onVerificationFailed,
             )
         pendingAuthentication = pending
         if (onReauthenticated == null) {
@@ -337,6 +355,7 @@ object AuthenticationManager {
             // A cancelled change must not also revoke an existing settings
             // session or make the user leave the settings screen.
             hideCustomAuthPrompt()
+            pending.onVerificationFailed?.invoke(ReauthenticationFailure.ENDED)
             return
         }
         session.reset()
@@ -381,6 +400,15 @@ object AuthenticationManager {
                     ) {
                         super.onAuthenticationError(errorCode, errString)
                         handleAuthError(pending, errString.toString())
+                    }
+
+                    override fun onAuthenticationFailed() {
+                        super.onAuthenticationFailed()
+                        if (pendingAuthentication === pending) {
+                            pending.onVerificationFailed?.invoke(
+                                ReauthenticationFailure.ATTEMPT_FAILED
+                            )
+                        }
                     }
 
                     override fun onAuthenticationSucceeded(

@@ -1482,11 +1482,13 @@ class UserSettings(val context: Context) {
                 )
                 // put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD,
                 // customAuthPassword)
-                // SETTINGS_AUTH_REQUIREMENT is omitted: importing an exported
-                // config must not be able to change a local security boundary.
                 put(
                     UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT,
                     unlockAuthRequirement.name,
+                )
+                put(
+                    UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT,
+                    settingsAuthRequirement.name,
                 )
                 put(UserSettingsKeys.Device.BLOCK_SCREEN_CAPTURE, blockScreenCapture)
                 put(UserSettingsKeys.Device.BLOCK_VOLUME_KEYS, blockVolumeKeys)
@@ -1743,6 +1745,40 @@ class UserSettings(val context: Context) {
                 )
             }
         return json
+    }
+
+    /** Used by the manual import dialog before applying a settings file. */
+    fun manualImportNeedsSettingsReauthentication(
+        text: String,
+        isBase64: Boolean = false,
+    ): Boolean {
+        if (
+            isRestricted(UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT) ||
+                settingsAuthRequirement != SettingsAuthRequirementOption.REQUIRE
+        ) {
+            return false
+        }
+        return try {
+            val json =
+                JSONObject(
+                    if (isBase64) {
+                        String(Base64.decode(text, Base64.NO_WRAP), Charsets.UTF_8)
+                    } else {
+                        text
+                    }
+                )
+            settingsAuthRequirement.requiresReauthenticationToChangeTo(
+                SettingsAuthRequirementOption.fromString(
+                    json.optString(
+                        UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT,
+                        settingsAuthRequirement.name,
+                    )
+                )
+            )
+        } catch (_: Exception) {
+            // Invalid input cannot disable authentication because import fails.
+            false
+        }
     }
 
     fun importJson(jsonStr: String): Boolean {
@@ -2153,8 +2189,13 @@ class UserSettings(val context: Context) {
                     UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD,
                     customAuthPassword,
                 )
-            // Do not import SETTINGS_AUTH_REQUIREMENT: imports (including remote
-            // settings updates) have no fresh local authentication challenge.
+            settingsAuthRequirement =
+                SettingsAuthRequirementOption.fromString(
+                    json.optString(
+                        UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT,
+                        settingsAuthRequirement.name,
+                    )
+                )
             unlockAuthRequirement =
                 UnlockAuthRequirementOption.fromString(
                     json.optString(

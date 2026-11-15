@@ -5,6 +5,7 @@ package uk.nktnet.webviewkiosk.config
 import android.content.Context
 import android.content.RestrictionsManager
 import android.os.Bundle
+import android.util.Base64
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -70,7 +71,7 @@ class SettingsAccessAuthSettingsTest {
             SettingsAuthRequirementOption.REQUIRE,
             settings.settingsAuthRequirement,
         )
-        assertFalse(settings.exportJson().has(key))
+        assertEquals("REQUIRE", settings.exportJson().getString(key))
 
         settings.settingsAuthRequirement = SettingsAuthRequirementOption.OFF
         assertEquals(
@@ -86,7 +87,7 @@ class SettingsAccessAuthSettingsTest {
             SettingsAuthRequirementOption.OFF,
             UserSettings(context).settingsAuthRequirement,
         )
-        assertFalse(settings.exportJson().has(key))
+        assertEquals("OFF", settings.exportJson().getString(key))
 
         settings.settingsAuthRequirement = SettingsAuthRequirementOption.REQUIRE
         assertEquals(
@@ -105,17 +106,79 @@ class SettingsAccessAuthSettingsTest {
     }
 
     @Test
-    fun importsCannotChangeSettingsAuthenticationRequirement() {
+    fun directImportsAllowRemoteUpdatesInBothDirections() {
         assertTrue(settings.importJson(JSONObject().put(key, "OFF").toString()))
+        assertEquals(
+            SettingsAuthRequirementOption.OFF,
+            settings.settingsAuthRequirement,
+        )
+        assertTrue(settings.importJson(JSONObject().put(key, "REQUIRE").toString()))
         assertEquals(
             SettingsAuthRequirementOption.REQUIRE,
             settings.settingsAuthRequirement,
         )
-
-        settings.settingsAuthRequirement = SettingsAuthRequirementOption.OFF
-        assertTrue(settings.importJson(JSONObject().put(key, "REQUIRE").toString()))
+        assertTrue(
+            settings.importBase64(
+                Base64.encodeToString(
+                    JSONObject().put(key, "Off").toString().toByteArray(),
+                    Base64.NO_WRAP,
+                )
+            )
+        )
         assertEquals(
             SettingsAuthRequirementOption.OFF,
+            settings.settingsAuthRequirement,
+        )
+    }
+
+    @Test
+    fun manualImportRequiresVerificationOnlyWhenDisablingProtection() {
+        val off = JSONObject().put(key, "OFF").toString()
+        val require = JSONObject().put(key, "REQUIRE").toString()
+        val offBase64 = Base64.encodeToString(off.toByteArray(), Base64.NO_WRAP)
+        val requireBase64 =
+            Base64.encodeToString(require.toByteArray(), Base64.NO_WRAP)
+
+        assertTrue(settings.manualImportNeedsSettingsReauthentication(off))
+        assertTrue(
+            settings.manualImportNeedsSettingsReauthentication(offBase64, true)
+        )
+        assertFalse(settings.manualImportNeedsSettingsReauthentication(require))
+        assertFalse(settings.manualImportNeedsSettingsReauthentication("{}"))
+        assertFalse(settings.manualImportNeedsSettingsReauthentication("not json"))
+        assertFalse(
+            settings.manualImportNeedsSettingsReauthentication("not base64", true)
+        )
+        assertFalse(settings.manualImportNeedsSettingsReauthentication(""))
+        assertFalse(
+            settings.manualImportNeedsSettingsReauthentication(
+                JSONObject().put(key, "false").toString()
+            )
+        )
+
+        settings.settingsAuthRequirement = SettingsAuthRequirementOption.OFF
+        assertFalse(settings.manualImportNeedsSettingsReauthentication(off))
+        assertFalse(settings.manualImportNeedsSettingsReauthentication(require))
+        assertFalse(
+            settings.manualImportNeedsSettingsReauthentication(requireBase64, true)
+        )
+        assertFalse(
+            settings.manualImportNeedsSettingsReauthentication(offBase64, true)
+        )
+    }
+
+    @Test
+    fun managedSettingsNeverNeedManualImportVerification() {
+        shadowOf(restrictions)
+            .setApplicationRestrictions(Bundle().apply { putString(key, "REQUIRE") })
+        assertFalse(
+            settings.manualImportNeedsSettingsReauthentication(
+                JSONObject().put(key, "OFF").toString()
+            )
+        )
+        assertTrue(settings.importJson(JSONObject().put(key, "OFF").toString()))
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
             settings.settingsAuthRequirement,
         )
     }

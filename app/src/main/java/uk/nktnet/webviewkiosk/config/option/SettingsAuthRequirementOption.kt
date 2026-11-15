@@ -5,6 +5,10 @@ enum class SettingsAuthRequirementOption(val label: String) {
     OFF("Off"),
     REQUIRE("Require");
 
+    fun requiresReauthenticationToChangeTo(
+        next: SettingsAuthRequirementOption
+    ): Boolean = this == REQUIRE && next == OFF
+
     companion object {
         fun fromString(value: String?): SettingsAuthRequirementOption {
             return entries.find {

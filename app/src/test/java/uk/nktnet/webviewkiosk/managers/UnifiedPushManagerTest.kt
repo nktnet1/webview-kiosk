@@ -42,6 +42,7 @@ import uk.nktnet.webviewkiosk.config.HistoryEntry
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundClearHistoryCommand
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandMessage
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundGoBackCommand
@@ -315,6 +316,20 @@ class UnifiedPushManagerTest {
     }
 
     @Test
+    fun remoteSettingsCanChangeSettingsAuthRequirementInBothDirections() {
+        send(settingsPayload(settingsAuth = SettingsAuthRequirementOption.OFF))
+        assertEquals(
+            SettingsAuthRequirementOption.OFF,
+            userSettings.settingsAuthRequirement,
+        )
+        send(settingsPayload(settingsAuth = SettingsAuthRequirementOption.REQUIRE))
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            userSettings.settingsAuthRequirement,
+        )
+    }
+
+    @Test
     fun disabledPushCannotApplySettings() {
         userSettings.unifiedPushEnabled = false
         send(settingsPayload())
@@ -563,6 +578,7 @@ class UnifiedPushManagerTest {
         instances: List<String>? = null,
         usernames: List<String>? = null,
         home: String = updatedHome,
+        settingsAuth: SettingsAuthRequirementOption? = null,
     ) = buildJsonObject {
         put("type", "settings")
         put("messageId", "settings-message")
@@ -577,6 +593,12 @@ class UnifiedPushManagerTest {
         putJsonObject("data") {
             putJsonObject("settings") {
                 put(UserSettingsKeys.WebContent.HOME_URL, home)
+                if (settingsAuth != null) {
+                    put(
+                        UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT,
+                        settingsAuth.name,
+                    )
+                }
             }
         }
     }
