@@ -264,11 +264,11 @@ class SettingsSearchIndexTest {
     }
 
     @Test
-    fun strongMatchesPrecedeDescriptionsAndGroupsRemainTogether() {
+    fun settingsPrecedeActionsAndStrongMatchesPrecedeDescriptionsWithinEachType() {
         val results = searchSettings(context, "cache")
         assertEquals(
-            R.string.settings_more_action_clear_cache,
-            results.first().titleRes,
+            UserSettingsKeys.WebEngine.CACHE_MODE,
+            results.first().settingKey,
         )
         val titleMatch = results.indexOfFirst {
             it.settingKey == UserSettingsKeys.WebEngine.CACHE_MODE
@@ -276,13 +276,53 @@ class SettingsSearchIndexTest {
         val optionMatch = results.indexOfFirst {
             it.settingKey == UserSettingsKeys.WebLifecycle.RESET_ACTIONS
         }
+        val actionMatch = results.indexOfFirst {
+            it.titleRes == R.string.settings_more_action_clear_cache
+        }
         assertTrue(titleMatch in 0..<optionMatch)
+        assertTrue(optionMatch in 0..<actionMatch)
         val grouped = groupSettingsSearchResults(results)
         assertTrue(grouped.size > 1)
         assertEquals(results, grouped.flatMap { it.second })
         grouped.forEach { (page, entries) ->
             assertTrue(entries.all { it.route == page.route })
         }
+    }
+
+    @Test
+    fun devicePoliciesPageOutranksMatchingAboutInformation() {
+        val results = searchSettings(context, "manage lock task packages")
+        val pageIndex = results.indexOfFirst {
+            it.kind == SettingsSearchResultKind.PAGE &&
+                it.route == Screen.SettingsDeviceOwner.route
+        }
+        val infoIndex = results.indexOfFirst {
+            it.kind == SettingsSearchResultKind.INFORMATION &&
+                it.titleRes == R.string.about_app_manage_lock_task_packages
+        }
+        assertEquals(SettingsSearchResultKind.SETTING, results.first().kind)
+        assertTrue(pageIndex > 0)
+        assertTrue(infoIndex > pageIndex)
+    }
+
+    @Test
+    fun settingsOutrankPagesAndInformationEvenForWeakerTextMatches() {
+        val results = searchSettings(context, "lock task")
+        val settingIndex = results.indexOfFirst {
+            it.kind == SettingsSearchResultKind.SETTING &&
+                it.route == Screen.SettingsDeviceOwner.route
+        }
+        val pageIndex = results.indexOfFirst {
+            it.kind == SettingsSearchResultKind.PAGE &&
+                it.route == Screen.SettingsDeviceOwner.route
+        }
+        val infoIndex = results.indexOfFirst {
+            it.kind == SettingsSearchResultKind.INFORMATION &&
+                it.route == Screen.SettingsAbout.route
+        }
+        assertEquals(0, settingIndex)
+        assertTrue(pageIndex > settingIndex)
+        assertTrue(infoIndex > pageIndex)
     }
 
     @Test

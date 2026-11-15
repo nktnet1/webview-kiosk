@@ -6,11 +6,12 @@ import java.text.Normalizer
 import java.util.Locale
 import uk.nktnet.webviewkiosk.config.Screen
 
-internal enum class SettingsSearchResultKind {
-    SETTING,
-    INFORMATION,
-    ACTION,
-    PAGE,
+/** Search priority is independent of how closely a result matches the query. */
+internal enum class SettingsSearchResultKind(val searchPriority: Int) {
+    SETTING(4),
+    INFORMATION(1),
+    ACTION(2),
+    PAGE(3),
 }
 
 internal data class SettingsSearchResult(
@@ -164,15 +165,20 @@ internal class SettingsSearchIndex(context: Context) {
                 }
             doc.result to score
         }
-        // Strongest group first, with stable registry order breaking ties. Keep
-        // each breadcrumb group together and rank its rows by match quality.
+        // Prioritise editable settings, then pages, actions, and information.
+        // Within each type, prefer stronger matches and keep registry order for
+        // ties. Group afterwards so each breadcrumb section stays together.
         return matches
+            .sortedWith(
+                compareByDescending<Pair<SettingsSearchResult, Int>> {
+                        it.first.kind.searchPriority
+                    }
+                    .thenByDescending { it.second }
+            )
             .groupBy { it.first.route }
             .values
-            .sortedByDescending { group -> group.maxOf { it.second } }
-            .flatMap { group ->
-                group.sortedByDescending { it.second }.map { it.first }
-            }
+            .flatten()
+            .map { it.first }
     }
 }
 
