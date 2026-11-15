@@ -59,6 +59,16 @@ fun RequireAuthWrapper(
     // changing Off to Require while Settings remains open can leave the bypass
     // branch mounted until an unrelated recomposition or navigation occurs.
     DisposableEffect(context, userSettings) {
+        fun refreshRequirement() {
+            val required =
+                userSettings.settingsAuthRequirement ==
+                    SettingsAuthRequirementOption.REQUIRE
+            if (requiresAuth.value && !required) {
+                AuthenticationManager.clearSettingsAuthentication()
+            }
+            requiresAuth.value = required
+        }
+
         val prefs =
             context.getSharedPreferences(
                 UserSettingsKeys.PREFS_NAME,
@@ -66,17 +76,13 @@ fun RequireAuthWrapper(
             )
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT) {
-                requiresAuth.value =
-                    userSettings.settingsAuthRequirement ==
-                        SettingsAuthRequirementOption.REQUIRE
+                refreshRequirement()
             }
         }
         val restrictionsReceiver =
             object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
-                    requiresAuth.value =
-                        userSettings.settingsAuthRequirement ==
-                            SettingsAuthRequirementOption.REQUIRE
+                    refreshRequirement()
                 }
             }
         prefs.registerOnSharedPreferenceChangeListener(listener)
@@ -87,9 +93,7 @@ fun RequireAuthWrapper(
             ContextCompat.RECEIVER_EXPORTED,
         )
         // Also close the gap between the first preference read and registration.
-        requiresAuth.value =
-            userSettings.settingsAuthRequirement ==
-                SettingsAuthRequirementOption.REQUIRE
+        refreshRequirement()
         onDispose {
             prefs.unregisterOnSharedPreferenceChangeListener(listener)
             context.unregisterReceiver(restrictionsReceiver)

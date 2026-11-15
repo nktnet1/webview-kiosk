@@ -236,6 +236,86 @@ class RequireAuthWrapperTest {
     }
 
     @Test
+    fun disablingProtectionCancelsAnOutstandingEntryPromptBeforeReenabling() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeWrapper()
+        val oldPrompt = prompts.single()
+        assertLoading()
+
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.OFF
+        pumpFrames()
+
+        assertUnprotectedSettingsVisible()
+        assertEquals(1, oldPrompt.cancelCalls)
+
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.REQUIRE
+        pumpFrames()
+
+        assertLoading()
+        assertEquals(2, prompts.size)
+        assertEquals(1, prompts.last().authenticateCalls)
+        oldPrompt.succeed()
+        pumpFrames()
+        assertNoProtectedContent()
+
+        prompts.last().succeed()
+        pumpFrames()
+        assertProtectedContent()
+    }
+
+    @Test
+    fun reenablingProtectionAfterAnEarlierEntryFailureStartsANewPrompt() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeWrapper()
+        prompts.single().callback.onAuthenticationError(1, "cancelled")
+        pumpFrames()
+        assertNoProtectedContent()
+
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.OFF
+        pumpFrames()
+        assertUnprotectedSettingsVisible()
+
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.REQUIRE
+        pumpFrames()
+        assertLoading()
+        assertEquals(2, prompts.size)
+    }
+
+    @Test
+    fun disablingProtectionDoesNotCancelAnIndependentSettingsVerification() {
+        authenticate()
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeWrapper()
+        assertProtectedContent()
+
+        var verified = false
+        val request =
+            manager.requestReauthentication(
+                "Reauthenticate",
+                "Verify",
+                onAuthenticated = {
+                    verified = true
+                },
+            )
+        assertTrue(request is AuthenticationManager.ReauthenticationRequest.Started)
+        val verificationPrompt = prompts.last()
+
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.OFF
+        pumpFrames()
+
+        assertEquals(0, verificationPrompt.cancelCalls)
+        assertTrue(texts().any { it.startsWith("Protected settings ") })
+        verificationPrompt.succeed()
+        pumpFrames()
+        assertTrue(verified)
+    }
+
+    @Test
     fun managedChoiceChangeImmediatelyEnforcesSettingsAuthentication() {
         val restrictions =
             activity.getSystemService(Context.RESTRICTIONS_SERVICE)
@@ -843,6 +923,12 @@ class RequireAuthWrapperTest {
         assertFalse(
             texts().contains(message(R.string.ui_waiting_for_authentication))
         )
+    }
+
+    private fun assertUnprotectedSettingsVisible() {
+        assertFalse(manager.hasValidSession())
+        assertEquals(1, protectedMounts - protectedDisposals)
+        assertTrue(texts().any { it.startsWith("Protected settings ") })
     }
 
     private fun assertNoProtectedContent() {

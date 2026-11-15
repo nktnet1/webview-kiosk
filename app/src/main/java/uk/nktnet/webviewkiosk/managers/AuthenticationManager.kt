@@ -169,6 +169,21 @@ object AuthenticationManager {
         }
     }
 
+    /**
+     * Discard a settings challenge when access no longer requires authentication.
+     */
+    fun clearSettingsAuthentication() {
+        // The gate owns only entry challenges. Leave a separate settings-change
+        // verification alive so its caller can complete or cancel it normally.
+        if (pendingAuthentication?.onReauthenticated != null) {
+            return
+        }
+        resetAuthentication()
+        // Terminal errors are intentionally sticky during normal authentication.
+        // A later switch back to Require must instead start a new challenge.
+        _resultState.value = AuthenticationResult.Loading
+    }
+
     fun bypassAuthForWindow(durationMs: Long = BYPASS_AUTH_WINDOW_MS) {
         // Preserve an authenticated session during an external activity round trip.
         // Opening an external app must not establish a session by itself.
