@@ -18,7 +18,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 | Shared owner through Dhizuku | You want Dhizuku to share its device or profile owner permissions with several apps. |
 | MDM/EMM | Your organisation already manages the device and can allowlist the kiosk. |
 
-### 1.1. Profile Owner and work profiles [#profile-owner-work-profile]
+### 1.1. Optional Work Profile [#optional-work-profile]
 
 Choosing **Profile Owner (Main User)** lets you keep or create a separate
 work profile, which is disallowed in **Device Owner** mode.
@@ -51,48 +51,14 @@ Note the new profile ID printed by Android. In this example, we will use `10`.
 
 <Step>
 
-Start the profile and install the work copy using the tab matching your app:
-
-<Tabs items={['GitHub / F-Droid / IzzyOnDroid', 'Google Play / Aurora Store', 'Debug APK']}>
-<Tab value="GitHub / F-Droid / IzzyOnDroid">
+Start the profile and mark the setup as complete.
 
 ```sh
 adb shell am start-user 10
-adb shell pm install-existing --user 10 uk.nktnet.webviewkiosk
-adb shell dpm set-profile-owner --user 10 uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
 adb shell settings --user 10 put secure user_setup_complete 1
-adb shell am start --user 10 -n uk.nktnet.webviewkiosk/.MainActivity
 ```
 
-</Tab>
-<Tab value="Google Play / Aurora Store">
-
-```sh
-adb shell am start-user 10
-adb shell pm install-existing --user 10 com.nktnet.webview_kiosk
-adb shell dpm set-profile-owner --user 10 com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-adb shell settings --user 10 put secure user_setup_complete 1
-adb shell am start --user 10 -n com.nktnet.webview_kiosk/uk.nktnet.webviewkiosk.MainActivity
-```
-
-</Tab>
-<Tab value="Debug APK">
-
-```sh
-adb shell am start-user 10
-adb shell pm install-existing --user 10 uk.nktnet.webviewkiosk.debug
-adb shell dpm set-profile-owner --user 10 uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-
-# Needed for work apps to appear in "Recents"
-adb shell settings --user 10 put secure user_setup_complete 1
-
-adb shell am start --user 10 -n uk.nktnet.webviewkiosk.debug/uk.nktnet.webviewkiosk.MainActivity
-```
-
-</Tab>
-</Tabs>
-
-Make sure to replace `10` with the ID returned from the previous step.
+You should now see **Personal** and **Work** tabs in your app drawer.
 
 </Step>
 
