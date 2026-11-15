@@ -25,7 +25,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.GenericSettingFieldIt
 import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
 
 @Composable
-fun RequireAuthForSettingsSetting() {
+fun SettingsAuthRequirementSetting() {
     val context = LocalContext.current
     val userSettings = remember(context) { UserSettings(context) }
     val settingKey = UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS
@@ -35,8 +35,12 @@ fun RequireAuthForSettingsSetting() {
     val promptTitle = stringResource(R.string.ui_authentication_required)
     val promptDescription =
         stringResource(R.string.ui_please_reauthenticate_to_change_settings_auth)
-    val trueText = stringResource(R.string.ui_true)
-    val falseText = stringResource(R.string.ui_false)
+    val requireText =
+        stringResource(
+            R.string.option_display_unlock_auth_requirement_option_require
+        )
+    val offText =
+        stringResource(R.string.option_display_unlock_auth_requirement_option_off)
 
     var currentValue by remember {
         mutableStateOf(userSettings.requireAuthForSettings)
@@ -56,9 +60,9 @@ fun RequireAuthForSettingsSetting() {
 
     fun valueText(value: Boolean) =
         if (value) {
-            trueText
+            requireText
         } else {
-            falseText
+            offText
         }
 
     GenericSettingFieldItem(
@@ -135,7 +139,7 @@ fun RequireAuthForSettingsSetting() {
             },
         ) {
             DropdownSelector(
-                options = listOf(true, false),
+                options = listOf(false, true),
                 selected = draftValue,
                 enabled = !restricted,
                 onSelectedChange = {
@@ -145,7 +149,16 @@ fun RequireAuthForSettingsSetting() {
                     }
                 },
             ) { value ->
-                Text(valueText(value))
+                Text(
+                    text = valueText(value),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color =
+                        if (value == draftValue) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                )
             }
             errorMessage?.let { error ->
                 Text(

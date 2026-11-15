@@ -28,6 +28,25 @@ class SettingsSearchIndexTest {
     private val context: Context = RuntimeEnvironment.getApplication()
 
     @Test
+    fun settingsAuthRequirementUsesOffAndRequireOptionLabels() {
+        val key = UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS
+        val definition = settingDefinition(key)
+        assertEquals(
+            "Settings Auth Requirement",
+            context.getString(definition.titleRes),
+        )
+        assertEquals(
+            listOf("Off", "Require"),
+            definition.optionLabelRes.map { context.getString(it) },
+        )
+        assertTrue(
+            searchSettings(context, "Settings Auth Requirement").any {
+                it.settingKey == key
+            }
+        )
+    }
+
+    @Test
     fun searchesIndividualSettingsInNestedScreens() {
         val key = UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING
         val result =

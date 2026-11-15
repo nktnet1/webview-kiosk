@@ -678,6 +678,13 @@ internal val settingsPages: List<SettingsPage> = buildList {
                         R.string.device_require_auth_for_settings_title,
                         UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS,
                         R.string.setting_info_require_auth_for_settings,
+                        optionLabelRes =
+                            listOf(
+                                R.string
+                                    .option_display_unlock_auth_requirement_option_off,
+                                R.string
+                                    .option_display_unlock_auth_requirement_option_require,
+                            ),
                     ),
                     SettingDefinition(
                         R.string.device_unlock_auth_requirement_title,

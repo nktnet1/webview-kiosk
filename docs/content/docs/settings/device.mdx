@@ -160,10 +160,15 @@ Leave this setting blank to use your device's biometrics or credentials.
 
 **Default:** *(blank)*
 
-## 12. Require Authentication for Settings [#require-auth-for-settings]
+## 12. Settings Auth Requirement [#settings-auth-requirement]
 
-Require a custom password, device credentials, or biometrics when opening any
-Settings screen. When disabled, Settings opens without authentication.
+Choose whether a custom password, device credentials, or biometrics are needed
+to access Settings.
+
+| Option | Description |
+|--------|-------------|
+| Off | Open Settings without authentication. |
+| Require | Authenticate before opening Settings. |
 
 Changing this option in either direction requires a **new** authentication
 challenge; an existing authenticated session is not sufficient. On devices
@@ -173,7 +178,7 @@ Cancelling or failing the prompt leaves the current setting unchanged.
 This preference is not imported from settings files or remote settings updates.
 Managed device restrictions can override it when configured by an administrator.
 
-**Default:** true
+**Default:** Require
 
 ## 13. Unlock Auth Requirement [#unlock-auth-requirement]
 

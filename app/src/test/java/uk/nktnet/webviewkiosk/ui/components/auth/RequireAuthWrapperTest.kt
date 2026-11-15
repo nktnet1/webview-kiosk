@@ -56,7 +56,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.AuthenticationSession
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.RequireAuthForSettingsSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.SettingsAuthRequirementSetting
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -226,13 +226,23 @@ class RequireAuthWrapperTest {
     }
 
     @Test
-    fun settingsAuthToggleIsNotSavedUntilTheNewPromptSucceeds() {
+    fun settingsAuthRequirementIsNotSavedUntilTheNewPromptSucceeds() {
         owner.registry.currentState = Lifecycle.State.RESUMED
-        composeSettingsAuthToggle()
+        composeSettingsAuthRequirement()
 
+        assertTrue(
+            texts()
+                .contains(
+                    message(
+                        R.string
+                            .option_display_unlock_auth_requirement_option_require
+                    )
+                )
+        )
+        assertFalse(texts().contains(message(R.string.ui_true)))
         click(message(R.string.device_require_auth_for_settings_title))
-        expandBooleanDropdown()
-        click(message(R.string.ui_false))
+        expandSettingsAuthDropdown()
+        click(message(R.string.option_display_unlock_auth_requirement_option_off))
         click(message(R.string.ui_save))
 
         assertTrue(UserSettings(activity).requireAuthForSettings)
@@ -248,13 +258,13 @@ class RequireAuthWrapperTest {
     }
 
     @Test
-    fun leavingTheSettingsAuthToggleCancelsItsUnfinishedChallenge() {
+    fun leavingTheSettingsAuthRequirementCancelsItsUnfinishedChallenge() {
         owner.registry.currentState = Lifecycle.State.RESUMED
-        composeSettingsAuthToggle()
+        composeSettingsAuthRequirement()
 
         click(message(R.string.device_require_auth_for_settings_title))
-        expandBooleanDropdown()
-        click(message(R.string.ui_false))
+        expandSettingsAuthDropdown()
+        click(message(R.string.option_display_unlock_auth_requirement_option_off))
         click(message(R.string.ui_save))
         val prompt = prompts.single()
 
@@ -564,12 +574,12 @@ class RequireAuthWrapperTest {
         pumpFrames()
     }
 
-    private fun composeSettingsAuthToggle() {
+    private fun composeSettingsAuthRequirement() {
         view.setContent {
             CompositionLocalProvider(
                 LocalLifecycleOwner provides currentOwner.value
             ) {
-                RequireAuthForSettingsSetting()
+                SettingsAuthRequirementSetting()
             }
         }
         pumpFrames()
@@ -631,13 +641,14 @@ class RequireAuthWrapperTest {
         pumpFrames()
     }
 
-    private fun expandBooleanDropdown() {
-        val trueText = message(R.string.ui_true)
+    private fun expandSettingsAuthDropdown() {
+        val requireText =
+            message(R.string.option_display_unlock_auth_requirement_option_require)
         val node =
             nodes(merged = true).last { node ->
                 node.config.getOrNull(SemanticsActions.OnClick) != null &&
                     node.config.getOrNull(SemanticsProperties.Text)?.any {
-                        it.text == trueText
+                        it.text == requireText
                     } == true
             }
         assertTrue(
