@@ -180,7 +180,9 @@ fun <T : Enum<T>> stringEnumPref(
         override fun getValue(thisRef: Any?, property: KProperty<*>): T {
             val value =
                 if (getRestrictions()?.containsKey(key) == true) {
-                    getRestrictions()?.getString(key)
+                    // A malformed MDM restriction must be handled by the enum's
+                    // default rather than throwing or reading the local value.
+                    @Suppress("DEPRECATION") (getRestrictions()?.get(key) as? String)
                 } else {
                     try {
                         prefs.getString(key, default)

@@ -15,4 +15,7 @@
     <string name="option_display_unlock_auth_requirement_option_default">"Default"</string>
     <string name="option_display_unlock_auth_requirement_option_off">"Off"</string>
     <string name="option_display_unlock_auth_requirement_option_require">"Require"</string>
+    <!-- SettingsAuthRequirementOption -->
+    <string name="option_display_settings_auth_requirement_option_off">"Off"</string>
+    <string name="option_display_settings_auth_requirement_option_require">"Require"</string>
 </resources>

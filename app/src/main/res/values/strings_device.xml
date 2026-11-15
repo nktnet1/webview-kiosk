@@ -40,6 +40,13 @@ For user-owned devices that use screen pinning, this will only work if you are u
 Device-level unpin methods (e.g. gestures/holding overview + back button simultaneously) will bypass this setting. To enhance security, please see: %1$s/security
 
 Leave this setting blank to use your device\'s biometrics or credentials."</string>
+    <string name="setting_info_settings_auth_requirement">"Choose whether Settings requires a custom password, device credentials, or biometrics:
+- Off: Open Settings without authentication
+- Require: Authenticate before opening Settings (default)
+
+Changing from Require to Off in Settings or through a manual settings import requires fresh authentication, even when Settings is already unlocked. Changing from Off to Require needs no verification. If no authentication is configured, set a custom password or device screen lock before disabling the requirement. Without either credential, Settings still uses the existing no-lock fallback even when Require is selected.
+
+MQTT, UnifiedPush, and managed configurations can change this setting without local re-authentication."</string>
     <string name="setting_info_custom_unlock_shortcut" formatted="false">"Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META) in combination with another standard key to unlock/unpin the application.
 
 For example, CTRL+1.

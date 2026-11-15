@@ -15,6 +15,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +33,8 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.managers.AuthenticationManager
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.ui.screens.settingDefinition
@@ -55,6 +58,93 @@ fun CustomAuthPasswordSetting() {
     var pendingPassword by remember { mutableStateOf("") }
     var pendingCommit by remember { mutableStateOf<(() -> Unit)?>(null) }
     var pendingRemoveCommit by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val pendingVerification = remember { mutableStateOf<Any?>(null) }
+
+    val promptTitle = stringResource(R.string.ui_authentication_required)
+    val promptDescription =
+        stringResource(R.string.ui_please_reauthenticate_to_change_custom_password)
+
+    fun cancelVerification() {
+        AuthenticationManager.cancelReauthentication(pendingVerification.value)
+        pendingVerification.value = null
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            AuthenticationManager.cancelReauthentication(pendingVerification.value)
+        }
+    }
+
+    fun applyPasswordChange(
+        password: String,
+        commit: (() -> Unit)?,
+        onApplied: () -> Unit,
+    ) {
+        if (commit == null) {
+            return
+        }
+
+        val apply = {
+            if (userSettings.isRestricted(settingKey)) {
+                ToastManager.show(
+                    context,
+                    context.getString(
+                        R.string.ui_this_setting_is_managed_by_your_it_admin
+                    ),
+                )
+            } else {
+                userSettings.customAuthPassword = password
+                commit()
+                onApplied()
+            }
+        }
+
+        if (
+            !userSettings.requiresReauthenticationToChangeCustomAuthPassword(
+                password
+            )
+        ) {
+            apply()
+            return
+        }
+
+        val showError: (Int) -> Unit = {
+            ToastManager.show(context, context.getString(it))
+        }
+        when (
+            val request =
+                AuthenticationManager.requestReauthentication(
+                    title = promptTitle,
+                    description = promptDescription,
+                    onVerificationFailed = { failure ->
+                        if (
+                            failure ==
+                                AuthenticationManager.ReauthenticationFailure.ENDED
+                        ) {
+                            pendingVerification.value = null
+                        }
+                        showError(R.string.ui_settings_auth_verification_failed)
+                    },
+                    onAuthenticated = {
+                        pendingVerification.value = null
+                        apply()
+                    },
+                )
+        ) {
+            is AuthenticationManager.ReauthenticationRequest.Started -> {
+                pendingVerification.value = request.token
+            }
+            AuthenticationManager.ReauthenticationRequest.Busy -> {
+                showError(R.string.ui_authentication_already_in_progress)
+            }
+            AuthenticationManager.ReauthenticationRequest.NoCredentials -> {
+                showError(R.string.ui_authentication_not_configured)
+            }
+            AuthenticationManager.ReauthenticationRequest.Unavailable -> {
+                showError(R.string.ui_authentication_unavailable)
+            }
+        }
+    }
 
     var showPassword by remember { mutableStateOf(false) }
     var passwordMismatch by remember { mutableStateOf(false) }
@@ -109,6 +199,7 @@ fun CustomAuthPasswordSetting() {
     if (showConfirmationDialog) {
         AlertDialog(
             onDismissRequest = {
+                cancelVerification()
                 showConfirmationDialog = false
                 pendingCommit = null
                 passwordMismatch = false
@@ -202,17 +293,17 @@ fun CustomAuthPasswordSetting() {
             },
             confirmButton = {
                 TextButton(
+                    enabled = pendingVerification.value == null,
                     onClick = {
                         if (confirmPassword == pendingPassword) {
-                            userSettings.customAuthPassword = pendingPassword
-                            pendingCommit?.invoke()
-
-                            pendingCommit = null
-                            showConfirmationDialog = false
+                            applyPasswordChange(pendingPassword, pendingCommit) {
+                                pendingCommit = null
+                                showConfirmationDialog = false
+                            }
                         } else {
                             passwordMismatch = true
                         }
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.ui_confirm))
                 }
@@ -220,6 +311,7 @@ fun CustomAuthPasswordSetting() {
             dismissButton = {
                 TextButton(
                     onClick = {
+                        cancelVerification()
                         showConfirmationDialog = false
                         pendingCommit = null
                         passwordMismatch = false
@@ -234,6 +326,7 @@ fun CustomAuthPasswordSetting() {
     if (showRemovePasswordDialog) {
         AlertDialog(
             onDismissRequest = {
+                cancelVerification()
                 showRemovePasswordDialog = false
                 pendingRemoveCommit = null
             },
@@ -254,15 +347,16 @@ fun CustomAuthPasswordSetting() {
             },
             confirmButton = {
                 TextButton(
+                    enabled = pendingVerification.value == null,
                     colors =
                         ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.error
                         ),
                     onClick = {
-                        userSettings.customAuthPassword = ""
-                        pendingRemoveCommit?.invoke()
-                        pendingRemoveCommit = null
-                        showRemovePasswordDialog = false
+                        applyPasswordChange("", pendingRemoveCommit) {
+                            pendingRemoveCommit = null
+                            showRemovePasswordDialog = false
+                        }
                     },
                 ) {
                     Text(stringResource(R.string.ui_remove))
@@ -271,6 +365,7 @@ fun CustomAuthPasswordSetting() {
             dismissButton = {
                 TextButton(
                     onClick = {
+                        cancelVerification()
                         showRemovePasswordDialog = false
                         pendingRemoveCommit = null
                     }

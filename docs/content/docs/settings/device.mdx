@@ -176,7 +176,40 @@ unpinning, which is outside the control of {APP_NAME}.
 
 **Default:** Default
 
-## 13. Block Screen Capture [#block-screen-capture]
+## 13. Settings Auth Requirement [#settings-auth-requirement]
+
+Choose whether a custom password, device credentials, or biometrics are needed
+to access Settings.
+
+| Option | Description |
+|--------|-------------|
+| Off | Open Settings without authentication. |
+| Require | Authenticate before opening Settings. |
+
+Changing from **Require** to **Off** in Settings or through a manual settings
+import requires fresh authentication. An existing authenticated session is not
+sufficient. Changing from **Off** to **Require** does not require verification.
+When Settings authentication is required, changing or removing an existing
+custom authentication password also requires fresh verification. This applies
+to manual imports that replace a custom password or change the authentication
+method from device credentials to a custom password. Creating the first custom
+password on a device with no screen lock does not require verification.
+If the device has neither a screen lock nor a custom authentication password,
+configure one before disabling the requirement. Cancelling or failing
+verification leaves the requirement unchanged. Without either credential,
+Settings still uses the existing no-lock fallback even when **Require** is
+selected.
+
+Settings exports include this preference. MQTT and UnifiedPush can update it
+without local verification. Managed configurations use the
+`device.settings_auth_requirement` key with **Off** (`OFF`) and **Require**
+(`REQUIRE`) choices, defaulting to **Require**. These are also the stored enum
+values. An administrator can override this setting without local
+re-authentication.
+
+**Default:** Require
+
+## 14. Block Screen Capture [#block-screen-capture]
 
 Prevent screenshots, screen recording and content previews in Recent Apps.
 This is done by setting the FLAG_SECURE window flag.
@@ -186,7 +219,7 @@ For more information, see
 
 **Default:** false
 
-## 14. Block Volume Keys [#block-volume-keys]
+## 15. Block Volume Keys [#block-volume-keys]
 
 Disable the volume control buttons, specifically:
 
@@ -196,7 +229,7 @@ Disable the volume control buttons, specifically:
 
 **Default:** false
 
-## 15. Device Policies [#device-owner]
+## 16. Device Policies [#device-owner]
 
 Open **Device → Manage Device Policies** to see the actual owner role, whether
 it is native or shared through Dhizuku, and whether it manages a full user or a
@@ -219,7 +252,7 @@ actions for testing: policies and user data can remain, so use your managed rese
 process for production unenrollment. Handle Dhizuku ownership in Dhizuku itself. See [Owner Activation](/docs/activation) for setup and
 [Security](/docs/security#owner-capabilities) for capabilities and restrictions.
 
-### 15.1. Lock Task Features [#lock-task-features]
+### 16.1. Lock Task Features [#lock-task-features]
 
 The following settings are based on Android's lock-task documentation:
 - [Lock Task Mode -> Customise UI](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#customize-ui)
@@ -337,7 +370,7 @@ The following settings are based on Android's lock-task documentation:
   </tbody>
 </table>
 
-### 15.2. Dhizuku Request Permission on Launch [#dhizuku-request-permission-on-launch]
+### 16.2. Dhizuku Request Permission on Launch [#dhizuku-request-permission-on-launch]
 
 When enabled, if [Dhizuku](https://github.com/iamr0s/Dhizuku) is installed and
 has not granted {APP_NAME} access through the
@@ -345,7 +378,7 @@ has not granted {APP_NAME} access through the
 
 **Default:** true
 
-### 15.2. Dhizuku [#dhizuku]
+### 16.3. Dhizuku [#dhizuku]
 
 **Request Permission on Launch** requests shared Device Owner or Profile Owner
 permission when Dhizuku is available. Open Dhizuku and grant access from this

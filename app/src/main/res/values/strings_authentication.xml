@@ -2,6 +2,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="ui_authentication_failed" formatted="false">"Authentication failed"</string>
     <string name="ui_authentication_required" formatted="false">"Authentication Required"</string>
+    <string name="ui_please_reauthenticate_to_change_settings_auth">"Authenticate again to turn off Settings authentication"</string>
+    <string name="ui_please_reauthenticate_to_change_custom_password">"Authenticate again to change your custom authentication password"</string>
+    <string name="ui_please_reauthenticate_to_import_settings">"Authenticate again to import settings that change authentication or its password"</string>
+    <string name="ui_settings_auth_verification_failed">"Authentication was not verified. No settings changes were applied."</string>
+    <string name="ui_authentication_already_in_progress">"Authentication is already in progress. Try again afterwards."</string>
+    <string name="ui_authentication_not_configured">"Set a custom authentication password or a device screen lock before turning off Settings authentication."</string>
+    <string name="ui_authentication_unavailable">"Authentication is currently unavailable. Try again."</string>
     <string name="ui_confirm_password" formatted="false">"Confirm password"</string>
     <string name="ui_enter_your_password" formatted="false">"Enter your password"</string>
     <string name="ui_hide_password" formatted="false">"Hide password"</string>

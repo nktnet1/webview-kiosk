@@ -31,6 +31,10 @@ fun <T> DropdownSettingFieldItem(
     validator: (value: T) -> Boolean = { true },
     validationMessage: String? = null,
     onSave: (T) -> Unit,
+    // Optional deferred approval (e.g. a fresh credential prompt). The value
+    // is committed only if the callback invokes approve.
+    requestSaveApproval: ((T, approve: () -> Unit) -> Unit)? = null,
+    onDialogDismiss: () -> Unit = {},
     itemText: @Composable (T) -> String,
 ) {
     val canEdit = !restricted && disabledReason == null
@@ -63,15 +67,26 @@ fun <T> DropdownSettingFieldItem(
         GenericSettingFieldDialog(
             title = label,
             infoText = infoText,
-            onDismiss = { showDialog = false },
+            onDismiss = {
+                onDialogDismiss()
+                showDialog = false
+            },
             settingKey = settingKey,
             restricted = restricted,
             disabledReason = disabledReason,
             onSave = {
                 if (canEdit && !draftError) {
-                    value = draftValue
-                    onSave(draftValue)
-                    showDialog = false
+                    val requestedValue = draftValue
+                    val approve = {
+                        value = requestedValue
+                        onSave(requestedValue)
+                        showDialog = false
+                    }
+                    if (requestSaveApproval == null) {
+                        approve()
+                    } else {
+                        requestSaveApproval(requestedValue, approve)
+                    }
                 }
             },
         ) {

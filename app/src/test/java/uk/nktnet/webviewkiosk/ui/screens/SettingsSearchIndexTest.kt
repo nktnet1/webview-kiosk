@@ -21,11 +21,41 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
 class SettingsSearchIndexTest {
     private val context: Context = RuntimeEnvironment.getApplication()
+
+    @Test
+    fun settingsAuthRequirementUsesOffAndRequireOptionLabels() {
+        val key = UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT
+        val definition = settingDefinition(key)
+        assertEquals(
+            "Settings Auth Requirement",
+            context.getString(definition.titleRes),
+        )
+        assertEquals(
+            SettingsAuthRequirementOption.entries.map {
+                context.getString(it.displayLabelRes)
+            },
+            definition.optionLabelRes.map { context.getString(it) },
+        )
+        assertTrue(
+            searchSettings(context, "Settings Auth Requirement").any {
+                it.settingKey == key
+            }
+        )
+        val deviceSettings =
+            settingsPages.single { it.screen == Screen.SettingsDevice }.settings
+        val unlockIndex = deviceSettings.indexOfFirst {
+            it.key == UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT
+        }
+        assertTrue(unlockIndex >= 0 && unlockIndex < deviceSettings.lastIndex)
+        assertEquals(key, deviceSettings[unlockIndex + 1].key)
+    }
 
     @Test
     fun searchesIndividualSettingsInNestedScreens() {

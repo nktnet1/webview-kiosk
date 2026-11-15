@@ -4,8 +4,11 @@ package uk.nktnet.webviewkiosk.ui.components.auth
 
 import android.app.KeyguardManager
 import android.content.Context
+import android.content.Intent
+import android.content.RestrictionsManager
 import android.os.Bundle
 import android.os.Looper
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.compose.material3.Text
@@ -20,7 +23,9 @@ import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -34,6 +39,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -47,13 +53,19 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import org.robolectric.shadows.ShadowToast
 import org.robolectric.util.ReflectionHelpers
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.AuthenticationSession
+import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.CustomAuthPasswordSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.SettingsAuthRequirementSetting
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -65,6 +77,7 @@ class RequireAuthWrapperTest {
     private lateinit var controller: ActivityController<AuthWrapperTestActivity>
     private lateinit var activity: AuthWrapperTestActivity
     private lateinit var view: ComposeView
+    private val roots = mutableListOf<ViewRootForTest>()
     private lateinit var navController: NavHostController
     private val frameClock = BroadcastFrameClock()
     private val compositionScope =
@@ -82,6 +95,7 @@ class RequireAuthWrapperTest {
 
     @Before
     fun setUp() {
+        ViewRootForTest.onViewCreatedCallback = { roots += it }
         controller =
             Robolectric.buildActivity(AuthWrapperTestActivity::class.java)
                 .setup()
@@ -134,6 +148,7 @@ class RequireAuthWrapperTest {
         manager.session = originalSession
         manager.biometricPromptFactory = originalPromptFactory
         controller.pause().stop().destroy()
+        ViewRootForTest.onViewCreatedCallback = null
     }
 
     @Test
@@ -189,6 +204,432 @@ class RequireAuthWrapperTest {
         assertProtectedContent()
         assertEquals(1, prompts.size)
         assertEquals(1, protectedMounts)
+    }
+
+    @Test
+    fun settingsOpenWithoutAuthenticationWhenPreferenceIsDisabled() {
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.OFF
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeWrapper()
+
+        assertFalse(manager.hasValidSession())
+        assertEquals(1, protectedMounts - protectedDisposals)
+        assertTrue(texts().any { it.startsWith("Protected settings ") })
+        assertTrue(prompts.isEmpty())
+    }
+
+    @Test
+    fun enablingSettingsProtectionGatesTheNextComposition() {
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.OFF
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeWrapper()
+        assertEquals(1, protectedMounts)
+
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.REQUIRE
+        pumpFrames()
+
+        assertLoading()
+        assertEquals(1, protectedDisposals)
+        assertEquals(1, prompts.size)
+    }
+
+    @Test
+    fun disablingProtectionCancelsAnOutstandingEntryPromptBeforeReenabling() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeWrapper()
+        val oldPrompt = prompts.single()
+        assertLoading()
+
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.OFF
+        pumpFrames()
+
+        assertUnprotectedSettingsVisible()
+        assertEquals(1, oldPrompt.cancelCalls)
+
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.REQUIRE
+        pumpFrames()
+
+        assertLoading()
+        assertEquals(2, prompts.size)
+        assertEquals(1, prompts.last().authenticateCalls)
+        oldPrompt.succeed()
+        pumpFrames()
+        assertNoProtectedContent()
+
+        prompts.last().succeed()
+        pumpFrames()
+        assertProtectedContent()
+    }
+
+    @Test
+    fun reenablingProtectionAfterAnEarlierEntryFailureStartsANewPrompt() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeWrapper()
+        prompts.single().callback.onAuthenticationError(1, "cancelled")
+        pumpFrames()
+        assertNoProtectedContent()
+
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.OFF
+        pumpFrames()
+        assertUnprotectedSettingsVisible()
+
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.REQUIRE
+        pumpFrames()
+        assertLoading()
+        assertEquals(2, prompts.size)
+    }
+
+    @Test
+    fun disablingProtectionDoesNotCancelAnIndependentSettingsVerification() {
+        authenticate()
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeWrapper()
+        assertProtectedContent()
+
+        var verified = false
+        val request =
+            manager.requestReauthentication(
+                "Reauthenticate",
+                "Verify",
+                onAuthenticated = {
+                    verified = true
+                },
+            )
+        assertTrue(request is AuthenticationManager.ReauthenticationRequest.Started)
+        val verificationPrompt = prompts.last()
+
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.OFF
+        pumpFrames()
+
+        assertEquals(0, verificationPrompt.cancelCalls)
+        assertTrue(texts().any { it.startsWith("Protected settings ") })
+        verificationPrompt.succeed()
+        pumpFrames()
+        assertTrue(verified)
+    }
+
+    @Test
+    fun managedChoiceChangeImmediatelyEnforcesSettingsAuthentication() {
+        val restrictions =
+            activity.getSystemService(Context.RESTRICTIONS_SERVICE)
+                as RestrictionsManager
+        val key = UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT
+        shadowOf(restrictions)
+            .setApplicationRestrictions(Bundle().apply { putString(key, "OFF") })
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeWrapper()
+        assertEquals(1, protectedMounts)
+        assertTrue(prompts.isEmpty())
+
+        shadowOf(restrictions)
+            .setApplicationRestrictions(Bundle().apply { putString(key, "REQUIRE") })
+        activity.sendBroadcast(
+            Intent(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
+        )
+        shadowOf(Looper.getMainLooper()).idle()
+        pumpFrames()
+
+        assertLoading()
+        assertEquals(1, protectedDisposals)
+        assertEquals(1, prompts.size)
+    }
+
+    @Test
+    fun settingsAuthRequirementIsNotSavedUntilTheNewPromptSucceeds() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeSettingsAuthRequirement()
+
+        assertTrue(
+            texts()
+                .contains(
+                    message(SettingsAuthRequirementOption.REQUIRE.displayLabelRes)
+                )
+        )
+        assertFalse(texts().contains(message(R.string.ui_true)))
+        click(message(R.string.device_settings_auth_requirement_title))
+        expandSettingsAuthDropdown()
+        click(message(SettingsAuthRequirementOption.OFF.displayLabelRes))
+        click(message(R.string.ui_save))
+
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
+        assertEquals(1, prompts.size)
+        assertEquals(
+            message(R.string.ui_please_reauthenticate_to_change_settings_auth),
+            prompts.single().info.description,
+        )
+
+        prompts.single().succeed()
+        pumpFrames()
+        assertEquals(
+            SettingsAuthRequirementOption.OFF,
+            UserSettings(activity).settingsAuthRequirement,
+        )
+    }
+
+    @Test
+    fun enablingSettingsAuthFromOffNeedsNoNewPrompt() {
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.OFF
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeSettingsAuthRequirement()
+
+        click(message(R.string.device_settings_auth_requirement_title))
+        expandSettingsAuthDropdown(
+            message(SettingsAuthRequirementOption.OFF.displayLabelRes)
+        )
+        click(message(SettingsAuthRequirementOption.REQUIRE.displayLabelRes))
+        click(message(R.string.ui_save))
+
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
+        assertTrue(prompts.isEmpty())
+    }
+
+    @Test
+    fun failedSettingsAuthVerificationDisplaysToastAndDoesNotApplyChange() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeSettingsAuthRequirement()
+
+        click(message(R.string.device_settings_auth_requirement_title))
+        expandSettingsAuthDropdown()
+        click(message(SettingsAuthRequirementOption.OFF.displayLabelRes))
+        click(message(R.string.ui_save))
+        prompts.single().callback.onAuthenticationError(1, "cancelled")
+        pumpFrames()
+
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
+        assertTrue(
+            ShadowToast.showedToast(
+                message(R.string.ui_settings_auth_verification_failed)
+            )
+        )
+    }
+
+    @Test
+    fun manualJsonImportNeedsVerificationOnlyWhenDisablingSettingsAuth() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeImportDialog()
+        click("JSON")
+        enterImportText(
+            JSONObject()
+                .put(UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT, "OFF")
+                .toString()
+        )
+        click(message(R.string.ui_import))
+
+        assertEquals(1, prompts.size)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
+        assertEquals(
+            message(R.string.ui_please_reauthenticate_to_import_settings),
+            prompts.single().info.description,
+        )
+        prompts.single().succeed()
+        pumpFrames()
+        assertEquals(
+            SettingsAuthRequirementOption.OFF,
+            UserSettings(activity).settingsAuthRequirement,
+        )
+    }
+
+    @Test
+    fun manualJsonImportFromOffToRequireAppliesWithoutVerification() {
+        UserSettings(activity).settingsAuthRequirement =
+            SettingsAuthRequirementOption.OFF
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeImportDialog()
+        click("JSON")
+        enterImportText(
+            JSONObject()
+                .put(UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT, "REQUIRE")
+                .toString()
+        )
+        click(message(R.string.ui_import))
+
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
+        assertTrue(prompts.isEmpty())
+    }
+
+    @Test
+    fun failedManualImportVerificationShowsToastAndLeavesSettingsUnchanged() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeImportDialog()
+        click("JSON")
+        enterImportText(
+            JSONObject()
+                .put(UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT, "OFF")
+                .toString()
+        )
+        click(message(R.string.ui_import))
+        prompts.single().callback.onAuthenticationError(1, "cancelled")
+        pumpFrames()
+
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
+        assertTrue(
+            ShadowToast.showedToast(
+                message(R.string.ui_settings_auth_verification_failed)
+            )
+        )
+    }
+
+    @Test
+    fun manualImportCannotRemoveCustomPasswordWithoutASecondAuthentication() {
+        UserSettings(activity).customAuthPassword = "existing password"
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeImportDialog()
+        click("JSON")
+        enterImportText(
+            JSONObject()
+                .put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD, "")
+                .toString()
+        )
+        click(message(R.string.ui_import))
+
+        assertEquals("existing password", UserSettings(activity).customAuthPassword)
+        val request = manager.customAuthRequest.value
+        assertTrue(manager.isCurrentCustomAuthRequest(request))
+
+        manager.customAuthSuccess(request)
+        pumpFrames()
+        assertEquals("", UserSettings(activity).customAuthPassword)
+    }
+
+    @Test
+    fun removingCustomPasswordWaitsForFreshAuthentication() {
+        UserSettings(activity).customAuthPassword = "existing password"
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeCustomPasswordSetting()
+        click(message(R.string.device_custom_auth_password_title))
+        enterImportText("")
+        click(message(R.string.ui_next))
+        click(message(R.string.ui_remove))
+
+        assertEquals("existing password", UserSettings(activity).customAuthPassword)
+        val request = manager.customAuthRequest.value
+        assertTrue(manager.isCurrentCustomAuthRequest(request))
+
+        manager.customAuthSuccess(request)
+        pumpFrames()
+        assertEquals("", UserSettings(activity).customAuthPassword)
+    }
+
+    @Test
+    fun leavingTheCustomPasswordSettingCancelsItsUnfinishedVerification() {
+        UserSettings(activity).customAuthPassword = "existing password"
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeCustomPasswordSetting()
+        click(message(R.string.device_custom_auth_password_title))
+        enterImportText("")
+        click(message(R.string.ui_next))
+        click(message(R.string.ui_remove))
+
+        val request = manager.customAuthRequest.value
+        assertTrue(manager.isCurrentCustomAuthRequest(request))
+        view.setContent { Text("Left settings") }
+        pumpFrames()
+        manager.customAuthSuccess(request)
+
+        assertFalse(manager.isCurrentCustomAuthRequest(request))
+        assertEquals("existing password", UserSettings(activity).customAuthPassword)
+    }
+
+    @Test
+    fun leavingTheSettingsAuthRequirementCancelsItsUnfinishedChallenge() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeSettingsAuthRequirement()
+
+        click(message(R.string.device_settings_auth_requirement_title))
+        expandSettingsAuthDropdown()
+        click(message(SettingsAuthRequirementOption.OFF.displayLabelRes))
+        click(message(R.string.ui_save))
+        val prompt = prompts.single()
+
+        view.setContent { Text("Other destination") }
+        pumpFrames()
+        prompt.succeed()
+
+        assertEquals(1, prompt.cancelCalls)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
+    }
+
+    @Test
+    fun dismissingTheDropdownCancelsAnUnfinishedReauthentication() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeSettingsAuthRequirement()
+
+        click(message(R.string.device_settings_auth_requirement_title))
+        expandSettingsAuthDropdown()
+        click(message(SettingsAuthRequirementOption.OFF.displayLabelRes))
+        click(message(R.string.ui_save))
+        val prompt = prompts.single()
+
+        click(message(R.string.ui_cancel))
+        prompt.succeed()
+        pumpFrames()
+
+        assertEquals(1, prompt.cancelCalls)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
+    }
+
+    @Test
+    fun navigatingImmediatelyAfterSavingCancelsReauthentication() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeSettingsAuthRequirement()
+
+        click(message(R.string.device_settings_auth_requirement_title))
+        expandSettingsAuthDropdown()
+        click(message(SettingsAuthRequirementOption.OFF.displayLabelRes))
+        // Trigger Save and leave before the pending-request state is recomposed.
+        val save =
+            nodes(merged = true).first { node ->
+                node.config.getOrNull(SemanticsActions.OnClick) != null &&
+                    node.config.getOrNull(SemanticsProperties.Text)?.any {
+                        it.text == message(R.string.ui_save)
+                    } == true
+            }
+        assertTrue(
+            save.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke() == true
+        )
+        val pendingPrompt = prompts.single()
+        view.setContent { Text("Other destination") }
+        pumpFrames()
+        pendingPrompt.succeed()
+
+        assertEquals(1, pendingPrompt.cancelCalls)
+        assertEquals(
+            SettingsAuthRequirementOption.REQUIRE,
+            UserSettings(activity).settingsAuthRequirement,
+        )
     }
 
     @Test
@@ -489,6 +930,53 @@ class RequireAuthWrapperTest {
         pumpFrames()
     }
 
+    private fun composeSettingsAuthRequirement() {
+        view.setContent {
+            CompositionLocalProvider(
+                LocalLifecycleOwner provides currentOwner.value
+            ) {
+                SettingsAuthRequirementSetting()
+            }
+        }
+        pumpFrames()
+    }
+
+    private fun composeCustomPasswordSetting() {
+        view.setContent {
+            CompositionLocalProvider(
+                LocalLifecycleOwner provides currentOwner.value
+            ) {
+                CustomAuthPasswordSetting()
+            }
+        }
+        pumpFrames()
+    }
+
+    private fun composeImportDialog() {
+        view.setContent {
+            CompositionLocalProvider(
+                LocalLifecycleOwner provides currentOwner.value
+            ) {
+                ImportSettingsDialog(showDialog = true, onDismiss = {})
+            }
+        }
+        pumpFrames()
+    }
+
+    private fun enterImportText(text: String) {
+        val editable =
+            nodes(merged = true).first { node ->
+                node.config.getOrNull(SemanticsActions.SetText) != null
+            }
+        assertTrue(
+            editable.config
+                .getOrNull(SemanticsActions.SetText)
+                ?.action
+                ?.invoke(AnnotatedString(text)) == true
+        )
+        pumpFrames()
+    }
+
     private fun authenticate() {
         manager.showAuthenticationPrompt("Test", "Test")
         prompts.last().succeed()
@@ -508,6 +996,12 @@ class RequireAuthWrapperTest {
         assertFalse(
             texts().contains(message(R.string.ui_waiting_for_authentication))
         )
+    }
+
+    private fun assertUnprotectedSettingsVisible() {
+        assertFalse(manager.hasValidSession())
+        assertEquals(1, protectedMounts - protectedDisposals)
+        assertTrue(texts().any { it.startsWith("Protected settings ") })
     }
 
     private fun assertNoProtectedContent() {
@@ -531,10 +1025,11 @@ class RequireAuthWrapperTest {
 
     private fun click(text: String) {
         val node =
-            nodes().single { node ->
-                node.config.getOrNull(SemanticsProperties.Text)?.any {
-                    it.text == text
-                } == true
+            nodes(merged = true).first { node ->
+                node.config.getOrNull(SemanticsActions.OnClick) != null &&
+                    node.config.getOrNull(SemanticsProperties.Text)?.any {
+                        it.text == text
+                    } == true
             }
         val action = node.config.getOrNull(SemanticsActions.OnClick)?.action
         assertTrue(
@@ -544,13 +1039,30 @@ class RequireAuthWrapperTest {
         pumpFrames()
     }
 
-    private fun nodes(): List<SemanticsNode> {
-        val root = view.getChildAt(0) as ViewRootForTest
-        root.measureAndLayoutForTest()
-        fun walk(node: SemanticsNode): List<SemanticsNode> =
-            listOf(node) + node.children.flatMap(::walk)
-        return walk(root.semanticsOwner.rootSemanticsNode)
+    private fun expandSettingsAuthDropdown(
+        currentText: String =
+            message(R.string.option_display_unlock_auth_requirement_option_require)
+    ) {
+        val node =
+            nodes(merged = true).last { node ->
+                node.config.getOrNull(SemanticsActions.OnClick) != null &&
+                    node.config.getOrNull(SemanticsProperties.Text)?.any {
+                        it.text == currentText
+                    } == true
+            }
+        assertTrue(
+            node.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke() == true
+        )
+        pumpFrames()
     }
+
+    private fun nodes(merged: Boolean = false): List<SemanticsNode> =
+        roots
+            .filter { it.view.isAttachedToWindow }
+            .flatMap { root ->
+                root.measureAndLayoutForTest()
+                root.semanticsOwner.getAllSemanticsNodes(mergingEnabled = merged)
+            }
 
     private fun pumpFrames() {
         // Drive recomposition and animation explicitly, without an idle wait on
@@ -561,6 +1073,16 @@ class RequireAuthWrapperTest {
             frameNanos += 16_000_000L
             frameClock.sendFrame(frameNanos)
             shadowOf(Looper.getMainLooper()).idle()
+            view.measure(
+                View.MeasureSpec.makeMeasureSpec(480, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(1000, View.MeasureSpec.EXACTLY),
+            )
+            view.layout(0, 0, 480, 1000)
+            roots
+                .filter { it.view.isAttachedToWindow }
+                .forEach {
+                    it.measureAndLayoutForTest()
+                }
         }
     }
 

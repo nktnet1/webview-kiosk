@@ -25,6 +25,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -99,6 +100,56 @@ fun ImportSettingsDialog(
     var importText by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf(ImportTab.Base64) }
     val tabs = ImportTab.entries.toTypedArray()
+    val pendingRequest = remember { mutableStateOf<Any?>(null) }
+    val promptTitle = stringResource(R.string.ui_authentication_required)
+    val promptDescription =
+        stringResource(R.string.ui_please_reauthenticate_to_import_settings)
+
+    fun dismiss() {
+        AuthenticationManager.cancelReauthentication(pendingRequest.value)
+        pendingRequest.value = null
+        onDismiss()
+    }
+
+    fun applyImport(text: String, tab: ImportTab) {
+        val success =
+            if (tab == ImportTab.Base64) {
+                userSettings.importBase64(text)
+            } else {
+                userSettings.importJson(text)
+            }
+        if (success) {
+            updateDeviceSettings(context)
+            ToastManager.show(
+                context,
+                context.getString(R.string.ui_imported_settings_successfully),
+            )
+            dismiss()
+        } else {
+            importError = true
+            ToastManager.show(
+                context,
+                context.getString(
+                    if (tab == ImportTab.Base64) {
+                        R.string
+                            .ui_failed_to_import_base64_you_may_need_to_switch_tabs
+                    } else {
+                        R.string.ui_failed_to_import_json_you_may_need_to_switch_tabs
+                    }
+                ),
+            )
+        }
+    }
+
+    fun showVerificationError(message: Int) {
+        ToastManager.show(context, context.getString(message))
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            AuthenticationManager.cancelReauthentication(pendingRequest.value)
+        }
+    }
 
     val fileLauncher =
         rememberLauncherForActivityResult(
@@ -146,7 +197,7 @@ fun ImportSettingsDialog(
             }
         }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(onDismissRequest = ::dismiss) {
         Surface(
             tonalElevation = 6.dp,
             shape = MaterialTheme.shapes.medium,
@@ -167,6 +218,7 @@ fun ImportSettingsDialog(
                         Tab(
                             selected = selectedTab == tab,
                             onClick = { selectedTab = tab },
+                            enabled = pendingRequest.value == null,
                             text = { Text(tab.name) },
                             selectedContentColor = MaterialTheme.colorScheme.primary,
                             unselectedContentColor =
@@ -180,6 +232,7 @@ fun ImportSettingsDialog(
                 Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
                     OutlinedTextField(
                         value = importText,
+                        enabled = pendingRequest.value == null,
                         onValueChange = {
                             importText = it
                             importError = false
@@ -213,7 +266,10 @@ fun ImportSettingsDialog(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        IconButton(onClick = { importText = "" }) {
+                        IconButton(
+                            onClick = { importText = "" },
+                            enabled = pendingRequest.value == null,
+                        ) {
                             Icon(
                                 painter =
                                     painterResource(R.drawable.baseline_clear_24),
@@ -223,6 +279,7 @@ fun ImportSettingsDialog(
                             )
                         }
                         IconButton(
+                            enabled = pendingRequest.value == null,
                             onClick = {
                                 scope.launch {
                                     val clipEntry = clipboard.getClipEntry()
@@ -233,7 +290,7 @@ fun ImportSettingsDialog(
                                             ?.text
                                             ?.toString() ?: ""
                                 }
-                            }
+                            },
                         ) {
                             Icon(
                                 painter =
@@ -255,6 +312,7 @@ fun ImportSettingsDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     TextButton(
+                        enabled = pendingRequest.value == null,
                         onClick = {
                             try {
                                 fileLauncher.launch(
@@ -286,7 +344,7 @@ fun ImportSettingsDialog(
 
                     Row {
                         TextButton(
-                            onClick = onDismiss,
+                            onClick = ::dismiss,
                             colors =
                                 ButtonDefaults.textButtonColors(
                                     contentColor = MaterialTheme.colorScheme.error
@@ -298,42 +356,76 @@ fun ImportSettingsDialog(
                         Spacer(Modifier.width(8.dp))
 
                         TextButton(
+                            enabled = pendingRequest.value == null,
                             onClick = {
-                                val success =
-                                    if (selectedTab == ImportTab.Base64) {
-                                        userSettings.importBase64(importText)
-                                    } else {
-                                        userSettings.importJson(importText)
-                                    }
-
-                                if (success) {
-                                    updateDeviceSettings(context)
-                                    ToastManager.show(
-                                        context,
-                                        context.getString(
-                                            R.string
-                                                .ui_imported_settings_successfully
-                                        ),
-                                    )
-                                    onDismiss()
+                                // Authenticate the exact snapshot that will be
+                                // applied.
+                                val text = importText
+                                val tab = selectedTab
+                                if (
+                                    !userSettings
+                                        .manualImportNeedsSettingsReauthentication(
+                                            text,
+                                            tab == ImportTab.Base64,
+                                        )
+                                ) {
+                                    applyImport(text, tab)
                                 } else {
-                                    importError = true
-                                    ToastManager.show(
-                                        context,
-                                        if (selectedTab == ImportTab.Base64) {
-                                            context.getString(
+                                    when (
+                                        val request =
+                                            AuthenticationManager
+                                                .requestReauthentication(
+                                                    title = promptTitle,
+                                                    description = promptDescription,
+                                                    onVerificationFailed = { failure
+                                                        ->
+                                                        if (
+                                                            failure ==
+                                                                AuthenticationManager
+                                                                    .ReauthenticationFailure
+                                                                    .ENDED
+                                                        ) {
+                                                            pendingRequest.value =
+                                                                null
+                                                        }
+                                                        showVerificationError(
+                                                            R.string
+                                                                .ui_settings_auth_verification_failed
+                                                        )
+                                                    },
+                                                    onAuthenticated = {
+                                                        pendingRequest.value = null
+                                                        applyImport(text, tab)
+                                                    },
+                                                )
+                                    ) {
+                                        is AuthenticationManager.ReauthenticationRequest.Started -> {
+                                            pendingRequest.value = request.token
+                                        }
+                                        AuthenticationManager.ReauthenticationRequest
+                                            .Busy -> {
+                                            showVerificationError(
                                                 R.string
-                                                    .ui_failed_to_import_base64_you_may_need_to_switch_tabs
+                                                    .ui_authentication_already_in_progress
                                             )
-                                        } else {
-                                            context.getString(
+                                        }
+                                        AuthenticationManager.ReauthenticationRequest
+                                            .NoCredentials -> {
+                                            showVerificationError(
                                                 R.string
-                                                    .ui_failed_to_import_json_you_may_need_to_switch_tabs
+                                                    .ui_authentication_not_configured
                                             )
-                                        },
-                                    )
+                                        }
+                                        AuthenticationManager.ReauthenticationRequest
+                                            .Unavailable -> {
+                                            showVerificationError(
+                                                R.string
+                                                    .ui_authentication_unavailable
+                                            )
+                                        }
+                                    }
                                 }
-                            }
+                            },
                         ) {
                             Text(stringResource(R.string.ui_import))
                         }

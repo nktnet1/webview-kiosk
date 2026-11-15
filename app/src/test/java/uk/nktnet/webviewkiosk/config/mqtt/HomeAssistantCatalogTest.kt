@@ -95,6 +95,25 @@ class HomeAssistantCatalogTest {
     }
 
     @Test
+    fun settingsAuthRequirementHasARemoteChoiceWithBothEnumValues() {
+        val key = "device.settings_auth_requirement"
+        val setting = HomeAssistantSetting.load(context).single { it.key == key }
+        assertEquals(RestrictionEntry.TYPE_CHOICE, setting.type)
+        assertEquals(listOf("OFF", "REQUIRE"), setting.options)
+        assertEquals(
+            "select",
+            payload()
+                .getValue("components")
+                .jsonObject
+                .getValue(setting.componentId)
+                .jsonObject
+                .getValue("platform")
+                .jsonPrimitive
+                .content,
+        )
+    }
+
+    @Test
     fun settingTemplatesHandleMissingKeysWithoutUndefinedValues() {
         val components = payload().getValue("components").jsonObject
         HomeAssistantSetting.load(context).forEach { setting ->

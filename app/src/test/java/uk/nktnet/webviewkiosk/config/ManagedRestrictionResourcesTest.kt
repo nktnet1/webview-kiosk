@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.config
 
+import android.content.RestrictionEntry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -12,6 +13,8 @@ import org.xmlpull.v1.XmlPullParser
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.mqtt.HomeAssistantSetting
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
+import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 /** Protects the Android managed-configuration contract, not its XML formatting. */
 @RunWith(RobolectricTestRunner::class)
@@ -66,6 +69,64 @@ class ManagedRestrictionResourcesTest {
         }
         assertEquals("Managed restriction count", restrictions, loaded.size)
         assertTrue("Expected managed choice restrictions", checked > 0)
+    }
+
+    @Test
+    fun settingsAuthRequirementIsAManagedChoiceAndARemoteControl() {
+        val key = UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT
+        var found = false
+        context.resources.getXml(R.xml.app_restrictions).use { xml ->
+            while (xml.next() != XmlPullParser.END_DOCUMENT) {
+                if (
+                    xml.eventType != XmlPullParser.START_TAG ||
+                        xml.name != "restriction" ||
+                        xml.getAttributeValue(androidNamespace, "key") != key
+                ) {
+                    continue
+                }
+                found = true
+                assertEquals(
+                    RestrictionEntry.TYPE_CHOICE,
+                    xml.getAttributeIntValue(
+                        androidNamespace,
+                        "restrictionType",
+                        RestrictionEntry.TYPE_NULL,
+                    ),
+                )
+                assertEquals(
+                    SettingsAuthRequirementOption.entries.map {
+                        context.getString(it.displayLabelRes)
+                    },
+                    context.resources
+                        .getStringArray(
+                            xml.getAttributeResourceValue(
+                                androidNamespace,
+                                "entries",
+                                0,
+                            )
+                        )
+                        .toList(),
+                )
+                assertEquals(
+                    SettingsAuthRequirementOption.entries.map { it.name },
+                    context.resources
+                        .getStringArray(
+                            xml.getAttributeResourceValue(
+                                androidNamespace,
+                                "entryValues",
+                                0,
+                            )
+                        )
+                        .toList(),
+                )
+                assertEquals(
+                    "REQUIRE",
+                    xml.getAttributeValue(androidNamespace, "defaultValue"),
+                )
+            }
+        }
+        assertTrue("Missing Settings Auth Requirement MDM choice", found)
+        assertTrue(HomeAssistantSetting.load(context).any { it.key == key })
     }
 
     @Test

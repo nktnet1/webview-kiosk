@@ -28,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -60,12 +59,7 @@ import uk.nktnet.webviewkiosk.utils.requestFocusWhenPlaced
 
 @Composable
 fun CustomAuthPasswordDialog() {
-    val state by AuthenticationManager.promptResults.collectAsState()
-
-    if (
-        !AuthenticationManager.showCustomAuth.value ||
-            state != AuthenticationManager.AuthenticationResult.Pending
-    ) {
+    if (!AuthenticationManager.showCustomAuth.value) {
         return
     }
     val request = AuthenticationManager.customAuthRequest.value ?: return

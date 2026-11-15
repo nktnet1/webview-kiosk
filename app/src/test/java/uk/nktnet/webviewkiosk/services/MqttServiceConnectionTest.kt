@@ -50,6 +50,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.HomeAssistantDiscovery
 import uk.nktnet.webviewkiosk.config.mqtt.HomeAssistantSetting
 import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
+import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent.DisconnectCause
 import uk.nktnet.webviewkiosk.managers.CustomNotificationChannel
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
@@ -911,10 +912,12 @@ class MqttServiceConnectionTest {
         connection.publications.clear()
         connection.publish(
             ha.settingsCommandTopic,
-            """{"showToast":false,"reloadActivity":false,"data":{"settings":{"device.brightness":24,"web_engine.enable_javascript":false,"appearance.theme":"DARK","web_lifecycle.reset_actions":["CACHE"],"device.custom_auth_password":"new-secret"}}}""",
+            """{"showToast":false,"reloadActivity":false,"data":{"settings":{"device.brightness":24,"web_engine.enable_javascript":false,"appearance.theme":"DARK","web_lifecycle.reset_actions":["CACHE"],"device.custom_auth_password":"new-secret","device.settings_auth_requirement":"OFF"}}}""",
         )
         awaitCondition {
-            settings.brightness == 24 && settings.customAuthPassword == "new-secret"
+            settings.brightness == 24 &&
+                settings.customAuthPassword == "new-secret" &&
+                settings.settingsAuthRequirement == SettingsAuthRequirementOption.OFF
         }
         assertFalse(settings.enableJavaScript)
         shadowOf(Looper.getMainLooper()).idleFor(200, TimeUnit.MILLISECONDS)
@@ -922,6 +925,7 @@ class MqttServiceConnectionTest {
             JSONObject(awaitPublication(connection, ha.settingsStateTopic).payload)
                 .getJSONObject("settings")
         assertEquals(24, state.getInt("device.brightness"))
+        assertEquals("OFF", state.getString("device.settings_auth_requirement"))
         assertFalse(state.getBoolean("web_engine.enable_javascript"))
         assertEquals("DARK", state.getString("appearance.theme"))
         assertEquals(
