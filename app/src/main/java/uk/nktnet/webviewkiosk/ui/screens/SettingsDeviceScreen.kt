@@ -67,8 +67,8 @@ fun SettingsDeviceScreen(navController: NavController) {
             BackButtonHoldActionSetting()
             CustomUnlockShortcutSetting()
             CustomAuthPasswordSetting()
-            SettingsAuthRequirementSetting()
             UnlockAuthRequirementSetting()
+            SettingsAuthRequirementSetting()
             BlockScreenCaptureSetting()
             BlockVolumeKeysSetting()
 

@@ -675,6 +675,15 @@ internal val settingsPages: List<SettingsPage> = buildList {
                         R.string.setting_info_custom_auth_password,
                     ),
                     SettingDefinition(
+                        R.string.device_unlock_auth_requirement_title,
+                        UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT,
+                        R.string.setting_info_unlock_auth_requirement,
+                        optionLabelRes =
+                            UnlockAuthRequirementOption.entries.map {
+                                it.displayLabelRes
+                            },
+                    ),
+                    SettingDefinition(
                         R.string.device_require_auth_for_settings_title,
                         UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS,
                         R.string.setting_info_require_auth_for_settings,
@@ -685,15 +694,6 @@ internal val settingsPages: List<SettingsPage> = buildList {
                                 R.string
                                     .option_display_unlock_auth_requirement_option_require,
                             ),
-                    ),
-                    SettingDefinition(
-                        R.string.device_unlock_auth_requirement_title,
-                        UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT,
-                        R.string.setting_info_unlock_auth_requirement,
-                        optionLabelRes =
-                            UnlockAuthRequirementOption.entries.map {
-                                it.displayLabelRes
-                            },
                     ),
                     SettingDefinition(
                         R.string.device_block_screen_capture_title,

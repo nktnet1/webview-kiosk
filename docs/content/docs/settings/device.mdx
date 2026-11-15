@@ -160,7 +160,23 @@ Leave this setting blank to use your device's biometrics or credentials.
 
 **Default:** *(blank)*
 
-## 12. Settings Auth Requirement [#settings-auth-requirement]
+## 12. Unlock Auth Requirement [#unlock-auth-requirement]
+
+This setting only applies to in-app unlock methods, e.g. when unlocking
+using `Kiosk Control Panel` or `Custom Unlock Shortcut`.
+
+| Option   | Description |
+|----------|-------------|
+| Default  | Require authentication for Lock Task Mode (allowlisted by an eligible management owner), off for screen pinning (user-owned devices). |
+| Off      | Unlock without requiring authentication. |
+| Require  | Prompt for biometrics or device credentials when unlocking. |
+
+For user-owned devices without lock task mode, the device will auto-lock when
+unpinning, which is outside the control of {APP_NAME}.
+
+**Default:** Default
+
+## 13. Settings Auth Requirement [#settings-auth-requirement]
 
 Choose whether a custom password, device credentials, or biometrics are needed
 to access Settings.
@@ -179,22 +195,6 @@ This preference is not imported from settings files or remote settings updates.
 Managed device restrictions can override it when configured by an administrator.
 
 **Default:** Require
-
-## 13. Unlock Auth Requirement [#unlock-auth-requirement]
-
-This setting only applies to in-app unlock methods, e.g. when unlocking
-using `Kiosk Control Panel` or `Custom Unlock Shortcut`.
-
-| Option   | Description |
-|----------|-------------|
-| Default  | Require authentication for Lock Task Mode (allowlisted by an eligible management owner), off for screen pinning (user-owned devices). |
-| Off      | Unlock without requiring authentication. |
-| Require  | Prompt for biometrics or device credentials when unlocking. |
-
-For user-owned devices without lock task mode, the device will auto-lock when
-unpinning, which is outside the control of {APP_NAME}.
-
-**Default:** Default
 
 ## 14. Block Screen Capture [#block-screen-capture]
 

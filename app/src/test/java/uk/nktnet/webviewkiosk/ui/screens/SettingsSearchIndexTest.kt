@@ -44,6 +44,13 @@ class SettingsSearchIndexTest {
                 it.settingKey == key
             }
         )
+        val deviceSettings =
+            settingsPages.single { it.screen == Screen.SettingsDevice }.settings
+        val unlockIndex = deviceSettings.indexOfFirst {
+            it.key == UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT
+        }
+        assertTrue(unlockIndex >= 0 && unlockIndex < deviceSettings.lastIndex)
+        assertEquals(key, deviceSettings[unlockIndex + 1].key)
     }
 
     @Test
