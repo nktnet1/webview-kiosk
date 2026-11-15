@@ -4,6 +4,8 @@ package uk.nktnet.webviewkiosk.ui.components.auth
 
 import android.app.KeyguardManager
 import android.content.Context
+import android.content.Intent
+import android.content.RestrictionsManager
 import android.os.Bundle
 import android.os.Looper
 import android.view.View
@@ -217,7 +219,32 @@ class RequireAuthWrapperTest {
         assertEquals(1, protectedMounts)
 
         UserSettings(activity).requireAuthForSettings = true
-        revision.value++
+        pumpFrames()
+
+        assertLoading()
+        assertEquals(1, protectedDisposals)
+        assertEquals(1, prompts.size)
+    }
+
+    @Test
+    fun managedChoiceChangeImmediatelyEnforcesSettingsAuthentication() {
+        val restrictions =
+            activity.getSystemService(Context.RESTRICTIONS_SERVICE)
+                as RestrictionsManager
+        val key = UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS
+        shadowOf(restrictions)
+            .setApplicationRestrictions(Bundle().apply { putString(key, "OFF") })
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeWrapper()
+        assertEquals(1, protectedMounts)
+        assertTrue(prompts.isEmpty())
+
+        shadowOf(restrictions)
+            .setApplicationRestrictions(Bundle().apply { putString(key, "REQUIRE") })
+        activity.sendBroadcast(
+            Intent(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
+        )
+        shadowOf(Looper.getMainLooper()).idle()
         pumpFrames()
 
         assertLoading()
@@ -273,6 +300,34 @@ class RequireAuthWrapperTest {
         prompt.succeed()
 
         assertEquals(1, prompt.cancelCalls)
+        assertTrue(UserSettings(activity).requireAuthForSettings)
+    }
+
+    @Test
+    fun navigatingImmediatelyAfterSavingCancelsReauthentication() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeSettingsAuthRequirement()
+
+        click(message(R.string.device_require_auth_for_settings_title))
+        expandSettingsAuthDropdown()
+        click(message(R.string.option_display_unlock_auth_requirement_option_off))
+        // Trigger Save and leave before the pending-request state is recomposed.
+        val save =
+            nodes(merged = true).first { node ->
+                node.config.getOrNull(SemanticsActions.OnClick) != null &&
+                    node.config.getOrNull(SemanticsProperties.Text)?.any {
+                        it.text == message(R.string.ui_save)
+                    } == true
+            }
+        assertTrue(
+            save.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke() == true
+        )
+        val pendingPrompt = prompts.single()
+        view.setContent { Text("Other destination") }
+        pumpFrames()
+        pendingPrompt.succeed()
+
+        assertEquals(1, pendingPrompt.cancelCalls)
         assertTrue(UserSettings(activity).requireAuthForSettings)
     }
 

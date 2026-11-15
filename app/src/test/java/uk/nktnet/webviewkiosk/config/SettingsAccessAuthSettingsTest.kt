@@ -63,13 +63,68 @@ class SettingsAccessAuthSettingsTest {
     }
 
     @Test
+    fun invalidManagedValueCannotSilentlyDisableSettingsAuthentication() {
+        settings.requireAuthForSettings = false
+        shadowOf(restrictions)
+            .setApplicationRestrictions(Bundle().apply { putString(key, "false") })
+        assertTrue(settings.isRestricted(key))
+        assertTrue(settings.requireAuthForSettings)
+    }
+
+    @Test
+    fun managedChoiceOffAndRequireOverrideLocalBooleanWithoutOverwritingIt() {
+        settings.requireAuthForSettings = true
+        shadowOf(restrictions)
+            .setApplicationRestrictions(Bundle().apply { putString(key, "OFF") })
+        assertTrue(settings.isRestricted(key))
+        assertFalse(settings.requireAuthForSettings)
+
+        // Managed settings are read-only, including while a policy is active.
+        settings.requireAuthForSettings = false
+        shadowOf(restrictions)
+            .setApplicationRestrictions(Bundle().apply { putString(key, "REQUIRE") })
+        assertTrue(settings.requireAuthForSettings)
+
+        shadowOf(restrictions).setApplicationRestrictions(Bundle())
+        assertTrue(settings.requireAuthForSettings)
+    }
+
+    @Test
+    fun invalidManagedChoiceFailsClosedToRequire() {
+        settings.requireAuthForSettings = false
+        for (invalidValue in listOf("", "off", "false", "DEFAULT", "UNKNOWN")) {
+            shadowOf(restrictions)
+                .setApplicationRestrictions(
+                    Bundle().apply { putString(key, invalidValue) }
+                )
+            assertTrue(
+                "Value $invalidValue must not disable access auth",
+                settings.requireAuthForSettings,
+            )
+        }
+        // Boolean restrictions are not supported: the MDM contract is a choice.
+        for (value in listOf(false, true)) {
+            shadowOf(restrictions)
+                .setApplicationRestrictions(
+                    Bundle().apply { putBoolean(key, value) }
+                )
+            assertTrue(settings.requireAuthForSettings)
+        }
+        shadowOf(restrictions)
+            .setApplicationRestrictions(Bundle().apply { putInt(key, 0) })
+        assertTrue(settings.requireAuthForSettings)
+        shadowOf(restrictions).setApplicationRestrictions(Bundle())
+        assertFalse(settings.requireAuthForSettings)
+    }
+
+    @Test
     fun managedRestrictionsOverrideButDoNotOverwriteLocalPreference() {
         settings.requireAuthForSettings = true
         shadowOf(restrictions)
-            .setApplicationRestrictions(Bundle().apply { putBoolean(key, false) })
+            .setApplicationRestrictions(Bundle().apply { putString(key, "OFF") })
         assertTrue(settings.isRestricted(key))
         assertFalse(settings.requireAuthForSettings)
-        settings.requireAuthForSettings = true
+        settings.requireAuthForSettings = false
         assertTrue(settings.importJson(JSONObject().put(key, true).toString()))
         assertFalse(settings.requireAuthForSettings)
 

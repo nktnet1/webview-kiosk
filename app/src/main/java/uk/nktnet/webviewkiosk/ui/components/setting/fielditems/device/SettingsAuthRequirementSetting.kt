@@ -9,7 +9,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -48,13 +47,14 @@ fun SettingsAuthRequirementSetting() {
     var draftValue by remember { mutableStateOf(currentValue) }
     var showDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<Int?>(null) }
-    var pendingRequest by remember { mutableStateOf<Any?>(null) }
-    val latestPendingRequest by rememberUpdatedState(pendingRequest)
+    // Hold the live request token, even before Compose has recomposed. A
+    // rememberUpdatedState value can lag behind a Save followed by navigation.
+    val pendingRequest = remember { mutableStateOf<Any?>(null) }
 
     // Do not apply a pending change after navigating away from this screen.
     DisposableEffect(Unit) {
         onDispose {
-            AuthenticationManager.cancelReauthentication(latestPendingRequest)
+            AuthenticationManager.cancelReauthentication(pendingRequest.value)
         }
     }
 
@@ -112,12 +112,12 @@ fun SettingsAuthRequirementSetting() {
                                         }
                                         currentValue =
                                             userSettings.requireAuthForSettings
-                                        pendingRequest = null
+                                        pendingRequest.value = null
                                     },
                                 )
                         ) {
                             is AuthenticationManager.ReauthenticationRequest.Started -> {
-                                pendingRequest = request.token
+                                pendingRequest.value = request.token
                                 showDialog = false
                             }
                             AuthenticationManager.ReauthenticationRequest.Busy -> {

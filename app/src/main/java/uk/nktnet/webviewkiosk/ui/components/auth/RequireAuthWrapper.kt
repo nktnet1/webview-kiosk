@@ -1,5 +1,10 @@
 package uk.nktnet.webviewkiosk.ui.components.auth
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -8,15 +13,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.NonSkippableComposable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
@@ -39,7 +47,43 @@ fun RequireAuthWrapper(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val userSettings = remember(context) { UserSettings(context) }
-    if (!userSettings.requireAuthForSettings) {
+    val requiresAuth =
+        remember(context) { mutableStateOf(userSettings.requireAuthForSettings) }
+    // Reading SharedPreferences is not observable by Compose. Without a listener,
+    // changing Off to Require while Settings remains open can leave the bypass
+    // branch mounted until an unrelated recomposition or navigation occurs.
+    DisposableEffect(context, userSettings) {
+        val prefs =
+            context.getSharedPreferences(
+                UserSettingsKeys.PREFS_NAME,
+                Context.MODE_PRIVATE,
+            )
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS) {
+                requiresAuth.value = userSettings.requireAuthForSettings
+            }
+        }
+        val restrictionsReceiver =
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) {
+                    requiresAuth.value = userSettings.requireAuthForSettings
+                }
+            }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        ContextCompat.registerReceiver(
+            context,
+            restrictionsReceiver,
+            IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED),
+            ContextCompat.RECEIVER_EXPORTED,
+        )
+        // Also close the gap between the first preference read and registration.
+        requiresAuth.value = userSettings.requireAuthForSettings
+        onDispose {
+            prefs.unregisterOnSharedPreferenceChangeListener(listener)
+            context.unregisterReceiver(restrictionsReceiver)
+        }
+    }
+    if (!requiresAuth.value) {
         content()
         return
     }

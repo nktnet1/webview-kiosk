@@ -103,6 +103,45 @@ fun booleanPref(
         }
     }
 
+/**
+ * Store a Boolean locally while accepting only the named Android managed-choice
+ * values. Unexpected restriction types or values fall back to the secure default.
+ */
+fun booleanChoicePref(
+    getRestrictions: () -> Bundle? = { null },
+    prefs: SharedPreferences,
+    key: String,
+    default: Boolean,
+    falseChoice: String,
+    trueChoice: String,
+) =
+    object : ReadWriteProperty<Any?, Boolean> {
+        private val localPreference = booleanPref({ null }, prefs, key, default)
+
+        @Suppress("DEPRECATION")
+        override fun getValue(thisRef: Any?, property: KProperty<*>): Boolean {
+            val restrictions = getRestrictions()
+            if (restrictions?.containsKey(key) == true) {
+                return when (restrictions.get(key)) {
+                    falseChoice -> false
+                    trueChoice -> true
+                    else -> default
+                }
+            }
+            return localPreference.getValue(thisRef, property)
+        }
+
+        override fun setValue(
+            thisRef: Any?,
+            property: KProperty<*>,
+            value: Boolean,
+        ) {
+            if (getRestrictions()?.containsKey(key) != true) {
+                localPreference.setValue(thisRef, property, value)
+            }
+        }
+    }
+
 fun intPref(
     getRestrictions: () -> Bundle? = { null },
     prefs: SharedPreferences,

@@ -33,6 +33,7 @@ import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
 import uk.nktnet.webviewkiosk.config.option.WebViewInsetOption
 import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
+import uk.nktnet.webviewkiosk.utils.booleanChoicePref
 import uk.nktnet.webviewkiosk.utils.booleanPref
 import uk.nktnet.webviewkiosk.utils.enumListPref
 import uk.nktnet.webviewkiosk.utils.intPref
@@ -651,11 +652,13 @@ class UserSettings(val context: Context) {
             UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD,
         )
     var requireAuthForSettings by
-        booleanPref(
+        booleanChoicePref(
             getRestrictions,
             prefs,
             UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS,
-            true,
+            default = true,
+            falseChoice = "OFF",
+            trueChoice = "REQUIRE",
         )
     var unlockAuthRequirement by
         stringEnumPref(

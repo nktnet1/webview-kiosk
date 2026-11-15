@@ -520,19 +520,21 @@
         android:description="@string/device_custom_auth_password_description"
     />
     <restriction
-        android:key="device.require_auth_for_settings"
-        android:restrictionType="bool"
-        android:defaultValue="true"
-        android:title="@string/device_require_auth_for_settings_title"
-        android:description="@string/device_require_auth_for_settings_description"
-    />
-    <restriction
         android:key="device.unlock_auth_requirement"
         android:restrictionType="choice"
         android:entries="@array/entries_unlock_auth_requirement_option"
         android:entryValues="@array/entry_values_unlock_auth_requirement_option"
         android:title="@string/device_unlock_auth_requirement_title"
         android:description="@string/device_unlock_auth_requirement_description"
+    />
+    <restriction
+        android:key="device.require_auth_for_settings"
+        android:restrictionType="choice"
+        android:entries="@array/entries_settings_auth_requirement_option"
+        android:entryValues="@array/entry_values_settings_auth_requirement_option"
+        android:defaultValue="REQUIRE"
+        android:title="@string/device_require_auth_for_settings_title"
+        android:description="@string/device_require_auth_for_settings_description"
     />
     <restriction
         android:key="device.block_screen_capture"

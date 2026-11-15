@@ -189,10 +189,15 @@ to access Settings.
 Changing this option in either direction requires a **new** authentication
 challenge; an existing authenticated session is not sufficient. On devices
 without a screen lock or custom authentication password, configure one first.
-Cancelling or failing the prompt leaves the current setting unchanged.
+Cancelling or failing the prompt leaves the current setting unchanged. When no
+credentials are configured, the existing no-lock fallback opens Settings
+without a prompt even with **Require** selected.
 
 This preference is not imported from settings files or remote settings updates.
-Managed device restrictions can override it when configured by an administrator.
+Managed configurations expose only the **Off** (`OFF`) and **Require**
+(`REQUIRE`) choices, with **Require** selected by default. Boolean values are
+not supported. An administrator can override this setting without local
+re-authentication.
 
 **Default:** Require
 
