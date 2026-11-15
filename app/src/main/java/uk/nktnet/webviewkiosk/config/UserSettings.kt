@@ -1785,41 +1785,39 @@ class UserSettings(val context: Context) {
         text: String,
         isBase64: Boolean = false,
     ): Boolean {
-        if (settingsAuthRequirement != SettingsAuthRequirementOption.REQUIRE) {
-            return false
-        }
-        return try {
-            val json =
-                JSONObject(
-                    if (isBase64) {
-                        String(
-                            Base64.decode(text, Base64.NO_WRAP),
-                            Charsets.UTF_8,
-                        )
-                    } else {
-                        text
-                    }
-                )
-            (!isRestricted(UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT) &&
-                settingsAuthRequirement.requiresReauthenticationToChangeTo(
-                    SettingsAuthRequirementOption.fromString(
-                        json.optString(
-                            UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT,
-                            settingsAuthRequirement.name,
-                        )
+        return settingsAuthRequirement == SettingsAuthRequirementOption.REQUIRE &&
+            try {
+                val json =
+                    JSONObject(
+                        if (isBase64) {
+                            String(
+                                Base64.decode(text, Base64.NO_WRAP),
+                                Charsets.UTF_8,
+                            )
+                        } else {
+                            text
+                        }
                     )
-                )) ||
-                (json.has(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD) &&
-                    requiresReauthenticationToChangeCustomAuthPassword(
-                        json.optString(
-                            UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD,
-                            customAuthPassword,
+                (!isRestricted(UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT) &&
+                    settingsAuthRequirement.requiresReauthenticationToChangeTo(
+                        SettingsAuthRequirementOption.fromString(
+                            json.optString(
+                                UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT,
+                                settingsAuthRequirement.name,
+                            )
                         )
-                    ))
-        } catch (_: Exception) {
-            // Invalid input cannot change credentials because import fails.
-            false
-        }
+                    )) ||
+                    (json.has(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD) &&
+                        requiresReauthenticationToChangeCustomAuthPassword(
+                            json.optString(
+                                UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD,
+                                customAuthPassword,
+                            )
+                        ))
+            } catch (_: Exception) {
+                // Invalid input cannot change credentials because import fails.
+                false
+            }
     }
 
     fun importJson(jsonStr: String): Boolean {
