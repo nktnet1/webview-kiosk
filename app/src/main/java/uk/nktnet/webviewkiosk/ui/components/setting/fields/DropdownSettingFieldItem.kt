@@ -33,9 +33,7 @@ fun <T> DropdownSettingFieldItem(
     onSave: (T) -> Unit,
     // Optional deferred approval (e.g. a fresh credential prompt). The value
     // is committed only if the callback invokes approve.
-    requestSaveApproval:
-        ((T, approve: () -> Unit, reportError: (Int) -> Unit) -> Unit)? =
-        null,
+    requestSaveApproval: ((T, approve: () -> Unit) -> Unit)? = null,
     onDialogDismiss: () -> Unit = {},
     itemText: @Composable (T) -> String,
 ) {
@@ -44,7 +42,6 @@ fun <T> DropdownSettingFieldItem(
     var value by remember { mutableStateOf(initialValue) }
     var draftValue by remember { mutableStateOf(initialValue) }
     var draftError by remember { mutableStateOf(false) }
-    var saveError by remember { mutableStateOf<Int?>(null) }
 
     GenericSettingFieldItem(
         settingKey = settingKey,
@@ -55,7 +52,6 @@ fun <T> DropdownSettingFieldItem(
         onClick = {
             draftValue = value
             draftError = !validator(value)
-            saveError = null
             showDialog = true
         },
     ) {
@@ -73,7 +69,6 @@ fun <T> DropdownSettingFieldItem(
             infoText = infoText,
             onDismiss = {
                 onDialogDismiss()
-                saveError = null
                 showDialog = false
             },
             settingKey = settingKey,
@@ -85,15 +80,12 @@ fun <T> DropdownSettingFieldItem(
                     val approve = {
                         value = requestedValue
                         onSave(requestedValue)
-                        saveError = null
                         showDialog = false
                     }
                     if (requestSaveApproval == null) {
                         approve()
                     } else {
-                        requestSaveApproval(requestedValue, approve) {
-                            saveError = it
-                        }
+                        requestSaveApproval(requestedValue, approve)
                     }
                 }
             },
@@ -106,7 +98,6 @@ fun <T> DropdownSettingFieldItem(
                     if (canEdit) {
                         draftValue = it
                         draftError = !validator(it)
-                        saveError = null
                     }
                 },
             ) { option ->
@@ -129,14 +120,6 @@ fun <T> DropdownSettingFieldItem(
                     text =
                         validationMessage
                             ?: stringResource(R.string.ui_invalid_input),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                )
-            }
-            saveError?.let { error ->
-                Text(
-                    text = stringResource(error),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),

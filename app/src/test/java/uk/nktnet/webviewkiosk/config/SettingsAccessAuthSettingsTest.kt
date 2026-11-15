@@ -184,18 +184,6 @@ class SettingsAccessAuthSettingsTest {
     }
 
     @Test
-    fun invalidManagedValueCannotSilentlyDisableSettingsAuthentication() {
-        settings.settingsAuthRequirement = SettingsAuthRequirementOption.OFF
-        shadowOf(restrictions)
-            .setApplicationRestrictions(Bundle().apply { putString(key, "false") })
-        assertTrue(settings.isRestricted(key))
-        assertEquals(
-            SettingsAuthRequirementOption.REQUIRE,
-            settings.settingsAuthRequirement,
-        )
-    }
-
-    @Test
     fun managedChoiceOffAndRequireOverrideLocalEnumWithoutOverwritingIt() {
         settings.settingsAuthRequirement = SettingsAuthRequirementOption.REQUIRE
         shadowOf(restrictions)

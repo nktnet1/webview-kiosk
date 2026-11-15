@@ -36,8 +36,8 @@ class ManagedRestrictionResourcesTest {
                 ) {
                     continue
                 }
-                val key = xml.getAttributeValue(androidNamespace, "key")
                 restrictions++
+                val key = xml.getAttributeValue(androidNamespace, "key")
                 val valuesId =
                     xml.getAttributeResourceValue(androidNamespace, "entryValues", 0)
                 if (valuesId == 0) {

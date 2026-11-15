@@ -40,9 +40,8 @@ fun SettingsAuthRequirementSetting() {
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.settingsAuthRequirement = it },
-        requestSaveApproval = { requestedValue, approve, reportError ->
+        requestSaveApproval = { requestedValue, approve ->
             val showError: (Int) -> Unit = { error ->
-                reportError(error)
                 ToastManager.show(context, context.getString(error))
             }
             when {

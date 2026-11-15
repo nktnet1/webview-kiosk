@@ -884,12 +884,11 @@ class RequireAuthWrapperTest {
         currentText: String =
             message(R.string.option_display_unlock_auth_requirement_option_require)
     ) {
-        val requireText = currentText
         val node =
             nodes(merged = true).last { node ->
                 node.config.getOrNull(SemanticsActions.OnClick) != null &&
                     node.config.getOrNull(SemanticsProperties.Text)?.any {
-                        it.text == requireText
+                        it.text == currentText
                     } == true
             }
         assertTrue(

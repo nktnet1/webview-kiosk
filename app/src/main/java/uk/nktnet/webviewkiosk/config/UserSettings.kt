@@ -1752,33 +1752,32 @@ class UserSettings(val context: Context) {
         text: String,
         isBase64: Boolean = false,
     ): Boolean {
-        if (
-            isRestricted(UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT) ||
-                settingsAuthRequirement != SettingsAuthRequirementOption.REQUIRE
-        ) {
-            return false
-        }
-        return try {
-            val json =
-                JSONObject(
-                    if (isBase64) {
-                        String(Base64.decode(text, Base64.NO_WRAP), Charsets.UTF_8)
-                    } else {
-                        text
-                    }
-                )
-            settingsAuthRequirement.requiresReauthenticationToChangeTo(
-                SettingsAuthRequirementOption.fromString(
-                    json.optString(
-                        UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT,
-                        settingsAuthRequirement.name,
+        return !(isRestricted(UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT) ||
+            settingsAuthRequirement != SettingsAuthRequirementOption.REQUIRE) &&
+            try {
+                val json =
+                    JSONObject(
+                        if (isBase64) {
+                            String(
+                                Base64.decode(text, Base64.NO_WRAP),
+                                Charsets.UTF_8,
+                            )
+                        } else {
+                            text
+                        }
+                    )
+                settingsAuthRequirement.requiresReauthenticationToChangeTo(
+                    SettingsAuthRequirementOption.fromString(
+                        json.optString(
+                            UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT,
+                            settingsAuthRequirement.name,
+                        )
                     )
                 )
-            )
-        } catch (_: Exception) {
-            // Invalid input cannot disable authentication because import fails.
-            false
-        }
+            } catch (_: Exception) {
+                // Invalid input cannot disable authentication because import fails.
+                false
+            }
     }
 
     fun importJson(jsonStr: String): Boolean {
