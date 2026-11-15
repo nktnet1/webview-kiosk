@@ -2,6 +2,7 @@
 
 package uk.nktnet.webviewkiosk.config
 
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.RestrictionsManager
 import android.os.Bundle
@@ -164,6 +165,85 @@ class SettingsAccessAuthSettingsTest {
         )
         assertFalse(
             settings.manualImportNeedsSettingsReauthentication(offBase64, true)
+        )
+    }
+
+    @Test
+    fun manualImportsCannotReplaceOrRemoveTheCurrentCustomPasswordWithoutVerification() {
+        val passwordKey = UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD
+        settings.customAuthPassword = "existing password"
+
+        val changed = JSONObject().put(passwordKey, "replacement").toString()
+        val removed = JSONObject().put(passwordKey, "").toString()
+        val unchanged = JSONObject().put(passwordKey, "existing password").toString()
+
+        assertTrue(settings.manualImportNeedsSettingsReauthentication(changed))
+        assertTrue(settings.manualImportNeedsSettingsReauthentication(removed))
+        assertTrue(
+            settings.manualImportNeedsSettingsReauthentication(
+                Base64.encodeToString(changed.toByteArray(), Base64.NO_WRAP),
+                isBase64 = true,
+            )
+        )
+        assertFalse(settings.manualImportNeedsSettingsReauthentication(unchanged))
+        assertFalse(settings.manualImportNeedsSettingsReauthentication("{}"))
+
+        settings.settingsAuthRequirement = SettingsAuthRequirementOption.OFF
+        assertFalse(settings.manualImportNeedsSettingsReauthentication(removed))
+    }
+
+    @Test
+    fun replacingDeviceAuthenticationAlsoRequiresFreshVerification() {
+        val keyguard =
+            context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        val addPassword =
+            JSONObject()
+                .put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD, "new password")
+                .toString()
+
+        shadowOf(keyguard).setIsDeviceSecure(true)
+        assertTrue(settings.manualImportNeedsSettingsReauthentication(addPassword))
+        assertTrue(
+            settings.requiresReauthenticationToChangeCustomAuthPassword(
+                "new password"
+            )
+        )
+
+        // Bootstrapping security on an unprotected device cannot authenticate
+        // against credentials that do not yet exist.
+        shadowOf(keyguard).setIsDeviceSecure(false)
+        assertFalse(settings.manualImportNeedsSettingsReauthentication(addPassword))
+        assertFalse(
+            settings.requiresReauthenticationToChangeCustomAuthPassword(
+                "new password"
+            )
+        )
+    }
+
+    @Test
+    fun managedSettingsRequireKeepsCredentialChangesGuarded() {
+        val passwordKey = UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD
+        settings.customAuthPassword = "original"
+        shadowOf(restrictions)
+            .setApplicationRestrictions(Bundle().apply { putString(key, "REQUIRE") })
+
+        assertTrue(
+            settings.manualImportNeedsSettingsReauthentication(
+                JSONObject().put(passwordKey, "").toString()
+            )
+        )
+
+        shadowOf(restrictions)
+            .setApplicationRestrictions(
+                Bundle().apply {
+                    putString(key, "REQUIRE")
+                    putString(passwordKey, "managed")
+                }
+            )
+        assertFalse(
+            settings.manualImportNeedsSettingsReauthentication(
+                JSONObject().put(passwordKey, "").toString()
+            )
         )
     }
 

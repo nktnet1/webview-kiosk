@@ -1,8 +1,10 @@
 package uk.nktnet.webviewkiosk.config
 
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.RestrictionsManager
 import android.content.SharedPreferences
+import android.os.Build
 import android.util.Base64
 import android.util.Log
 import android.webkit.WebView
@@ -1747,25 +1749,58 @@ class UserSettings(val context: Context) {
         return json
     }
 
+    /**
+     * A credential change must not bypass the fresh verification required to disable
+     * Settings auth.
+     */
+    fun requiresReauthenticationToChangeCustomAuthPassword(
+        nextPassword: String
+    ): Boolean {
+        if (
+            settingsAuthRequirement != SettingsAuthRequirementOption.REQUIRE ||
+                isRestricted(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD) ||
+                customAuthPassword == nextPassword
+        ) {
+            return false
+        }
+
+        // When no credential exists, creating the first custom password is an
+        // improvement and must remain possible without an impossible challenge.
+        if (customAuthPassword.isNotEmpty()) {
+            return true
+        }
+        // Unknown device-lock state must not bypass verification.
+        val keyguard =
+            context.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+                ?: return true
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            keyguard.isDeviceSecure
+        } else {
+            @Suppress("DEPRECATION") keyguard.isKeyguardSecure
+        }
+    }
+
     /** Used by the manual import dialog before applying a settings file. */
     fun manualImportNeedsSettingsReauthentication(
         text: String,
         isBase64: Boolean = false,
     ): Boolean {
-        return !(isRestricted(UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT) ||
-            settingsAuthRequirement != SettingsAuthRequirementOption.REQUIRE) &&
-            try {
-                val json =
-                    JSONObject(
-                        if (isBase64) {
-                            String(
-                                Base64.decode(text, Base64.NO_WRAP),
-                                Charsets.UTF_8,
-                            )
-                        } else {
-                            text
-                        }
-                    )
+        if (settingsAuthRequirement != SettingsAuthRequirementOption.REQUIRE) {
+            return false
+        }
+        return try {
+            val json =
+                JSONObject(
+                    if (isBase64) {
+                        String(
+                            Base64.decode(text, Base64.NO_WRAP),
+                            Charsets.UTF_8,
+                        )
+                    } else {
+                        text
+                    }
+                )
+            (!isRestricted(UserSettingsKeys.Device.SETTINGS_AUTH_REQUIREMENT) &&
                 settingsAuthRequirement.requiresReauthenticationToChangeTo(
                     SettingsAuthRequirementOption.fromString(
                         json.optString(
@@ -1773,11 +1808,18 @@ class UserSettings(val context: Context) {
                             settingsAuthRequirement.name,
                         )
                     )
-                )
-            } catch (_: Exception) {
-                // Invalid input cannot disable authentication because import fails.
-                false
-            }
+                )) ||
+                (json.has(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD) &&
+                    requiresReauthenticationToChangeCustomAuthPassword(
+                        json.optString(
+                            UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD,
+                            customAuthPassword,
+                        )
+                    ))
+        } catch (_: Exception) {
+            // Invalid input cannot change credentials because import fails.
+            false
+        }
     }
 
     fun importJson(jsonStr: String): Boolean {

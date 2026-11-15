@@ -63,6 +63,7 @@ import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.AuthenticationSession
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.CustomAuthPasswordSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.SettingsAuthRequirementSetting
 import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
@@ -496,6 +497,67 @@ class RequireAuthWrapperTest {
     }
 
     @Test
+    fun manualImportCannotRemoveCustomPasswordWithoutASecondAuthentication() {
+        UserSettings(activity).customAuthPassword = "existing password"
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeImportDialog()
+        click("JSON")
+        enterImportText(
+            JSONObject()
+                .put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD, "")
+                .toString()
+        )
+        click(message(R.string.ui_import))
+
+        assertEquals("existing password", UserSettings(activity).customAuthPassword)
+        val request = manager.customAuthRequest.value
+        assertTrue(manager.isCurrentCustomAuthRequest(request))
+
+        manager.customAuthSuccess(request)
+        pumpFrames()
+        assertEquals("", UserSettings(activity).customAuthPassword)
+    }
+
+    @Test
+    fun removingCustomPasswordWaitsForFreshAuthentication() {
+        UserSettings(activity).customAuthPassword = "existing password"
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeCustomPasswordSetting()
+        click(message(R.string.device_custom_auth_password_title))
+        enterImportText("")
+        click(message(R.string.ui_next))
+        click(message(R.string.ui_remove))
+
+        assertEquals("existing password", UserSettings(activity).customAuthPassword)
+        val request = manager.customAuthRequest.value
+        assertTrue(manager.isCurrentCustomAuthRequest(request))
+
+        manager.customAuthSuccess(request)
+        pumpFrames()
+        assertEquals("", UserSettings(activity).customAuthPassword)
+    }
+
+    @Test
+    fun leavingTheCustomPasswordSettingCancelsItsUnfinishedVerification() {
+        UserSettings(activity).customAuthPassword = "existing password"
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeCustomPasswordSetting()
+        click(message(R.string.device_custom_auth_password_title))
+        enterImportText("")
+        click(message(R.string.ui_next))
+        click(message(R.string.ui_remove))
+
+        val request = manager.customAuthRequest.value
+        assertTrue(manager.isCurrentCustomAuthRequest(request))
+        view.setContent { Text("Left settings") }
+        pumpFrames()
+        manager.customAuthSuccess(request)
+
+        assertFalse(manager.isCurrentCustomAuthRequest(request))
+        assertEquals("existing password", UserSettings(activity).customAuthPassword)
+    }
+
+    @Test
     fun leavingTheSettingsAuthRequirementCancelsItsUnfinishedChallenge() {
         owner.registry.currentState = Lifecycle.State.RESUMED
         composeSettingsAuthRequirement()
@@ -874,6 +936,17 @@ class RequireAuthWrapperTest {
                 LocalLifecycleOwner provides currentOwner.value
             ) {
                 SettingsAuthRequirementSetting()
+            }
+        }
+        pumpFrames()
+    }
+
+    private fun composeCustomPasswordSetting() {
+        view.setContent {
+            CompositionLocalProvider(
+                LocalLifecycleOwner provides currentOwner.value
+            ) {
+                CustomAuthPasswordSetting()
             }
         }
         pumpFrames()
