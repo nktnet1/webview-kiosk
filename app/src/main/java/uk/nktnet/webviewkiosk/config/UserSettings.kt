@@ -650,6 +650,13 @@ class UserSettings(val context: Context) {
             prefs,
             UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD,
         )
+    var requireAuthForSettings by
+        booleanPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.Device.REQUIRE_AUTH_FOR_SETTINGS,
+            true,
+        )
     var unlockAuthRequirement by
         stringEnumPref(
             getRestrictions,
@@ -1473,6 +1480,8 @@ class UserSettings(val context: Context) {
                 )
                 // put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD,
                 // customAuthPassword)
+                // REQUIRE_AUTH_FOR_SETTINGS is omitted: importing an exported
+                // config must not be able to change a local security boundary.
                 put(
                     UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT,
                     unlockAuthRequirement.name,
@@ -2142,6 +2151,8 @@ class UserSettings(val context: Context) {
                     UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD,
                     customAuthPassword,
                 )
+            // Do not import REQUIRE_AUTH_FOR_SETTINGS: imports (including remote
+            // settings updates) have no fresh local authentication challenge.
             unlockAuthRequirement =
                 UnlockAuthRequirementOption.fromString(
                     json.optString(

@@ -6,6 +6,7 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.os.Bundle
 import android.os.Looper
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.compose.material3.Text
@@ -20,6 +21,7 @@ import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -54,6 +56,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.AuthenticationSession
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.RequireAuthForSettingsSetting
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -65,6 +68,7 @@ class RequireAuthWrapperTest {
     private lateinit var controller: ActivityController<AuthWrapperTestActivity>
     private lateinit var activity: AuthWrapperTestActivity
     private lateinit var view: ComposeView
+    private val roots = mutableListOf<ViewRootForTest>()
     private lateinit var navController: NavHostController
     private val frameClock = BroadcastFrameClock()
     private val compositionScope =
@@ -82,6 +86,7 @@ class RequireAuthWrapperTest {
 
     @Before
     fun setUp() {
+        ViewRootForTest.onViewCreatedCallback = { roots += it }
         controller =
             Robolectric.buildActivity(AuthWrapperTestActivity::class.java)
                 .setup()
@@ -134,6 +139,7 @@ class RequireAuthWrapperTest {
         manager.session = originalSession
         manager.biometricPromptFactory = originalPromptFactory
         controller.pause().stop().destroy()
+        ViewRootForTest.onViewCreatedCallback = null
     }
 
     @Test
@@ -189,6 +195,75 @@ class RequireAuthWrapperTest {
         assertProtectedContent()
         assertEquals(1, prompts.size)
         assertEquals(1, protectedMounts)
+    }
+
+    @Test
+    fun settingsOpenWithoutAuthenticationWhenPreferenceIsDisabled() {
+        UserSettings(activity).requireAuthForSettings = false
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeWrapper()
+
+        assertFalse(manager.hasValidSession())
+        assertEquals(1, protectedMounts - protectedDisposals)
+        assertTrue(texts().any { it.startsWith("Protected settings ") })
+        assertTrue(prompts.isEmpty())
+    }
+
+    @Test
+    fun enablingSettingsProtectionGatesTheNextComposition() {
+        UserSettings(activity).requireAuthForSettings = false
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeWrapper()
+        assertEquals(1, protectedMounts)
+
+        UserSettings(activity).requireAuthForSettings = true
+        revision.value++
+        pumpFrames()
+
+        assertLoading()
+        assertEquals(1, protectedDisposals)
+        assertEquals(1, prompts.size)
+    }
+
+    @Test
+    fun settingsAuthToggleIsNotSavedUntilTheNewPromptSucceeds() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeSettingsAuthToggle()
+
+        click(message(R.string.device_require_auth_for_settings_title))
+        expandBooleanDropdown()
+        click(message(R.string.ui_false))
+        click(message(R.string.ui_save))
+
+        assertTrue(UserSettings(activity).requireAuthForSettings)
+        assertEquals(1, prompts.size)
+        assertEquals(
+            message(R.string.ui_please_reauthenticate_to_change_settings_auth),
+            prompts.single().info.description,
+        )
+
+        prompts.single().succeed()
+        pumpFrames()
+        assertFalse(UserSettings(activity).requireAuthForSettings)
+    }
+
+    @Test
+    fun leavingTheSettingsAuthToggleCancelsItsUnfinishedChallenge() {
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        composeSettingsAuthToggle()
+
+        click(message(R.string.device_require_auth_for_settings_title))
+        expandBooleanDropdown()
+        click(message(R.string.ui_false))
+        click(message(R.string.ui_save))
+        val prompt = prompts.single()
+
+        view.setContent { Text("Other destination") }
+        pumpFrames()
+        prompt.succeed()
+
+        assertEquals(1, prompt.cancelCalls)
+        assertTrue(UserSettings(activity).requireAuthForSettings)
     }
 
     @Test
@@ -489,6 +564,17 @@ class RequireAuthWrapperTest {
         pumpFrames()
     }
 
+    private fun composeSettingsAuthToggle() {
+        view.setContent {
+            CompositionLocalProvider(
+                LocalLifecycleOwner provides currentOwner.value
+            ) {
+                RequireAuthForSettingsSetting()
+            }
+        }
+        pumpFrames()
+    }
+
     private fun authenticate() {
         manager.showAuthenticationPrompt("Test", "Test")
         prompts.last().succeed()
@@ -531,10 +617,11 @@ class RequireAuthWrapperTest {
 
     private fun click(text: String) {
         val node =
-            nodes().single { node ->
-                node.config.getOrNull(SemanticsProperties.Text)?.any {
-                    it.text == text
-                } == true
+            nodes(merged = true).first { node ->
+                node.config.getOrNull(SemanticsActions.OnClick) != null &&
+                    node.config.getOrNull(SemanticsProperties.Text)?.any {
+                        it.text == text
+                    } == true
             }
         val action = node.config.getOrNull(SemanticsActions.OnClick)?.action
         assertTrue(
@@ -544,13 +631,28 @@ class RequireAuthWrapperTest {
         pumpFrames()
     }
 
-    private fun nodes(): List<SemanticsNode> {
-        val root = view.getChildAt(0) as ViewRootForTest
-        root.measureAndLayoutForTest()
-        fun walk(node: SemanticsNode): List<SemanticsNode> =
-            listOf(node) + node.children.flatMap(::walk)
-        return walk(root.semanticsOwner.rootSemanticsNode)
+    private fun expandBooleanDropdown() {
+        val trueText = message(R.string.ui_true)
+        val node =
+            nodes(merged = true).last { node ->
+                node.config.getOrNull(SemanticsActions.OnClick) != null &&
+                    node.config.getOrNull(SemanticsProperties.Text)?.any {
+                        it.text == trueText
+                    } == true
+            }
+        assertTrue(
+            node.config.getOrNull(SemanticsActions.OnClick)?.action?.invoke() == true
+        )
+        pumpFrames()
     }
+
+    private fun nodes(merged: Boolean = false): List<SemanticsNode> =
+        roots
+            .filter { it.view.isAttachedToWindow }
+            .flatMap { root ->
+                root.measureAndLayoutForTest()
+                root.semanticsOwner.getAllSemanticsNodes(mergingEnabled = merged)
+            }
 
     private fun pumpFrames() {
         // Drive recomposition and animation explicitly, without an idle wait on
@@ -561,6 +663,16 @@ class RequireAuthWrapperTest {
             frameNanos += 16_000_000L
             frameClock.sendFrame(frameNanos)
             shadowOf(Looper.getMainLooper()).idle()
+            view.measure(
+                View.MeasureSpec.makeMeasureSpec(480, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(1000, View.MeasureSpec.EXACTLY),
+            )
+            view.layout(0, 0, 480, 1000)
+            roots
+                .filter { it.view.isAttachedToWindow }
+                .forEach {
+                    it.measureAndLayoutForTest()
+                }
         }
     }
 

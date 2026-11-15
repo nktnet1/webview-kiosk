@@ -293,6 +293,160 @@ class AuthenticationManagerTest {
     }
 
     @Test
+    fun changingSettingsAuthenticationRequiresANewPromptDespiteAValidSession() {
+        showPrompt()
+        prompts.single().succeed()
+        var changed = false
+
+        val request =
+            manager.requestReauthentication(
+                "Confirm",
+                "Change settings protection",
+            ) {
+                changed = true
+            }
+
+        assertTrue(request is AuthenticationManager.ReauthenticationRequest.Started)
+        assertEquals(2, prompts.size)
+        assertEquals("Confirm", prompts.last().info.title)
+        assertFalse(changed)
+        // Reauthentication must not hide the settings screen that initiated it.
+        assertTrue(manager.hasValidSession())
+
+        prompts.last().succeed()
+        assertTrue(changed)
+        assertTrue(manager.hasValidSession())
+    }
+
+    @Test
+    fun reauthenticationCancellationLeavesTheExistingSessionAndSettingUnchanged() {
+        showPrompt()
+        prompts.single().succeed()
+        var changes = 0
+
+        val request =
+            manager.requestReauthentication("Confirm", "Confirm") { changes++ }
+                as AuthenticationManager.ReauthenticationRequest.Started
+        val prompt = prompts.last()
+        assertEquals(
+            AuthenticationManager.ReauthenticationRequest.Busy,
+            manager.requestReauthentication("Again", "Again") { changes++ },
+        )
+
+        manager.cancelReauthentication(request.token)
+        prompt.succeed()
+        prompt.callback.onAuthenticationError(1, "late cancellation")
+
+        assertEquals(1, prompt.cancelCalls)
+        assertEquals(0, changes)
+        assertTrue(manager.hasValidSession())
+        assertEquals(
+            AuthenticationResult.AuthenticationSuccess,
+            manager.promptResults.value,
+        )
+
+        manager.requestReauthentication("Retry", "Retry") { changes++ }
+        prompts.last().callback.onAuthenticationError(1, "cancelled")
+        assertEquals(0, changes)
+        assertTrue(manager.hasValidSession())
+    }
+
+    @Test
+    fun reauthenticationWithoutConfiguredCredentialsCannotUseNoLockFallback() {
+        shadowOf(keyguardManager).setIsDeviceSecure(false)
+        showPrompt()
+        assertEquals(
+            AuthenticationResult.AuthenticationNotSet,
+            manager.promptResults.value,
+        )
+        var changed = false
+
+        assertEquals(
+            AuthenticationManager.ReauthenticationRequest.NoCredentials,
+            manager.requestReauthentication("Confirm", "Confirm") {
+                changed = true
+            },
+        )
+        assertFalse(changed)
+        assertTrue(prompts.isEmpty())
+        assertEquals(
+            AuthenticationResult.AuthenticationNotSet,
+            manager.promptResults.value,
+        )
+    }
+
+    @Test
+    fun reauthenticationLaunchFailureIsUnavailableRatherThanAnUnfinishableRequest() {
+        manager.biometricPromptFactory = { _, _ ->
+            throw IllegalStateException("Biometric prompt unavailable")
+        }
+        var changed = false
+
+        assertEquals(
+            AuthenticationManager.ReauthenticationRequest.Unavailable,
+            manager.requestReauthentication("Confirm", "Confirm") {
+                changed = true
+            },
+        )
+        assertFalse(changed)
+
+        manager.biometricPromptFactory = { _, callback ->
+            FakePrompt(callback).also { prompts.add(it) }
+        }
+        assertTrue(
+            manager.requestReauthentication("Retry", "Retry") { changed = true }
+                is AuthenticationManager.ReauthenticationRequest.Started
+        )
+        prompts.single().succeed()
+        assertTrue(changed)
+    }
+
+    @Test
+    fun customPasswordReauthenticationDoesNotReuseSessionOrAcceptOldCallbacks() {
+        UserSettings(activity).customAuthPassword = "secret"
+        showPrompt()
+        manager.customAuthSuccess(manager.customAuthRequest.value)
+
+        var changes = 0
+        val first =
+            manager.requestReauthentication("Confirm", "Confirm") { changes++ }
+                as AuthenticationManager.ReauthenticationRequest.Started
+        assertTrue(manager.showCustomAuth.value)
+        assertEquals(
+            AuthenticationResult.AuthenticationSuccess,
+            manager.promptResults.value,
+        )
+        manager.customAuthCancel(first.token)
+        assertEquals(0, changes)
+        assertTrue(manager.hasValidSession())
+
+        val next =
+            manager.requestReauthentication("Confirm", "Confirm") { changes++ }
+                as AuthenticationManager.ReauthenticationRequest.Started
+        manager.customAuthSuccess(first.token)
+        assertEquals(0, changes)
+        manager.customAuthSuccess(next.token)
+        assertEquals(1, changes)
+        assertFalse(manager.showCustomAuth.value)
+    }
+
+    @Test
+    fun lockingCancelsSettingsReauthenticationWithoutApplyingTheChange() {
+        showPrompt()
+        prompts.single().succeed()
+        var changed = false
+        manager.requestReauthentication("Confirm", "Confirm") { changed = true }
+        val prompt = prompts.last()
+
+        manager.resetAuthentication()
+        prompt.succeed()
+
+        assertEquals(1, prompt.cancelCalls)
+        assertFalse(changed)
+        assertFalse(manager.hasValidSession())
+    }
+
+    @Test
     fun aTerminalErrorInvalidatesTheSessionAndAllowsExactlyOneRetry() {
         showPrompt()
         val prompt = prompts.single()

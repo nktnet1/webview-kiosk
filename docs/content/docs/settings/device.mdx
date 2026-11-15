@@ -160,7 +160,22 @@ Leave this setting blank to use your device's biometrics or credentials.
 
 **Default:** *(blank)*
 
-## 12. Unlock Auth Requirement [#unlock-auth-requirement]
+## 12. Require Authentication for Settings [#require-auth-for-settings]
+
+Require a custom password, device credentials, or biometrics when opening any
+Settings screen. When disabled, Settings opens without authentication.
+
+Changing this option in either direction requires a **new** authentication
+challenge; an existing authenticated session is not sufficient. On devices
+without a screen lock or custom authentication password, configure one first.
+Cancelling or failing the prompt leaves the current setting unchanged.
+
+This preference is not imported from settings files or remote settings updates.
+Managed device restrictions can override it when configured by an administrator.
+
+**Default:** true
+
+## 13. Unlock Auth Requirement [#unlock-auth-requirement]
 
 This setting only applies to in-app unlock methods, e.g. when unlocking
 using `Kiosk Control Panel` or `Custom Unlock Shortcut`.
@@ -176,7 +191,7 @@ unpinning, which is outside the control of {APP_NAME}.
 
 **Default:** Default
 
-## 13. Block Screen Capture [#block-screen-capture]
+## 14. Block Screen Capture [#block-screen-capture]
 
 Prevent screenshots, screen recording and content previews in Recent Apps.
 This is done by setting the FLAG_SECURE window flag.
@@ -186,7 +201,7 @@ For more information, see
 
 **Default:** false
 
-## 14. Block Volume Keys [#block-volume-keys]
+## 15. Block Volume Keys [#block-volume-keys]
 
 Disable the volume control buttons, specifically:
 
@@ -196,7 +211,7 @@ Disable the volume control buttons, specifically:
 
 **Default:** false
 
-## 15. Device Policies [#device-owner]
+## 16. Device Policies [#device-owner]
 
 Open **Device → Manage Device Policies** to see the actual owner role, whether
 it is native or shared through Dhizuku, and whether it manages a full user or a
@@ -219,7 +234,7 @@ actions for testing: policies and user data can remain, so use your managed rese
 process for production unenrollment. Handle Dhizuku ownership in Dhizuku itself. See [Owner Activation](/docs/activation) for setup and
 [Security](/docs/security#owner-capabilities) for capabilities and restrictions.
 
-### 15.1. Lock Task Features [#lock-task-features]
+### 16.1. Lock Task Features [#lock-task-features]
 
 The following settings are based on Android's lock-task documentation:
 - [Lock Task Mode -> Customise UI](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#customize-ui)
@@ -337,7 +352,7 @@ The following settings are based on Android's lock-task documentation:
   </tbody>
 </table>
 
-### 15.2. Dhizuku Request Permission on Launch [#dhizuku-request-permission-on-launch]
+### 16.2. Dhizuku Request Permission on Launch [#dhizuku-request-permission-on-launch]
 
 When enabled, if [Dhizuku](https://github.com/iamr0s/Dhizuku) is installed and
 has not granted {APP_NAME} access through the
@@ -345,7 +360,7 @@ has not granted {APP_NAME} access through the
 
 **Default:** true
 
-### 15.2. Dhizuku [#dhizuku]
+### 16.3. Dhizuku [#dhizuku]
 
 **Request Permission on Launch** requests shared Device Owner or Profile Owner
 permission when Dhizuku is available. Open Dhizuku and grant access from this

@@ -175,6 +175,9 @@
     <string name="device_custom_auth_password_title">Custom Auth Password</string>
     <string name="device_custom_auth_password_description">Optional password for in-app settings access and unlocking. Leave blank to use device authentication.</string>
 
+    <string name="device_require_auth_for_settings_title">Require Authentication for Settings</string>
+    <string name="device_require_auth_for_settings_description">Require authentication to open settings. Changing this option requires fresh authentication.</string>
+
     <string name="device_unlock_auth_requirement_title">Unlock Auth Requirement</string>
     <string name="device_unlock_auth_requirement_description">Choose whether in-app unlocking requires device authentication. Does not control system-level unpinning.</string>
 

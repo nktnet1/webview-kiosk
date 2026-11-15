@@ -40,6 +40,11 @@ For user-owned devices that use screen pinning, this will only work if you are u
 Device-level unpin methods (e.g. gestures/holding overview + back button simultaneously) will bypass this setting. To enhance security, please see: %1$s/security
 
 Leave this setting blank to use your device\'s biometrics or credentials."</string>
+    <string name="setting_info_require_auth_for_settings">"Require a custom password, device credentials, or biometrics to open Settings. Enabled by default.
+
+Changing this setting in either direction requires fresh authentication, even when Settings is already unlocked. If no authentication is configured, set a custom password or device screen lock first.
+
+This security setting cannot be changed through settings imports or remote settings updates."</string>
     <string name="setting_info_custom_unlock_shortcut" formatted="false">"Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META) in combination with another standard key to unlock/unpin the application.
 
 For example, CTRL+1.
