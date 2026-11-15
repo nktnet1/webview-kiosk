@@ -197,6 +197,54 @@ class SuggestedFilterListDownloaderTest {
     }
 
     @Test
+    fun cancellationDuringCurrentBatchItemDoesNotCountItAsFinished() {
+        val requested = SuggestedFilterLists.defaults.take(2)
+        val cancellation = FilterListDownloadCancellation()
+        val progress = mutableListOf<FilterListBatchProgress>()
+        val requests = AtomicInteger()
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        requests.incrementAndGet()
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("OK")
+                            .body("||ads.example^".toResponseBody())
+                            .build()
+                    }
+                    .build()
+            )
+
+        assertThrows(CancellationException::class.java) {
+            client.downloadDefaults(store, requested, cancellation) { update ->
+                progress += update
+                if (
+                    update.current == 2 &&
+                        update.download.stage == FilterListDownloadStage.DOWNLOADING
+                ) {
+                    cancellation.cancel()
+                }
+            }
+        }
+
+        assertEquals(2, requests.get())
+        assertEquals(
+            listOf(requested.first().url),
+            store.list().map { it.sourceUrl },
+        )
+        assertEquals(
+            listOf(requested.first().name),
+            progress
+                .filter { it.download.stage == FilterListDownloadStage.FINISHED }
+                .map { it.name },
+        )
+        assertEquals(1, progress.last().completed)
+    }
+
+    @Test
     fun unknownHttpLengthReportsBytesWithoutInventingATotal() {
         val content = "||ads.example^\n"
         val client =

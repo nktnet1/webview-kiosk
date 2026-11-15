@@ -1,7 +1,9 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.os.Looper
+import android.os.SystemClock
 import android.text.format.Formatter
+import android.view.MotionEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.MaterialTheme
@@ -19,7 +21,11 @@ import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.state.ToggleableState
 import androidx.navigation.NavController
+import com.sun.net.httpserver.HttpServer
 import java.io.File
+import java.net.InetSocketAddress
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -40,6 +46,7 @@ import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.FilterListBatchProgress
 import uk.nktnet.webviewkiosk.blocking.FilterListDownloadProgress
 import uk.nktnet.webviewkiosk.blocking.FilterListDownloadStage
@@ -195,6 +202,67 @@ class SettingsContentBlockingScreenTest {
         assertTrue(
             disabled(textNode(message(R.string.ui_cancelling_filter_list_download)))
         )
+    }
+
+    @Test
+    fun cancelOnProgressOverlayRespondsToRealTouchAndPreservesSavedRules() {
+        StalledFilterServer().use { server ->
+            store.importFrom(
+                "Remote",
+                "||old.example^".byteInputStream(),
+                server.url("/stalled.txt"),
+            )
+            view.disposeComposition()
+            renderScreen()
+
+            clickDescription(message(R.string.ui_options_for_value, "Remote"))
+            click(message(R.string.ui_refresh))
+            awaitCondition {
+                server.started.count == 0L && hasText(message(R.string.ui_cancel))
+            }
+
+            touch(textNode(message(R.string.ui_cancel)))
+            awaitCondition {
+                actionsReady() && !hasText(message(R.string.ui_cancel))
+            }
+            assertTrue(store.enabledTexts().contains("||old.example^"))
+        }
+    }
+
+    @Test
+    fun disposingScreenCancelsHttpAndMarksPreviouslySavedRulesAsChanged() {
+        StalledFilterServer().use { server ->
+            store.importFrom(
+                "Completed",
+                "||before.example^".byteInputStream(),
+                server.url("/completed.txt"),
+            )
+            store.importFrom(
+                "Stalled",
+                "||unchanged.example^".byteInputStream(),
+                server.url("/stalled.txt"),
+            )
+            view.disposeComposition()
+            renderScreen()
+            val blocker = ContentBlockingService.get(activityController.get())
+            blocker.prepareForWebView()
+            assertFalse(blocker.rulesPending.value)
+
+            click(message(R.string.ui_actions))
+            click(message(R.string.ui_refresh_all))
+            awaitCondition {
+                server.started.count == 0L &&
+                    store.enabledTexts().contains("||after.example^")
+            }
+            assertTrue(store.enabledTexts().contains("||unchanged.example^"))
+
+            view.disposeComposition()
+            // The coroutine is gone but its blocking IO finally still has to
+            // flag the already-committed first list for engine recompilation.
+            awaitCondition { blocker.rulesPending.value }
+            assertTrue(store.enabledTexts().contains("||after.example^"))
+            assertTrue(store.enabledTexts().contains("||unchanged.example^"))
+        }
     }
 
     @Test
@@ -642,6 +710,66 @@ class SettingsContentBlockingScreenTest {
         )
         clickDescription(message(R.string.ui_back))
         assertTrue(hasText(message(R.string.ui_add_list)))
+    }
+
+    private fun touch(node: SemanticsNode) {
+        val location = IntArray(2)
+        view.getLocationInWindow(location)
+        val center = node.boundsInWindow.center
+        val x = center.x - location[0]
+        val y = center.y - location[1]
+        val time = SystemClock.uptimeMillis()
+        val down = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, x, y, 0)
+        try {
+            assertTrue(view.dispatchTouchEvent(down))
+        } finally {
+            down.recycle()
+        }
+        frames()
+        val up = MotionEvent.obtain(time, time + 32, MotionEvent.ACTION_UP, x, y, 0)
+        try {
+            assertTrue(view.dispatchTouchEvent(up))
+        } finally {
+            up.recycle()
+        }
+        frames()
+    }
+
+    private class StalledFilterServer : AutoCloseable {
+        private val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        private val release = CountDownLatch(1)
+        val started = CountDownLatch(1)
+
+        init {
+            server.createContext("/completed.txt") { exchange ->
+                val contents = "||after.example^".toByteArray()
+                exchange.responseHeaders.add("Content-Type", "text/plain")
+                exchange.sendResponseHeaders(200, contents.size.toLong())
+                exchange.responseBody.use { it.write(contents) }
+            }
+            server.createContext("/stalled.txt") { exchange ->
+                try {
+                    exchange.responseHeaders.add("Content-Type", "text/plain")
+                    // Advertise more bytes than the response sends so that a
+                    // read stays blocked until the call is cancelled.
+                    exchange.sendResponseHeaders(200, 1024)
+                    exchange.responseBody.write("||partial.example^".toByteArray())
+                    exchange.responseBody.flush()
+                    started.countDown()
+                    release.await(10, TimeUnit.SECONDS)
+                } finally {
+                    exchange.close()
+                }
+            }
+            server.start()
+        }
+
+        fun url(path: String) = "http://127.0.0.1:${server.address.port}$path"
+
+        override fun close() {
+            release.countDown()
+            server.stop(0)
+        }
     }
 
     private fun enterManage() {

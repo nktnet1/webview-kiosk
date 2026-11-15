@@ -430,19 +430,22 @@ internal class SuggestedFilterListDownloader(
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
+                cancellation?.throwIfCancelled()
                 failures +=
                     FilterRefreshFailure(listName, error.message ?: fallbackError)
-            } finally {
-                onProgress?.invoke(
-                    FilterListBatchProgress(
-                        listName,
-                        index + 1,
-                        candidates.size,
-                        index + 1,
-                        FilterListDownloadProgress(FilterListDownloadStage.FINISHED),
-                    )
-                )
             }
+            // A cancelled attempt is not a completed attempt. Preserve the
+            // last reported count rather than publishing a false FINISHED stage.
+            cancellation?.throwIfCancelled()
+            onProgress?.invoke(
+                FilterListBatchProgress(
+                    listName,
+                    index + 1,
+                    candidates.size,
+                    index + 1,
+                    FilterListDownloadProgress(FilterListDownloadStage.FINISHED),
+                )
+            )
         }
         return FilterRefreshResult(updated, candidates.size, failures)
     }

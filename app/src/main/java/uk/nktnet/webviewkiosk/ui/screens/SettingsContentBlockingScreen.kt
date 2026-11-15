@@ -62,6 +62,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -100,6 +101,7 @@ import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -181,6 +183,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         mutableStateOf<FilterListDownloadCancellation?>(null)
     }
     var cancellingDownload by remember { mutableStateOf(false) }
+    // rememberCoroutineScope is cancelled when this screen leaves composition,
+    // but a synchronous OkHttp call on Dispatchers.IO must also be cancelled.
+    DisposableEffect(Unit) {
+        onDispose { activeDownload?.cancel() }
+    }
     val busy = working
     var bulkActionsExpanded by remember { mutableStateOf(false) }
     var managing by rememberSaveable { mutableStateOf(false) }
@@ -273,9 +280,15 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             try {
                 val savedLists = mutationMutex.withLock {
                     withContext(Dispatchers.IO) {
-                        block(cancellation)
-                        if (affectsRules) {
-                            blocker.markRulesChanged()
+                        try {
+                            block(cancellation)
+                        } finally {
+                            // A batch may already have saved earlier entries
+                            // when disposal cancels its coroutine. Mark the
+                            // engine dirty from IO, before leaving this block.
+                            if (affectsRules) {
+                                blocker.markRulesChanged()
+                            }
                         }
                         store.list()
                     }
@@ -290,15 +303,15 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 successMessage?.let { notify(it) }
             } catch (e: CancellationException) {
                 if (cancellation?.isCancelled == true) {
-                    // Earlier batch entries may already have been committed. Keep
-                    // them visible and reload the engine after a partial update.
+                    // The IO block already marked any partial writes as dirty.
+                    // On screen disposal there is no UI left to update, and this
+                    // coroutine is no longer active; only user cancellation
+                    // should reload lists and show a notification.
+                    if (!isActive) {
+                        return@launch
+                    }
                     val savedLists = mutationMutex.withLock {
-                        withContext(Dispatchers.IO) {
-                            if (affectsRules) {
-                                blocker.markRulesChanged()
-                            }
-                            store.list()
-                        }
+                        withContext(Dispatchers.IO) { store.list() }
                     }
                     lists = savedLists
                     selectedIds =
