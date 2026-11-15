@@ -4,15 +4,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -22,6 +19,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowCameraSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowLocationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowMicrophoneSetting
@@ -72,16 +70,16 @@ fun SettingsDeviceScreen(navController: NavController) {
             BlockScreenCaptureSetting()
             BlockVolumeKeysSetting()
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
+            SettingListItem(
+                title = stringResource(R.string.settings_device_owner_title),
+                description =
+                    stringResource(R.string.settings_device_owner_description),
                 onClick = {
                     navController.navigate(Screen.SettingsDeviceOwner.route)
                 },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.ui_manage_device_owner))
-            }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
         }

@@ -23,7 +23,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.event
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.event.MqttPublishEventRetainSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.event.MqttPublishEventTopicSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
-import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogCard
 
 @Composable
 fun SettingsMqttTopicsPublishEventScreen(navController: NavController) {
@@ -54,6 +54,6 @@ fun SettingsMqttTopicsPublishEventScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        MqttDebugLogsButton(navController)
+        MqttDebugLogCard(navController)
     }
 }

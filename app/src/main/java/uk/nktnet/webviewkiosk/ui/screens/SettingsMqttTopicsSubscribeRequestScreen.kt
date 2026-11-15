@@ -24,7 +24,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.reque
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.request.MqttSubscribeRequestRetainHandlingSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.request.MqttSubscribeRequestTopicSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
-import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogCard
 
 @Composable
 fun SettingsMqttTopicsSubscribeRequestScreen(navController: NavController) {
@@ -58,6 +58,6 @@ fun SettingsMqttTopicsSubscribeRequestScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        MqttDebugLogsButton(navController)
+        MqttDebugLogCard(navController)
     }
 }

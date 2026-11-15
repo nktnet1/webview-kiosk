@@ -4,8 +4,10 @@
 
     <string name="settings_title">Settings</string>
     <string name="settings_device_owner_title">Device Policies</string>
+    <string name="settings_device_owner_description">Ownership, lock task and policies</string>
     <string name="settings_more_actions_title">More Actions</string>
     <string name="settings_site_permissions_title">Site Permissions</string>
+    <string name="settings_site_permissions_description">Manage website permission grants</string>
     <string name="settings_files_title">Files</string>
 
     <string name="settings_web_content_title">Web Content</string>
@@ -66,6 +68,8 @@
     <string name="settings_mqtt_topics_subscribe_request_description">Subscribe to requests for information</string>
 
     <string name="settings_debug_log_title">Debug Log</string>
+    <string name="settings_mqtt_debug_log_description">View MQTT activity and diagnostics</string>
+    <string name="settings_unifiedpush_debug_log_description">View push activity and diagnostics</string>
 
     <string name="settings_unifiedpush_title">UnifiedPush</string>
     <string name="settings_unifiedpush_description">Control kiosk devices via push messages</string>

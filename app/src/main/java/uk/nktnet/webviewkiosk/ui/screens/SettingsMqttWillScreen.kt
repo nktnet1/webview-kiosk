@@ -26,7 +26,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWil
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillRetainSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillTopicSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
-import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogCard
 
 @Composable
 fun SettingsMqttWillScreen(navController: NavController) {
@@ -59,6 +59,6 @@ fun SettingsMqttWillScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        MqttDebugLogsButton(navController)
+        MqttDebugLogCard(navController)
     }
 }
