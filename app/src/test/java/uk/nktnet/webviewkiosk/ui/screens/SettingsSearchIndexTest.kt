@@ -148,6 +148,28 @@ class SettingsSearchIndexTest {
     }
 
     @Test
+    fun lockTaskSearchIncludesDevicePoliciesPage() {
+        for (query in
+            listOf(
+                "lock task mode",
+                "LOCK-TASK MODE",
+                "lock_task_mode",
+                "manage lock task packages",
+                "MANAGE-LOCK-TASK-PACKAGES",
+                "manage_lock_task_packages",
+            )) {
+            val result =
+                searchSettings(context, query).single {
+                    it.kind == SettingsSearchResultKind.PAGE &&
+                        it.route == Screen.SettingsDeviceOwner.route
+                }
+            assertEquals(R.string.settings_device_owner_title, result.titleRes)
+            assertEquals(null, result.targetId)
+            assertEquals(null, result.settingKey)
+        }
+    }
+
+    @Test
     fun findsDescriptionsAliasesAndOptionLabels() {
         assertTrue(
             searchSettings(context, "keep device awake").any {
@@ -242,25 +264,141 @@ class SettingsSearchIndexTest {
     }
 
     @Test
-    fun strongMatchesPrecedeDescriptionsAndGroupsRemainTogether() {
+    fun exactActionOutranksSettingPrefixButWeakOptionMatchDoesNot() {
         val results = searchSettings(context, "cache")
         assertEquals(
             R.string.settings_more_action_clear_cache,
             results.first().titleRes,
         )
+        assertEquals(SettingsSearchResultKind.ACTION, results.first().kind)
         val titleMatch = results.indexOfFirst {
             it.settingKey == UserSettingsKeys.WebEngine.CACHE_MODE
         }
         val optionMatch = results.indexOfFirst {
             it.settingKey == UserSettingsKeys.WebLifecycle.RESET_ACTIONS
         }
-        assertTrue(titleMatch in 0..<optionMatch)
+        val actionMatch = results.indexOfFirst {
+            it.titleRes == R.string.settings_more_action_clear_cache
+        }
+        assertEquals(0, actionMatch)
+        assertTrue(titleMatch in 1..<optionMatch)
         val grouped = groupSettingsSearchResults(results)
         assertTrue(grouped.size > 1)
         assertEquals(results, grouped.flatMap { it.second })
         grouped.forEach { (page, entries) ->
             assertTrue(entries.all { it.route == page.route })
         }
+    }
+
+    @Test
+    fun exactPageAliasOutranksWeakerSettingsAndMatchingInformation() {
+        val results = searchSettings(context, "manage lock task packages")
+        assertEquals(SettingsSearchResultKind.PAGE, results.first().kind)
+        assertEquals(Screen.SettingsDeviceOwner.route, results.first().route)
+        assertEquals(R.string.settings_device_owner_title, results.first().titleRes)
+        val settingIndex = results.indexOfFirst {
+            it.kind == SettingsSearchResultKind.SETTING
+        }
+        val infoIndex = results.indexOfFirst {
+            it.kind == SettingsSearchResultKind.INFORMATION &&
+                it.titleRes == R.string.about_app_manage_lock_task_packages
+        }
+        assertTrue(settingIndex > 0)
+        assertTrue(infoIndex > 0)
+    }
+
+    @Test
+    fun exactInformationTitleOutranksWeakerSettingMatches() {
+        val results = searchSettings(context, "lock task permitted")
+        assertEquals(
+            R.string.about_app_lock_task_permitted,
+            results.first().titleRes,
+        )
+        assertEquals(SettingsSearchResultKind.INFORMATION, results.first().kind)
+        assertTrue(
+            results.drop(1).any { it.kind == SettingsSearchResultKind.SETTING }
+        )
+    }
+
+    @Test
+    fun equalRelevanceUsesTypePriorityAndPreservesRegistryOrder() {
+        fun hit(
+            kind: SettingsSearchResultKind,
+            route: String,
+            title: Int,
+        ) = SettingsSearchResult(title, route, kind)
+        val information =
+            hit(
+                SettingsSearchResultKind.INFORMATION,
+                Screen.SettingsAbout.route,
+                R.string.about_app_instance_id,
+            )
+        val page =
+            hit(
+                SettingsSearchResultKind.PAGE,
+                Screen.SettingsDeviceOwner.route,
+                R.string.settings_device_owner_title,
+            )
+        val action =
+            hit(
+                SettingsSearchResultKind.ACTION,
+                Screen.SettingsMoreActions.route,
+                R.string.settings_more_action_clear_cache,
+            )
+        val setting =
+            hit(
+                SettingsSearchResultKind.SETTING,
+                Screen.SettingsWebEngine.route,
+                R.string.web_engine_cache_mode_title,
+            )
+        val settingWithSameRank =
+            setting.copy(titleRes = R.string.web_engine_layout_algorithm_title)
+        assertEquals(
+            listOf(setting, settingWithSameRank, action, page, information),
+            rankSettingsSearchMatches(
+                listOf(
+                    information to 700,
+                    page to 700,
+                    action to 700,
+                    setting to 700,
+                    settingWithSameRank to 700,
+                )
+            ),
+        )
+    }
+
+    @Test
+    fun breadcrumbGroupsRankByStrongestHitAndKeepWeakerRowsTogether() {
+        val strong =
+            SettingsSearchResult(
+                R.string.web_engine_cache_mode_title,
+                Screen.SettingsWebEngine.route,
+                SettingsSearchResultKind.SETTING,
+            )
+        val weak = strong.copy(titleRes = R.string.web_engine_layout_algorithm_title)
+        val middle =
+            SettingsSearchResult(
+                R.string.settings_more_action_clear_cache,
+                Screen.SettingsMoreActions.route,
+                SettingsSearchResultKind.ACTION,
+            )
+        val exactInformation =
+            SettingsSearchResult(
+                R.string.about_device_android_version,
+                Screen.SettingsAbout.route,
+                SettingsSearchResultKind.INFORMATION,
+            )
+        assertEquals(
+            listOf(exactInformation, strong, weak, middle),
+            rankSettingsSearchMatches(
+                listOf(
+                    weak to 100,
+                    middle to 700,
+                    strong to 800,
+                    exactInformation to 1_000,
+                )
+            ),
+        )
     }
 
     @Test
