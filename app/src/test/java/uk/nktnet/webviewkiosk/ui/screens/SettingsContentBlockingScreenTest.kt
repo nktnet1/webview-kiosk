@@ -9,6 +9,7 @@ import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.semantics.SemanticsActions
@@ -152,6 +153,21 @@ class SettingsContentBlockingScreenTest {
                 node.config.getOrNull(SemanticsProperties.ProgressBarRangeInfo)
             }
         assertEquals(listOf(0.25f, 0.5f), bars.map { it.current })
+    }
+
+    @Test
+    fun downloadStatusAcceptsModifierAsFirstOptionalArgument() {
+        view.setContent {
+            MaterialTheme {
+                FilterListDownloadStatus(
+                    "Downloading filter list…",
+                    null,
+                    Modifier,
+                )
+            }
+        }
+        frames()
+        assertTrue(hasText("Downloading filter list…"))
     }
 
     @Test

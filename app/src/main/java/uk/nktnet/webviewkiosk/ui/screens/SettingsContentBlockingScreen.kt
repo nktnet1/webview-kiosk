@@ -1468,9 +1468,9 @@ private fun FilterListProgressOverlay(
 internal fun FilterListDownloadStatus(
     message: String,
     progress: FilterListBatchProgress?,
+    modifier: Modifier = Modifier,
     onCancel: (() -> Unit)? = null,
     cancelling: Boolean = false,
-    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val transfer = progress?.download
