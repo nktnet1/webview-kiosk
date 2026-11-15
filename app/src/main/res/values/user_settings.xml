@@ -179,7 +179,6 @@
     <string name="device_unlock_auth_requirement_description">Choose whether in-app unlocking requires device authentication. Does not control system-level unpinning.</string>
 
     <string name="device_settings_auth_requirement_title">Settings Auth Requirement</string>
-    <string name="device_settings_auth_requirement_description">Choose whether Settings requires authentication. Changing this option in the app requires fresh authentication; managed configurations can override it.</string>
 
     <string name="device_block_screen_capture_title">Block Screen Capture</string>
 

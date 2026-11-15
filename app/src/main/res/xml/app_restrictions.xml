@@ -534,7 +534,7 @@
         android:entryValues="@array/entry_values_settings_auth_requirement_option"
         android:defaultValue="REQUIRE"
         android:title="@string/device_settings_auth_requirement_title"
-        android:description="@string/device_settings_auth_requirement_description"
+        android:description="@string/setting_info_settings_auth_requirement"
     />
     <restriction
         android:key="device.block_screen_capture"

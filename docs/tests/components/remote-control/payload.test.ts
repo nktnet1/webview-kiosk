@@ -301,7 +301,7 @@ describe("shared remote message editor", () => {
 });
 
 describe("Android-managed settings catalogue", () => {
-  it("covers every app restriction with the correct type and enum values", () => {
+  it("covers remotely writable restrictions, excluding managed-only settings", () => {
     const restrictionsXml = readFileSync(
       new URL(
         "../../../../app/src/main/res/xml/app_restrictions.xml",
@@ -336,6 +336,9 @@ describe("Android-managed settings catalogue", () => {
       );
       return attributes;
     });
+    // This security setting is available through MDM, but MQTT and UnifiedPush
+    // must never offer it as a remotely writable setting.
+    const managedOnlyKeys = ["device.settings_auth_requirement"];
     const restrictionKeys = restrictions.map((restriction) => restriction.key);
     const catalogKeys = SETTINGS_CATALOG.map((setting) => setting.key);
     const expectedKeys = new Set(restrictionKeys);
@@ -355,7 +358,7 @@ describe("Android-managed settings catalogue", () => {
       duplicateRestrictionKeys: duplicateKeys(restrictionKeys),
       duplicateCatalogKeys: duplicateKeys(catalogKeys),
     }).toEqual({
-      missingFromCatalog: [],
+      missingFromCatalog: managedOnlyKeys,
       unexpectedInCatalog: [],
       duplicateRestrictionKeys: [],
       duplicateCatalogKeys: [],
@@ -365,6 +368,14 @@ describe("Android-managed settings catalogue", () => {
       SETTINGS_CATALOG.map((setting) => [setting.key, setting]),
     );
     for (const restriction of restrictions) {
+      if (managedOnlyKeys.includes(restriction.key)) {
+        expect(restriction.restrictionType).toBe("choice");
+        expect(restriction.defaultValue).toBe("REQUIRE");
+        expect(
+          arrayValues.get(restriction.entryValues.replace("@array/", "")),
+        ).toEqual(["OFF", "REQUIRE"]);
+        continue;
+      }
       const setting = byKey.get(restriction.key);
       expect(setting, restriction.key).toBeDefined();
       expect(setting?.kind).toBe(

@@ -1,6 +1,7 @@
 /**
- * Setting keys and value types mirror app/src/main/res/xml/app_restrictions.xml.
- * Choice values mirror app/src/main/res/values/arrays.xml.
+ * Remotely writable setting keys and types mirror app restrictions, except
+ * managed-only security restrictions that cannot be changed via MQTT or
+ * UnifiedPush. Choice values mirror app/src/main/res/values/arrays.xml.
  * Keep in sync when Android restrictions change (verified in tests).
  */
 

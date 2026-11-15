@@ -30,7 +30,7 @@ import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 
-private fun showAuthPrompt(context: android.content.Context) {
+private fun showAuthPrompt(context: Context) {
     AuthenticationManager.showAuthenticationPrompt(
         title = context.getString(R.string.ui_authentication_required),
         description =
