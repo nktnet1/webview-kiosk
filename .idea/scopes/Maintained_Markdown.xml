@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Maintained Markdown" pattern="file:README.md||file:.github/CONTRIBUTING.md||file:.github/ISSUE_TEMPLATE/*.md||file:docs//*.md||file:adblock/docs//*.md" />
+</component>

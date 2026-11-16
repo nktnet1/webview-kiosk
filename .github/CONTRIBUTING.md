@@ -44,11 +44,20 @@ an Australian spelling dictionary. Its English proofreading rules can therefore
 produce false positives for locales and Android string escapes.
 
 The project inspection profile is **WebviewKiosk**. The profile filename,
-internal name and active-profile setting must all match. It disables only the
-HTML, Java-global and proofreading inspections identified as noise in the
-November 2026 Android Studio export. Proofreading and spelling are disabled in
-this profile, including for Markdown. Kotlin, Java correctness and Android Lint
-checks remain available.
+internal name and active-profile setting match. The noisy **Style** inspection
+is disabled because the exported suggestions assume American English. Grammar
+and spelling remain enabled for the **Maintained Markdown** scope, covering
+project documentation but not source identifiers, Android locale XML, bundled
+third-party licences or ignored files. This is a file-scope restriction, not an
+Australian-English grammar model. In **Settings > Editor > Natural Languages >
+Grammar and Style > Rules**, use **Disable rule** on any remaining US-specific
+suggestions rather than turning off all grammar checks.
+
+For HTML, only the obsolete-attribute and image-size inspections are disabled.
+For Java, the report-driven exclusions are global unused declarations, unused
+Gradle libraries, module-placement and module-size suggestions. Other Java,
+Kotlin, security, resource, and Android Lint inspections stay available. Do not
+assume a zero-result inspection run proves all relevant checks have run.
 
 In **Settings > Editor > Inspections**, select the **project** profile named
 **WebviewKiosk**. When using **Code > Inspect Code**, explicitly select
