@@ -1,4 +1,7 @@
 import com.android.build.api.variant.HostTestBuilder
+import org.gradle.api.attributes.Usage
+import org.gradle.api.specs.Spec
+import org.gradle.api.tasks.testing.Test
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -205,4 +208,90 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
+}
+
+// Use separate classpaths for Android 5.0-6.0 and modern Robolectric tests.
+afterEvaluate {
+    val modernRobolectricVersion = libs.versions.robolectric.get()
+    val legacyRobolectricVersion = libs.versions.robolectricLegacy.get()
+    val legacyRobolectricRuntime =
+        configurations.create("legacyRobolectricRuntimeClasspath") {
+            isCanBeConsumed = false
+            isCanBeResolved = true
+            attributes {
+                attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+            }
+        }
+    dependencies.add(
+        legacyRobolectricRuntime.name,
+        "org.robolectric:robolectric:$legacyRobolectricVersion",
+    )
+
+    // Robolectric selects SDK variants before executing each test method.
+    // Exclude legacy SDKs rather than changing their @Config annotations.
+    tasks.named<Test>("testDebugUnitTest") {
+        systemProperty("robolectric.enabledSdks", (24..37).joinToString(","))
+    }
+
+    tasks.register<Test>("testLegacyUnitTest") {
+        group = "verification"
+        description = "Run Android 5.0-6.0 tests using Robolectric 4.15.1."
+
+        val modernTest = tasks.named<Test>("testDebugUnitTest").get()
+        testClassesDirs = modernTest.testClassesDirs
+        // Keep AGP's test APK, resources, configuration and app classpath.
+        // Replace only Robolectric modules, not the whole Android classpath.
+        val robolectricModules =
+            setOf(
+                "annotations",
+                "junit",
+                "nativeruntime",
+                "pluginapi",
+                "plugins-maven-dependency-resolver",
+                "resources",
+                "robolectric",
+                "sandbox",
+                "shadowapi",
+                "shadows-framework",
+                "utils",
+                "utils-reflector",
+            )
+        val withoutModernRobolectric =
+            modernTest.classpath.filter(
+                Spec<File> { file ->
+                    robolectricModules.none { module ->
+                        file.name == "$module-$modernRobolectricVersion.jar"
+                    }
+                }
+            )
+        classpath = withoutModernRobolectric + legacyRobolectricRuntime
+        maxHeapSize = modernTest.maxHeapSize
+        maxParallelForks = modernTest.maxParallelForks
+        forkEvery = modernTest.forkEvery
+        jvmArgs(modernTest.jvmArgs.orEmpty())
+        systemProperties(modernTest.systemProperties)
+        systemProperty("robolectric.enabledSdks", "21,22,23")
+
+        // Only classes with tests targeting API 21-23 belong in this second JVM.
+        filter {
+            includeTestsMatching(
+                "uk.nktnet.webviewkiosk.activation.ShizukuActivationTest"
+            )
+            includeTestsMatching(
+                "uk.nktnet.webviewkiosk.managers.DhizukuVersionCompatibilityTest"
+            )
+            includeTestsMatching(
+                "uk.nktnet.webviewkiosk.managers.ManagementVersionCompatibilityTest"
+            )
+            includeTestsMatching(
+                "uk.nktnet.webviewkiosk.services.BackgroundMediaNotificationTest"
+            )
+            includeTestsMatching(
+                "uk.nktnet.webviewkiosk.ui.screens.ManagementSettingsUiTest"
+            )
+            includeTestsMatching(
+                "uk.nktnet.webviewkiosk.utils.LegacyWebViewSdkCompatibilityTest"
+            )
+        }
+    }
 }

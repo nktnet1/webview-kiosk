@@ -275,7 +275,7 @@ class ReleaseDexTest(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         tests = (root / ".github/workflows/tests.yaml").read_text()
         gradle_setup = tests.index("gradle/actions/setup-gradle@")
-        jvm = tests.index("sh gradlew :adblock:test :app:testDebugUnitTest")
+        jvm = tests.index("sh gradlew :adblock:test :app:testDebugUnitTest :app:testLegacyUnitTest")
         smoke = tests.index("run: python3 scripts/r8/r8_audit.py --require-mapping --fail-on-warnings --json build/reports/r8/smokeRelease.json")
         self.assertLess(gradle_setup, jvm)
         self.assertLess(jvm, smoke)

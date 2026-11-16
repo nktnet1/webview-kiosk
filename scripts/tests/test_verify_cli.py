@@ -77,7 +77,8 @@ class VerifyCliTest(unittest.TestCase):
         ], [name for name, _ in calls])
         android = calls[1][1]
         for check in ("checkFormatting", "lint", ":adblock:test",
-                      ":app:testDebugUnitTest", ":app:assembleSmokeRelease", "--warning-mode=all"):
+                      ":app:testDebugUnitTest", ":app:testLegacyUnitTest",
+                      ":app:assembleSmokeRelease", "--warning-mode=all"):
             self.assertIn(check, android)
         self.assertIn("--fail-on-warnings", calls[2][1])
         for index in (0, 3, 4):
