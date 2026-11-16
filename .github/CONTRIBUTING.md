@@ -36,6 +36,28 @@ Runtime coverage is still limited to the existing JSON, WebView, and MQTT
 loopback probes; hardware NFC, external MQTT TLS/WSS, and file downloads
 need separate acceptance testing.
 
+## Australian English and IDE inspections
+
+Use Australian English (`en-AU`) in documentation and user-facing strings
+(e.g. *colour*, *organise*, *normalise*, *licence* as a noun). The root
+`.editorconfig` declares this spelling for editors that support the standard
+`spelling_language` property. Android Studio's Grazie style inspection in the
+exported reports enforced American English, so the shared
+`.idea/inspectionProfiles/Project_Default.xml` disables **Style** while keeping
+**Grammar** and **Spelling** inspections. Spelling checks still cover text,
+comments and literals, but not identifiers containing API names, URLs or
+filter-list syntax. The project dictionary accepts common technical terms.
+
+That inspection profile also disables Java's global **Unused declaration**,
+**Unused library**, and module/class placement and size suggestions: they
+incorrectly treat Android manifest entries, Kotlin-serialised types, Gradle
+tasks, JUnit/Robolectric tests and managed/transitive dependencies as unused.
+Keep ordinary Kotlin compiler inspections, Android Lint and Gradle dependency
+checks enabled. When exporting IDE inspections, analyse tracked source files
+rather than **Project Files** that may include local `.env`, JVM crash logs and
+other untracked diagnostic data. Third-party licence and notice text should not
+be rewritten to satisfy prose inspections.
+
 ## Script organisation
 
 `python3 scripts/verify.py` is the single full verification entry point.

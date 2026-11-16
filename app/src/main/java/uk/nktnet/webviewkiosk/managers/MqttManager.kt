@@ -1088,7 +1088,7 @@ object MqttManager {
                 .send()
                 .whenComplete { result, throwable ->
                     // Internal shutdown progress must be delivered even if the
-                    // publish result no longer belongs to the active session.
+                    // result of the publish operation belongs to a previous session.
                     whenComplete?.invoke(result, throwable)
                     if (
                         getReadyClient() !== c ||

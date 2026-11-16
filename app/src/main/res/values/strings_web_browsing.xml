@@ -58,7 +58,7 @@ In that case, the region stays at Top Left so the panel remains accessible."</st
 Typically, this is from clicking links (&lt;a&gt; tags) on a webpage\'s HTML.
 
 Actions are:
-- Show Block Page (display a HTML block page)
+- Show Block Page (display an HTML block page)
 - Prevent Navigation (does nothing when links are clicked)
 - Show Toast (shows a toast with your custom block message)
 
@@ -67,7 +67,7 @@ This option will NOT take effect for:
 - Custom URL loading, e.g. from the Address Bar, Bookmarks, History, etc
 
 In those other cases, the block page will simply be shown."</string>
-    <string name="setting_info_replace_history_url_on_redirect" formatted="false">"Set to true to replace the current history entry with the final URL if any page redirections occurs, rather than adding multiple entries to the history navigation stack."</string>
+    <string name="setting_info_replace_history_url_on_redirect" formatted="false">"Set to true to replace the current history entry with the final URL if any page redirects occur, rather than adding multiple entries to the history navigation stack."</string>
     <string name="setting_info_search_provider_url">"The URL used for search queries in the address bar.
 
 This URL must include a query parameter, e.g.
@@ -77,7 +77,7 @@ This URL must include a query parameter, e.g.
 For example, when searching for \"new\", you may get suggested
 - news
 - new recipes
-- new york times"</string>
+- New York Times"</string>
     <!-- UI labels, placeholders, and messages -->
     <string name="ui_bookmarks" formatted="false">"Bookmarks"</string>
     <string name="ui_copy_full_url" formatted="false">"Copy full URL"</string>

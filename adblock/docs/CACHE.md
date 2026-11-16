@@ -1,7 +1,7 @@
 # Compiled filter cache
 
 `CompiledFilterCache` uses disposable WKCF snapshots (schema 20) with source
-SHA-256 identities, normalized rule records, compact rule-ID indexes and CRC32.
+SHA-256 identities, normalised rule records, compact rule-ID indexes and CRC32.
 Network, cosmetic and scriptlet hostname/entity/exception buckets are restored
 directly without duplicating rule text, selectors or arguments.
 
@@ -20,7 +20,7 @@ Strings remain limited to 8,192 UTF-16 code units. A reusable character buffer i
 needed only for the wide-string path.
 
 Warm restores still validate cached indexes, so the indexing stage can include
-work without rebuilding the buckets. Missing or invalid indexes rebuild from normalized
+work without rebuilding the buckets. Missing or invalid indexes rebuild from normalised
 records and repair the aggregate snapshot. Bad snapshots recompile
 from source text. No executable JavaScript is loaded from disk; the scriptlet
 dispatcher is generated from validated records. Its public-suffix data is
