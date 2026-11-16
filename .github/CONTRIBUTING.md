@@ -39,24 +39,36 @@ need separate acceptance testing.
 ## Australian English and IDE inspections
 
 Use Australian English (`en-AU`) in documentation and user-facing strings
-(e.g. *colour*, *organise*, *normalise*, *licence* as a noun). The root
-`.editorconfig` declares this spelling for editors that support the standard
-`spelling_language` property. Android Studio's Grazie style inspection in the
-exported reports enforced American English, so the shared
-`.idea/inspectionProfiles/Project_Default.xml` disables **Style** while keeping
-**Grammar** and **Spelling** inspections. Spelling checks still cover text,
-comments and literals, but not identifiers containing API names, URLs or
-filter-list syntax. The project dictionary accepts common technical terms.
+(e.g. *colour*, *organise*, *normalise*, *licence* as a noun). Android Studio does
+not support a `spelling_language` EditorConfig property, so the project standard
+is documented here instead. Add project-specific technical terms to
+`.idea/dictionaries/project.xml`. If the Natural Languages plugin offers a
+regional English variant, use British English as the closest available match.
+Do not change correct Australian spelling merely to satisfy an American-English
+suggestion.
 
-That inspection profile also disables Java's global **Unused declaration**,
-**Unused library**, and module/class placement and size suggestions: they
-incorrectly treat Android manifest entries, Kotlin-serialised types, Gradle
-tasks, JUnit/Robolectric tests and managed/transitive dependencies as unused.
-Keep ordinary Kotlin compiler inspections, Android Lint and Gradle dependency
-checks enabled. When exporting IDE inspections, analyse tracked source files
-rather than **Project Files** that may include local `.env`, JVM crash logs and
-other untracked diagnostic data. Third-party licence and notice text should not
-be rewritten to satisfy prose inspections.
+The shared `.idea/inspectionProfiles/Project_Default.xml` disables **Style**
+while retaining **Grammar** and **Spelling**. It also disables Java's global
+**Unused declaration**, **Unused library**, and module/class placement and size
+suggestions because they produce false positives for Android entry points,
+Kotlin-generated code, Gradle tasks, JUnit/Robolectric tests and managed
+transitive dependencies. The HTML checks for obsolete `align` attributes and
+resized images are disabled because GitHub Markdown uses `align` to centre
+README badges and screenshots, and the screenshots are thumbnails rather than
+full-size images. Leave other HTML, Kotlin, Android Lint and compiler checks
+active.
+
+`.idea/inspectionProfiles/profiles_settings.xml` activates the shared
+**Project Default** inspection profile. When running **Code > Inspect Code**,
+select that profile and choose **Custom scope > Project Files Excluding
+Git-Ignored**. This scope respects `.gitignore`, including `.env*`, JVM crash
+logs, `build/` output and Gradle caches. To inspect only committed or staged
+paths, instead select **Project Files Tracked by Git**. That scope excludes
+untracked files, though it still includes any already-tracked files matching
+ignore patterns. Avoid **Whole project** and ordinary **Project Files** scopes
+when exporting warnings. Inspection exports are snapshots, so rerun the
+inspection after changing the profile or scope. Preserve third-party licence
+and notice text verbatim.
 
 ## Script organisation
 

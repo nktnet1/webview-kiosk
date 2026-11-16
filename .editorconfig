@@ -1,9 +1,5 @@
 root = true
 
-# Australian English for editors that support EditorConfig spellchecking.
-[*]
-spelling_language = en-AU
-
 [*.{kt,kts}]
 charset = utf-8
 end_of_line = lf

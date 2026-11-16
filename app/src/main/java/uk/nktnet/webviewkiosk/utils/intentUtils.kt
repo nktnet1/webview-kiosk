@@ -56,10 +56,8 @@ fun handleMainIntent(intent: Intent): IntentResult {
     return when (intent.action) {
         Intent.ACTION_VIEW -> {
             // This exported activity registers VIEW only for HTTP(S) links and
-            // content
-            // attachments. An explicit intent must not bypass that scheme policy
-            // (for
-            // example, javascript: would otherwise reach WebView.loadUrl directly).
+            // content attachments. An explicit intent must not bypass that scheme
+            // policy or a JavaScript URL could reach WebView.loadUrl directly.
             when (val uri = intent.data) {
                 null -> IntentResult()
                 else ->

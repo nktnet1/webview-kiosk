@@ -92,7 +92,7 @@ object NfcBridgeManager {
     fun releaseClient(clientId: String?) {
         if (clientId != null && clients.remove(clientId)) {
             scanningClients.remove(clientId)
-            // Do not let a write from a detached frame consume the next tag.
+            // Do not let writes from detached frames consume the next tag.
             if (pendingWrite?.clientId == clientId) {
                 pendingWrite = null
             }
