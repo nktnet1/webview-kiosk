@@ -11,6 +11,7 @@
     <string name="ui_blocking_couldn_t_be_updated" formatted="false">"Blocking couldn\'t be updated."</string>
     <string name="ui_bullet" formatted="false">"•"</string>
     <string name="ui_cannot_open_the_selected_file" formatted="false">"Cannot open the selected file"</string>
+    <string name="ui_cancelling_filter_list_download">"Cancelling…"</string>
     <string name="ui_clone" formatted="false">"Clone"</string>
     <string name="ui_content_blocking_is_disabled_the_settings_below_will_n" formatted="false">"Content blocking is disabled. The settings below will not take effect."</string>
     <string name="ui_cosmetic" formatted="false">"Cosmetic"</string>
@@ -25,6 +26,7 @@
     <string name="ui_all_preset_lists_added" formatted="false">"All preset lists have been added"</string>
     <string name="ui_filter_list_current_file_bytes">"Current file: %1$s of %2$s received"</string>
     <string name="ui_filter_list_current_file_received">"Current file: %1$s received"</string>
+    <string name="ui_filter_list_download_cancelled">"Download cancelled. Completed lists were kept."</string>
     <string name="ui_downloading_filter_list" formatted="false">"Downloading filter list…"</string>
     <string name="ui_downloading_filter_lists" formatted="false">"Downloading filter lists…"</string>
     <string name="ui_downloading_selected_filter_lists" formatted="false">"Downloading selected filter lists…"</string>

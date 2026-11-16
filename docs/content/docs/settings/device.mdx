@@ -184,7 +184,13 @@ to access Settings.
 | Option | Description |
 |--------|-------------|
 | Off | Open Settings without authentication. |
-| Require | Authenticate before opening Settings. |
+| Require | Authenticate before opening Settings when credentials are configured. |
+
+If you have **neither a custom authentication password nor a secure device
+screen lock**, selecting **Require** does not prevent Settings from opening:
+it opens **without a prompt**. This is intentional; Require does not set up
+credentials. To prompt for authentication, configure a custom password or a
+secure device screen lock.
 
 Changing from **Require** to **Off** in Settings or through a manual settings
 import requires fresh authentication. An existing authenticated session is not
@@ -196,9 +202,7 @@ method from device credentials to a custom password. Creating the first custom
 password on a device with no screen lock does not require verification.
 If the device has neither a screen lock nor a custom authentication password,
 configure one before disabling the requirement. Cancelling or failing
-verification leaves the requirement unchanged. Without either credential,
-Settings still uses the existing no-lock fallback even when **Require** is
-selected.
+verification leaves the requirement unchanged.
 
 Settings exports include this preference. MQTT and UnifiedPush can update it
 without local verification. Managed configurations use the

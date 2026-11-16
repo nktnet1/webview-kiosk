@@ -62,6 +62,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -100,6 +101,7 @@ import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -110,6 +112,7 @@ import uk.nktnet.webviewkiosk.blocking.BlockingStatus
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.FilterListBatchAction
 import uk.nktnet.webviewkiosk.blocking.FilterListBatchProgress
+import uk.nktnet.webviewkiosk.blocking.FilterListDownloadCancellation
 import uk.nktnet.webviewkiosk.blocking.FilterListDownloadProgress
 import uk.nktnet.webviewkiosk.blocking.FilterListDownloadStage
 import uk.nktnet.webviewkiosk.blocking.FilterListInfo
@@ -175,6 +178,15 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     var workingMessage by remember { mutableStateOf<String?>(null) }
     var downloadProgress by remember {
         mutableStateOf<FilterListBatchProgress?>(null)
+    }
+    var activeDownload by remember {
+        mutableStateOf<FilterListDownloadCancellation?>(null)
+    }
+    var cancellingDownload by remember { mutableStateOf(false) }
+    // rememberCoroutineScope is cancelled when this screen leaves composition,
+    // but a synchronous OkHttp call on Dispatchers.IO must also be cancelled.
+    DisposableEffect(Unit) {
+        onDispose { activeDownload?.cancel() }
     }
     val busy = working
     var bulkActionsExpanded by remember { mutableStateOf(false) }
@@ -247,7 +259,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         onStored: (() -> Unit)? = null,
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null,
-        block: () -> Unit,
+        block: (FilterListDownloadCancellation?) -> Unit,
     ) {
         if (working) {
             return
@@ -255,14 +267,28 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         working = true
         workingMessage = progressMessage
         downloadProgress = initialProgress
+        val cancellation =
+            if (initialProgress != null) {
+                FilterListDownloadCancellation()
+            } else {
+                null
+            }
+        activeDownload = cancellation
+        cancellingDownload = false
         editError = null
         scope.launch {
             try {
                 val savedLists = mutationMutex.withLock {
                     withContext(Dispatchers.IO) {
-                        block()
-                        if (affectsRules) {
-                            blocker.markRulesChanged()
+                        try {
+                            block(cancellation)
+                        } finally {
+                            // A batch may already have saved earlier entries
+                            // when disposal cancels its coroutine. Mark the
+                            // engine dirty from IO, before leaving this block.
+                            if (affectsRules) {
+                                blocker.markRulesChanged()
+                            }
                         }
                         store.list()
                     }
@@ -276,7 +302,26 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 onSuccess?.invoke()
                 successMessage?.let { notify(it) }
             } catch (e: CancellationException) {
-                throw e
+                if (cancellation?.isCancelled == true) {
+                    // The IO block already marked any partial writes as dirty.
+                    // On screen disposal there is no UI left to update, and this
+                    // coroutine is no longer active; only user cancellation
+                    // should reload lists and show a notification.
+                    if (!isActive) {
+                        return@launch
+                    }
+                    val savedLists = mutationMutex.withLock {
+                        withContext(Dispatchers.IO) { store.list() }
+                    }
+                    lists = savedLists
+                    selectedIds =
+                        selectedIds.intersect(savedLists.map { it.id }.toSet())
+                    notify(
+                        context.getString(R.string.ui_filter_list_download_cancelled)
+                    )
+                } else {
+                    throw e
+                }
             } catch (e: Exception) {
                 Log.w("ContentBlocking", "Filter list update failed", e)
                 val message = filterListFailureMessage(e)
@@ -289,7 +334,16 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 working = false
                 workingMessage = null
                 downloadProgress = null
+                activeDownload = null
+                cancellingDownload = false
             }
+        }
+    }
+
+    fun cancelDownload() {
+        activeDownload?.let { cancellation ->
+            cancellingDownload = true
+            cancellation.cancel()
         }
     }
 
@@ -372,9 +426,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     downloadDefaults(requested)
                 }
             },
-        ) {
+        ) { cancellation ->
             summary =
-                downloader.downloadDefaults(store, requested) { progress ->
+                downloader.downloadDefaults(store, requested, cancellation) {
+                    progress ->
                     downloadProgress = progress
                 }
         }
@@ -393,9 +448,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             onSuccess = {
                 reportBatch(summary, FilterListBatchAction.REFRESH) { refreshAll() }
             },
-        ) {
+        ) { cancellation ->
             summary =
-                downloader.refreshAll(store) { progress ->
+                downloader.refreshAll(store, cancellation) { progress ->
                     downloadProgress = progress
                 }
         }
@@ -420,9 +475,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     refreshSelected(ids)
                 }
             },
-        ) {
+        ) { cancellation ->
             summary =
-                downloader.refreshSelected(store, ids) { progress ->
+                downloader.refreshSelected(store, ids, cancellation) { progress ->
                     downloadProgress = progress
                 }
         }
@@ -983,10 +1038,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                                     startingProgress(
                                                         item.displayName()
                                                     ),
-                                            ) {
+                                            ) { cancellation ->
                                                 downloader.refresh(
                                                     item,
                                                     store,
+                                                    cancellation,
                                                     singleDownloadProgress(
                                                         item.displayName()
                                                     ),
@@ -1049,6 +1105,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 FilterListProgressOverlay(
                     message = workingMessage.orEmpty(),
                     progress = downloadProgress,
+                    onCancel = activeDownload?.let { { cancelDownload() } },
+                    cancelling = cancellingDownload,
                     modifier = Modifier.matchParentSize(),
                 )
             }
@@ -1213,6 +1271,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             canSave = canSave,
             progressMessage = workingMessage.orEmpty(),
             downloadProgress = downloadProgress,
+            onCancelDownload = activeDownload?.let { { cancelDownload() } },
+            cancellingDownload = cancellingDownload,
             onDismiss = {
                 if (!busy) {
                     pendingEdit = null
@@ -1254,7 +1314,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             null
                         },
                     onStored = { pendingEdit = null },
-                ) {
+                ) { cancellation ->
                     when (item.type) {
                         FilterListType.FILE -> {
                             val input =
@@ -1284,6 +1344,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                 name,
                                 url,
                                 store,
+                                cancellation,
                                 singleDownloadProgress(name),
                             )
 
@@ -1305,6 +1366,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             busy = busy,
             progressMessage = workingMessage.orEmpty(),
             downloadProgress = downloadProgress,
+            onCancelDownload = activeDownload?.let { { cancelDownload() } },
+            cancellingDownload = cancellingDownload,
             error = addError,
             onClearError = { addError = null },
             onDismiss = {
@@ -1345,11 +1408,12 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     initialProgress = startingProgress(name),
                     onStored = { showAddDialog = false },
                     onFailure = { addError = it },
-                ) {
+                ) { cancellation ->
                     downloader.downloadUrl(
                         url,
                         name,
                         store,
+                        cancellation,
                         singleDownloadProgress(name),
                     )
                 }
@@ -1362,10 +1426,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     initialProgress = startingProgress(suggestion.name),
                     onStored = { showAddDialog = false },
                     onFailure = { addError = it },
-                ) {
+                ) { cancellation ->
                     downloader.download(
                         suggestion,
                         store,
+                        cancellation,
                         singleDownloadProgress(suggestion.name),
                     )
                 }
@@ -1381,6 +1446,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
 private fun FilterListProgressOverlay(
     message: String,
     progress: FilterListBatchProgress?,
+    onCancel: (() -> Unit)?,
+    cancelling: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -1399,6 +1466,8 @@ private fun FilterListProgressOverlay(
         FilterListDownloadStatus(
             message = message,
             progress = progress,
+            onCancel = onCancel,
+            cancelling = cancelling,
             modifier = Modifier.padding(12.dp).widthIn(max = 400.dp),
         )
     }
@@ -1413,6 +1482,8 @@ internal fun FilterListDownloadStatus(
     message: String,
     progress: FilterListBatchProgress?,
     modifier: Modifier = Modifier,
+    onCancel: (() -> Unit)? = null,
+    cancelling: Boolean = false,
 ) {
     val context = LocalContext.current
     val transfer = progress?.download
@@ -1571,6 +1642,23 @@ internal fun FilterListDownloadStatus(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (onCancel != null) {
+                TextButton(
+                    onClick = onCancel,
+                    enabled = !cancelling,
+                    modifier = Modifier.align(Alignment.End),
+                ) {
+                    Text(
+                        stringResource(
+                            if (cancelling) {
+                                R.string.ui_cancelling_filter_list_download
+                            } else {
+                                R.string.ui_cancel
+                            }
+                        )
+                    )
+                }
+            }
         }
     }
 }
@@ -2238,6 +2326,8 @@ private fun AddFilterListDialog(
     busy: Boolean,
     progressMessage: String,
     downloadProgress: FilterListBatchProgress?,
+    onCancelDownload: (() -> Unit)?,
+    cancellingDownload: Boolean,
     error: String?,
     onClearError: () -> Unit,
     onDismiss: () -> Unit,
@@ -2647,6 +2737,8 @@ private fun AddFilterListDialog(
                     FilterListProgressOverlay(
                         message = progressMessage,
                         progress = downloadProgress,
+                        onCancel = onCancelDownload,
+                        cancelling = cancellingDownload,
                         modifier = Modifier.matchParentSize(),
                     )
                 }
@@ -2719,6 +2811,8 @@ private fun EditFilterListDialog(
     canSave: Boolean,
     progressMessage: String,
     downloadProgress: FilterListBatchProgress?,
+    onCancelDownload: (() -> Unit)?,
+    cancellingDownload: Boolean,
     onDismiss: () -> Unit,
     onSave: () -> Unit,
 ) {
@@ -2818,6 +2912,8 @@ private fun EditFilterListDialog(
                     FilterListProgressOverlay(
                         message = progressMessage,
                         progress = downloadProgress,
+                        onCancel = onCancelDownload,
+                        cancelling = cancellingDownload,
                         modifier = Modifier.matchParentSize(),
                     )
                 }

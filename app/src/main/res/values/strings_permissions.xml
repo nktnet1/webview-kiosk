@@ -4,7 +4,6 @@
     <string name="ui_are_you_sure_you_want_to_remove_all_permissions_for_th" formatted="false">"Are you sure you want to remove ALL permissions for this site?"</string>
     <string name="ui_deleted_value">"Deleted %1$s"</string>
     <string name="ui_location_permission_not_available">"%1$s requested access to your location.\n\nHowever, location permission is either disabled in settings or\nnot yet granted to %2$s."</string>
-    <string name="ui_manage_site_permissions" formatted="false">"Manage Site Permissions"</string>
     <string name="ui_permission_blocked" formatted="false">"Permission blocked"</string>
     <string name="ui_permission_blocked_host">"|%1$s requested access to:"</string>
     <string name="ui_permission_camera" formatted="false">"Camera"</string>
