@@ -38,37 +38,28 @@ need separate acceptance testing.
 
 ## Australian English and IDE inspections
 
-Write documentation and user-facing text in Australian English (`en-AU`), for
-example *colour*, *organise*, *normalise*, *centre*, *afterwards* and *licence*
-as a noun. Android Studio does not support an EditorConfig language-selection
-property. The IDE's English grammar suggestions can still assume American
-English, and its spellchecker cannot be forced to use an Australian locale from
-a portable EditorConfig setting.
+Use Australian English (`en-AU`) for documentation and user-facing strings.
+Android Studio does not recognise a portable EditorConfig option for selecting
+an Australian spelling dictionary. Its English proofreading rules can therefore
+produce false positives for locales and Android string escapes.
 
-The shared project inspection profile is **Webview Kiosk - Australian English**
-under `.idea/inspectionProfiles`. Select this exact **project** profile in
-**Settings > Editor > Inspections**, and, independently, in **Code > Inspect
-Code** (batch inspection offers its own profile selector). The generic IDE
-**Default** and **Project Default** profiles do not have these exclusions.
-Clear older inspection results and export a fresh run to see the change. If
-new results still contain disabled inspection names, first verify that the
-batch run selected this project profile, not the IDE-level default.
+The project inspection profile is **WebviewKiosk**. The profile filename,
+internal name and active-profile setting must all match. It disables only the
+HTML, Java-global and proofreading inspections identified as noise in the
+November 2026 Android Studio export. Proofreading and spelling are disabled in
+this profile, including for Markdown. Kotlin, Java correctness and Android Lint
+checks remain available.
 
-The shared profile disables US-English grammar and style suggestions, HTML
-attribute warnings for the GitHub README, and low-signal Java modularisation,
-unused-declaration and method-complexity recommendations. The **Spelling**
-inspection is kept only for human-written Markdown selected by the shared
-**Maintained Markdown** scope. This excludes Android resource strings, locale
-files, code, technical identifiers, vendored licences and generated content.
-Real Android resource validation, Java/Kotlin correctness checks, security
-inspections, Gradle checks, formatting and Android Lint remain enabled.
-
-When running **Inspect Code**, use **Custom scope > Project Files Excluding
-Git-Ignored** to exclude local `.env*`, crash logs, `build/` output and
-Gradle caches. To inspect only committed or staged paths, choose **Project
-Files Tracked by Git**. These scopes affect IDE analysis, not Git itself.
-Never add ignored diagnostic or secret files to patches. Third-party licence
-and notice text should be preserved verbatim.
+In **Settings > Editor > Inspections**, select the **project** profile named
+**WebviewKiosk**. When using **Code > Inspect Code**, explicitly select
+**WebviewKiosk** again, as batch inspections can use another profile. Choose
+**Project Files Excluding Git-Ignored**, or **Project Files Tracked by Git** if
+only tracked files should be inspected. This excludes local `.env*`, build
+output and crash logs from the batch analysis. Rerun inspections and export
+new results, as old XML exports are snapshots. The new `.descriptions.xml`
+should identify `profile="WebviewKiosk"` and show the disabled inspections as
+`enabled="false"`. Do not rewrite third-party licence or notice text just to
+satisfy English-language inspections.
 
 ## Script organisation
 

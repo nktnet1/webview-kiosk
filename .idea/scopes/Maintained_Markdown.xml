@@ -1,4 +1,0 @@
-<component name="DependencyValidationManager">
-  <!-- Only maintained Markdown, not SDKs, generated output, code, locales or third-party notices. -->
-  <scope name="Maintained Markdown" pattern="file:README.md||file:.github/CONTRIBUTING.md||file:.github/ISSUE_TEMPLATE/*.md||file:docs//*.md||file:adblock/docs//*.md" />
-</component>

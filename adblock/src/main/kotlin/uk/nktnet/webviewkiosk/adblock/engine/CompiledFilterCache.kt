@@ -435,7 +435,7 @@ internal class CompiledFilterCache(
             storage.write(MAX_BYTES) { fileOutput ->
                 val checksum = CRC32()
                 // Buffer the writes before checksumming, just like the reader.
-                // Otherwise, writeInt()/writeUTF() update CRC32 a byte at a time.
+                // Otherwise writeInt()/writeUTF() update CRC32 a byte at a time.
                 val output =
                     DataOutputStream(
                         CheckedOutputStream(fileOutput, checksum)

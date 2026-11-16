@@ -434,7 +434,7 @@ fun createCustomWebview(
         }
 
         fun beginLoad(url: String) {
-            // JavaScript URLs execute in the current document without navigating.
+            // javascript: executes in the current document without navigating.
             // It must not leave a loading spinner waiting for a page callback.
             if (url.startsWith("javascript:", ignoreCase = true)) {
                 return

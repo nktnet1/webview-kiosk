@@ -780,7 +780,7 @@ class MqttServiceConnectionTest {
         assertEquals(2, systemSettings.historyStack.size)
 
         // Await the command completion event as well as its native side effect.
-        // Otherwise, an unfinished main-thread handoff can hold the shared command
+        // Otherwise an unfinished main-thread handoff can hold the shared command
         // mutex after Robolectric tears down this test's looper.
         publishCommandAndAwait(connection, "ha-command", ha.commandTopic)
         assertEquals(1, systemSettings.historyStack.size)

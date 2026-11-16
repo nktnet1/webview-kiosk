@@ -6,7 +6,7 @@ import java.text.Normalizer
 import java.util.Locale
 import uk.nktnet.webviewkiosk.config.Screen
 
-/** Break text-relevance ties in favour of editable settings. */
+/** Break ties in text relevance, preferring editable settings over other results. */
 internal enum class SettingsSearchResultKind(val searchPriority: Int) {
     SETTING(4),
     INFORMATION(1),

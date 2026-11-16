@@ -177,8 +177,8 @@ class BlobInterface(private val context: Context) {
                     return false
                 }
                 download.output.write(bytes)
-                // A provider may invoke a callback during output. Never acknowledge
-                // bytes for a transfer replaced while data was being written.
+                // A provider may invoke a callback while writing; never acknowledge
+                // bytes sent to a transfer that was replaced during the write.
                 isActive && activeDownloads[transferId] === download
             }
         } catch (e: Exception) {

@@ -88,7 +88,7 @@ internal class ClientCertificateInstaller(
                         installerLauncher.launch(intent)
                     } catch (e: CancellationException) {
                         // Activity destruction may cancel the handoff. That is not
-                        // an installation error.
+                        // an install error.
                         phase = Phase.IDLE
                         throw e
                     } catch (e: Exception) {
