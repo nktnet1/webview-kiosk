@@ -38,37 +38,37 @@ need separate acceptance testing.
 
 ## Australian English and IDE inspections
 
-Use Australian English (`en-AU`) in documentation and user-facing strings
-(e.g. *colour*, *organise*, *normalise*, *licence* as a noun). Android Studio does
-not support a `spelling_language` EditorConfig property, so the project standard
-is documented here instead. Add project-specific technical terms to
-`.idea/dictionaries/project.xml`. If the Natural Languages plugin offers a
-regional English variant, use British English as the closest available match.
-Do not change correct Australian spelling merely to satisfy an American-English
-suggestion.
+Write documentation and user-facing text in Australian English (`en-AU`), for
+example *colour*, *organise*, *normalise*, *centre*, *afterwards* and *licence*
+as a noun. Android Studio does not support an EditorConfig language-selection
+property. The IDE's English grammar suggestions can still assume American
+English, and its spellchecker cannot be forced to use an Australian locale from
+a portable EditorConfig setting.
 
-The shared `.idea/inspectionProfiles/Project_Default.xml` disables **Style**
-while retaining **Grammar** and **Spelling**. It also disables Java's global
-**Unused declaration**, **Unused library**, and module/class placement and size
-suggestions because they produce false positives for Android entry points,
-Kotlin-generated code, Gradle tasks, JUnit/Robolectric tests and managed
-transitive dependencies. The HTML checks for obsolete `align` attributes and
-resized images are disabled because GitHub Markdown uses `align` to centre
-README badges and screenshots, and the screenshots are thumbnails rather than
-full-size images. Leave other HTML, Kotlin, Android Lint and compiler checks
-active.
+The shared project inspection profile is **Webview Kiosk - Australian English**
+under `.idea/inspectionProfiles`. Select this exact **project** profile in
+**Settings > Editor > Inspections**, and, independently, in **Code > Inspect
+Code** (batch inspection offers its own profile selector). The generic IDE
+**Default** and **Project Default** profiles do not have these exclusions.
+Clear older inspection results and export a fresh run to see the change. If
+new results still contain disabled inspection names, first verify that the
+batch run selected this project profile, not the IDE-level default.
 
-`.idea/inspectionProfiles/profiles_settings.xml` activates the shared
-**Project Default** inspection profile. When running **Code > Inspect Code**,
-select that profile and choose **Custom scope > Project Files Excluding
-Git-Ignored**. This scope respects `.gitignore`, including `.env*`, JVM crash
-logs, `build/` output and Gradle caches. To inspect only committed or staged
-paths, instead select **Project Files Tracked by Git**. That scope excludes
-untracked files, though it still includes any already-tracked files matching
-ignore patterns. Avoid **Whole project** and ordinary **Project Files** scopes
-when exporting warnings. Inspection exports are snapshots, so rerun the
-inspection after changing the profile or scope. Preserve third-party licence
-and notice text verbatim.
+The shared profile disables US-English grammar and style suggestions, HTML
+attribute warnings for the GitHub README, and low-signal Java modularisation,
+unused-declaration and method-complexity recommendations. The **Spelling**
+inspection is kept only for human-written Markdown selected by the shared
+**Maintained Markdown** scope. This excludes Android resource strings, locale
+files, code, technical identifiers, vendored licences and generated content.
+Real Android resource validation, Java/Kotlin correctness checks, security
+inspections, Gradle checks, formatting and Android Lint remain enabled.
+
+When running **Inspect Code**, use **Custom scope > Project Files Excluding
+Git-Ignored** to exclude local `.env*`, crash logs, `build/` output and
+Gradle caches. To inspect only committed or staged paths, choose **Project
+Files Tracked by Git**. These scopes affect IDE analysis, not Git itself.
+Never add ignored diagnostic or secret files to patches. Third-party licence
+and notice text should be preserved verbatim.
 
 ## Script organisation
 
