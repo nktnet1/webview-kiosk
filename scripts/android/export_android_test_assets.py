@@ -41,7 +41,7 @@ ROBOLECTRIC_SDK_VERSIONS = {
     30: "11-robolectric-6757853-i7",
     31: "12-robolectric-7732740-i7",
     33: "13-robolectric-9030017-i7",
-    37: "17-robolectric-15733970-i7",
+    37: "17-robolectric-16653203-i7",
 }
 ROBOLECTRIC_VERSIONS = tuple(ROBOLECTRIC_SDK_VERSIONS.values())
 ROBOLECTRIC_MAVEN_URL = (

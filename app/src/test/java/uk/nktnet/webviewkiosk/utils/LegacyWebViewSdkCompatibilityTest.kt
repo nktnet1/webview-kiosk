@@ -1,7 +1,10 @@
 package uk.nktnet.webviewkiosk.utils
 
 import android.os.Build
+import java.security.KeyPairGenerator
+import java.security.spec.NamedParameterSpec
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -10,6 +13,16 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [21, 22, 23])
 class LegacyWebViewSdkCompatibilityTest {
+    @Test
+    fun hostTlsKeyGenerationWorksAfterLegacySandboxStarts() {
+        // SDK downloads use the host TLS provider after earlier sandboxes run.
+        val generator = KeyPairGenerator.getInstance("XDH")
+        generator.initialize(NamedParameterSpec.X25519)
+        val keyPair = generator.generateKeyPair()
+        assertNotNull(keyPair.public)
+        assertNotNull(keyPair.private)
+    }
+
     @Test
     fun lollipopAndMarshmallowKeepCompatNavigation() {
         val sdk = Build.VERSION.SDK_INT
