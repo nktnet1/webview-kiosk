@@ -57,6 +57,8 @@ gradle.beforeProject { project ->
                     'debugRuntimeClasspath',
                     'debugUnitTestCompileClasspath',
                     'debugUnitTestRuntimeClasspath',
+                    // The API 21-23 suite has its own Robolectric 4.15.1 classpath.
+                    'legacyRobolectricRuntimeClasspath',
                     // AGP supplies lint through this separate configuration.
                     // It is not downloaded by the test classpaths above.
                     'androidLintTool',

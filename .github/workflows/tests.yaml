@@ -71,7 +71,7 @@ jobs:
         run: sh gradlew checkFormatting --build-cache --stacktrace
 
       - name: Run unit tests
-        run: sh gradlew :adblock:test :app:testDebugUnitTest --build-cache --profile --stacktrace
+        run: sh gradlew :adblock:test :app:testDebugUnitTest :app:testLegacyUnitTest --build-cache --profile --stacktrace
 
       # smokeRelease has release R8/shrinking but uses Android's test-only debug
       # signing key. No production keystore or emulator is needed. On release
@@ -89,7 +89,9 @@ jobs:
             adblock/build/test-results/test/
             adblock/build/reports/tests/test/
             app/build/test-results/testDebugUnitTest/
+            app/build/test-results/testLegacyUnitTest/
             app/build/reports/tests/testDebugUnitTest/
+            app/build/reports/tests/testLegacyUnitTest/
             build/reports/profile/
             build/reports/r8/smokeRelease.json
           if-no-files-found: ignore

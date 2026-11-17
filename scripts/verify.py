@@ -468,7 +468,8 @@ def verify(args, report):
     execute("Script tests (Python + Node)", [python, "scripts/ci/test_local.py", "checks"], report,
             capture_output=True)
     execute("Android format, lint, JVM and minified APK", ["sh", "gradlew", "checkFormatting", "lint",
-            ":adblock:test", ":app:testDebugUnitTest", ":app:assembleSmokeRelease",
+            ":adblock:test", ":app:testDebugUnitTest", ":app:testLegacyUnitTest",
+            ":app:assembleSmokeRelease",
             "--warning-mode=all", "--build-cache", "--stacktrace"], report)
     execute("R8 static audit", [python, "scripts/r8/r8_audit.py", SMOKE_APK,
             "--require-mapping", "--fail-on-warnings", "--json", R8_REPORTS / "smokeRelease.json"], report)

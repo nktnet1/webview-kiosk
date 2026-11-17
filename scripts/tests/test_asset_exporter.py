@@ -1,5 +1,6 @@
 """Exercise Python asset exports without downloading tools or dependencies."""
 
+import argparse
 import contextlib
 import hashlib
 import importlib.util
@@ -35,6 +36,18 @@ def write(path, value, *, executable=False):
 
 
 class ArchiveTest(unittest.TestCase):
+    def test_robolectric_sdk_selection_defaults_to_full_coverage(self):
+        full = tuple(ASSETS.ROBOLECTRIC_SDK_VERSIONS)
+        self.assertEqual(full, ASSETS.parse_args([]).robolectric_sdks)
+        self.assertEqual(full, ASSETS.select_robolectric_sdks("all"))
+        self.assertEqual((21, 22, 23), ASSETS.select_robolectric_sdks("legacy"))
+        self.assertEqual(tuple(sdk for sdk in full if sdk >= 24),
+                         ASSETS.select_robolectric_sdks("modern"))
+        self.assertEqual((21, 28), ASSETS.select_robolectric_sdks("28,21,28"))
+        for invalid in ("", "21,", "all,legacy", "22 23", "25", "999", "0"):
+            with self.subTest(invalid=invalid), self.assertRaises(argparse.ArgumentTypeError):
+                ASSETS.select_robolectric_sdks(invalid)
+
     def test_robolectric_export_covers_every_configured_test_sdk(self):
         default = (ROOT / "app/src/test/resources/robolectric.properties").read_text()
         required = {int(re.search(r"(?m)^sdk=(\d+)$", default).group(1))}
@@ -295,7 +308,30 @@ else:
         self.assertIn(":app:resolveAndroidTestAssets", call["args"])
         self.assertIn("--init-script", call["args"])
         self.assertNotIn(":app:testDebugUnitTest", call["args"])
+        self.assertIn("Full test SDK coverage", (self.output / "CONTENTS.txt").read_text())
         self.assertFalse(list((self.project / "build").iterdir()))
+
+    def test_selective_robolectric_export_keeps_only_requested_runtime_jars(self):
+        self.assertEqual(0, self.export("gradle", "--robolectric-sdks", "legacy"), self.error)
+        self.assertEqual(4 * 3, len(self.downloads))
+        with self.archive("robolectric-maven") as archive:
+            jars = [name for name in archive.getnames() if name.endswith(".jar")]
+            self.assertEqual(3, len(jars))
+            self.assertTrue(any("5.0.2_r3-robolectric-r0-i7" in name for name in jars))
+            self.assertTrue(any("5.1.1_r9-robolectric-r2-i7" in name for name in jars))
+            self.assertTrue(any("6.0.1_r3-robolectric-r1-i7" in name for name in jars))
+            self.assertFalse(any("11-robolectric-6757853-i7" in name for name in jars))
+        contents = (self.output / "CONTENTS.txt").read_text()
+        self.assertIn("Robolectric: API 21/22/23", contents)
+        self.assertIn("Partial SDK coverage", contents)
+        self.assertIn("Robolectric runtime JAR bytes (before archive compression): 36", contents)
+        self.assertIn("API 21: 12 B", contents)
+        self.assertEqual(0, self.export("gradle", "--robolectric-sdks", "modern"), self.error)
+        with self.archive("robolectric-maven") as archive:
+            jars = [name for name in archive.getnames() if name.endswith(".jar")]
+            self.assertEqual(len(ASSETS.ROBOLECTRIC_SDK_VERSIONS) - 3, len(jars))
+            self.assertFalse(any("5.0.2_r3-robolectric-r0-i7" in name for name in jars))
+        self.verify_checksums()
 
     def test_reuses_gradle_and_robolectric_cache_and_repairs_corruption(self):
         home = self.root / "existing gradle home"
@@ -618,9 +654,21 @@ class DispatchTest(unittest.TestCase):
                              build[build.index("--file") + 1])
             self.assertEqual(ROOT / "scripts/android", build[-1])
 
+    def test_docker_forwards_selected_robolectric_sdks(self):
+        with tempfile.TemporaryDirectory() as directory, \
+             mock.patch.object(ASSETS.platform, "system", return_value="Darwin"), \
+             mock.patch.object(ASSETS.shutil, "which", return_value="/usr/bin/docker"), \
+             mock.patch.object(ASSETS, "run", return_value="linux") as run, \
+             contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(0, ASSETS.main(["--output", directory,
+                                             "--robolectric-sdks", "21,22"]))
+            command = run.call_args_list[-1].args[0]
+            self.assertEqual(["--robolectric-sdks", "21,22"], command[-2:])
+
     def test_init_script_prefetches_lint_gradle_and_current_build_assets(self):
         script = (ROOT / "scripts/android/resolve-android-test-assets.init.gradle").read_text()
         self.assertIn("'androidLintTool'", script)
+        self.assertIn("'legacyRobolectricRuntimeClasspath'", script)
         self.assertIn("'lintChecks'", script)
         self.assertIn("'debugLintChecksClasspath'", script)
         self.assertIn("'releaseLintChecksClasspath'", script)

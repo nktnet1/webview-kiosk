@@ -23,7 +23,7 @@ For focused checks:
 ./gradlew spotlessApply
 ./gradlew checkFormatting
 ./gradlew lint --warning-mode=all
-./gradlew :adblock:test :app:testDebugUnitTest
+./gradlew :adblock:test :app:testDebugUnitTest :app:testLegacyUnitTest
 python3 scripts/ci/test_local.py checks
 ```
 

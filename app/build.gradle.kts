@@ -1,4 +1,8 @@
 import com.android.build.api.variant.HostTestBuilder
+import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.tasks.testing.Test
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -205,4 +209,85 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
+}
+
+// Use separate classpaths for Android 5.0-6.0 and modern Robolectric tests.
+afterEvaluate {
+    val modernRuntime = configurations.getByName("debugUnitTestRuntimeClasspath")
+    val legacyRobolectricVersion = libs.versions.robolectricLegacy.get()
+    val legacyRobolectricRuntime =
+        configurations.create("legacyRobolectricRuntimeClasspath") {
+            isCanBeConsumed = false
+            isCanBeResolved = true
+            // Include app dependencies directly instead of AGP's self-project
+            // dependency, which has no unambiguous standalone runtime artifact.
+            extendsFrom(configurations.getByName("debugRuntimeClasspath"))
+            dependencies.addAll(
+                modernRuntime.allDependencies
+                    .filterNot { it is ProjectDependency && it.path == project.path }
+                    .map { it.copy() }
+            )
+            attributes {
+                fun <T : Any> copyAttribute(key: Attribute<T>) {
+                    modernRuntime.attributes.getAttribute(key)?.let {
+                        attribute(key, it)
+                    }
+                }
+                modernRuntime.attributes.keySet().forEach { copyAttribute(it) }
+            }
+            // Resolve one consistent graph, including Conscrypt, native runtime
+            // and AndroidX Test dependencies, using the legacy runner's versions.
+            resolutionStrategy.dependencySubstitution {
+                substitute(module("org.robolectric:robolectric"))
+                    .using(
+                        module(
+                            "org.robolectric:robolectric:$legacyRobolectricVersion"
+                        )
+                    )
+            }
+        }
+
+    // Robolectric selects SDK variants before executing each test method.
+    // Apply the split to every AGP variant, including release and smokeRelease.
+    tasks.withType<Test>().configureEach {
+        if (name != "testLegacyUnitTest") {
+            systemProperty("robolectric.enabledSdks", (24..37).joinToString(","))
+        }
+    }
+
+    val legacyTest =
+        tasks.register<Test>("testLegacyUnitTest") {
+            group = "verification"
+            description =
+                "Run Android 5.0-6.0 tests using Robolectric $legacyRobolectricVersion."
+
+            val modernTest = tasks.named<Test>("testDebugUnitTest").get()
+            testClassesDirs = modernTest.testClassesDirs
+            // AGP puts both classes and Java resources on the test classpath.
+            // Replace their external artifacts by component identity so transformed
+            // JARs and transitive dependencies cannot retain modern runner classes.
+            val artifactType = Attribute.of("artifactType", String::class.java)
+            fun externalArtifacts(configuration: Configuration) =
+                listOf("android-classes-jar", "android-java-res").map { type ->
+                    configuration.incoming
+                        .artifactView {
+                            attributes.attribute(artifactType, type)
+                            componentFilter { it is ModuleComponentIdentifier }
+                        }
+                        .files
+                }
+            classpath =
+                modernTest.classpath - files(externalArtifacts(modernRuntime)) +
+                    files(externalArtifacts(legacyRobolectricRuntime))
+            maxHeapSize = modernTest.maxHeapSize
+            maxParallelForks = modernTest.maxParallelForks
+            forkEvery = modernTest.forkEvery
+            jvmArgs(modernTest.jvmArgs.orEmpty())
+            systemProperties(modernTest.systemProperties)
+            systemProperty("robolectric.enabledSdks", "21,22,23")
+            // Discover tests normally so newly added legacy SDK cases are included.
+        }
+
+    tasks.named("test") { dependsOn(legacyTest) }
+    tasks.named("check") { dependsOn(legacyTest) }
 }

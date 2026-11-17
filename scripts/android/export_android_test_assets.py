@@ -30,6 +30,8 @@ SDK_BUILD_TOOLS = "36.0.0"
 # Match every SDK selected by app/src/test's @Config annotations. These Maven
 # runtimes are resolved by Robolectric itself, outside Gradle's dependency cache.
 ROBOLECTRIC_SDK_VERSIONS = {
+    21: "5.0.2_r3-robolectric-r0-i7",
+    22: "5.1.1_r9-robolectric-r2-i7",
     23: "6.0.1_r3-robolectric-r1-i7",
     24: "7.0.0_r1-robolectric-r1-i7",
     26: "8.0.0_r4-robolectric-r1-i7",
@@ -39,12 +41,34 @@ ROBOLECTRIC_SDK_VERSIONS = {
     30: "11-robolectric-6757853-i7",
     31: "12-robolectric-7732740-i7",
     33: "13-robolectric-9030017-i7",
-    37: "17-robolectric-15733970-i7",
+    37: "17-robolectric-16653203-i7",
 }
 ROBOLECTRIC_VERSIONS = tuple(ROBOLECTRIC_SDK_VERSIONS.values())
 ROBOLECTRIC_MAVEN_URL = (
     "https://repo.maven.apache.org/maven2/org/robolectric/android-all-instrumented"
 )
+
+
+def select_robolectric_sdks(value):
+    """Select SDKs without silently discarding coverage in the default export."""
+    versions = tuple(ROBOLECTRIC_SDK_VERSIONS)
+    if value == "all":
+        return versions
+    if value == "modern":
+        return tuple(sdk for sdk in versions if sdk >= 24)
+    if value == "legacy":
+        return tuple(sdk for sdk in versions if sdk <= 23)
+    if not re.fullmatch(r"[0-9]+(?:,[0-9]+)*", value):
+        raise argparse.ArgumentTypeError(
+            "Use all, modern, legacy, or a comma-separated list of supported API levels"
+        )
+    selected = {int(sdk) for sdk in value.split(",")}
+    unknown = selected - ROBOLECTRIC_SDK_VERSIONS.keys()
+    if unknown:
+        raise argparse.ArgumentTypeError(f"Unsupported Robolectric API levels: {sorted(unknown)}")
+    return tuple(sdk for sdk in versions if sdk in selected)
+
+
 CMDLINE_TOOLS_ZIP = "commandlinetools-linux-15859902_latest.zip"
 CMDLINE_TOOLS_SHA256 = "4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583"
 JBR_ARCHIVE = "jbrsdk-21.0.11-linux-x64-b1163.116.tar.gz"
@@ -566,9 +590,10 @@ def export_gradle(args, output, *, env=None):
             if not any(path.is_dir() for path in modules.glob("metadata-2.*")):
                 raise ExportError("Gradle dependency resolution metadata was not populated")
             maven = (home if args.gradle_user_home else work) / "robolectric-maven"
-            runtime_sdks = "/".join(map(str, ROBOLECTRIC_SDK_VERSIONS))
+            selected_versions = [ROBOLECTRIC_SDK_VERSIONS[sdk] for sdk in args.robolectric_sdks]
+            runtime_sdks = "/".join(map(str, args.robolectric_sdks))
             say(f"Checking/downloading Robolectric API {runtime_sdks} Maven runtimes")
-            for version in ROBOLECTRIC_VERSIONS:
+            for version in selected_versions:
                 for extension in ("pom", "jar"):
                     robolectric_artifact(maven, version, extension)
             say("Exporting Android SDK, Gradle dependencies, and Robolectric runtimes")
@@ -585,8 +610,22 @@ def export_gradle(args, output, *, env=None):
                 return None if name.endswith(".lock") or name == "gc.properties" else member
 
             export_archive(staging / "gradle-deps.tar.gz", [(modules, "caches/modules-2")], exclude=exclude_locks)
-            maven_paths = [f"org/robolectric/android-all-instrumented/{version}" for version in ROBOLECTRIC_VERSIONS]
+            maven_paths = [
+                f"org/robolectric/android-all-instrumented/{version}"
+                for version in selected_versions
+            ]
             export_archive(staging / "robolectric-maven.tar.gz", [(maven / name, name) for name in maven_paths])
+            runtime_sizes = [
+                (sdk, (maven / "org/robolectric/android-all-instrumented" / version /
+                       f"android-all-instrumented-{version}.jar").stat().st_size)
+                for sdk, version in zip(args.robolectric_sdks, selected_versions)
+            ]
+            runtime_bytes = sum(size for _, size in runtime_sizes)
+            runtime_breakdown = ", ".join(f"API {sdk}: {size:,} B" for sdk, size in runtime_sizes)
+            export_scope = (
+                "Full test SDK coverage" if len(args.robolectric_sdks) == len(ROBOLECTRIC_SDK_VERSIONS)
+                else "Partial SDK coverage, insufficient for the complete offline JVM test suite"
+            )
             contents = f"""Project task: :app:resolveAndroidTestAssets (resolves dependencies only)
 Platform: Linux x86_64
 Gradle/JBR distributions: exported in tools/ when requested with --download-gradle/--download-jbr
@@ -594,6 +633,9 @@ Android SDK: platforms/{SDK_PLATFORM}, build-tools/{SDK_BUILD_TOOLS}, platform-t
 Android SDK licences: exported when available
 Gradle dependencies: caches/modules-2 (artifacts and resolution metadata; excludes *.lock and gc.properties)
 Robolectric: API {runtime_sdks} Maven runtime artifacts
+Robolectric export: {export_scope}
+Robolectric runtime JAR bytes (before archive compression): {runtime_bytes:,}
+Robolectric per-SDK JAR sizes: {runtime_breakdown}
 Gradle tests and lint: dependencies resolved only (no tasks executed)
 Gradle deps destination: $GRADLE_USER_HOME/caches/modules-2/ (extract into $GRADLE_USER_HOME/)
 Android SDK destination: $ANDROID_SDK_ROOT/
@@ -653,6 +695,8 @@ def export_docker(args):
     for name in ("gradle", "jbr", "android-tools"):
         if getattr(args, f"download_{name.replace('-', '_')}"):
             command.append(f"--download-{name}")
+    if args.robolectric_sdks != tuple(ROBOLECTRIC_SDK_VERSIONS):
+        command.extend(["--robolectric-sdks", ",".join(map(str, args.robolectric_sdks))])
     if args.accept_sdk_licenses:
         command.append("--accept-sdk-licenses")
     run(command)
@@ -680,6 +724,12 @@ use --download-only to fetch these packages without an SDK, Java, or Docker.
     parser.add_argument("--sdk-root", type=path_argument, help="native Linux Android SDK directory")
     parser.add_argument("--gradle-user-home", type=path_argument, help="reuse an existing native Gradle cache")
     parser.add_argument("--gradle-bin", type=path_argument, help="preinstalled native Gradle executable matching the wrapper")
+    parser.add_argument(
+        "--robolectric-sdks", type=select_robolectric_sdks,
+        default=tuple(ROBOLECTRIC_SDK_VERSIONS), metavar="all|modern|legacy|API,API",
+        help=("Robolectric Maven images to export (default: all SDKs used by tests). "
+              "Use modern, legacy, or explicit API levels for a smaller, incomplete offline bundle"),
+    )
     downloads = parser.add_argument_group("Optional tool downloads (Linux x86_64 packages)")
     downloads.add_argument(
         "--download-tools", action="store_true",

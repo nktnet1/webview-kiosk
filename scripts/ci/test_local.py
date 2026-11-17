@@ -68,6 +68,7 @@ def jvm() -> int:
     require_tool("java")
     print("Local tests: running adblock JVM and Android JVM/Robolectric tests", flush=True)
     return run("sh", "gradlew", ":adblock:test", ":app:testDebugUnitTest",
+               ":app:testLegacyUnitTest",
                "--build-cache", "--profile", "--stacktrace")
 
 

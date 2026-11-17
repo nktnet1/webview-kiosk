@@ -37,7 +37,7 @@ class CiWorkflowTest(unittest.TestCase):
             "run: python3 scripts/ci/test_local.py checks",
             "uses: gradle/actions/setup-gradle@",
             "sh gradlew checkFormatting",
-            "sh gradlew :adblock:test :app:testDebugUnitTest",
+            "sh gradlew :adblock:test :app:testDebugUnitTest :app:testLegacyUnitTest",
             "scripts/r8/r8_audit.py",
         ):
             self.assertIn(required, android)
