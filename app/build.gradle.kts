@@ -1,8 +1,4 @@
 import com.android.build.api.variant.HostTestBuilder
-import org.gradle.api.artifacts.ProjectDependency
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import org.gradle.api.attributes.Attribute
-import org.gradle.api.tasks.testing.Test
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -282,7 +278,7 @@ afterEvaluate {
             maxHeapSize = modernTest.maxHeapSize
             maxParallelForks = modernTest.maxParallelForks
             forkEvery = modernTest.forkEvery
-            jvmArgs(modernTest.jvmArgs.orEmpty())
+            jvmArgs(modernTest.jvmArgs)
             systemProperties(modernTest.systemProperties)
             systemProperty("robolectric.enabledSdks", "21,22,23")
             // Discover tests normally so newly added legacy SDK cases are included.
