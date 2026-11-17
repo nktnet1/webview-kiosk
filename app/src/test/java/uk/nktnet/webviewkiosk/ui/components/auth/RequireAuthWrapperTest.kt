@@ -422,6 +422,40 @@ class RequireAuthWrapperTest {
     }
 
     @Test
+    @Config(sdk = [23, 28, 30])
+    fun settingsVerificationSurvivesTheSystemCredentialActivityRoundTrip() {
+        authenticate()
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        view.setContent {
+            CompositionLocalProvider(LocalLifecycleOwner provides owner) {
+                RequireAuthWrapper(navController) {
+                    SettingsAuthRequirementSetting()
+                }
+            }
+        }
+        pumpFrames()
+        click(message(R.string.device_settings_auth_requirement_title))
+        expandSettingsAuthDropdown()
+        click(message(SettingsAuthRequirementOption.OFF.displayLabelRes))
+        click(message(R.string.ui_save))
+        val prompt = prompts.last()
+
+        owner.registry.currentState = Lifecycle.State.CREATED
+        manager.resetAuthentication(preserveExternalActivitySession = true)
+        pumpFrames()
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        pumpFrames()
+
+        assertEquals(0, prompt.cancelCalls)
+        prompt.succeed()
+        pumpFrames()
+        assertEquals(
+            SettingsAuthRequirementOption.OFF,
+            UserSettings(activity).settingsAuthRequirement,
+        )
+    }
+
+    @Test
     fun manualJsonImportNeedsVerificationOnlyWhenDisablingSettingsAuth() {
         owner.registry.currentState = Lifecycle.State.RESUMED
         composeImportDialog()

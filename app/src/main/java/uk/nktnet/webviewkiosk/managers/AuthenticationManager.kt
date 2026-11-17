@@ -139,6 +139,18 @@ object AuthenticationManager {
     }
 
     fun resetAuthentication(preserveExternalActivitySession: Boolean = false) {
+        // Device-credential verification can stop the settings activity. Keep its
+        // existing session until that challenge returns, without extending its
+        // timeout. Otherwise the gate disposes the caller and cancels the change.
+        if (
+            preserveExternalActivitySession &&
+                hasValidSession() &&
+                pendingAuthentication?.let {
+                    it.onReauthenticated != null && it.kind != PromptKind.CUSTOM
+                } == true
+        ) {
+            return
+        }
         session.reset(preserveExternalActivitySession && hasValidSession())
         if (!preserveExternalActivitySession) {
             val pending = pendingAuthentication

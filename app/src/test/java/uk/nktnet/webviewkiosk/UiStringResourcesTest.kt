@@ -26,7 +26,7 @@ class UiStringResourcesTest {
                 "capture, Lock Task Mode may block it unless that app is " +
                 "allowlisted. This is not required for camera access directly " +
                 "inside WebView. If device policy controls are available, manage " +
-                "the allowlist under Settings → Device → Manage Device Policies " +
+                "the allowlist under Settings → Device → Device Policies " +
                 "→ Manage Lock Task Packages.",
             context.getString(R.string.setting_info_allow_camera),
         )
