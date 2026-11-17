@@ -26,6 +26,7 @@ object LockStateSingleton {
     private var monitoringJob: Job? = null
     private var isStarted = false
     private lateinit var activityManager: ActivityManager
+    private var callbackGeneration = 0L
 
     // Dhizuku requires API 23+. Do not load its listener on Android 5.x.
     private val dhizukuMonitor by lazy {
@@ -33,7 +34,9 @@ object LockStateSingleton {
     }
 
     /** Called by the native DPC receiver or Dhizuku's forwarded DPC callback. */
+    @Synchronized
     fun onLockTaskModeChanged(entering: Boolean) {
+        callbackGeneration++
         setLockState(
             entering,
             if (entering) {
@@ -60,10 +63,21 @@ object LockStateSingleton {
     }
 
     internal fun refreshFromActivityManager(manager: ActivityManager) {
-        setLockState(
-            getIsLocked(manager),
-            LockStateType.fromActivityManager(manager),
-        )
+        val generation = synchronized(this) { callbackGeneration }
+        val type = LockStateType.fromActivityManager(manager)
+        val locked =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                type != LockStateType.NONE
+            } else {
+                getIsLocked(manager)
+            }
+        synchronized(this) {
+            // A Binder query can return a snapshot taken before a newer callback.
+            // Discard it without holding the state lock during the system call.
+            if (callbackGeneration == generation) {
+                setLockState(locked, type)
+            }
+        }
     }
 
     fun startMonitoring(application: Application) {

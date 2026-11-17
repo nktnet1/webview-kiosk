@@ -352,6 +352,49 @@ class AuthenticationManagerTest {
     }
 
     @Test
+    @Config(sdk = [21, 22, 23, 28, 29, 30])
+    fun credentialRoundTripKeepsTheSettingsSessionDuringReauthentication() {
+        showPrompt()
+        fun succeed() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                prompts.last().succeed()
+            } else {
+                manager.handleLollipopDeviceCredentialResult(
+                    activity.credentialRequests.last(),
+                    AppCompatActivity.RESULT_OK,
+                )
+            }
+        }
+        succeed()
+        var changes = 0
+        manager.requestReauthentication("Confirm", "Confirm") { changes++ }
+
+        manager.resetAuthentication(preserveExternalActivitySession = true)
+
+        assertTrue(manager.hasValidSession())
+        assertEquals(
+            AuthenticationResult.AuthenticationSuccess,
+            manager.promptResults.value,
+        )
+        assertTrue(prompts.all { it.cancelCalls == 0 })
+        succeed()
+        assertEquals(1, changes)
+    }
+
+    @Test
+    fun reauthenticationRoundTripDoesNotExtendAnExpiredSettingsSession() {
+        showPrompt()
+        prompts.single().succeed()
+        manager.requestReauthentication("Confirm", "Confirm") {}
+        time += 300_000
+
+        manager.resetAuthentication(preserveExternalActivitySession = true)
+
+        assertFalse(manager.hasValidSession())
+        assertEquals(AuthenticationResult.Loading, manager.promptResults.value)
+    }
+
+    @Test
     fun reauthenticationReportsFailedAttemptsAndTerminalErrorsButNotExplicitCancellation() {
         val failures = mutableListOf<AuthenticationManager.ReauthenticationFailure>()
         var changes = 0
