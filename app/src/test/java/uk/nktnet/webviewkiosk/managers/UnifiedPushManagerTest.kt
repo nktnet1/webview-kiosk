@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.managers
 
 import android.content.Context
+import android.os.Build
 import android.os.Looper
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
@@ -53,7 +54,7 @@ import uk.nktnet.webviewkiosk.managers.RemoteMessageManager.RemoteMessage
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager.RemoteMessage.Source
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class UnifiedPushManagerTest {
     private lateinit var context: Context

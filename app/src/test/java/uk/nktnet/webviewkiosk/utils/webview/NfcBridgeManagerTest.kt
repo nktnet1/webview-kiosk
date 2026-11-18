@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
 import android.app.Activity
+import android.os.Build
 import android.os.Looper
 import android.webkit.WebView
 import org.junit.After
@@ -19,7 +20,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class NfcBridgeManagerTest {
     private lateinit var controller: ActivityController<Activity>

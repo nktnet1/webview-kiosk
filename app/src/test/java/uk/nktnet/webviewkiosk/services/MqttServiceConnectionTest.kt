@@ -5,6 +5,7 @@ import android.app.Service
 import android.content.Context
 import android.content.RestrictionsManager
 import android.os.BatteryManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import com.hivemq.client.mqtt.MqttClientState
@@ -60,7 +61,7 @@ import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class MqttServiceConnectionTest {
     private lateinit var context: Context
@@ -184,7 +185,7 @@ class MqttServiceConnectionTest {
     }
 
     @Test
-    @Config(sdk = [28, 29])
+    @Config(sdk = [Build.VERSION_CODES.P, Build.VERSION_CODES.Q])
     fun stickyRestartBuildsARealClientAndSubscribesWithoutAnActivity() {
         assertFalse(MqttManager.isInitialized())
 

@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.config
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -12,7 +13,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class SystemSettingsHistoryTest {
     private lateinit var context: Context
     private lateinit var prefs: SharedPreferences

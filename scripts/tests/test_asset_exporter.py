@@ -51,18 +51,45 @@ class ArchiveTest(unittest.TestCase):
     def test_robolectric_export_covers_every_configured_test_sdk(self):
         default = (ROOT / "app/src/test/resources/robolectric.properties").read_text()
         required = {int(re.search(r"(?m)^sdk=(\d+)$", default).group(1))}
-        aliases = {"P": 28, "Q": 29}
+        # The offline checks suite has no Android SDK. Resolve version names
+        # independently of the exported runtimes so missing SDKs are detected.
+        version_codes = {
+            "LOLLIPOP": 21,
+            "LOLLIPOP_MR1": 22,
+            "M": 23,
+            "N": 24,
+            "N_MR1": 25,
+            "O": 26,
+            "O_MR1": 27,
+            "P": 28,
+            "Q": 29,
+            "R": 30,
+            "S": 31,
+            "S_V2": 32,
+            "TIRAMISU": 33,
+            "UPSIDE_DOWN_CAKE": 34,
+            "VANILLA_ICE_CREAM": 35,
+            "BAKLAVA": 36,
+            "CINNAMON_BUN": 37,
+        }
         for source in (ROOT / "app/src/test").rglob("*.kt"):
             for annotation in re.findall(r"@Config\((.*?)\)", source.read_text(), re.S):
                 match = re.search(r"\bsdk\s*=\s*\[([^\]]+)\]", annotation)
                 if match:
                     for sdk in match.group(1).split(","):
                         sdk = sdk.strip()
-                        if sdk:
-                            required.add(
-                                int(sdk) if sdk.isdecimal()
-                                else aliases[sdk.removeprefix("Build.VERSION_CODES.")]
-                            )
+                        if not sdk:
+                            continue
+                        if sdk.isdecimal():
+                            required.add(int(sdk))
+                            continue
+                        self.assertTrue(
+                            sdk.startswith("Build.VERSION_CODES."),
+                            f"Unsupported Robolectric SDK expression in {source}: {sdk}",
+                        )
+                        name = sdk.removeprefix("Build.VERSION_CODES.")
+                        self.assertIn(name, version_codes, f"Unknown Android version code in {source}: {sdk}")
+                        required.add(version_codes[name])
         self.assertFalse(
             required - ASSETS.ROBOLECTRIC_SDK_VERSIONS.keys(),
             "Export Maven runtimes for every SDK used by the Android tests",

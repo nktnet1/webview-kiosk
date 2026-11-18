@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Looper
 import android.security.KeyChain
 import android.widget.FrameLayout
@@ -44,7 +45,7 @@ import org.robolectric.annotation.LooperMode
  * survives.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class ClientCertificateInstallerComposeTest {
     private lateinit var activityController: ActivityController<AppCompatActivity>

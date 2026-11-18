@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import androidx.activity.BackEventCompat
@@ -44,7 +45,7 @@ import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
  * deterministic probe.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class WebViewRootComposeRegressionTest {
     private lateinit var activityController: ActivityController<AppCompatActivity>

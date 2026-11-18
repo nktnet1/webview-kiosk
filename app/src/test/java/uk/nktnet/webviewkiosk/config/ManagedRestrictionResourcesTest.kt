@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.config
 
 import android.content.RestrictionEntry
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -18,7 +19,7 @@ import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 /** Protects the Android managed-configuration contract, not its XML formatting. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class ManagedRestrictionResourcesTest {
     private val context = RuntimeEnvironment.getApplication()
     private val androidNamespace = "http://schemas.android.com/apk/res/android"

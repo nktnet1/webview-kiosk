@@ -5,6 +5,7 @@ package uk.nktnet.webviewkiosk.config
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.RestrictionsManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Base64
 import org.json.JSONObject
@@ -21,7 +22,7 @@ import org.robolectric.annotation.Config
 import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class SettingsAccessAuthSettingsTest {
     private lateinit var context: Context
     private lateinit var settings: UserSettings

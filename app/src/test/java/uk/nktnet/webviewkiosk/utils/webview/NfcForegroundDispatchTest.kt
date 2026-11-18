@@ -5,6 +5,7 @@ package uk.nktnet.webviewkiosk.utils.webview
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.nfc.NfcAdapter
+import android.os.Build
 import android.os.Looper
 import java.time.Duration
 import org.junit.After
@@ -23,7 +24,7 @@ import org.robolectric.shadows.ShadowNfcAdapter
 import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class NfcForegroundDispatchTest {
     private lateinit var controller: ActivityController<Activity>

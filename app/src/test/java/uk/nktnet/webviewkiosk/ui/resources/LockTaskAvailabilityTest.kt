@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.resources
 
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -21,9 +22,9 @@ class LockTaskAvailabilityTest {
     fun unsupportedVersionsExplainTheMinimumVersionEvenWithoutOwnerAccess() {
         for ((minimum, message) in
             listOf(
-                26 to R.string.ui_lock_task_requires_android_8,
-                28 to R.string.ui_lock_task_requires_android_9,
-                30 to R.string.ui_lock_task_requires_android_11,
+                Build.VERSION_CODES.O to R.string.ui_lock_task_requires_android_8,
+                Build.VERSION_CODES.P to R.string.ui_lock_task_requires_android_9,
+                Build.VERSION_CODES.R to R.string.ui_lock_task_requires_android_11,
             )) {
             assertEquals(
                 message,
@@ -40,12 +41,12 @@ class LockTaskAvailabilityTest {
 
     @Test
     fun advancedFeatureIsUnavailableOnAndroid9And10EvenForADeviceOwner() {
-        for (sdk in listOf(28, 29)) {
+        for (sdk in listOf(Build.VERSION_CODES.P, Build.VERSION_CODES.Q)) {
             assertEquals(
                 R.string.ui_lock_task_requires_android_11,
                 lockTaskPolicyUnavailableReason(
                     sdk,
-                    30,
+                    Build.VERSION_CODES.R,
                     nativeOwner.copy(
                         mode = DeviceOwnerMode.DeviceOwner,
                         owner = ManagementOwner.DeviceOwner,
@@ -57,8 +58,8 @@ class LockTaskAvailabilityTest {
         }
         assertNull(
             lockTaskPolicyUnavailableReason(
-                30,
-                30,
+                Build.VERSION_CODES.R,
+                Build.VERSION_CODES.R,
                 nativeOwner,
                 hasOwnerPermission = true,
                 policyAccess = true,
@@ -71,8 +72,8 @@ class LockTaskAvailabilityTest {
         assertEquals(
             R.string.ui_lock_task_owner_access_required,
             lockTaskPolicyUnavailableReason(
-                37,
-                28,
+                Build.VERSION_CODES.CINNAMON_BUN,
+                Build.VERSION_CODES.P,
                 DeviceOwnerManager.Status(),
                 hasOwnerPermission = false,
                 policyAccess = false,
@@ -81,8 +82,8 @@ class LockTaskAvailabilityTest {
         assertEquals(
             R.string.ui_lock_task_dhizuku_permission_required,
             lockTaskPolicyUnavailableReason(
-                37,
-                28,
+                Build.VERSION_CODES.CINNAMON_BUN,
+                Build.VERSION_CODES.P,
                 nativeOwner.copy(
                     mode = DeviceOwnerMode.Dhizuku,
                     owner = ManagementOwner.Unknown,
@@ -99,8 +100,8 @@ class LockTaskAvailabilityTest {
             assertEquals(
                 R.string.ui_lock_task_work_profile_unavailable,
                 lockTaskPolicyUnavailableReason(
-                    37,
-                    28,
+                    Build.VERSION_CODES.CINNAMON_BUN,
+                    Build.VERSION_CODES.P,
                     nativeOwner.copy(
                         mode = mode,
                         userType = ManagementUserType.ManagedProfile,
@@ -117,8 +118,8 @@ class LockTaskAvailabilityTest {
         for (scope in ManagementUserType.entries) {
             assertNull(
                 lockTaskPolicyUnavailableReason(
-                    37,
-                    28,
+                    Build.VERSION_CODES.CINNAMON_BUN,
+                    Build.VERSION_CODES.P,
                     nativeOwner.copy(userType = scope),
                     hasOwnerPermission = true,
                     policyAccess = true,
@@ -132,8 +133,8 @@ class LockTaskAvailabilityTest {
         assertEquals(
             R.string.ui_lock_task_policy_access_denied,
             lockTaskPolicyUnavailableReason(
-                37,
-                28,
+                Build.VERSION_CODES.CINNAMON_BUN,
+                Build.VERSION_CODES.P,
                 nativeOwner,
                 hasOwnerPermission = true,
                 policyAccess = false,
@@ -142,8 +143,8 @@ class LockTaskAvailabilityTest {
         assertEquals(
             R.string.ui_lock_task_profile_unavailable,
             lockTaskPolicyUnavailableReason(
-                37,
-                28,
+                Build.VERSION_CODES.CINNAMON_BUN,
+                Build.VERSION_CODES.P,
                 nativeOwner.copy(userType = ManagementUserType.Profile),
                 hasOwnerPermission = true,
                 policyAccess = false,
@@ -156,8 +157,8 @@ class LockTaskAvailabilityTest {
         assertEquals(
             R.string.ui_lock_task_dhizuku_permission_required,
             lockTaskPolicyUnavailableReason(
-                37,
-                28,
+                Build.VERSION_CODES.CINNAMON_BUN,
+                Build.VERSION_CODES.P,
                 nativeOwner.copy(mode = DeviceOwnerMode.Dhizuku),
                 hasOwnerPermission = false,
                 policyAccess = true,

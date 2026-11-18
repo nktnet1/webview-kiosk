@@ -8,6 +8,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import java.util.concurrent.CountDownLatch
@@ -36,7 +37,7 @@ import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [31])
+@Config(sdk = [Build.VERSION_CODES.S])
 @LooperMode(LooperMode.Mode.PAUSED)
 class ShizukuActivationTest {
     private lateinit var app: Application
@@ -70,7 +71,7 @@ class ShizukuActivationTest {
     }
 
     @Test
-    @Config(sdk = [23, 31])
+    @Config(sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.S])
     fun anotherAppsProfileOwnerDoesNotBlockTheAttemptOrReplaceAndroidsError() {
         shadowOf(dpm)
             .setProfileOwner(ComponentName("another.owner", "another.owner.Admin"))
@@ -172,7 +173,7 @@ class ShizukuActivationTest {
     }
 
     @Test
-    @Config(sdk = [23, 30])
+    @Config(sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.R])
     fun android6And11CanStartShizukuActivation() {
         val result = complete(start())
         assertTrue(result.success)

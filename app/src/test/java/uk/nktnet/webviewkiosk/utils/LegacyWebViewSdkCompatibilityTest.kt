@@ -11,7 +11,14 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [21, 22, 23])
+@Config(
+    sdk =
+        [
+            Build.VERSION_CODES.LOLLIPOP,
+            Build.VERSION_CODES.LOLLIPOP_MR1,
+            Build.VERSION_CODES.M,
+        ]
+)
 class LegacyWebViewSdkCompatibilityTest {
     @Test
     fun hostTlsKeyGenerationWorksAfterLegacySandboxStarts() {

@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk
 
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -12,7 +13,7 @@ import org.robolectric.annotation.Config
  * resources.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class UiStringResourcesTest {
     private val context = RuntimeEnvironment.getApplication()
 
@@ -111,8 +112,8 @@ class UiStringResourcesTest {
             "Error: kiosk launch requires Android API 28+ (current: 27).",
             context.getString(
                 R.string.ui_error_kiosk_launch_requires_android_api_value_current,
-                28.toString(),
-                27.toString(),
+                Build.VERSION_CODES.P.toString(),
+                Build.VERSION_CODES.O_MR1.toString(),
             ),
         )
     }

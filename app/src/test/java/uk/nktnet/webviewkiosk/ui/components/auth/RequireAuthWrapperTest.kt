@@ -6,6 +6,7 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.content.RestrictionsManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.view.View
@@ -68,7 +69,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.SettingsAu
 import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class RequireAuthWrapperTest {
     private val manager = AuthenticationManager
@@ -422,7 +423,9 @@ class RequireAuthWrapperTest {
     }
 
     @Test
-    @Config(sdk = [23, 28, 30])
+    @Config(
+        sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.P, Build.VERSION_CODES.R]
+    )
     fun settingsVerificationSurvivesTheSystemCredentialActivityRoundTrip() {
         authenticate()
         owner.registry.currentState = Lifecycle.State.RESUMED
@@ -720,7 +723,7 @@ class RequireAuthWrapperTest {
     }
 
     @Test
-    @Config(sdk = [28, 29])
+    @Config(sdk = [Build.VERSION_CODES.P, Build.VERSION_CODES.Q])
     fun expiredSessionAfterPauseIsRemovedAndRepromptedOnResumeWithoutAStartEvent() {
         authenticate()
         owner.registry.currentState = Lifecycle.State.RESUMED

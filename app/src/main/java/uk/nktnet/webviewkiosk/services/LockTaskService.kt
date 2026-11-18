@@ -28,7 +28,7 @@ import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 
-@RequiresApi(28)
+@RequiresApi(Build.VERSION_CODES.P)
 class LockTaskService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var updateJob: Job? = null

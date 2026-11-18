@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.services
 
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -11,7 +12,7 @@ import org.xmlpull.v1.XmlPullParser
 import uk.nktnet.webviewkiosk.R
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class MediaNotificationIconTest {
     @Suppress("DEPRECATION")
     @Test

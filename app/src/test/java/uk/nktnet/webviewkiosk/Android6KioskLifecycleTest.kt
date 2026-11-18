@@ -39,13 +39,13 @@ import uk.nktnet.webviewkiosk.utils.tryLockTask
  * emulate an API 23 device.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class Android6KioskLifecycleTest {
     private lateinit var app: Application
     private lateinit var settings: UserSettings
     private val activities = mutableListOf<ActivityController<out MainActivity>>()
-    private var originalSdk = 28
+    private var originalSdk = Build.VERSION_CODES.P
     private var savedMonitoringJob: Job? = null
     private var savedMonitoringStarted = false
 

@@ -5,6 +5,7 @@ package uk.nktnet.webviewkiosk.ui.screens
 import android.app.ActivityManager
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
+import android.os.Build
 import android.os.Looper
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -47,7 +48,7 @@ import uk.nktnet.webviewkiosk.utils.BaseJson
 import uk.nktnet.webviewkiosk.utils.getSystemInfo
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [30], qualifiers = "w480dp-h1000dp")
+@Config(sdk = [Build.VERSION_CODES.R], qualifiers = "w480dp-h1000dp")
 @LooperMode(LooperMode.Mode.PAUSED)
 class SettingsAboutScreenTest {
     private lateinit var controller: ActivityController<AppCompatActivity>

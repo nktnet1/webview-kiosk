@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
 import android.app.Activity
+import android.os.Build
 import android.os.Looper
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -18,7 +19,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class MediaStateBridgeLifecycleTest {
     private lateinit var activity: ActivityController<Activity>

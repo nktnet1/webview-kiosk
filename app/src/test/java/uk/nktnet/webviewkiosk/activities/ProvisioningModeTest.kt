@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.activities
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
 import android.content.Intent
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -14,7 +15,14 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [29, 33, 37])
+@Config(
+    sdk =
+        [
+            Build.VERSION_CODES.Q,
+            Build.VERSION_CODES.TIRAMISU,
+            Build.VERSION_CODES.CINNAMON_BUN,
+        ]
+)
 class ProvisioningModeTest {
     @Test
     fun deviceOwnerProvisioningRemainsTheDefaultForOlderFlows() {
@@ -22,7 +30,7 @@ class ProvisioningModeTest {
     }
 
     @Test
-    @Config(sdk = [33, 37])
+    @Config(sdk = [Build.VERSION_CODES.TIRAMISU, Build.VERSION_CODES.CINNAMON_BUN])
     fun allowedDeviceOwnerModeIsChosenRatherThanWorkProfileMode() {
         verifyMode(
             allowedModes(
@@ -34,7 +42,7 @@ class ProvisioningModeTest {
     }
 
     @Test
-    @Config(sdk = [33, 37])
+    @Config(sdk = [Build.VERSION_CODES.TIRAMISU, Build.VERSION_CODES.CINNAMON_BUN])
     fun workProfileOnlyProvisioningIsCancelledWithoutClaimingMainUserOwnership() {
         verifyMode(
             allowedModes(DevicePolicyManager.PROVISIONING_MODE_MANAGED_PROFILE),
@@ -43,7 +51,7 @@ class ProvisioningModeTest {
     }
 
     @Test
-    @Config(sdk = [33, 37])
+    @Config(sdk = [Build.VERSION_CODES.TIRAMISU, Build.VERSION_CODES.CINNAMON_BUN])
     fun emptyAllowedModeListIsRejected() {
         verifyMode(allowedModes(), Activity.RESULT_CANCELED)
     }

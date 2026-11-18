@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
 import android.content.Context
+import android.os.Build
 import android.util.AttributeSet
 import android.view.View
 import org.junit.Assert.assertEquals
@@ -12,7 +13,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class BackgroundMediaFullscreenContainerTest {
     @Test
     fun activePlaybackKeepsFullscreenChildrenVisibleUntilStop() {

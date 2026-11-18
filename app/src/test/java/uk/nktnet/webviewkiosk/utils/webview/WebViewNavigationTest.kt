@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -14,7 +15,7 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class WebViewNavigationTest {
     private lateinit var settings: SystemSettings
     private lateinit var userSettings: UserSettings

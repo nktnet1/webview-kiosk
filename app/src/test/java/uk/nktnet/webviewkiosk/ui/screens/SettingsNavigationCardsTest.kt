@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.os.Build
 import android.os.Looper
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -43,7 +44,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogCard
 import uk.nktnet.webviewkiosk.ui.components.setting.unifiedpush.UnifiedPushDebugLogCard
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [30], qualifiers = "w480dp-h1800dp")
+@Config(sdk = [Build.VERSION_CODES.R], qualifiers = "w480dp-h1800dp")
 @LooperMode(LooperMode.Mode.PAUSED)
 class SettingsNavigationCardsTest {
     private lateinit var activityController: ActivityController<AppCompatActivity>

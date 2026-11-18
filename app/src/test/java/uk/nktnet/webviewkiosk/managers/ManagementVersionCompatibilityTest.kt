@@ -24,7 +24,16 @@ import uk.nktnet.webviewkiosk.utils.applyLockTaskFeatures
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [23, 24, 26, 27], shadows = [LockTaskAuthorityShadow::class])
+@Config(
+    sdk =
+        [
+            Build.VERSION_CODES.M,
+            Build.VERSION_CODES.N,
+            Build.VERSION_CODES.O,
+            Build.VERSION_CODES.O_MR1,
+        ],
+    shadows = [LockTaskAuthorityShadow::class],
+)
 @Suppress("DEPRECATION") // Configure the system-user query on old Android runtimes.
 class ManagementVersionCompatibilityTest {
     private val app = RuntimeEnvironment.getApplication()
@@ -88,7 +97,7 @@ class ManagementVersionCompatibilityTest {
         DeviceOwnerManager.init(app)
         assertTrue(DeviceOwnerManager.hasOwnerPermission(app))
         assertEquals(
-            if (Build.VERSION.SDK_INT >= 24) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 ManagementUserType.ManagedProfile
             } else {
                 ManagementUserType.Unknown
@@ -121,7 +130,7 @@ class ManagementVersionCompatibilityTest {
     }
 
     @Test
-    @Config(sdk = [26, 27])
+    @Config(sdk = [Build.VERSION_CODES.O, Build.VERSION_CODES.O_MR1])
     fun affiliatedProfileOwnerCanUsePackagePolicyBeforeFeaturesWereIntroduced() {
         shadowOf(dpm).setProfileOwner(admin)
         DeviceOwnerManager.init(app)

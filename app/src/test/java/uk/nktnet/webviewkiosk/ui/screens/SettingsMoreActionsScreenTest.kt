@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.os.Build
 import android.os.Looper
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -40,7 +41,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28], qualifiers = "w480dp-h1000dp")
+@Config(sdk = [Build.VERSION_CODES.P], qualifiers = "w480dp-h1000dp")
 @LooperMode(LooperMode.Mode.PAUSED)
 class SettingsMoreActionsScreenTest {
     private lateinit var activityController: ActivityController<AppCompatActivity>

@@ -35,7 +35,10 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager.AuthenticationResult
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28, 29, 30], shadows = [CredentialKeyguardShadow::class])
+@Config(
+    sdk = [Build.VERSION_CODES.P, Build.VERSION_CODES.Q, Build.VERSION_CODES.R],
+    shadows = [CredentialKeyguardShadow::class],
+)
 @LooperMode(LooperMode.Mode.PAUSED)
 class AuthenticationManagerTest {
     private val manager = AuthenticationManager
@@ -186,7 +189,7 @@ class AuthenticationManagerTest {
             replacement.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         shadowOf(replacementKeyguard).setIsKeyguardSecure(true)
         try {
-            setSdk(22)
+            setSdk(Build.VERSION_CODES.LOLLIPOP_MR1)
             showPrompt()
             val oldRequestCode = activity.credentialRequests.single()
 
@@ -352,7 +355,17 @@ class AuthenticationManagerTest {
     }
 
     @Test
-    @Config(sdk = [21, 22, 23, 28, 29, 30])
+    @Config(
+        sdk =
+            [
+                Build.VERSION_CODES.LOLLIPOP,
+                Build.VERSION_CODES.LOLLIPOP_MR1,
+                Build.VERSION_CODES.M,
+                Build.VERSION_CODES.P,
+                Build.VERSION_CODES.Q,
+                Build.VERSION_CODES.R,
+            ]
+    )
     fun credentialRoundTripKeepsTheSettingsSessionDuringReauthentication() {
         showPrompt()
         fun succeed() {
@@ -568,7 +581,12 @@ class AuthenticationManagerTest {
     fun secureDevicesWithoutEnrolledBiometricsKeepCredentialFallbackOnAndroid6To10() {
         // Exercise the SDK gates without invoking hardware or APIs from a
         // different Android runtime.
-        for (sdk in listOf(23, 28, 29)) {
+        for (sdk in
+            listOf(
+                Build.VERSION_CODES.M,
+                Build.VERSION_CODES.P,
+                Build.VERSION_CODES.Q,
+            )) {
             setSdk(sdk)
             showPrompt()
             val prompt = prompts.last()
@@ -844,7 +862,7 @@ class AuthenticationManagerTest {
 
     @Test
     fun legacyCredentialRoundTripIsLaunchedOnceAndMustSucceedBeforeUnlocking() {
-        setSdk(22)
+        setSdk(Build.VERSION_CODES.LOLLIPOP_MR1)
         showPrompt()
         showPrompt()
         assertEquals(1, activity.credentialRequests.size)
@@ -872,7 +890,7 @@ class AuthenticationManagerTest {
 
     @Test
     fun legacyCancellationAndLateResultAfterALockDoNotAuthenticate() {
-        setSdk(22)
+        setSdk(Build.VERSION_CODES.LOLLIPOP_MR1)
         showPrompt()
         manager.handleLollipopDeviceCredentialResult(
             activity.credentialRequests.single(),
@@ -896,7 +914,7 @@ class AuthenticationManagerTest {
 
     @Test
     fun aLegacyResultFromBeforeALockCannotCompleteTheReplacementRequest() {
-        setSdk(22)
+        setSdk(Build.VERSION_CODES.LOLLIPOP_MR1)
         showPrompt()
         val oldRequestCode = activity.credentialRequests.single()
         manager.resetAuthentication()
@@ -949,7 +967,7 @@ class AuthenticationManagerTest {
     }
 
     @Test
-    @Config(sdk = [30])
+    @Config(sdk = [Build.VERSION_CODES.R])
     fun android11AcceptsSuccessfulBiometricsWithoutACryptoObject() {
         showPrompt()
         val prompt = prompts.single()
@@ -969,7 +987,7 @@ class AuthenticationManagerTest {
     }
 
     @Test
-    @Config(sdk = [30])
+    @Config(sdk = [Build.VERSION_CODES.R])
     fun workProfileCredentialsAuthenticateWithoutAKeystoreOperation() {
         val users =
             activity.getSystemService(Context.USER_SERVICE) as android.os.UserManager
@@ -989,7 +1007,7 @@ class AuthenticationManagerTest {
     }
 
     @Test
-    @Config(sdk = [30])
+    @Config(sdk = [Build.VERSION_CODES.R])
     fun aFreshSystemSuccessIsRequiredAfterResettingAuthentication() {
         showPrompt()
         val previous = prompts.single()
@@ -1009,7 +1027,7 @@ class AuthenticationManagerTest {
     }
 
     @Test
-    @Config(sdk = [30])
+    @Config(sdk = [Build.VERSION_CODES.R])
     fun cancelledWorkProfileAuthenticationDoesNotGrantASession() {
         val users =
             activity.getSystemService(Context.USER_SERVICE) as android.os.UserManager

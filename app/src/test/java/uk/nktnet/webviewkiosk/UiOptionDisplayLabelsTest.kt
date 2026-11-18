@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk
 
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,7 +37,7 @@ import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 /** UI labels can be translated without changing any stable configuration labels. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class UiOptionDisplayLabelsTest {
     private val context = RuntimeEnvironment.getApplication()
 

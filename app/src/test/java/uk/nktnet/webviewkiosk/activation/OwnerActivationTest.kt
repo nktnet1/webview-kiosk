@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.activation
 
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -16,7 +17,7 @@ class OwnerActivationTest {
     private var onCommand: (List<String>) -> Unit = {}
     private var onRefresh: () -> Unit = {}
 
-    private fun engine(sdk: Int = 34) =
+    private fun engine(sdk: Int = Build.VERSION_CODES.UPSIDE_DOWN_CAKE) =
         OwnerActivation(
             sdk,
             admin,
@@ -130,11 +131,11 @@ class OwnerActivationTest {
 
     @Test
     fun android12And13UseFullSystemUserAndRefuseHeadlessDevices() {
-        assertTrue(engine(31).activate(true, 0).success)
+        assertTrue(engine(Build.VERSION_CODES.S).activate(true, 0).success)
         assertFalse(commands.any { it.first() == "cmd" })
         commands.clear()
         headless = "1"
-        assertFalse(engine(33).activate(true, 0).success)
+        assertFalse(engine(Build.VERSION_CODES.TIRAMISU).activate(true, 0).success)
         assertEquals(1, commands.size)
     }
 
@@ -255,7 +256,7 @@ class OwnerActivationTest {
 
     @Test
     fun androidBefore6CannotRunAnyActivationCommands() {
-        for (sdk in 21..22) {
+        for (sdk in Build.VERSION_CODES.LOLLIPOP..Build.VERSION_CODES.LOLLIPOP_MR1) {
             commands.clear()
             refreshed.clear()
             val result = engine(sdk).activate(false, 0)
@@ -268,7 +269,7 @@ class OwnerActivationTest {
 
     @Test
     fun android6Through11UsesDpmWithoutReadingOrChangingSetupState() {
-        for (sdk in 23..30) {
+        for (sdk in Build.VERSION_CODES.M..Build.VERSION_CODES.R) {
             for (profileOwner in listOf(false, true)) {
                 commands.clear()
                 refreshed.clear()
@@ -294,7 +295,7 @@ class OwnerActivationTest {
 
     @Test
     fun android12UsesTheSetupWorkaround() {
-        assertTrue(engine(31).activate(false, 0).success)
+        assertTrue(engine(Build.VERSION_CODES.S).activate(false, 0).success)
         assertEquals(listOf(0, 0), refreshed)
         assertTrue(commands.any { it.first() == "settings" && it.last() == "0" })
         assertTrue(commands.any { it.first() == "settings" && it.last() == "1" })
@@ -308,7 +309,7 @@ class OwnerActivationTest {
                 "java.lang.IllegalStateException: accounts on the device\n" +
                     "    at android.app.admin.DevicePolicyManager.setDeviceOwner(DPM.java:12)",
             )
-        val result = engine(30).activate(false, 0)
+        val result = engine(Build.VERSION_CODES.R).activate(false, 0)
         assertFalse(result.success)
         assertEquals(
             "java.lang.IllegalStateException: accounts on the device",

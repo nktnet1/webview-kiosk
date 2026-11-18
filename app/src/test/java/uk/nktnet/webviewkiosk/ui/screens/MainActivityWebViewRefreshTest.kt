@@ -7,6 +7,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Looper
 import android.os.PowerManager
 import android.view.View
@@ -79,7 +80,7 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewStartupGate
 /** Exercises the real MainActivity -> SetupNavHost -> WebviewScreen refresh path. */
 @Suppress("UsePropertyAccessSyntax")
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class MainActivityWebViewRefreshTest {
     private lateinit var activityController: ActivityController<MainActivity>

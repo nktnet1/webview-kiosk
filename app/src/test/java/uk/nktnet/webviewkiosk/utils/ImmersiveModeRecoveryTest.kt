@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.utils
 
 import android.content.Context
+import android.os.Build
 import android.os.Looper
 import android.view.View
 import androidx.core.view.WindowInsetsCompat
@@ -17,7 +18,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28, 29])
+@Config(sdk = [Build.VERSION_CODES.P, Build.VERSION_CODES.Q])
 @LooperMode(LooperMode.Mode.PAUSED)
 class ImmersiveModeRecoveryTest {
     private class WindowView(context: Context) : View(context) {

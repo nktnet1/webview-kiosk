@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.config.mqtt
 
 import android.content.RestrictionEntry
+import android.os.Build
 import java.io.File
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.json.JsonObject
@@ -22,7 +23,7 @@ import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandMessage
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRequestMessage
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class HomeAssistantCatalogTest {
     private val context
         get() = RuntimeEnvironment.getApplication()

@@ -6,6 +6,7 @@ import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Looper
 import android.os.PowerManager
 import com.hivemq.client.mqtt.MqttClientState
@@ -67,7 +68,7 @@ import uk.nktnet.webviewkiosk.managers.RemoteMessageManager.RemoteMessage.Source
 import uk.nktnet.webviewkiosk.managers.ToastManager
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class MqttForegroundServiceTest {
     private lateinit var context: Context
@@ -274,7 +275,7 @@ class MqttForegroundServiceTest {
     }
 
     @Test
-    @Config(sdk = [29])
+    @Config(sdk = [Build.VERSION_CODES.Q])
     fun nullIntentRestartAlsoUsesTheApi29ForegroundPath() {
         assertEquals(Service.START_STICKY, start())
         assertEquals(
