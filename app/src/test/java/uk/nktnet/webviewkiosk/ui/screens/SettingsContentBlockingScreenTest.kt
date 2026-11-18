@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.os.Build
 import android.os.Looper
 import android.os.SystemClock
 import android.text.format.Formatter
@@ -55,7 +56,7 @@ import uk.nktnet.webviewkiosk.blocking.FilterListType
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterLists
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28], qualifiers = "w480dp-h1000dp")
+@Config(sdk = [Build.VERSION_CODES.P], qualifiers = "w480dp-h1000dp")
 @LooperMode(LooperMode.Mode.PAUSED)
 class SettingsContentBlockingScreenTest {
     private lateinit var activityController: ActivityController<AppCompatActivity>

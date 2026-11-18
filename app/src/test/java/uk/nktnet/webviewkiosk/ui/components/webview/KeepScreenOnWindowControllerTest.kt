@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.app.Activity
+import android.os.Build
 import android.view.WindowManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -14,7 +15,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class KeepScreenOnWindowControllerTest {
     private class TestOwner : LifecycleOwner {
         val registry = LifecycleRegistry(this)

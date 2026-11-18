@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.os.Build
 import android.os.Looper
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -47,7 +48,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SETTINGS_SEARCH_FLASH_DELAY_
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingsSearchTarget
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28], qualifiers = "w400dp-h480dp")
+@Config(sdk = [Build.VERSION_CODES.P], qualifiers = "w400dp-h480dp")
 @LooperMode(LooperMode.Mode.PAUSED)
 class SettingsSearchScrollTest {
     private lateinit var controller: ActivityController<AppCompatActivity>

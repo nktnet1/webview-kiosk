@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.utils
 
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelStore
 import androidx.navigation.NavHostController
@@ -19,7 +20,7 @@ import org.robolectric.annotation.Config
 import uk.nktnet.webviewkiosk.config.Screen
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class WebViewRootNavigationTest {
     private fun controller(): NavHostController {
         val activity =

@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Looper
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -26,7 +27,7 @@ import uk.nktnet.webviewkiosk.managers.CustomNotificationChannel
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class LockTaskServiceTest {
     private lateinit var context: Context
@@ -85,7 +86,7 @@ class LockTaskServiceTest {
     }
 
     @Test
-    @Config(sdk = [29])
+    @Config(sdk = [Build.VERSION_CODES.Q])
     fun nullIntentRestartCreatesItsChannelOnTheApi29ForegroundPath() {
         assertEquals(Service.START_STICKY, start())
         val manager = context.getSystemService(NotificationManager::class.java)

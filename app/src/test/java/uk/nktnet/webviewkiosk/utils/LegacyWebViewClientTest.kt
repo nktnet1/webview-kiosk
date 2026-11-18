@@ -4,6 +4,7 @@ package uk.nktnet.webviewkiosk.utils
 
 import android.net.Uri
 import android.net.http.SslError
+import android.os.Build
 import android.webkit.ClientCertRequest
 import android.webkit.HttpAuthHandler
 import android.webkit.RenderProcessGoneDetail
@@ -26,11 +27,16 @@ import org.robolectric.annotation.Config
 import uk.nktnet.webviewkiosk.utils.webview.LegacyWebViewClient
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class LegacyWebViewClientTest {
     @Test
     fun olderAndroidKeepsCompatNavigationEvenOnVulnerableProviders() {
-        for (sdk in listOf(21, 22, 23)) {
+        for (sdk in
+            listOf(
+                Build.VERSION_CODES.LOLLIPOP,
+                Build.VERSION_CODES.LOLLIPOP_MR1,
+                Build.VERSION_CODES.M,
+            )) {
             assertFalse(needsFrameworkWebViewClient(sdk, "67.0.3396.87"))
             assertFalse(needsFrameworkWebViewClient(sdk, "72.0.3626.105"))
             assertFalse(needsFrameworkWebViewClient(sdk, null))
@@ -39,7 +45,13 @@ class LegacyWebViewClientTest {
 
     @Test
     fun requestAwareAndroidUsesFrameworkOnlyForVulnerableProviders() {
-        for (sdk in listOf(24, 25, 28, 36)) {
+        for (sdk in
+            listOf(
+                Build.VERSION_CODES.N,
+                Build.VERSION_CODES.N_MR1,
+                Build.VERSION_CODES.P,
+                Build.VERSION_CODES.BAKLAVA,
+            )) {
             assertFalse(needsFrameworkWebViewClient(sdk, "66.0.3359.158"))
             assertTrue(needsFrameworkWebViewClient(sdk, "67.0.3396.87"))
             assertTrue(needsFrameworkWebViewClient(sdk, "72.0.3626.105"))
@@ -50,7 +62,14 @@ class LegacyWebViewClientTest {
 
     @Test
     fun unknownOrInvalidProviderVersionsKeepCompatNavigation() {
-        for (sdk in listOf(23, 24, 25, 28, 36)) {
+        for (sdk in
+            listOf(
+                Build.VERSION_CODES.M,
+                Build.VERSION_CODES.N,
+                Build.VERSION_CODES.N_MR1,
+                Build.VERSION_CODES.P,
+                Build.VERSION_CODES.BAKLAVA,
+            )) {
             assertFalse(needsFrameworkWebViewClient(sdk, null))
             assertFalse(needsFrameworkWebViewClient(sdk, "not-a-version"))
             assertFalse(needsFrameworkWebViewClient(sdk, "0"))

@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Looper
 import android.os.PowerManager
 import android.view.View
@@ -21,7 +22,7 @@ import org.robolectric.util.ReflectionHelpers
 import org.robolectric.util.ReflectionHelpers.ClassParameter
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @Suppress(
     "DEPRECATION",
     "UsePropertyAccessSyntax",

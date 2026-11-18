@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.security.KeyChain
 import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.contract.ActivityResultContract
@@ -30,7 +31,7 @@ import org.robolectric.annotation.Config
 import uk.nktnet.webviewkiosk.R
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class ClientCertificateInstallerTest {
     private val context: Context = RuntimeEnvironment.getApplication()
     private val owner = TestOwner()

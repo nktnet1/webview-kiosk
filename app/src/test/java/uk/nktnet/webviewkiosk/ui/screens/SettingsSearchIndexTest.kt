@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.screens
 
 import android.content.Context
 import android.content.res.Configuration
+import android.os.Build
 import androidx.lifecycle.ViewModelStore
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.ComposeNavigator
@@ -25,7 +26,7 @@ import uk.nktnet.webviewkiosk.config.option.SettingsAuthRequirementOption
 import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class SettingsSearchIndexTest {
     private val context: Context = RuntimeEnvironment.getApplication()
 

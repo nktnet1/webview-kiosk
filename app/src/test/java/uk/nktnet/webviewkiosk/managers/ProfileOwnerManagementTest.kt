@@ -58,7 +58,17 @@ import uk.nktnet.webviewkiosk.utils.tryUnlockTask
  * docs/testing/profile-owner.md.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28, 29, 30, 33, 37], shadows = [LockTaskAuthorityShadow::class])
+@Config(
+    sdk =
+        [
+            Build.VERSION_CODES.P,
+            Build.VERSION_CODES.Q,
+            Build.VERSION_CODES.R,
+            Build.VERSION_CODES.TIRAMISU,
+            Build.VERSION_CODES.CINNAMON_BUN,
+        ],
+    shadows = [LockTaskAuthorityShadow::class],
+)
 @LooperMode(LooperMode.Mode.PAUSED)
 class ProfileOwnerManagementTest {
     private lateinit var app: Application
@@ -248,7 +258,7 @@ class ProfileOwnerManagementTest {
     }
 
     @Test
-    @Config(sdk = [33, 37])
+    @Config(sdk = [Build.VERSION_CODES.TIRAMISU, Build.VERSION_CODES.CINNAMON_BUN])
     fun otherProfileTypesAreNotReportedAsFullAndroidUsers() {
         shadowOf(dpm).setProfileOwner(admin)
         val users = shadowOf(app.getSystemService(UserManager::class.java))
@@ -559,7 +569,7 @@ class ProfileOwnerManagementTest {
             flags and DevicePolicyManager.LOCK_TASK_FEATURE_NOTIFICATIONS,
         )
         assertEquals(
-            Build.VERSION.SDK_INT >= 30,
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R,
             flags and
                 DevicePolicyManager.LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK !=
                 0,
@@ -572,7 +582,13 @@ class ProfileOwnerManagementTest {
         dpm.setLockTaskPackages(admin, arrayOf("existing.app"))
         // Exercise production version guards using the API 28+ runtime, not an
         // assertion that Robolectric is emulating Android 5/6/8 here.
-        for (sdk in listOf(21, 23, 26, 27)) {
+        for (sdk in
+            listOf(
+                Build.VERSION_CODES.LOLLIPOP,
+                Build.VERSION_CODES.M,
+                Build.VERSION_CODES.O,
+                Build.VERSION_CODES.O_MR1,
+            )) {
             ReflectionHelpers.setStaticField(
                 Build.VERSION::class.java,
                 "SDK_INT",
@@ -679,7 +695,7 @@ class LockTaskAuthorityShadow : ShadowDevicePolicyManager() {
     // Robolectric invokes this hook reflectively. Stock Robolectric does not
     // model this owner query on API 24–29; keep it even if an IDE reports no uses.
     @Suppress("UNUSED_PARAMETER")
-    @Implementation(minSdk = 24)
+    @Implementation(minSdk = Build.VERSION_CODES.N)
     fun isManagedProfile(admin: ComponentName): Boolean = managedProfile
 
     @Implementation
@@ -706,7 +722,7 @@ class LockTaskAuthorityShadow : ShadowDevicePolicyManager() {
         }
     }
 
-    @Implementation(minSdk = 28)
+    @Implementation(minSdk = Build.VERSION_CODES.P)
     public override fun getLockTaskFeatures(admin: ComponentName): Int {
         if (!featuresAllowed) {
             throw SecurityException("Lock Task features unavailable")
@@ -714,7 +730,7 @@ class LockTaskAuthorityShadow : ShadowDevicePolicyManager() {
         return super.getLockTaskFeatures(admin)
     }
 
-    @Implementation(minSdk = 28)
+    @Implementation(minSdk = Build.VERSION_CODES.P)
     public override fun setLockTaskFeatures(admin: ComponentName, flags: Int) {
         if (!featuresAllowed || rejectWrites) {
             throw SecurityException("Lock Task features denied")

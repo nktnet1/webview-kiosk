@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.utils
 
 import android.app.Activity
+import android.os.Build
 import android.os.Looper
 import android.view.View
 import androidx.core.view.WindowCompat
@@ -19,7 +20,7 @@ import org.robolectric.annotation.LooperMode
 
 /** Tests the API 30 compat path, not SystemUI's transient surface animations. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [30])
+@Config(sdk = [Build.VERSION_CODES.R])
 @LooperMode(LooperMode.Mode.PAUSED)
 @Suppress("DEPRECATION") // AndroidX intentionally uses these flags on Android 11.
 class ImmersiveModeAndroid11Test {

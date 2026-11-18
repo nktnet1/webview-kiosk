@@ -25,7 +25,10 @@ import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 
 /** Exercises production version gates with a fake Dhizuku transport. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [23, 28], shadows = [LockTaskAuthorityShadow::class])
+@Config(
+    sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.P],
+    shadows = [LockTaskAuthorityShadow::class],
+)
 class DhizukuVersionCompatibilityTest {
     private val app = RuntimeEnvironment.getApplication()
     private val dpm =
@@ -57,7 +60,7 @@ class DhizukuVersionCompatibilityTest {
             DeviceOwnerManager.editLockTaskPackage(app, "existing.player", true)
         )
         assertTrue("existing.player" in DeviceOwnerManager.getLockTaskPackages(app))
-        if (Build.VERSION.SDK_INT < 28) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             assertFalse(DeviceOwnerManager.getCapabilities(app).lockTaskFeatures)
         }
     }
@@ -92,21 +95,21 @@ class DhizukuVersionCompatibilityTest {
     }
 
     @Test
-    @Config(sdk = [23])
+    @Config(sdk = [Build.VERSION_CODES.M])
     fun platformBridgeDoesNotNeedHiddenApiBypassOnAndroid6() {
         // No configured owner is an expected, clean false from the real API.
         assertFalse(original.init(app))
     }
 
     @Test
-    @Config(sdk = [28])
+    @Config(sdk = [Build.VERSION_CODES.P])
     fun android5StillCannotUseDhizuku() {
         val sdk = Build.VERSION.SDK_INT
         try {
             ReflectionHelpers.setStaticField(
                 Build.VERSION::class.java,
                 "SDK_INT",
-                21,
+                Build.VERSION_CODES.LOLLIPOP,
             )
             bridge.available = true
             bridge.initializations = 0

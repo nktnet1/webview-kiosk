@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
 import android.content.Context
+import android.os.Build
 import android.webkit.WebView
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -16,7 +17,7 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.option.ResetActionOption
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class WebViewSessionResetTest {
     private lateinit var context: Context
     private lateinit var systemSettings: SystemSettings

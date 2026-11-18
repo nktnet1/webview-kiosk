@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.states
 
+import android.os.Build
 import com.rosan.dhizuku.api.DhizukuLockTaskModeListener
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -9,7 +10,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class DhizukuLockTaskModeMonitorTest {
     private val registry = FakeRegistry()
     private val events = mutableListOf<Boolean>()

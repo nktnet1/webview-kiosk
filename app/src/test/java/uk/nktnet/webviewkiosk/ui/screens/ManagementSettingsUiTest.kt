@@ -11,6 +11,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PermissionInfo
 import android.net.Uri
 import android.os.Binder
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.view.View
@@ -80,7 +81,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.isShizukuAvailable
 import uk.nktnet.webviewkiosk.ui.theme.warning
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [30], qualifiers = "w480dp-h1000dp")
+@Config(sdk = [Build.VERSION_CODES.R], qualifiers = "w480dp-h1000dp")
 @LooperMode(LooperMode.Mode.PAUSED)
 class ManagementSettingsUiTest {
     private lateinit var controller: ActivityController<AppCompatActivity>
@@ -129,7 +130,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
-    @Config(sdk = [31])
+    @Config(sdk = [Build.VERSION_CODES.S])
     fun shizukuActivationLetsUserPickProfileOwnerAndShowsAndroidFailure() {
         var chosen: Boolean? = null
         var refreshed = false
@@ -185,7 +186,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
-    @Config(sdk = [31])
+    @Config(sdk = [Build.VERSION_CODES.S])
     fun activationStacktraceIsVisibleImmediatelyForEachResult() {
         val details =
             "\n  java.lang.IllegalStateException: original failure\n at android.app.admin.DPM.run(DPM.java:42)\n"
@@ -210,7 +211,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
-    @Config(sdk = [31])
+    @Config(sdk = [Build.VERSION_CODES.S])
     fun scrollingTheStacktraceKeepsTheHeadingAndActionButtonsFixedAndCopiesAllFrames() {
         val summary = "Android rejected activation."
         val details =
@@ -281,7 +282,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
-    @Config(sdk = [31])
+    @Config(sdk = [Build.VERSION_CODES.S])
     fun shizukuDeviceOwnerSuccessRemainsVisibleWhenNativeStatusChanges() {
         val native = mutableStateOf(false)
         var chosen: Boolean? = null
@@ -306,7 +307,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
-    @Config(sdk = [31])
+    @Config(sdk = [Build.VERSION_CODES.S])
     fun pendingShizukuActivationDisablesRoleChangesAndDuplicateSubmission() {
         val result = CompletableDeferred<ActivationResult>()
         var calls = 0
@@ -346,7 +347,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
-    @Config(sdk = [23, 30])
+    @Config(sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.R])
     fun onlyThisAppsNativeOwnershipOrGrantedSharedPermissionHidesActivation() {
         val native = mutableStateOf(false)
         val shared = mutableStateOf(false)
@@ -371,7 +372,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
-    @Config(sdk = [23, 31])
+    @Config(sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.S])
     fun aStoppedShizukuForkIsDiscoveredThroughItsApiPermission() {
         val packageName = "example.shizuku.fork"
         val context = controller.get()
@@ -395,7 +396,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
-    @Config(sdk = [23, 31])
+    @Config(sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.S])
     fun aConnectedBinderIsDiscoverableWithoutAnyManagerPackage() {
         val context = controller.get()
         shadowOf(context.packageManager).removePackage("example.shizuku.fork")
@@ -411,7 +412,7 @@ class ManagementSettingsUiTest {
     }
 
     @Test
-    @Config(sdk = [31])
+    @Config(sdk = [Build.VERSION_CODES.S])
     fun missingDiagnosticsUseTheTrimmedErrorForDisplayAndCopying() {
         render {
             ShizukuActivationSection(

@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.utils
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
+import android.os.Build
 import android.view.View
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -20,7 +21,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ImmersiveModeOption
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28, 29])
+@Config(sdk = [Build.VERSION_CODES.P, Build.VERSION_CODES.Q])
 @Suppress("DEPRECATION")
 class ImmersiveModeUtilsTest {
     private lateinit var controller: ActivityController<Activity>

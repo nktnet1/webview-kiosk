@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.utils
 
+import android.os.Build
 import java.io.File
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -58,7 +59,7 @@ class InputValidationTest {
     }
 
     @Test
-    @Config(sdk = [28, 29])
+    @Config(sdk = [Build.VERSION_CODES.P, Build.VERSION_CODES.Q])
     fun acceptsIpv6UrlsWithAndWithoutAPort() {
         val urls =
             listOf(
@@ -73,7 +74,7 @@ class InputValidationTest {
     }
 
     @Test
-    @Config(sdk = [28, 29])
+    @Config(sdk = [Build.VERSION_CODES.P, Build.VERSION_CODES.Q])
     fun rejectsMalformedIpv6Urls() {
         val urls =
             listOf(

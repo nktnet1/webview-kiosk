@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
+import android.os.Build
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.MaterialTheme
@@ -38,7 +39,7 @@ import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.FilterListStore
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class ContentBlockingGateTest {
     private lateinit var controller: ActivityController<AppCompatActivity>

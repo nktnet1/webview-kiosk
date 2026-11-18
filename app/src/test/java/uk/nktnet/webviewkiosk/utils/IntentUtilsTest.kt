@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.utils
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -11,7 +12,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class IntentUtilsTest {
     @Test
     fun viewAcceptsOnlyTheRegisteredBrowserAndAttachmentSchemes() {

@@ -5,6 +5,7 @@ package uk.nktnet.webviewkiosk.config
 import android.content.Context
 import android.content.Intent
 import android.content.RestrictionsManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import kotlinx.coroutines.runBlocking
@@ -25,7 +26,7 @@ import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.FilterListStore
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class ContentBlockingSettingsTest {
     private lateinit var context: Context
     private lateinit var settings: UserSettings

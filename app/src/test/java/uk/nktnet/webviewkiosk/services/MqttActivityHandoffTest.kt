@@ -5,6 +5,7 @@ import android.app.Service
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Looper
 import android.view.ViewGroup
 import androidx.compose.runtime.BroadcastFrameClock
@@ -73,7 +74,7 @@ import uk.nktnet.webviewkiosk.states.LockStateSingleton
  * Actual activity/Compose and service collectors, with real HiveMQ TCP deliveries.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class MqttActivityHandoffTest {
     private lateinit var context: Application
@@ -272,7 +273,7 @@ class MqttActivityHandoffTest {
     }
 
     @Test
-    @Config(sdk = [28, 29])
+    @Config(sdk = [Build.VERSION_CODES.P, Build.VERSION_CODES.Q])
     fun aDeniedPlatformStartRequestKeepsActualActivityHandlersAvailable() {
         settings.mqttUseForegroundService = true
         val host =
@@ -291,7 +292,7 @@ class MqttActivityHandoffTest {
     }
 
     @Test
-    @Config(sdk = [28, 29])
+    @Config(sdk = [Build.VERSION_CODES.P, Build.VERSION_CODES.Q])
     fun aDeniedForegroundPromotionHandsDeliveriesBackWithoutChangingThePreference() {
         settings.mqttUseForegroundService = true
         createActivity()
@@ -513,7 +514,7 @@ class MqttActivityHandoffTest {
     }
 
     @Test
-    @Config(sdk = [28, 29])
+    @Config(sdk = [Build.VERSION_CODES.P, Build.VERSION_CODES.Q])
     fun destroyingTheLastActivityKeepsTheOptedInServiceAndConnectionAlive() {
         settings.mqttUseForegroundService = true
         val host = createActivity()

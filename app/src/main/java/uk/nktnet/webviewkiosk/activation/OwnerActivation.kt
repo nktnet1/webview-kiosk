@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.activation
 
+import android.os.Build
+
 internal data class ActivationResult(
     val success: Boolean,
     val output: String,
@@ -59,11 +61,11 @@ internal class OwnerActivation(
         }
 
         try {
-            checkActivation(sdkInt >= 23) {
+            checkActivation(sdkInt >= Build.VERSION_CODES.M) {
                 "Shizuku activation requires Android 6 or later."
             }
             val mainUser =
-                if (sdkInt >= 34) {
+                if (sdkInt >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                     command(listOf("cmd", "user", "get-main-user"))
                         .requireSuccess()
                         .toIntOrNull()
@@ -90,7 +92,7 @@ internal class OwnerActivation(
                     "Open the app in that user and try again."
             }
 
-            if (sdkInt >= 31) {
+            if (sdkInt >= Build.VERSION_CODES.S) {
                 val original =
                     settings("get", "secure", "user_setup_complete").requireSuccess()
                 checkActivation(original in setOf("0", "1", "null")) {

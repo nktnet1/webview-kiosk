@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.utils.webview
 
 import android.app.Notification
 import android.app.NotificationManager
+import android.os.Build
 import android.os.Looper
 import android.webkit.WebView
 import java.time.Duration
@@ -25,7 +26,7 @@ import uk.nktnet.webviewkiosk.services.BackgroundMediaPlaybackService
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class BackgroundMediaPlaybackControllerLifecycleTest {
     @Test

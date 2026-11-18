@@ -6,6 +6,7 @@ import android.app.ActivityManager
 import android.app.admin.DeviceAdminReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -25,7 +26,7 @@ import org.robolectric.shadows.ShadowActivityManager
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class LockStateCallbacksTest {
     private val app = RuntimeEnvironment.getApplication()
     private val receiver = WebviewKioskAdminReceiver()

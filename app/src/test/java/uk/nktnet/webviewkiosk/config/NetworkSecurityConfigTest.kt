@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.config
 
 import android.content.Context
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
@@ -16,7 +17,7 @@ import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
  * Guard the packaged WebView trust policy, not just an XML fixture in test sources.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [29])
+@Config(sdk = [Build.VERSION_CODES.Q])
 class NetworkSecurityConfigTest {
     @Test
     fun appWideTrustIncludesSystemAndAndroidInstalledUserCAs() {

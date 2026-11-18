@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.services
 import android.app.Notification
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -20,11 +21,18 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.utils.webview.MediaPlaybackInfo
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 @LooperMode(LooperMode.Mode.PAUSED)
 class BackgroundMediaNotificationTest {
     @Test
-    @Config(sdk = [28, 33, 37])
+    @Config(
+        sdk =
+            [
+                Build.VERSION_CODES.P,
+                Build.VERSION_CODES.TIRAMISU,
+                Build.VERSION_CODES.CINNAMON_BUN,
+            ]
+    )
     fun bufferingStopsClockAndDisplaysLoadingUntilPlaybackResumes() {
         val controller =
             Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
@@ -121,7 +129,7 @@ class BackgroundMediaNotificationTest {
     }
 
     @Test
-    @Config(sdk = [23, 28])
+    @Config(sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.P])
     fun notificationKeepsFiveSlotsWithMuteFirstAndCloseLast() {
         val controller =
             Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
@@ -222,7 +230,7 @@ class BackgroundMediaNotificationTest {
     }
 
     @Test
-    @Config(sdk = [33, 37])
+    @Config(sdk = [Build.VERSION_CODES.TIRAMISU, Build.VERSION_CODES.CINNAMON_BUN])
     fun semanticControlsFillBothExtraSlotsWithMuteThenClose() {
         val controller =
             Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
@@ -309,7 +317,14 @@ class BackgroundMediaNotificationTest {
 
     @Suppress("DEPRECATION")
     @Test
-    @Config(sdk = [28, 33, 37])
+    @Config(
+        sdk =
+            [
+                Build.VERSION_CODES.P,
+                Build.VERSION_CODES.TIRAMISU,
+                Build.VERSION_CODES.CINNAMON_BUN,
+            ]
+    )
     fun muteStateChangesLabelAndIconWithoutMovingOtherControls() {
         val controller =
             Robolectric.buildService(BackgroundMediaPlaybackService::class.java)
@@ -368,7 +383,7 @@ class BackgroundMediaNotificationTest {
     }
 
     @Test
-    @Config(sdk = [31, 33])
+    @Config(sdk = [Build.VERSION_CODES.S, Build.VERSION_CODES.TIRAMISU])
     fun foregroundNotificationIsNotDeferredByAndroid() {
         val controller =
             Robolectric.buildService(BackgroundMediaPlaybackService::class.java)

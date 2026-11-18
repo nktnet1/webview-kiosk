@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting
 
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -42,7 +43,7 @@ class NotificationPermissionControlsTest {
         assertEquals(
             R.string.ui_request_notification_permission,
             notificationPermissionButtonLabel(
-                33,
+                Build.VERSION_CODES.TIRAMISU,
                 PermissionState(granted = false, shouldShowRationale = false),
                 notificationsAvailable = false,
             ),
@@ -55,12 +56,16 @@ class NotificationPermissionControlsTest {
             PermissionState(granted = false, shouldShowRationale = true)
         assertEquals(
             R.string.ui_enable_in_app_info,
-            notificationPermissionButtonLabel(33, deniedWithRationale, false),
+            notificationPermissionButtonLabel(
+                Build.VERSION_CODES.TIRAMISU,
+                deniedWithRationale,
+                false,
+            ),
         )
         assertEquals(
             R.string.ui_enable_in_app_info,
             notificationPermissionButtonLabel(
-                32,
+                Build.VERSION_CODES.S_V2,
                 PermissionState(granted = false, shouldShowRationale = false),
                 notificationsAvailable = false,
             ),
@@ -72,7 +77,7 @@ class NotificationPermissionControlsTest {
         assertEquals(
             R.string.ui_enable_in_app_info,
             notificationPermissionButtonLabel(
-                33,
+                Build.VERSION_CODES.TIRAMISU,
                 PermissionState(granted = true, shouldShowRationale = false),
                 notificationsAvailable = false,
             ),
@@ -84,7 +89,7 @@ class NotificationPermissionControlsTest {
         assertEquals(
             R.string.ui_disable_in_app_info,
             notificationPermissionButtonLabel(
-                33,
+                Build.VERSION_CODES.TIRAMISU,
                 PermissionState(granted = true, shouldShowRationale = false),
                 notificationsAvailable = true,
             ),

@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
 import android.content.Context
+import android.os.Build
 import android.webkit.WebView
 import android.widget.FrameLayout
 import org.junit.Assert.assertEquals
@@ -14,7 +15,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [Build.VERSION_CODES.P])
 class WebViewLifetimeTest {
     private class CountingWebView(context: Context) : WebView(context) {
         var stops = 0
