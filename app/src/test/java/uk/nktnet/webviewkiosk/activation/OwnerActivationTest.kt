@@ -11,7 +11,7 @@ class OwnerActivationTest {
     private val commands = mutableListOf<List<String>>()
     private val refreshed = mutableListOf<Int>()
     private var original = "1"
-    private var mainUser = "0"
+    private var designatedFullUserId = "0"
     private var headless = "false"
     private var dpmResult = CommandResult(0, "Success")
     private var onCommand: (List<String>) -> Unit = {}
@@ -25,7 +25,7 @@ class OwnerActivationTest {
                 commands += args
                 onCommand(args)
                 when (args.first()) {
-                    "cmd" -> CommandResult(0, mainUser)
+                    "cmd" -> CommandResult(0, designatedFullUserId)
                     "getprop" -> CommandResult(0, headless)
                     "settings" ->
                         CommandResult(
@@ -47,7 +47,7 @@ class OwnerActivationTest {
         )
 
     @Test
-    fun deviceOwnerUsesExplicitMainUserAndRestoresSetup() {
+    fun deviceOwnerUsesDesignatedFullUserAndRestoresSetup() {
         val result = engine().activate(false, 0)
         assertTrue(result.success)
         assertEquals(
@@ -95,10 +95,14 @@ class OwnerActivationTest {
     }
 
     @Test
-    fun profileOwnerUsesResolvedNonzeroMainUser() {
-        mainUser = "10\n"
+    fun profileOwnerUsesResolvedNonzeroDesignatedFullUser() {
+        designatedFullUserId = "10\n"
         val result = engine().activate(true, 10)
         assertTrue(result.success)
+        assertEquals(
+            "Profile Owner is now active in the designated full user.",
+            result.output,
+        )
         assertTrue(
             listOf("dpm", "set-profile-owner", "--user", "10", admin) in commands
         )
@@ -114,17 +118,21 @@ class OwnerActivationTest {
             commands.clear()
             val result = engine().activate(true, user)
             assertFalse(result.success)
-            assertTrue(result.output.contains("main user (ID 0)"))
+            assertTrue(result.output.contains("designated full user (ID 0)"))
             assertEquals(listOf(listOf("cmd", "user", "get-main-user")), commands)
         }
     }
 
     @Test
-    fun unknownMainUserFailsClosedInsteadOfFallingBackToZero() {
+    fun unknownFullUserIdFailsClosedInsteadOfFallingBackToZero() {
         for (output in listOf("No main user", "-10000", "", "Error: unsupported")) {
             commands.clear()
-            mainUser = output
-            assertFalse(engine().activate(false, 0).success)
+            designatedFullUserId = output
+            val result = engine().activate(false, 0)
+            assertFalse(result.success)
+            assertTrue(
+                result.output.contains("could not identify the designated full user")
+            )
             assertEquals(1, commands.size)
         }
     }

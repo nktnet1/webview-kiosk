@@ -1,6 +1,6 @@
 ---
 title: Shizuku
-description: Activate Device Owner or main-user Profile Owner from the app.
+description: Activate Device Owner or full-user Profile Owner from the app.
 ---
 
 ## 1. Requirements [#requirements]
@@ -23,9 +23,10 @@ On Android 6-11, activation uses the normal Android ownership commands without
 changing setup state. Existing accounts or ownership can prevent activation -
 follow the [ADB activation guide](/docs/activation/adb) if Android rejects it.
 
-Activate from the device's main user (typically id 0). Automatic activation is
-unavailable on headless-system-user devices prior to Android 14, since the main
-user cannot be identified by {APP_NAME}.
+Activate from the device's designated full user (typically ID `0`). Automatic
+activation does not support arbitrary secondary full users. It is unavailable
+on headless-system-user devices prior to Android 14 because {APP_NAME} cannot
+safely identify the designated full user.
 
 ## 2. Activate ownership [#activate]
 

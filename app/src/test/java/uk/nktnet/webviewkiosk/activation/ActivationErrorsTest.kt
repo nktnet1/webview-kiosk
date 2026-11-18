@@ -54,7 +54,9 @@ class ActivationErrorsTest {
 
     @Test
     fun appPreconditionsKeepTheirMessage() {
-        val message = "Open the app in the main user (ID 10) and try again."
+        val message =
+            "Activation is only available in the designated full user (ID 10). " +
+                "Open the app in that user and try again."
         assertEquals(message, activationFailure(ActivationException(message)).output)
     }
 

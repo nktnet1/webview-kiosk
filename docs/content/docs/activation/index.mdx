@@ -14,13 +14,13 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 | Role | Use it when |
 | --- | --- |
 | Device Owner | You are setting up a dedicated kiosk without a work profile. |
-| Profile Owner in the main user | You want kiosk policies in the personal user alongside a separate work profile. |
+| Eligible Profile Owner in a full user | You want kiosk policies in the personal user alongside a separate work profile. |
 | Shared owner through Dhizuku | You want Dhizuku to share its device or profile owner permissions with several apps. |
 | MDM/EMM | Your organisation already manages the device and can allowlist the kiosk. |
 
 ### 1.1. Optional Work Profile [#optional-work-profile]
 
-Choosing **Profile Owner (Main User)** lets you keep or create a separate
+Choosing **Profile Owner (Full User)** lets you keep or create a separate
 work profile, which is disallowed in **Device Owner** mode.
 
 For example, this can be done via ADB:
@@ -29,7 +29,7 @@ For example, this can be done via ADB:
 
 <Step>
 
-Find the ID of your main user (typically `0`)
+Find the ID of the full user you want to manage (typically `0`)
 
 ```sh
 adb shell pm list users
@@ -39,7 +39,7 @@ adb shell pm list users
 
 <Step>
 
-Create the work profile based on the main user's ID (in this case, `0`):
+Create the work profile based on the selected full user's ID (in this case, `0`):
 
 ```sh
 adb shell pm create-user --profileOf 0 --managed Work
@@ -69,7 +69,7 @@ You should now see **Personal** and **Work** tabs in your app drawer.
 | Method | Requirements | Best for |
 | --- | --- | --- |
 | [Shizuku](/docs/activation/shizuku) | Android 12+ with Shizuku running | Activation from the app on an existing device. |
-| [ADB](/docs/activation/adb) | A computer with Android Platform Tools | Setting Device Owner or main-user Profile Owner directly. |
+| [ADB](/docs/activation/adb) | A computer with Android Platform Tools | Setting Device Owner or full-user Profile Owner directly. |
 | [QR Code](/docs/activation/qr-code) | Android 7+ on a new or reset device | A fresh dedicated kiosk with Device Owner. |
 | [Dhizuku](/docs/activation/dhizuku) | Android 6+ with Dhizuku activated | Sharing an existing owner's permissions. |
 | [MDM/EMM/DPC](/docs/activation/mdm-emm-dpc) | Access to your management platform | Allowlisting the kiosk without changing ownership. |

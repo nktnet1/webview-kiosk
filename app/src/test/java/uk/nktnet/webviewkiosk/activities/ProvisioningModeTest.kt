@@ -43,7 +43,7 @@ class ProvisioningModeTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.TIRAMISU, Build.VERSION_CODES.CINNAMON_BUN])
-    fun workProfileOnlyProvisioningIsCancelledWithoutClaimingMainUserOwnership() {
+    fun workProfileOnlyProvisioningIsCancelledWithoutClaimingFullUserOwnership() {
         verifyMode(
             allowedModes(DevicePolicyManager.PROVISIONING_MODE_MANAGED_PROFILE),
             Activity.RESULT_CANCELED,

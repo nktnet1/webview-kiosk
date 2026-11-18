@@ -44,10 +44,11 @@ For each eligible owner mode:
 3. Allowlist another installed app and an uninstalled package before opening
    settings. Add/remove a third app. Confirm the original entries survive. Make
    a second policy change while a package dialog is open and repeat the edit.
-4. Lock and verify `LOCK_TASK_MODE_LOCKED` / `get_system_info` response `data.app.lockState` = `LOCK_TASK`. Remove policy
-   authority or allowlisting and verify the reported state is not silently
-   labelled Lock Task. An ordinary unmanaged or work-profile app can request
-   pinning. Approve it manually and confirm `SCREEN_PINNING`.
+4. Lock and verify `LOCK_TASK_MODE_LOCKED` / `get_system_info` response
+   `data.app.lockState` = `LOCK_TASK`. Remove policy authority or allowlisting
+   and verify the reported state is not silently labelled Lock Task. An
+   ordinary unmanaged or work-profile app can request pinning. Approve it
+   manually and confirm `SCREEN_PINNING`.
 5. Toggle Lock Task features. Home must accompany Overview/Notifications, and
    the activity-start restriction must be absent before API 30. Deny a setter
    or revoke permission while a dialog is open: no crash and no false success.
@@ -78,25 +79,26 @@ Primary references and setup instructions are linked in
 ## Shizuku activation
 
 `OwnerActivationTest` covers explicit user targeting, both ownership commands,
-nonzero main-user IDs, secondary/work-profile rejection, unknown main-user
-responses, pre-Android-14 full-system-user detection, and setup restoration on
-success, command failure, and exceptions. Client tests cover permission and
-service lifecycle failures. UI tests cover role selection and result display.
-`ShizukuActivationTest` exercises activation on Android 12 with a fake transport,
-plus Android 6 and 11 compatibility cases. `OwnerActivationTest` verifies that
-Android 6–11 use normal ownership commands without setup-state reads or writes,
-and Android 5 rejects activation before running commands. Error tests cover
-collapsed stacktraces and their original exception causes. These tests do not
-provision a device or emulate the Shizuku server.
+nonzero designated full-user IDs, secondary/work-profile rejection, unknown
+designated full-user responses, pre-Android-14 full-system-user detection, and
+setup restoration on success, command failure, and exceptions. Client tests
+cover permission and service lifecycle failures. UI tests cover role selection
+and result display. `ShizukuActivationTest` exercises activation on Android 12
+with a fake transport, plus Android 6 and 11 compatibility cases.
+`OwnerActivationTest` verifies that Android 6–11 use normal ownership commands
+without setup-state reads or writes, and Android 5 rejects activation before
+running commands. Error tests cover collapsed stacktraces and their original
+exception causes. These tests do not provision a device or emulate the Shizuku
+server.
 
 On disposable devices, test both owner choices with Shizuku running as ADB/shell
 and root. Record the original and final setup state, the result dialog, and
 `dumpsys device_policy`. Include Android 6–11, Android 12+, and Android 14+ with a
-nonzero main user where available. Test existing accounts, conflicting ownership,
-denied permission, disconnects, and navigation during activation. Confirm setup
-restoration after failed commands on Android 12+, and no setup-state changes on
-Android 6–11. Before Android 6, verify that the provider is disabled and the
-activation action is absent.
+nonzero designated full user where available. Test existing accounts,
+conflicting ownership, denied permission, disconnects, and navigation during
+activation. Confirm setup restoration after failed commands on Android 12+, and
+no setup-state changes on Android 6–11. Before Android 6, verify that the
+provider is disabled and the activation action is absent.
 
 `DhizukuVersionCompatibilityTest` covers Android 6 and 9 transport gates,
 permission callbacks, and native-owner priority. Test the real Dhizuku service

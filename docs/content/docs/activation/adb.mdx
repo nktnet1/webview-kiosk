@@ -1,6 +1,6 @@
 ---
 title: ADB
-description: Assign Device Owner or main-user Profile Owner using a computer.
+description: Assign Device Owner or full-user Profile Owner using a computer.
 ---
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
@@ -41,7 +41,10 @@ the connection.
 
 <Step>
 
-Check the main user. The ID is typically `0` on most devices.
+Identify the full user you want to manage. Its ID is typically `0` on most
+devices. The Profile Owner examples below use `--user 0`. Replace `0` with
+the intended full user's ID if it is different. Device Owner enrollment must
+follow your device's supported user and provisioning requirements.
 
 ```sh
 adb shell pm list users
@@ -54,7 +57,7 @@ adb shell pm list users
 ## 2. Choose the role and installed app [#assign-owner]
 
 Run **one** of the two owner commands in the tab matching your installation.
-Choose [Profile Owner (Main User)](/docs/activation#optional-work-profile)
+Choose [Profile Owner (Full User)](/docs/activation#optional-work-profile)
 if you also want to use a work profile. Choose Device Owner for a dedicated kiosk.
 
 <Tabs items={['GitHub / F-Droid / IzzyOnDroid', 'Google Play / Aurora Store', 'Debug APK']}>
@@ -125,7 +128,7 @@ the following steps:
     adb shell dumpsys user | grep 'UserInfo{.*}'
     ```
 
-    The goal is to only have a single main user:
+    The goal is to only have a single full user:
 
     ```
     UserInfo{0:null:4c13} serialNo=0 isPrimary=true
