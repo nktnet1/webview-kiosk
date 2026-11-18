@@ -433,14 +433,15 @@ describe("MQTT message log", () => {
     const html = renderToStaticMarkup(
       createElement(MqttMessageLog, { entries: [received] }),
     );
-    expect(html).toContain("JSON payload</figcaption>");
-    expect(html).toContain("Copy Text");
-    expect(html.indexOf("JSON payload</figcaption>")).toBeLessThan(
-      html.indexOf("Copy Text"),
-    );
-    expect(html.indexOf("Copy Text")).toBeLessThan(
-      html.indexOf('role="region"'),
-    );
+    const captionIndex = html.indexOf("JSON payload</figcaption>");
+    const copyIndex = html.indexOf("Copy Text");
+    // The scroll viewport receives this class from our viewportProps. Its role
+    // is controlled by Fumadocs and may change independently of the layout.
+    const viewportIndex = html.indexOf("max-h-80");
+
+    expect(captionIndex).toBeGreaterThanOrEqual(0);
+    expect(copyIndex).toBeGreaterThan(captionIndex);
+    expect(viewportIndex).toBeGreaterThan(copyIndex);
   });
 
   it("omits metadata tooltip when no MQTT 5 properties are present", () => {

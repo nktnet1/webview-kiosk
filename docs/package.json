@@ -27,10 +27,10 @@
     "@tanstack/react-start": "1.169.5",
     "class-variance-authority": "0.7.1",
     "cn": "0.5.2",
-    "fumadocs-core": "16.19.0",
-    "fumadocs-mdx": "15.5.0",
-    "fumadocs-ui": "16.19.0",
-    "lucide-react": "^1.72.0",
+    "fumadocs-core": "16.19.3",
+    "fumadocs-mdx": "15.6.3",
+    "fumadocs-ui": "16.19.3",
+    "lucide-react": "^1.73.0",
     "next-themes": "^0.4.6",
     "radix-ui": "1.8.1",
     "react": "^19.3.1",
@@ -44,8 +44,8 @@
     "valibot": "1.5.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.6.7",
-    "@playwright/test": "1.65.0",
+    "@biomejs/biome": "^2.6.8",
+    "@playwright/test": "1.65.1",
     "@tailwindcss/vite": "^4.3.5",
     "@tanstack/react-router-devtools": "1.167.3",
     "@tanstack/router-generator": "1.168.0",
@@ -56,14 +56,14 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
     "lefthook": "2.2.2",
-    "serve": "^14.2.7",
+    "serve": "^14.2.8",
     "shiki": "^4.6.0",
     "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2",
     "unist-util-visit": "5.2.0",
     "vite": "^8.3.8",
     "vitest": "5.1.0",
-    "wrangler": "^4.160.1"
+    "wrangler": "^4.163.0"
   },
-  "packageManager": "pnpm@12.18.0"
+  "packageManager": "pnpm@12.21.0"
 }

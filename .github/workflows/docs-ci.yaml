@@ -100,7 +100,7 @@ jobs:
     # Pinned to docs/package.json's @playwright/test version. Chromium and OS
     # libraries are already present, so we do not depend on flaky apt mirrors.
     container:
-      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      image: mcr.microsoft.com/playwright:v1.65.1-noble
       options: --user 1001
 
     defaults:
