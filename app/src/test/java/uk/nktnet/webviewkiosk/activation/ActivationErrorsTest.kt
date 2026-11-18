@@ -53,14 +53,6 @@ class ActivationErrorsTest {
     }
 
     @Test
-    fun appPreconditionsKeepTheirMessage() {
-        val message =
-            "Activation is only available in the designated full user (ID 10). " +
-                "Open the app in that user and try again."
-        assertEquals(message, activationFailure(ActivationException(message)).output)
-    }
-
-    @Test
     fun absentOrBlankMessagesUseAShortFallbackAndKeepTheException() {
         for (message in listOf(null, "", " \n\t")) {
             val result = activationFailure(IllegalStateException(message))

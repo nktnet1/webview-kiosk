@@ -64,33 +64,46 @@ internal class OwnerActivation(
             checkActivation(sdkInt >= Build.VERSION_CODES.M) {
                 "Shizuku activation requires Android 6 or later."
             }
-            val designatedFullUserId =
-                if (sdkInt >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    command(listOf("cmd", "user", "get-main-user"))
-                        .requireSuccess()
-                        .toIntOrNull()
-                        ?.takeIf { it >= 0 }
-                        ?: throw ActivationException(
-                            "Android could not identify the designated full user. " +
-                                "Open the app in that user or use the ADB activation guide."
-                        )
-                } else {
-                    // Before Android 14, user 0 is the supported full-user target.
-                    // Do not guess on older headless-system devices.
-                    checkActivation(
-                        command(listOf("getprop", "ro.fw.mu.headless_system_user"))
+            checkActivation(userId >= 0) {
+                "Android could not identify the current user. Open the app in the " +
+                    "user you want to manage and try again."
+            }
+            if (!profileOwner) {
+                val designatedFullUserId =
+                    if (sdkInt >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        command(listOf("cmd", "user", "get-main-user"))
                             .requireSuccess()
-                            .lowercase() !in setOf("true", "1", "yes", "y", "on")
-                    ) {
-                        "Automatic activation cannot identify this device's designated " +
-                            "full user. Use the ADB activation guide instead."
+                            .toIntOrNull()
+                            ?.takeIf { it >= 0 }
+                            ?: throw ActivationException(
+                                "Android could not identify the designated full user. " +
+                                    "Open the app in that user or use the ADB activation guide."
+                            )
+                    } else {
+                        // Before Android 14, user 0 is the supported full-user
+                        // target.
+                        // Do not guess on older headless-system devices.
+                        checkActivation(
+                            command(
+                                    listOf(
+                                        "getprop",
+                                        "ro.fw.mu.headless_system_user",
+                                    )
+                                )
+                                .requireSuccess()
+                                .lowercase() !in setOf("true", "1", "yes", "y", "on")
+                        ) {
+                            "Automatic Device Owner activation cannot identify this " +
+                                "device's designated full user. Use the ADB activation " +
+                                "guide instead."
+                        }
+                        0
                     }
-                    0
+                checkActivation(userId == designatedFullUserId) {
+                    "Device Owner activation is only available in the designated " +
+                        "full user (ID $designatedFullUserId). " +
+                        "Open the app in that user and try again."
                 }
-            checkActivation(userId == designatedFullUserId) {
-                "Activation is only available in the designated full user " +
-                    "(ID $designatedFullUserId). " +
-                    "Open the app in that user and try again."
             }
 
             if (sdkInt >= Build.VERSION_CODES.S) {
@@ -128,7 +141,7 @@ internal class OwnerActivation(
             messages +=
                 if (success) {
                     if (profileOwner) {
-                        "Profile Owner is now active in the designated full user."
+                        "Profile Owner is now active in user $userId."
                     } else {
                         "Device Owner is now active."
                     }

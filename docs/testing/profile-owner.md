@@ -94,7 +94,9 @@ server.
 On disposable devices, test both owner choices with Shizuku running as ADB/shell
 and root. Record the original and final setup state, the result dialog, and
 `dumpsys device_policy`. Include Android 6–11, Android 12+, and Android 14+ with a
-nonzero designated full user where available. Test existing accounts,
+nonzero designated full user where available. Test Profile Owner activation
+from a managed work profile and a secondary full user, and confirm Device Owner
+activation is blocked there before changing setup state. Test existing accounts,
 conflicting ownership, denied permission, disconnects, and navigation during
 activation. Confirm setup restoration after failed commands on Android 12+, and
 no setup-state changes on Android 6–11. Before Android 6, verify that the
