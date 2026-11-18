@@ -1,0 +1,6 @@
+## Changes
+
+- Added Settings Auth Requirement and verification for sensitive settings or import 
+- Improved device owner lock status (more responsive using hooks over polling)
+- Improved filter-list download progress and management
+- Improved settings search and navigation cards
