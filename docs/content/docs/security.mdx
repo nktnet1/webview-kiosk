@@ -3,7 +3,7 @@ title: Security
 description: Authentication, launcher, lock task mode/pinning, Device Owner, Profile Owner, DPC and managed configurations
 ---
 
-import Link from 'fumadocs-core/link';
+import Link from 'fumadocs-core/link'
 
 ## 1. Settings Authentication Session [#settings-authentication-session]
 
@@ -65,10 +65,11 @@ This has the benefits of:
    the back and overview button, thus removing the side-effect of the device
    getting locked when users attempt to "unpin"
 
-In
+Under normal Android behaviour, when {APP_NAME} is running in fully managed
 [Lock Task Mode](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode),
-the in-app unlock methods are configurable and can be disabled. An eligible
-DPC can also end Lock Task by updating its policy. The in-app methods are:
+users cannot exit using the standard screen-unpin gesture. The in-app
+unlock methods are configurable and can be disabled. An eligible DPC can also
+end Lock Task by updating its policy. Available in-app methods are:
 
 1. Opening the Kiosk Control Panel by either
    - holding the back button
@@ -76,6 +77,16 @@ DPC can also end Lock Task by updating its policy. The in-app methods are:
      (e.g. Top Left quadrant)
 2. Adding a custom unlock shortcut (requires a physical keyboard or
    a method of that sending key combinations, e.g. `CTRL+1`)
+
+Some manufacturer firmware has been reported to leave kiosk mode unexpectedly,
+including after hardware Back-button input. When investigating an escape, first
+check whether the device was in full lock task mode or ordinary screen pinning.
+To help mitigate unexpected exits, Device Owner installations can enable
+[Re-lock After Unexpected Exit](/docs/settings/web-lifecycle#re-lock-after-unexpected-exit)
+and [Disable Status Bar Outside Lock Task](/docs/settings/device#disable-status-bar-outside-lock-task).
+Both options are disabled by default. Re-locking works only while the kiosk
+activity is visible. Neither option fixes an Android firmware issue, and
+the status-bar policy must be cleared through an administrator unlock.
 
 For further details, see the [MDM/EMM/DPC activation guide](/docs/activation/mdm-emm-dpc).
 
