@@ -11,7 +11,7 @@ class OwnerActivationTest {
     private val commands = mutableListOf<List<String>>()
     private val refreshed = mutableListOf<Int>()
     private var original = "1"
-    private var mainUser = "0"
+    private var designatedFullUserId = "0"
     private var headless = "false"
     private var dpmResult = CommandResult(0, "Success")
     private var onCommand: (List<String>) -> Unit = {}
@@ -25,7 +25,7 @@ class OwnerActivationTest {
                 commands += args
                 onCommand(args)
                 when (args.first()) {
-                    "cmd" -> CommandResult(0, mainUser)
+                    "cmd" -> CommandResult(0, designatedFullUserId)
                     "getprop" -> CommandResult(0, headless)
                     "settings" ->
                         CommandResult(
@@ -47,7 +47,7 @@ class OwnerActivationTest {
         )
 
     @Test
-    fun deviceOwnerUsesExplicitMainUserAndRestoresSetup() {
+    fun deviceOwnerUsesDesignatedFullUserAndRestoresSetup() {
         val result = engine().activate(false, 0)
         assertTrue(result.success)
         assertEquals(
@@ -95,13 +95,29 @@ class OwnerActivationTest {
     }
 
     @Test
-    fun profileOwnerUsesResolvedNonzeroMainUser() {
-        mainUser = "10\n"
+    fun deviceOwnerAcceptsResolvedNonzeroDesignatedFullUser() {
+        designatedFullUserId = "10\n"
+        val result = engine().activate(false, 10)
+        assertTrue(result.success)
+        assertTrue(
+            listOf("dpm", "set-device-owner", "--user", "10", admin) in commands
+        )
+        assertTrue(
+            commands.filter { it.first() == "settings" }.all { it[2] == "10" }
+        )
+        assertEquals(listOf(10, 10), refreshed)
+    }
+
+    @Test
+    fun profileOwnerActivatesInWorkProfileWithoutResolvingFullUser() {
+        designatedFullUserId = "No main user"
         val result = engine().activate(true, 10)
         assertTrue(result.success)
+        assertEquals("Profile Owner is now active in user 10.", result.output)
         assertTrue(
             listOf("dpm", "set-profile-owner", "--user", "10", admin) in commands
         )
+        assertFalse(commands.any { it.first() == "cmd" || it.first() == "getprop" })
         assertEquals(listOf(10, 10), refreshed)
         assertTrue(
             commands.filter { it.first() == "settings" }.all { it[2] == "10" }
@@ -109,34 +125,88 @@ class OwnerActivationTest {
     }
 
     @Test
-    fun secondaryUserOrWorkProfileCannotModifyAnySettings() {
-        for (user in listOf(10, 11, -1)) {
+    fun nonDesignatedUsersCannotAttemptDeviceOwnerOrModifySetup() {
+        for (user in listOf(10, 11)) {
             commands.clear()
-            val result = engine().activate(true, user)
+            refreshed.clear()
+            val result = engine().activate(false, user)
             assertFalse(result.success)
-            assertTrue(result.output.contains("main user (ID 0)"))
+            assertTrue(result.output.contains("designated full user (ID 0)"))
             assertEquals(listOf(listOf("cmd", "user", "get-main-user")), commands)
+            assertTrue(refreshed.isEmpty())
         }
     }
 
     @Test
-    fun unknownMainUserFailsClosedInsteadOfFallingBackToZero() {
+    fun negativeUserIdsCannotAttemptEitherOwnerMode() {
+        for (profileOwner in listOf(false, true)) {
+            commands.clear()
+            refreshed.clear()
+            val result = engine().activate(profileOwner, -1)
+            assertFalse(result.success)
+            assertTrue(result.output.contains("could not identify the current user"))
+            assertTrue(commands.isEmpty())
+            assertTrue(refreshed.isEmpty())
+        }
+    }
+
+    @Test
+    fun profileOwnerOnPre14HeadlessDeviceUsesItsOwnUserId() {
+        headless = "true"
+        val result = engine(Build.VERSION_CODES.TIRAMISU).activate(true, 11)
+        assertTrue(result.success)
+        assertTrue(
+            listOf("dpm", "set-profile-owner", "--user", "11", admin) in commands
+        )
+        assertFalse(commands.any { it.first() == "cmd" || it.first() == "getprop" })
+        assertTrue(
+            commands.filter { it.first() == "settings" }.all { it[2] == "11" }
+        )
+        assertEquals(listOf(11, 11), refreshed)
+    }
+
+    @Test
+    fun profileOwnerOnOlderAndroidTargetsSecondaryUserWithoutSetupWorkaround() {
+        val result = engine(Build.VERSION_CODES.R).activate(true, 10)
+        assertTrue(result.success)
+        assertEquals(
+            listOf("dpm", "set-profile-owner", "--user", "10", admin),
+            commands.single(),
+        )
+        assertTrue(refreshed.isEmpty())
+    }
+
+    @Test
+    fun unknownFullUserIdFailsClosedInsteadOfFallingBackToZero() {
         for (output in listOf("No main user", "-10000", "", "Error: unsupported")) {
             commands.clear()
-            mainUser = output
-            assertFalse(engine().activate(false, 0).success)
+            designatedFullUserId = output
+            val result = engine().activate(false, 0)
+            assertFalse(result.success)
+            assertTrue(
+                result.output.contains("could not identify the designated full user")
+            )
             assertEquals(1, commands.size)
         }
     }
 
     @Test
     fun android12And13UseFullSystemUserAndRefuseHeadlessDevices() {
-        assertTrue(engine(Build.VERSION_CODES.S).activate(true, 0).success)
+        assertTrue(engine(Build.VERSION_CODES.S).activate(false, 0).success)
         assertFalse(commands.any { it.first() == "cmd" })
         commands.clear()
         headless = "1"
-        assertFalse(engine(Build.VERSION_CODES.TIRAMISU).activate(true, 0).success)
+        assertFalse(engine(Build.VERSION_CODES.TIRAMISU).activate(false, 0).success)
         assertEquals(1, commands.size)
+        commands.clear()
+        headless = "false"
+        val secondaryResult = engine(Build.VERSION_CODES.S).activate(false, 10)
+        assertFalse(secondaryResult.success)
+        assertTrue(secondaryResult.output.contains("designated full user (ID 0)"))
+        assertEquals(
+            listOf(listOf("getprop", "ro.fw.mu.headless_system_user")),
+            commands,
+        )
     }
 
     @Test
