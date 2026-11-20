@@ -615,6 +615,9 @@ internal class CompiledFilterCache(
         } catch (_: IOException) {
             // Disposable optimization; the original filter lists remain
             // authoritative.
+        } catch (_: OutOfMemoryError) {
+            // Cache serialization is optional. Free its temporary dictionary
+            // rather than failing a successfully compiled rule replacement.
         }
     }
 
@@ -623,11 +626,22 @@ internal class CompiledFilterCache(
         private val encoding = CacheStringWriter(output)
 
         fun write(value: String) {
+            if (value.length > CacheStringWriter.MAX_LENGTH) {
+                throw IOException("Compiled cache string exceeds the size limit")
+            }
             val previous = strings[value]
-            output.writeInt(previous ?: strings.size)
-            if (previous == null) {
-                strings[value] = strings.size
-                encoding.write(value)
+            when {
+                previous != null -> output.writeInt(previous)
+                strings.size < MAX_INTERNED_STRINGS -> {
+                    output.writeInt(strings.size)
+                    strings[value] = strings.size
+                    encoding.write(value)
+                }
+                else -> {
+                    // Keep unique selectors from retaining an unbounded map.
+                    output.writeInt(INLINE_STRING)
+                    encoding.write(value)
+                }
             }
         }
 
@@ -683,10 +697,16 @@ internal class CompiledFilterCache(
             get() = values.size
 
         fun read(): String {
-            val index = input.count(minOf(values.size, 2_000_000))
+            val index = input.readInt()
+            if (index == INLINE_STRING) {
+                return input.readString()
+            }
+            require(index in 0..values.size)
             if (index == values.size) {
+                require(values.size < MAX_INTERNED_STRINGS)
                 val value = input.readString()
                 values += value
+                return value
             }
             return values[index]
         }
@@ -735,10 +755,12 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 20
+        private const val VERSION = 21
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
         private const val CHECKSUM_BYTES = Long.SIZE_BYTES.toLong()
+        private const val MAX_INTERNED_STRINGS = 16_384
+        private const val INLINE_STRING = -1
 
         private fun CacheDataInput.count(max: Int): Int =
             readInt().also {

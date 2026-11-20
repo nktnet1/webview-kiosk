@@ -194,6 +194,9 @@ internal class CacheStringWriter(private val output: DataOutputStream) {
     }
 
     companion object {
-        const val MAX_LENGTH = 8192
+        // Source rule lines are capped at 8,192 characters by FilterParser.
+        // Leave room for normalized fields while rejecting implausibly large
+        // cache strings. Two-byte characters still fit the 64 KiB read buffer.
+        const val MAX_LENGTH = 16_384
     }
 }

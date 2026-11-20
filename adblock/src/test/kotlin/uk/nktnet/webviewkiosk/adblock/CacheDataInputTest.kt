@@ -180,7 +180,8 @@ class CacheDataInputTest {
 
     @Test
     fun invalidLengthsAndTruncatedStringsAreRejected() {
-        for (tag in listOf(8193, 0x8000 or 8193, 0x7fff, 0xffff)) {
+        val tooLong = CacheStringWriter.MAX_LENGTH + 1
+        for (tag in listOf(tooLong, 0x8000 or tooLong, 0x7fff, 0xffff)) {
             val bytes = ByteArrayOutputStream()
             DataOutputStream(bytes).writeShort(tag)
             CacheDataInput(ByteArrayInputStream(bytes.toByteArray()), 2, CRC32())
