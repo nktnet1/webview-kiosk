@@ -7,7 +7,10 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.ServiceConnection
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.content.pm.PermissionInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
@@ -32,6 +35,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuProvider
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
@@ -99,6 +103,34 @@ class ShizukuActivationTest {
         assertEquals(0, access.requests)
         assertEquals(0, access.binds)
         assertClean()
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.S])
+    fun missingManagerExplainsHowToInstallOrStartShizuku() {
+        val result = complete(scope.async { ShizukuActivation.activate(app, false) })
+        assertFalse(result.success)
+        assertTrue(result.output, result.output.contains("Shizuku is unavailable"))
+        assertTrue(result.output, result.output.contains("if needed"))
+        assertEquals(0, access.binds)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.S])
+    fun stoppedServiceIsDetectedForDifferentShizukuForkPackageNames() {
+        for (packageName in
+            listOf("example.shizuku.fork", "another.example.manager")) {
+            installShizukuManager(packageName)
+            val result =
+                complete(scope.async { ShizukuActivation.activate(app, false) })
+            assertFalse(result.success)
+            assertTrue(
+                result.output,
+                result.output.contains("Shizuku is not running"),
+            )
+            assertEquals(0, access.binds)
+            shadowOf(app.packageManager).removePackage(packageName)
+        }
     }
 
     @Test
@@ -318,6 +350,29 @@ class ShizukuActivationTest {
         assertTrue(access.deaths.isEmpty())
     }
 
+    @Suppress("DEPRECATION")
+    private fun installShizukuManager(shizukuPackageName: String) {
+        shadowOf(app.packageManager)
+            .installPackage(
+                PackageInfo().apply {
+                    packageName = shizukuPackageName
+                    applicationInfo =
+                        ApplicationInfo().apply {
+                            packageName = shizukuPackageName
+                            flags = ApplicationInfo.FLAG_INSTALLED
+                        }
+                }
+            )
+        shadowOf(app.packageManager)
+            .addPermissionInfo(
+                PermissionInfo().apply {
+                    name = ShizukuProvider.PERMISSION
+                    packageName = shizukuPackageName
+                    protectionLevel = PermissionInfo.PROTECTION_NORMAL
+                }
+            )
+    }
+
     private inner class FakeAccess : ShizukuAccess {
         var available = true
         var permission = true
@@ -365,7 +420,7 @@ class ShizukuActivationTest {
             )
         }
 
-        override fun checkAvailable() {
+        override fun checkAvailable(context: Context) {
             check(available) { "Shizuku is not running" }
         }
 
