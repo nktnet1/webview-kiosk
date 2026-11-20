@@ -25,12 +25,14 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuProvider
 import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.utils.isPackageInstalled
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 
 internal interface ShizukuAccess {
-    fun checkAvailable()
+    fun checkAvailable(context: Context)
 
     fun permissionGranted(): Boolean
 
@@ -53,9 +55,15 @@ internal interface ShizukuAccess {
 
 @RequiresApi(Build.VERSION_CODES.M)
 private object PlatformShizukuAccess : ShizukuAccess {
-    override fun checkAvailable() {
+    override fun checkAvailable(context: Context) {
         checkActivation(Shizuku.pingBinder()) {
-            "Shizuku is not running. Open Shizuku, start its service, then try again."
+            if (isShizukuManagerInstalled(context)) {
+                "Shizuku is not running. Start the service in your Shizuku-compatible " +
+                    "manager, then try again."
+            } else {
+                "Shizuku is unavailable. Install a Shizuku-compatible manager if " +
+                    "needed, start its service, then try again."
+            }
         }
         checkActivation(Shizuku.getVersion() >= 11) {
             "Update Shizuku, restart its service, then try again."
@@ -96,6 +104,21 @@ private object PlatformShizukuAccess : ShizukuAccess {
     ) = Shizuku.unbindUserService(args, connection, true)
 }
 
+private fun isShizukuManagerInstalled(context: Context): Boolean =
+    try {
+        // Compatible forks declare the same API permission as the official app.
+        val manager =
+            context.packageManager
+                .getPermissionInfo(ShizukuProvider.PERMISSION, 0)
+                .packageName
+        manager != null && isPackageInstalled(context, manager)
+    } catch (_: PackageManager.NameNotFoundException) {
+        false
+    } catch (_: SecurityException) {
+        // Package visibility may hide an installed fork.
+        false
+    }
+
 /** One activation at a time, including permission prompts and setup restoration. */
 internal object ShizukuActivation {
     private val mutex = Mutex()
@@ -119,8 +142,8 @@ internal object ShizukuActivation {
                     "This app already has native ownership. Check Device Policies " +
                         "before trying to activate another role."
                 }
-                access.checkAvailable()
-                awaitPermission(access)
+                access.checkAvailable(context)
+                awaitPermission(context, access)
                 val result = activateService(context, profileOwner, access)
                 // Activation grants native ownership, not a Shizuku policy mode.
                 DeviceOwnerManager.init(context)
@@ -156,7 +179,7 @@ internal object ShizukuActivation {
         }
     }
 
-    private suspend fun awaitPermission(access: ShizukuAccess) {
+    private suspend fun awaitPermission(context: Context, access: ShizukuAccess) {
         if (access.permissionGranted()) {
             return
         }
@@ -195,7 +218,7 @@ internal object ShizukuActivation {
             withTimeout(120_000.milliseconds) {
                 suspendCancellableCoroutine { continuation ->
                     pending = continuation
-                    access.checkAvailable()
+                    access.checkAvailable(context)
                     access.requestPermission(requestCode)
                 }
             }
@@ -261,7 +284,7 @@ internal object ShizukuActivation {
                 withTimeout(20_000.milliseconds) {
                     suspendCancellableCoroutine { continuation ->
                         pending = continuation
-                        access.checkAvailable()
+                        access.checkAvailable(context)
                         access.bind(args, connection)
                     }
                 }

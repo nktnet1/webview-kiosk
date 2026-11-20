@@ -4,12 +4,10 @@ package uk.nktnet.webviewkiosk.ui.screens
 
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
 import android.content.RestrictionsManager
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PermissionInfo
-import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.Bundle
@@ -77,7 +75,6 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
-import uk.nktnet.webviewkiosk.ui.components.setting.isShizukuAvailable
 import uk.nktnet.webviewkiosk.ui.theme.warning
 
 @RunWith(RobolectricTestRunner::class)
@@ -373,39 +370,60 @@ class ManagementSettingsUiTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.S])
-    fun aStoppedShizukuForkIsDiscoveredThroughItsApiPermission() {
+    fun shizukuButtonRemainsVisibleWhenManagerIsMissingInstalledOrRemoved() {
         val packageName = "example.shizuku.fork"
         val context = controller.get()
-        shadowOf(context.packageManager).removePackage(packageName)
-        render {
-            ShizukuActivationSection(hasNativeOwner = false, onActivated = {})
+        val originalBinder = Shizuku.getBinder()
+        ReflectionHelpers.setStaticField(Shizuku::class.java, "binder", null)
+        try {
+            shadowOf(context.packageManager).removePackage(packageName)
+            render {
+                ShizukuActivationSection(
+                    hasNativeOwner = false,
+                    onActivated = {},
+                    activate = {
+                        ActivationResult(
+                            false,
+                            "Shizuku is unavailable. Install a compatible manager if needed.",
+                        )
+                    },
+                )
+            }
+            assertText(message(R.string.ui_activate_with_shizuku))
+            click(message(R.string.ui_activate_with_shizuku))
+            click(message(R.string.ui_shizuku_activate))
+            assertText(
+                "Shizuku is unavailable. Install a compatible manager if needed."
+            )
+            click(message(R.string.ui_close))
+            installShizuku()
+            frames()
+            assertText(message(R.string.ui_activate_with_shizuku))
+            shadowOf(context.packageManager).removePackage(packageName)
+            frames()
+            assertText(message(R.string.ui_activate_with_shizuku))
+        } finally {
+            ReflectionHelpers.setStaticField(
+                Shizuku::class.java,
+                "binder",
+                originalBinder,
+            )
         }
-        assertNoText(message(R.string.ui_activate_with_shizuku))
-        installShizuku()
-        context.sendBroadcast(
-            Intent(Intent.ACTION_PACKAGE_ADDED, Uri.parse("package:$packageName"))
-        )
-        frames()
-        assertText(message(R.string.ui_activate_with_shizuku))
-        shadowOf(context.packageManager).removePackage(packageName)
-        context.sendBroadcast(
-            Intent(Intent.ACTION_PACKAGE_REMOVED, Uri.parse("package:$packageName"))
-        )
-        frames()
-        assertNoText(message(R.string.ui_activate_with_shizuku))
     }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.S])
-    fun aConnectedBinderIsDiscoverableWithoutAnyManagerPackage() {
+    fun shizukuButtonIsVisibleWithOnlyAConnectedBinder() {
         val context = controller.get()
         shadowOf(context.packageManager).removePackage("example.shizuku.fork")
         val original = Shizuku.getBinder()
         try {
             ReflectionHelpers.setStaticField(Shizuku::class.java, "binder", null)
-            assertFalse(isShizukuAvailable(context))
             ReflectionHelpers.setStaticField(Shizuku::class.java, "binder", Binder())
-            assertTrue(isShizukuAvailable(context))
+            render {
+                ShizukuActivationSection(hasNativeOwner = false, onActivated = {})
+            }
+            assertText(message(R.string.ui_activate_with_shizuku))
         } finally {
             ReflectionHelpers.setStaticField(Shizuku::class.java, "binder", original)
         }

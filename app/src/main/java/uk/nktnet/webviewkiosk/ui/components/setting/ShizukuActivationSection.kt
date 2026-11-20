@@ -1,11 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting
 
-import android.content.BroadcastReceiver
 import android.content.ClipData
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
@@ -36,7 +31,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,18 +53,11 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
-import rikka.shizuku.Shizuku
-import rikka.shizuku.ShizukuProvider
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.activation.ActivationResult
 import uk.nktnet.webviewkiosk.activation.ShizukuActivation
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
-import uk.nktnet.webviewkiosk.utils.isPackageInstalled
 
 @RequiresApi(Build.VERSION_CODES.M)
 @Composable
@@ -87,9 +74,7 @@ internal fun ShizukuActivationSection(
     var running by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<ActivationResult?>(null) }
     var resultProfileOwner by remember { mutableStateOf(false) }
-    val shizukuAvailable = rememberShizukuAvailable()
-    val canActivate =
-        shizukuAvailable && !hasNativeOwner && !hasSharedOwnerPermission
+    val canActivate = !hasNativeOwner && !hasSharedOwnerPermission
 
     if (canActivate) {
         Button(
@@ -365,72 +350,4 @@ private fun ActivationStacktrace(diagnostics: String) {
             }
         }
     }
-}
-
-@Composable
-private fun rememberShizukuAvailable(): Boolean {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var available by
-        remember(context) {
-            mutableStateOf(isShizukuAvailable(context))
-        }
-    DisposableEffect(context, lifecycleOwner) {
-        fun refresh() {
-            available = isShizukuAvailable(context)
-        }
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                refresh()
-            }
-        }
-        val receiver =
-            object : BroadcastReceiver() {
-                override fun onReceive(context: Context, intent: Intent) {
-                    refresh()
-                }
-            }
-        val received = Shizuku.OnBinderReceivedListener { refresh() }
-        val died = Shizuku.OnBinderDeadListener { refresh() }
-        val filter =
-            IntentFilter().apply {
-                addAction(Intent.ACTION_PACKAGE_ADDED)
-                addAction(Intent.ACTION_PACKAGE_REMOVED)
-                addAction(Intent.ACTION_PACKAGE_CHANGED)
-                addDataScheme("package")
-            }
-        ContextCompat.registerReceiver(
-            context,
-            receiver,
-            filter,
-            ContextCompat.RECEIVER_NOT_EXPORTED,
-        )
-        lifecycleOwner.lifecycle.addObserver(observer)
-        Shizuku.addBinderReceivedListenerSticky(received)
-        Shizuku.addBinderDeadListener(died)
-        refresh()
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            Shizuku.removeBinderReceivedListener(received)
-            Shizuku.removeBinderDeadListener(died)
-            context.unregisterReceiver(receiver)
-        }
-    }
-    return available
-}
-
-internal fun isShizukuAvailable(context: Context): Boolean {
-    return Shizuku.pingBinder() ||
-        try {
-            // Discover the app providing the SDK permission, including compatible
-            // forks. A stopped manager remains discoverable, without a package
-            // allowlist.
-            val manager =
-                context.packageManager
-                    .getPermissionInfo(ShizukuProvider.PERMISSION, 0)
-                    .packageName
-            manager != null && isPackageInstalled(context, manager)
-        } catch (_: PackageManager.NameNotFoundException) {
-            false
-        }
 }
