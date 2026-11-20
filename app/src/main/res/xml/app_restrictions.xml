@@ -324,6 +324,12 @@
         android:description="@string/setting_info_lock_on_launch"
     />
     <restriction
+        android:key="web_lifecycle.relock_on_unexpected_exit"
+        android:restrictionType="bool"
+        android:title="@string/web_lifecycle_relock_on_unexpected_exit_title"
+        android:description="@string/setting_info_relock_on_unexpected_exit"
+    />
+    <restriction
         android:key="web_lifecycle.reset_on_launch"
         android:restrictionType="bool"
         android:title="@string/web_lifecycle_reset_on_launch_title"
@@ -550,6 +556,12 @@
     />
 
     <!-- Device Owner -->
+    <restriction
+        android:key="device.owner.disable_status_bar_outside_lock_task"
+        android:restrictionType="bool"
+        android:title="@string/device_owner_disable_status_bar_outside_lock_task_title"
+        android:description="@string/setting_info_disable_status_bar_outside_lock_task"
+    />
     <restriction
         android:key="device.owner.lock_task_feature.home"
         android:restrictionType="bool"

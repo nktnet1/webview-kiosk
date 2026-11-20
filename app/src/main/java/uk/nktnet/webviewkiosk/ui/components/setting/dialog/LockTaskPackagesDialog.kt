@@ -51,6 +51,7 @@ import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
 import uk.nktnet.webviewkiosk.ui.resources.displayLabelRes
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
+import uk.nktnet.webviewkiosk.utils.removeLockTaskPackage
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -200,17 +201,7 @@ fun RemoveLockTaskAppDialog(
                     }
 
                     try {
-                        check(
-                            DeviceOwnerManager.editLockTaskPackage(
-                                context,
-                                removeApp.packageName,
-                                false,
-                            )
-                        ) {
-                            context.getString(
-                                R.string.ui_lock_task_policy_update_failed
-                            )
-                        }
+                        removeLockTaskPackage(context, removeApp.packageName)
                         ToastManager.show(
                             context,
                             context.getString(

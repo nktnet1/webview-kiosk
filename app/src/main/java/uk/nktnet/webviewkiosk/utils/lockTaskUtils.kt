@@ -307,6 +307,15 @@ fun tryLockTask(activity: Activity?): Boolean {
         activity,
         lockAction = Activity::startLockTask,
         onSuccess = {
+            if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                    (activity.getSystemService(Context.ACTIVITY_SERVICE)
+                            as ActivityManager)
+                        .lockTaskModeState == ActivityManager.LOCK_TASK_MODE_LOCKED
+            ) {
+                LockTaskRecovery.onLockStarted()
+            }
+            DeviceOwnerStatusBarPolicy.reconcile(activity)
             AuthenticationManager.resetAuthentication()
             // Handled MQTT publish in LockStateSingleton
         },
@@ -324,78 +333,134 @@ fun tryUnlockTask(activity: Activity?): Boolean {
         return false
     }
     logAndroid6LockAction(activity, "stopLockTask")
+    // Suppress unexpected-exit recovery before changing lock task or owner
+    // policies. Restore the prior state if the unlock cannot complete.
+    val previousIntentionalUnlock = LockTaskRecovery.beginIntentionalUnlock()
+    val clearedPolicy = DeviceOwnerStatusBarPolicy.clearForIntentionalExit(activity)
+    if (!clearedPolicy.succeeded) {
+        LockTaskRecovery.completeIntentionalUnlock(false, previousIntentionalUnlock)
+        ToastManager.show(
+            activity,
+            "Failed to restore status bar. Unlock cancelled.",
+        )
+        return false
+    }
     val capabilities = DeviceOwnerManager.getCapabilities(activity)
-    return tryLockAction(
-        activity,
-        lockAction = {
-            if (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-                    capabilities.lockTaskPackages
-            ) {
-                try {
-                    val savedPackages =
-                        DeviceOwnerManager.DPM.getLockTaskPackages(
-                            DeviceOwnerManager.DAR
-                        )
-                    val savedFeatures =
-                        if (
-                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-                                capabilities.lockTaskFeatures
-                        ) {
-                            DeviceOwnerManager.DPM.getLockTaskFeatures(
+    val succeeded =
+        tryLockAction(
+            activity,
+            lockAction = {
+                if (
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                        capabilities.lockTaskPackages
+                ) {
+                    try {
+                        val savedPackages =
+                            DeviceOwnerManager.DPM.getLockTaskPackages(
                                 DeviceOwnerManager.DAR
                             )
-                        } else {
-                            null
-                        }
-                    try {
-                        DeviceOwnerManager.DPM.setLockTaskPackages(
-                            DeviceOwnerManager.DAR,
-                            arrayOf(activity.packageName),
-                        )
-                    } finally {
-                        DeviceOwnerManager.DPM.setLockTaskPackages(
-                            DeviceOwnerManager.DAR,
-                            savedPackages,
-                        )
-                        if (
-                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-                                savedFeatures != null
-                        ) {
-                            DeviceOwnerManager.DPM.setLockTaskFeatures(
+                        val savedFeatures =
+                            if (
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                                    capabilities.lockTaskFeatures
+                            ) {
+                                DeviceOwnerManager.DPM.getLockTaskFeatures(
+                                    DeviceOwnerManager.DAR
+                                )
+                            } else {
+                                null
+                            }
+                        try {
+                            DeviceOwnerManager.DPM.setLockTaskPackages(
                                 DeviceOwnerManager.DAR,
-                                savedFeatures,
+                                arrayOf(activity.packageName),
                             )
+                        } finally {
+                            DeviceOwnerManager.DPM.setLockTaskPackages(
+                                DeviceOwnerManager.DAR,
+                                savedPackages,
+                            )
+                            if (
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                                    savedFeatures != null
+                            ) {
+                                DeviceOwnerManager.DPM.setLockTaskFeatures(
+                                    DeviceOwnerManager.DAR,
+                                    savedFeatures,
+                                )
+                            }
                         }
+                    } catch (e: Exception) {
+                        Log.w(
+                            Constants.APP_SCHEME,
+                            "Lock task packages or features operation failed",
+                            e,
+                        )
+                        ToastManager.show(
+                            activity,
+                            activity.getString(
+                                R.string.ui_dpm_value_error_value,
+                                DeviceOwnerManager.status.value.mode,
+                                e.message,
+                            ),
+                        )
                     }
-                } catch (e: Exception) {
-                    Log.w(
-                        Constants.APP_SCHEME,
-                        "Lock task packages or features operation failed",
-                        e,
-                    )
-                    ToastManager.show(
-                        activity,
-                        activity.getString(
-                            R.string.ui_dpm_value_error_value,
-                            DeviceOwnerManager.status.value.mode,
-                            e.message,
-                        ),
-                    )
                 }
-            }
-            activity.stopLockTask()
-        },
-        onSuccess = {
-            // Handled MQTT publish in LockStateSingleton
-        },
-        onFailed = {
-            ToastManager.show(
-                activity,
-                activity.getString(R.string.ui_failed_to_unlock_value, it),
-            )
-        },
-    )
+                activity.stopLockTask()
+            },
+            onSuccess = {
+                // Handled MQTT publish in LockStateSingleton
+            },
+            onFailed = {
+                ToastManager.show(
+                    activity,
+                    activity.getString(R.string.ui_failed_to_unlock_value, it),
+                )
+            },
+        )
+    LockTaskRecovery.completeIntentionalUnlock(succeeded, previousIntentionalUnlock)
+    if (!succeeded && clearedPolicy.wasManaged) {
+        DeviceOwnerStatusBarPolicy.reconcile(activity)
+    }
+    return succeeded
+}
+
+/** Remove an allowlist entry using the capabilities-aware policy API. */
+fun removeLockTaskPackage(context: Context, packageName: String) {
+    val removingSelf = packageName == context.packageName
+    val previousUnlock =
+        if (removingSelf) {
+            LockTaskRecovery.beginIntentionalUnlock()
+        } else {
+            null
+        }
+    val clearedPolicy =
+        if (removingSelf) {
+            DeviceOwnerStatusBarPolicy.clearForIntentionalExit(context)
+        } else {
+            null
+        }
+    if (clearedPolicy != null && !clearedPolicy.succeeded) {
+        LockTaskRecovery.completeIntentionalUnlock(false, previousUnlock!!)
+        error("Cannot restore status bar before removing the kiosk allowlist entry.")
+    }
+
+    try {
+        check(DeviceOwnerManager.editLockTaskPackage(context, packageName, false)) {
+            context.getString(R.string.ui_lock_task_policy_update_failed)
+        }
+        if (previousUnlock != null) {
+            LockTaskRecovery.completeIntentionalUnlock(true, previousUnlock)
+        }
+    } catch (e: Exception) {
+        if (previousUnlock != null) {
+            LockTaskRecovery.completeIntentionalUnlock(false, previousUnlock)
+        }
+        if (clearedPolicy?.wasManaged == true) {
+            DeviceOwnerStatusBarPolicy.reconcile(context)
+        }
+        throw e
+    }
 }
 
 fun setupLockTaskPackage(context: Context): Boolean {

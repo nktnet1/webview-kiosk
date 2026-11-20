@@ -48,6 +48,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.ShizukuActivationSection
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.DeviceAdminReceiverListDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.LockTaskPackagesDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunchSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.DisableStatusBarOutsideLockTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureHomeSetting
@@ -57,6 +58,8 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
 import uk.nktnet.webviewkiosk.ui.resources.lockTaskPolicyUnavailableReason
 import uk.nktnet.webviewkiosk.ui.theme.warning
+import uk.nktnet.webviewkiosk.utils.DeviceOwnerStatusBarPolicy
+import uk.nktnet.webviewkiosk.utils.LockTaskRecovery
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 import uk.nktnet.webviewkiosk.utils.openPackage
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
@@ -192,6 +195,17 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 DividerDefaults.color,
             )
 
+            val statusBarReason =
+                when {
+                    Build.VERSION.SDK_INT < Build.VERSION_CODES.M ->
+                        stringResource(R.string.ui_status_bar_requires_android_6)
+                    deviceOwnerStatus.mode != DeviceOwnerMode.DeviceOwner ->
+                        stringResource(R.string.ui_status_bar_requires_device_owner)
+                    !hasOwnerPermission ->
+                        stringResource(R.string.ui_lock_task_owner_access_required)
+                    else -> null
+                }
+            DisableStatusBarOutsideLockTaskSetting(disabledReason = statusBarReason)
             LockTaskFeatureHomeSetting(disabledReason = featureReason)
             LockTaskFeatureOverviewSetting(disabledReason = featureReason)
             LockTaskFeatureGlobalActionsSetting(disabledReason = featureReason)
@@ -313,6 +327,23 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 TextButton(
                     onClick = {
                         showDeviceOwnerRemovalDialog = false
+                        val previousUnlock =
+                            LockTaskRecovery.beginIntentionalUnlock()
+                        val clearedPolicy =
+                            DeviceOwnerStatusBarPolicy.clearForIntentionalExit(
+                                context
+                            )
+                        if (!clearedPolicy.succeeded) {
+                            LockTaskRecovery.completeIntentionalUnlock(
+                                false,
+                                previousUnlock,
+                            )
+                            ToastManager.show(
+                                context,
+                                "Cannot restore status bar. Deactivation cancelled.",
+                            )
+                            return@TextButton
+                        }
                         try {
                             DeviceOwnerManager.removeNativeOwner(context)
                         } catch (e: Exception) {
@@ -328,6 +359,20 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                                     e.message,
                                 ),
                             )
+                        }
+                        DeviceOwnerManager.init(context)
+                        val ownerStillActive =
+                            DeviceOwnerManager.status.value.mode in
+                                setOf(
+                                    DeviceOwnerMode.DeviceOwner,
+                                    DeviceOwnerMode.ProfileOwner,
+                                )
+                        LockTaskRecovery.completeIntentionalUnlock(
+                            !ownerStillActive,
+                            previousUnlock,
+                        )
+                        if (ownerStillActive && clearedPolicy.wasManaged) {
+                            DeviceOwnerStatusBarPolicy.reconcile(context)
                         }
                         hasOwnerPermission =
                             DeviceOwnerManager.hasOwnerPermission(context)

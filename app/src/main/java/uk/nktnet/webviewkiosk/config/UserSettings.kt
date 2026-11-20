@@ -436,6 +436,13 @@ class UserSettings(val context: Context) {
             UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH,
             false,
         )
+    var relockOnUnexpectedExit by
+        booleanPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.WebLifecycle.RELOCK_ON_UNEXPECTED_EXIT,
+            false,
+        )
     var resetOnLaunch by
         booleanPref(
             getRestrictions,
@@ -681,6 +688,14 @@ class UserSettings(val context: Context) {
             getRestrictions,
             prefs,
             UserSettingsKeys.Device.BLOCK_VOLUME_KEYS,
+            false,
+        )
+
+    var disableStatusBarOutsideLockTask by
+        booleanPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.Device.Owner.DISABLE_STATUS_BAR_OUTSIDE_LOCK_TASK,
             false,
         )
 
@@ -1410,6 +1425,10 @@ class UserSettings(val context: Context) {
                 )
 
                 put(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
+                put(
+                    UserSettingsKeys.WebLifecycle.RELOCK_ON_UNEXPECTED_EXIT,
+                    relockOnUnexpectedExit,
+                )
                 put(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
                 put(
                     UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS,
@@ -1494,6 +1513,11 @@ class UserSettings(val context: Context) {
                 )
                 put(UserSettingsKeys.Device.BLOCK_SCREEN_CAPTURE, blockScreenCapture)
                 put(UserSettingsKeys.Device.BLOCK_VOLUME_KEYS, blockVolumeKeys)
+                put(
+                    UserSettingsKeys.Device.Owner
+                        .DISABLE_STATUS_BAR_OUTSIDE_LOCK_TASK,
+                    disableStatusBarOutsideLockTask,
+                )
 
                 put(
                     UserSettingsKeys.Device.Owner.LockTaskFeature.HOME,
@@ -2077,6 +2101,11 @@ class UserSettings(val context: Context) {
                     UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH,
                     lockOnLaunch,
                 )
+            relockOnUnexpectedExit =
+                json.optBoolean(
+                    UserSettingsKeys.WebLifecycle.RELOCK_ON_UNEXPECTED_EXIT,
+                    relockOnUnexpectedExit,
+                )
             resetOnLaunch =
                 json.optBoolean(
                     UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH,
@@ -2253,6 +2282,12 @@ class UserSettings(val context: Context) {
                     blockVolumeKeys,
                 )
 
+            disableStatusBarOutsideLockTask =
+                json.optBoolean(
+                    UserSettingsKeys.Device.Owner
+                        .DISABLE_STATUS_BAR_OUTSIDE_LOCK_TASK,
+                    disableStatusBarOutsideLockTask,
+                )
             lockTaskFeatureHome =
                 json.optBoolean(
                     UserSettingsKeys.Device.Owner.LockTaskFeature.HOME,

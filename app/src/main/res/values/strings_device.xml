@@ -63,6 +63,9 @@ This requires Android 11 (API Level 30)."</string>
     <string name="setting_info_lock_task_feature_global_actions" formatted="false">"Enables the global actions dialog that shows when long-pressing the power button.
 
 This is the only feature that\'s enabled when setLockTaskFeatures() hasn\'t been called. A user typically can\'t power off the device if you disable this dialog."</string>
+    <string name="setting_info_disable_status_bar_outside_lock_task" formatted="false">"When Lock on Launch is enabled and the app is Device Owner, keep the status bar disabled if the OS unexpectedly exits lock task mode. The app applies this policy only after full lock task is confirmed. Android enforces it after lock task exits. The app's normal Unlock action restores the status bar.
+
+This restricts notification shade access, but does not disable Settings or prevent all system-level escapes. Requires Android 6+."</string>
     <string name="setting_info_lock_task_feature_home" formatted="false">"Shows the Home button.
 
 Enable for custom launchers - tapping an enabled Home button has no action unless you allowlist the default Android launcher."</string>
