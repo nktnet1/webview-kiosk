@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.adblock
 import java.io.File
 import java.nio.ByteBuffer
 import java.util.zip.CRC32
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -11,6 +12,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import uk.nktnet.webviewkiosk.adblock.engine.CacheStringWriter
 import uk.nktnet.webviewkiosk.adblock.engine.CompiledFilterCache
 import uk.nktnet.webviewkiosk.adblock.engine.CompiledRuleSet
 import uk.nktnet.webviewkiosk.adblock.engine.CosmeticRule
@@ -386,6 +388,84 @@ class CompiledFilterCacheTest {
     }
 
     @Test
+    fun cacheRoundTripsMoreUniqueCosmeticSelectorsThanTheInterningLimit() {
+        val file = File(folder.root, "many-selectors.bin")
+        val cache = CompiledFilterCache(file)
+        val key = cache.key(listOf("many-selectors"))
+        val cosmetics =
+            (0..17_000).map { index ->
+                CosmeticRule(".unique-$index", DomainScope.ANY, exception = false)
+            } +
+                CosmeticRule(".unique-0", DomainScope.ANY, exception = false) +
+                CosmeticRule(".unique-17000", DomainScope.ANY, exception = false)
+        cache.write(key, CompiledRuleSet(emptyList(), cosmetics, skippedRules = 0))
+
+        val timings = mutableListOf<String>()
+        val restored = requireNotNull(cache.read(key, onTimings = timings::add))
+        assertEquals(cosmetics, restored.cosmetics.toList())
+        assertTrue("strings=16384" in timings.single())
+    }
+
+    @Test
+    fun maximumLengthCacheStringsRoundTripWithoutTruncation() {
+        val file = File(folder.root, "maximum-length-selectors.bin")
+        val cache = CompiledFilterCache(file)
+        val key = cache.key(listOf("maximum-length-selectors"))
+        val cosmetics =
+            listOf(
+                CosmeticRule(
+                    "." + "a".repeat(CacheStringWriter.MAX_LENGTH - 1),
+                    DomainScope.ANY,
+                    exception = false,
+                ),
+                CosmeticRule(
+                    "." + "\u4e16".repeat(CacheStringWriter.MAX_LENGTH - 1),
+                    DomainScope.ANY,
+                    exception = false,
+                ),
+            )
+
+        cache.write(key, CompiledRuleSet(emptyList(), cosmetics, skippedRules = 0))
+        assertEquals(cosmetics, requireNotNull(cache.read(key)).cosmetics.toList())
+    }
+
+    @Test
+    fun oversizedCacheStringsAreNotPersisted() {
+        val file = File(folder.root, "oversized-selector.bin")
+        val cache = CompiledFilterCache(file)
+        val key = cache.key(listOf("oversized-selector"))
+        val cosmetics =
+            listOf(
+                CosmeticRule(
+                    "." + "x".repeat(CacheStringWriter.MAX_LENGTH),
+                    DomainScope.ANY,
+                    exception = false,
+                )
+            )
+
+        // Cache serialization is optional and must not reject the compiled rules.
+        cache.write(key, CompiledRuleSet(emptyList(), cosmetics, skippedRules = 0))
+        assertNull(cache.read(key))
+        assertFalse(file.exists())
+
+        // A failed replacement must also leave a previously valid cache intact.
+        val valid =
+            CompiledRuleSet(
+                emptyList(),
+                listOf(CosmeticRule(".valid", DomainScope.ANY, exception = false)),
+                skippedRules = 0,
+            )
+        cache.write(key, valid)
+        val saved = file.readBytes()
+        cache.write(key, CompiledRuleSet(emptyList(), cosmetics, skippedRules = 0))
+        assertArrayEquals(saved, file.readBytes())
+        assertEquals(
+            valid.cosmetics.toList(),
+            requireNotNull(cache.read(key)).cosmetics.toList(),
+        )
+    }
+
+    @Test
     fun invalidScopeMaskWithCorrectChecksumIsRejected() {
         val file = File(folder.root, "scope-invalid.bin")
         val cache = CompiledFilterCache(file)
@@ -525,14 +605,15 @@ class CompiledFilterCacheTest {
         // Header: magic/schema/salt/key + total/skipped/network counts, then the
         // first network's disabled byte, string ID and tagged string length.
         val stringId = 3 * Int.SIZE_BYTES + 32 + 3 * Int.SIZE_BYTES + 1
-        for (reference in listOf(-1, 1, Int.MAX_VALUE)) {
+        for (reference in listOf(-2, 1, Int.MAX_VALUE)) {
             val bytes = valid.copyOf()
             ByteBuffer.wrap(bytes).putInt(stringId, reference)
             repairChecksum(bytes)
             file.writeBytes(bytes)
             assertNull(cache.read(key))
         }
-        for (tag in listOf(8193, 0x8000 or 8193, 0xffff)) {
+        val tooLong = CacheStringWriter.MAX_LENGTH + 1
+        for (tag in listOf(tooLong, 0x8000 or tooLong, 0xffff)) {
             val bytes = valid.copyOf()
             ByteBuffer.wrap(bytes).putShort(stringId + Int.SIZE_BYTES, tag.toShort())
             repairChecksum(bytes)
