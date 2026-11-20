@@ -105,6 +105,32 @@ class ForegroundWebViewLifecycleControllerTest {
     }
 
     @Test
+    fun delayedScreenOffAfterWakeDoesNotPauseTheWebViewAgain() {
+        screenOff()
+        shadowOf(power).setIsInteractive(true)
+        view.focus()
+        assertEquals(1, resumes)
+
+        context.sendBroadcast(Intent(Intent.ACTION_SCREEN_OFF))
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(1, pauses)
+        assertEquals(1, resumes)
+    }
+
+    @Test
+    fun delayedScreenOnWhileAsleepDoesNotResumeTheWebView() {
+        screenOff()
+        context.sendBroadcast(Intent(Intent.ACTION_SCREEN_ON))
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(1, pauses)
+        assertEquals(0, resumes)
+
+        shadowOf(power).setIsInteractive(true)
+        view.focus()
+        assertEquals(1, resumes)
+    }
+
+    @Test
     fun screenSleepViaActivityPauseWithoutStopCanRecoverOnResume() {
         shadowOf(power).setIsInteractive(false)
         owner.send(Lifecycle.Event.ON_PAUSE)
@@ -124,6 +150,61 @@ class ForegroundWebViewLifecycleControllerTest {
         assertEquals(1, pauses)
         assertEquals(0, resumes)
         screenOn()
+        assertEquals(1, resumes)
+    }
+
+    @Test
+    fun activityStartWhileAsleepWithoutScreenOffDoesNotResumeEarly() {
+        owner.send(Lifecycle.Event.ON_STOP)
+        shadowOf(power).setIsInteractive(false)
+        owner.send(Lifecycle.Event.ON_START)
+        owner.send(Lifecycle.Event.ON_RESUME)
+        assertEquals(1, pauses)
+        assertEquals(0, resumes)
+
+        shadowOf(power).setIsInteractive(true)
+        view.focus()
+        assertEquals(1, resumes)
+    }
+
+    @Test
+    fun activityResumeDetectsSleepAfterAnInteractivePauseWithoutScreenOff() {
+        owner.send(Lifecycle.Event.ON_PAUSE)
+        assertEquals(0, pauses)
+        shadowOf(power).setIsInteractive(false)
+        owner.send(Lifecycle.Event.ON_RESUME)
+        assertEquals(1, pauses)
+        assertEquals(0, resumes)
+
+        shadowOf(power).setIsInteractive(true)
+        view.focus()
+        assertEquals(1, resumes)
+    }
+
+    @Test
+    fun focusGainWhileAsleepDetectsMissingScreenOff() {
+        shadowOf(power).setIsInteractive(false)
+        view.focus()
+        assertEquals(1, pauses)
+        assertEquals(0, resumes)
+
+        view.focus(false)
+        assertEquals(1, pauses)
+        shadowOf(power).setIsInteractive(true)
+        view.focus()
+        assertEquals(1, resumes)
+    }
+
+    @Test
+    fun reattachResamplesLifecycleChangesWhileDetached() {
+        controller.detach()
+        owner.send(Lifecycle.Event.ON_STOP)
+        controller.attach()
+        assertEquals(1, pauses)
+        assertEquals(0, resumes)
+
+        owner.send(Lifecycle.Event.ON_START)
+        owner.send(Lifecycle.Event.ON_RESUME)
         assertEquals(1, resumes)
     }
 

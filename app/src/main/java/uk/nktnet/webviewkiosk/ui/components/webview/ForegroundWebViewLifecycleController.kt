@@ -13,21 +13,21 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 
 private class ForegroundScreenStateReceiver(
-    private val onScreenStateChanged: (Boolean) -> Unit
+    private val onScreenStateChanged: () -> Unit
 ) : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
-            Intent.ACTION_SCREEN_OFF -> onScreenStateChanged(true)
-            Intent.ACTION_SCREEN_ON -> onScreenStateChanged(false)
+            Intent.ACTION_SCREEN_OFF,
+            Intent.ACTION_SCREEN_ON -> onScreenStateChanged()
         }
     }
 }
 
 /**
- * Keep the foreground WebView's native pause state in sync with both the host
- * lifecycle and display sleep. Some automotive devices turn the display off without
- * stopping the Activity, but WebView.onPause() is what suspends geolocation in
- * Chromium.
+ * Keep the foreground WebView's native pause state in sync with host visibility and
+ * device interactivity, including screen events without Activity transitions. Native
+ * pause/resume updates Chromium's page visibility, but cannot guarantee recovery of
+ * Android's location provider.
  */
 internal class ForegroundWebViewLifecycleController(
     private val context: Context,
@@ -39,31 +39,18 @@ internal class ForegroundWebViewLifecycleController(
     private val power =
         context.getSystemService(Context.POWER_SERVICE) as PowerManager
     private var attached = false
-    private var started = lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
-    private var screenOff = !power.isInteractive
+    private var started = false
     // Unknown on attach because the WebView may already have been paused.
     private var webViewPaused: Boolean? = null
     private var focusObserver: ViewTreeObserver? = null
 
-    private val focusListener =
-        ViewTreeObserver.OnWindowFocusChangeListener { hasFocus ->
-            // Recover when a head unit omits screen broadcasts but changes
-            // power state and focus while suspending or restoring the display.
-            if (!hasFocus && !power.isInteractive) {
-                screenOff = true
-                updatePauseState()
-            } else if (hasFocus && power.isInteractive) {
-                screenOff = false
-                updatePauseState()
-            }
-        }
-
-    private val receiver = ForegroundScreenStateReceiver { off ->
-        if (attached) {
-            screenOff = off
-            updatePauseState()
-        }
+    private val focusListener = ViewTreeObserver.OnWindowFocusChangeListener {
+        // A focus change can expose a missing screen broadcast. Losing focus
+        // to a dialog while interactive does not itself pause the WebView.
+        updatePauseState()
     }
+
+    private val receiver = ForegroundScreenStateReceiver { updatePauseState() }
 
     fun attach() {
         if (attached || lifecycle.currentState == Lifecycle.State.DESTROYED) {
@@ -78,6 +65,8 @@ internal class ForegroundWebViewLifecycleController(
             },
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
+        // The host may have changed state while this controller was detached.
+        started = lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
         attached = true
         focusObserver = windowView.viewTreeObserver
         focusObserver?.addOnWindowFocusChangeListener(focusListener)
@@ -87,25 +76,10 @@ internal class ForegroundWebViewLifecycleController(
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
-            Lifecycle.Event.ON_PAUSE -> {
-                // The screen can sleep while this Activity remains STARTED.
-                if (!power.isInteractive) {
-                    screenOff = true
-                    updatePauseState()
-                }
-            }
-            Lifecycle.Event.ON_RESUME -> {
-                if (power.isInteractive) {
-                    screenOff = false
-                    updatePauseState()
-                }
-            }
+            Lifecycle.Event.ON_PAUSE,
+            Lifecycle.Event.ON_RESUME -> updatePauseState()
             Lifecycle.Event.ON_START -> {
                 started = true
-                // Handles a wake where the vendor did not send SCREEN_ON.
-                if (power.isInteractive) {
-                    screenOff = false
-                }
                 updatePauseState()
             }
             Lifecycle.Event.ON_STOP -> {
@@ -121,7 +95,9 @@ internal class ForegroundWebViewLifecycleController(
         if (!attached) {
             return
         }
-        val shouldPause = !started || screenOff
+        // Screen broadcasts can arrive after another power transition. Sample
+        // current interactivity on every signal instead of retaining a stale flag.
+        val shouldPause = !started || !power.isInteractive
         if (webViewPaused != shouldPause) {
             webViewPaused = shouldPause
             if (shouldPause) {
