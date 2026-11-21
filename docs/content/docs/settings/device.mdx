@@ -87,6 +87,29 @@ required for the WebView's
 
 **Default:** false
 
+### Use Direct GPS [#use-direct-gps]
+
+Enable **Settings → Device → Use Direct GPS** if a head unit stops providing
+website location after sleep while its direct GPS diagnostic still succeeds.
+This optional backend uses Android's GPS provider for the main HTTPS page's
+`getCurrentPosition()`, `watchPosition()` and `clearWatch()` calls.
+
+Enable **Allow Location**, grant **precise location**, enable the device's GPS
+and restart the app after changing this setting. Allow the website's location
+prompt as usual. The browser still checks Permissions Policy before the native
+backend can receive a grant. Embedded frames retain WebView geolocation.
+
+Requests share one GPS listener. Location collection stops while the app is
+hidden or the screen is off, including when Background Media Playback is enabled.
+Active watches resume with a new listener and require a fresh fix after wake.
+GPS can use more battery than WebView's usual location provider. The
+`enableHighAccuracy` option remains a hint and this backend always requests GPS.
+An approximate-only Android permission cannot use this backend.
+
+This setting defaults to **false** and is available to managed configuration and
+remote settings as `device.use_direct_gps`. WebView providers without both
+supported document-start scripts and web messages retain standard geolocation.
+
 ## 7. Allow NFC [#allow-nfc]
 
 Set to true to enable NFC support in {APP_NAME} via a Web NFC compatibility bridge.

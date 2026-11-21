@@ -626,6 +626,13 @@ class UserSettings(val context: Context) {
             UserSettingsKeys.Device.ALLOW_LOCATION,
             false,
         )
+    var useDirectGps by
+        booleanPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.Device.USE_DIRECT_GPS,
+            false,
+        )
     var allowNotifications by
         booleanPref(
             getRestrictions,
@@ -1472,6 +1479,7 @@ class UserSettings(val context: Context) {
                 put(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
                 put(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
                 put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
+                put(UserSettingsKeys.Device.USE_DIRECT_GPS, useDirectGps)
                 put(UserSettingsKeys.Device.ALLOW_NFC, allowNfc)
                 put(UserSettingsKeys.Device.ALLOW_NOTIFICATIONS, allowNotifications)
                 put(
@@ -2204,6 +2212,11 @@ class UserSettings(val context: Context) {
                 json.optBoolean(
                     UserSettingsKeys.Device.ALLOW_LOCATION,
                     allowLocation,
+                )
+            useDirectGps =
+                json.optBoolean(
+                    UserSettingsKeys.Device.USE_DIRECT_GPS,
+                    useDirectGps,
                 )
             allowNfc = json.optBoolean(UserSettingsKeys.Device.ALLOW_NFC, allowNfc)
             allowNotifications =

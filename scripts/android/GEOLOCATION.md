@@ -45,6 +45,58 @@ fix can also take longer than the test window. These diagnostics deliberately do
 not install a replacement `navigator.geolocation`, change the app's provider or
 claim recovery without a device test.
 
+## Direct GPS workaround for the confirmed provider split
+
+The follow-up report on Android 10 with WebView 157 showed the Criteria request
+reporting `Provider disabled: fused` and timing out after 60 seconds. A subsequent
+GPS request obtained a fresh fix in about 625 ms, with a 5 ms fix age and 7.29 m
+accuracy. Before the failure, both paths returned fresh fixes. This identifies a
+usable alternative provider on that device, without establishing the firmware
+cause of the fused-provider failure.
+
+The opt-in **Settings → Device → Use Direct GPS** backend sends real GPS fixes
+to the HTTPS main page. It does not depend on opening diagnostics, network
+connectivity or obtaining a fused-provider fix. The diagnostic tests remain
+independent and do not feed the page.
+
+### Enable and verify on the affected head unit
+
+1. Install the build containing the native GPS backend in the same app variant
+   being tested
+2. Enable **Allow Location** and **Use Direct GPS**, grant precise Android
+   location permission and enable the device's GPS
+3. Restart the app, open the HTTPS site and allow its location prompt
+4. Confirm that a website `watchPosition` callback receives a fresh timestamp,
+   coordinates and accuracy, rather than only returning a numeric watch ID
+5. Put the head unit to sleep, wake it and repeat several times without opening
+   diagnostics or toggling Android location
+6. Confirm that tracking resumes after every wake, including with Background
+   Media Playback enabled, and that no callbacks arrive while the app is hidden
+7. Check `clearWatch`, navigation to another origin, site denial and revoking
+   precise Android permission. Each must stop the relevant location delivery
+8. Disable **Use Direct GPS** and restart to compare standard WebView behaviour
+
+Allow time and satellite visibility for a genuine fix. Native unit tests and
+JavaScript tests cannot establish recovery on the physical head unit. Do not
+close issue #388 until this device acceptance test passes.
+
+### Permission and lifetime boundaries
+
+The document-start compatibility script keeps the browser's original
+`watchPosition` solely long enough to obtain the real WebView permission result.
+No fix from that request is required. The existing app setting, runtime Android
+permissions, site dialog and Chromium Permissions Policy checks remain in the
+permission path. Only the native permission callback can authorize the backend.
+Every new request rechecks app and precise Android permissions before using a
+cached fix. Android permissions are checked again on every GPS callback.
+
+Native messages must come from the HTTPS main frame at the current page origin
+and match its reply endpoint and session token. Responses use that document's
+`JavaScriptReplyProxy`. Navigation, release, renderer death and disposal remove
+its listener and invalidate its session. GPS callbacks from an old listener,
+cached fixes predating registration and invalid or future timestamps are ignored.
+No coordinates are logged or added to diagnostic reports.
+
 ## References
 
 - [Chromium Android location provider](https://chromium.googlesource.com/chromium/src/+/6fe5c1ade0995e96eab84defe8871b7fa19ad15f/services/device/geolocation/android/java/src/org/chromium/device/geolocation/LocationProviderAndroid.java)

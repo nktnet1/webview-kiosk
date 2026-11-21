@@ -60,6 +60,7 @@ const KEYS = {
     "device.allow_camera",
     "device.allow_microphone",
     "device.allow_location",
+    "device.use_direct_gps",
     "device.allow_nfc",
     "device.allow_notifications",
     "device.block_screen_capture",

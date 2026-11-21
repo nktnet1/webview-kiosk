@@ -162,6 +162,7 @@
     <string name="device_allow_microphone_title">Allow Microphone</string>
 
     <string name="device_allow_location_title">Allow Location</string>
+    <string name="device_use_direct_gps_title">Use Direct GPS</string>
 
     <string name="device_allow_nfc_title">Allow NFC</string>
 

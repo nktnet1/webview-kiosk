@@ -69,6 +69,7 @@ import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaPlaybackController
 import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaWindowVisibility
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import uk.nktnet.webviewkiosk.utils.webview.LegacyWebViewClient
+import uk.nktnet.webviewkiosk.utils.webview.NativeGpsBridge
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
@@ -402,6 +403,7 @@ fun createCustomWebview(
         var scriptlets: WebViewScriptlets? = null
         var requests: WebViewRequests? = null
         var backgroundPlayback: BackgroundMediaPlaybackController? = null
+        var nativeGps: NativeGpsBridge? = null
 
         fun releaseWebView(view: WebView, rendererGone: Boolean): Boolean {
             val wasActive = navigation.isActive()
@@ -426,6 +428,8 @@ fun createCustomWebview(
                     scriptlets?.dispose(rendererGone)
                     requests?.dispose(rendererGone)
                     blobInterface?.dispose()
+                    nativeGps?.dispose(rendererGone)
+                    view.setTag(R.id.native_gps_bridge, null)
                     backgroundPlayback?.dispose(rendererGone)
                     view.setTag(R.id.background_media_playback_controller, null)
                     NfcBridgeManager.detachWebView(view)
@@ -715,6 +719,9 @@ fun createCustomWebview(
                     scriptlets =
                         WebViewScriptlets.attach(this, contentBlocker, scope)
 
+                    nativeGps = NativeGpsBridge.attach(this, userSettings)
+                    setTag(R.id.native_gps_bridge, nativeGps)
+
                     if (userSettings.enableBatteryApi) {
                         addJavascriptInterface(
                             BatteryInterface(context),
@@ -845,6 +852,7 @@ fun createCustomWebview(
                                 }
                                 startLoadingProgress()
                                 backgroundPlayback?.onNavigationStarted()
+                                nativeGps?.onNavigationStarted(url)
                                 awaitingPdfPageStart = false
                                 config.setLastErrorUrl("")
                                 config.onHttpAuthRequest(null)
@@ -1687,7 +1695,8 @@ fun createCustomWebview(
                                     handleGeolocationRequest(
                                         context,
                                         it.trimEnd('/'),
-                                        callback,
+                                        nativeGps?.permissionCallback(it, callback)
+                                            ?: callback,
                                         systemSettings,
                                         userSettings,
                                         dialogs,

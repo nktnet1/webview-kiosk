@@ -11,6 +11,11 @@ When a website launches a separate camera app for photo or video capture, Lock T
 You can choose to request precise location (FINE) or approximate location (COARSE).
 
 You will need to grant either ACCESS_FINE_LOCATION or ACCESS_COARSE_LOCATION, required for the WebView\'s GeolocationPermissions."</string>
+    <string name="setting_info_use_direct_gps">"Use GPS directly when website location stops working after sleep. Disabled by default.
+
+Requires a GPS receiver, Allow Location and precise location permission. Websites still need your permission. Applies to HTTPS main pages. Embedded frames keep standard WebView location.
+
+GPS stops while the app is hidden or the screen is off and restarts on wake. It can use more battery. Restart the app after changing this setting. Update Android System WebView if this option is unsupported."</string>
     <string name="setting_info_allow_microphone" formatted="false">"Set to true to give WebView access to your device\'s microphone.
 
 You will need to grant the RECORD_AUDIO permission, which is required for the WebView\'s RESOURCE_AUDIO_CAPTURE feature."</string>

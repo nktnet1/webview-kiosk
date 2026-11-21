@@ -117,6 +117,7 @@ import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaPlaybackController
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
+import uk.nktnet.webviewkiosk.utils.webview.NativeGpsBridge
 import uk.nktnet.webviewkiosk.utils.webview.PAUSE_MEDIA_SCRIPT
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
@@ -399,19 +400,31 @@ fun WebviewScreen(navController: NavController) {
     val backgroundMediaPlayback = userSettings.backgroundMediaPlayback
     DisposableEffect(activity, webView, backgroundMediaPlayback) {
         val activityLifecycle = (activity as? LifecycleOwner)?.lifecycle
+        val nativeGps = webView.getTag(R.id.native_gps_bridge) as? NativeGpsBridge
         val foregroundController =
-            if (!backgroundMediaPlayback && activityLifecycle != null) {
+            if (
+                (!backgroundMediaPlayback || nativeGps != null) &&
+                    activityLifecycle != null
+            ) {
                 ForegroundWebViewLifecycleController(
                     context = context,
                     lifecycle = activityLifecycle,
                     windowView = activity.window.decorView,
                     pause = {
-                        if (userSettings.enableJavaScript) {
-                            webView.evaluateJavascript(PAUSE_MEDIA_SCRIPT, null)
+                        nativeGps?.setForeground(false)
+                        if (!backgroundMediaPlayback) {
+                            if (userSettings.enableJavaScript) {
+                                webView.evaluateJavascript(PAUSE_MEDIA_SCRIPT, null)
+                            }
+                            webView.onPause()
                         }
-                        webView.onPause()
                     },
-                    resume = { webView.onResume() },
+                    resume = {
+                        nativeGps?.setForeground(true)
+                        if (!backgroundMediaPlayback) {
+                            webView.onResume()
+                        }
+                    },
                 )
             } else {
                 null
@@ -444,6 +457,7 @@ fun WebviewScreen(navController: NavController) {
         }
         onDispose {
             foregroundController?.detach()
+            nativeGps?.setForeground(false)
             if (backgroundObserver != null) {
                 activityLifecycle?.removeObserver(backgroundObserver)
             }
