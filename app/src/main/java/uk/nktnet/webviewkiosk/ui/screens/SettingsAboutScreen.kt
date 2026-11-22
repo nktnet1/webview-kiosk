@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.content.ClipData
-import android.content.Intent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
@@ -34,7 +33,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
@@ -127,23 +125,6 @@ fun SettingsAboutScreen(navController: NavController) {
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelMedium,
                 )
-            }
-
-            if (BuildConfig.DEBUG) {
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        context.startActivity(
-                            Intent()
-                                .setClassName(
-                                    context,
-                                    "uk.nktnet.webviewkiosk.diagnostics.LocationDiagnosticsActivity",
-                                )
-                        )
-                    },
-                ) {
-                    Text(stringResource(R.string.about_location_diagnostics))
-                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

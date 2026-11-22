@@ -24,10 +24,8 @@ private class ForegroundScreenStateReceiver(
 }
 
 /**
- * Keep the foreground WebView's native pause state in sync with host visibility and
- * device interactivity, including screen events without Activity transitions. Native
- * pause/resume updates Chromium's page visibility, but cannot guarantee recovery of
- * Android's location provider.
+ * Sample host visibility and device interactivity for native GPS requests, including
+ * screen events without Activity transitions.
  */
 internal class ForegroundWebViewLifecycleController(
     private val context: Context,
@@ -40,7 +38,7 @@ internal class ForegroundWebViewLifecycleController(
         context.getSystemService(Context.POWER_SERVICE) as PowerManager
     private var attached = false
     private var started = false
-    // Unknown on attach because the WebView may already have been paused.
+    // Unknown until attach samples lifecycle and current device interactivity.
     private var webViewPaused: Boolean? = null
     private var focusObserver: ViewTreeObserver? = null
 

@@ -2,7 +2,6 @@
 <resources>
 
     <string name="about_open_app_info">Open App Info</string>
-    <string name="about_location_diagnostics" translatable="false">Location diagnostics</string>
     <string name="about_section_app">App</string>
     <string name="about_section_device">Device</string>
     <string name="about_section_management">Management</string>

@@ -392,76 +392,66 @@ fun WebviewScreen(navController: NavController) {
         return
     }
 
-    // The default is intentionally foreground-only. Pause HTML media when the
-    // host Activity becomes invisible, not when a picker/dialog briefly takes
-    // focus. Automotive display sleep can happen without ON_STOP, so also pair
-    // native WebView pause/resume with screen-off/on events for geolocation.
-    // Background playback keeps its separate lifetime controller.
-    val backgroundMediaPlayback = userSettings.backgroundMediaPlayback
-    DisposableEffect(activity, webView, backgroundMediaPlayback) {
-        val activityLifecycle = (activity as? LifecycleOwner)?.lifecycle
+    DisposableEffect(activity, webView) {
         val nativeGps = webView.getTag(R.id.native_gps_bridge) as? NativeGpsBridge
-        val foregroundController =
-            if (
-                (!backgroundMediaPlayback || nativeGps != null) &&
-                    activityLifecycle != null
-            ) {
+        val activityLifecycle = (activity as? LifecycleOwner)?.lifecycle
+        val controller =
+            if (nativeGps != null && activityLifecycle != null) {
                 ForegroundWebViewLifecycleController(
                     context = context,
                     lifecycle = activityLifecycle,
                     windowView = activity.window.decorView,
-                    pause = {
-                        nativeGps?.setForeground(false)
-                        if (!backgroundMediaPlayback) {
-                            if (userSettings.enableJavaScript) {
-                                webView.evaluateJavascript(PAUSE_MEDIA_SCRIPT, null)
-                            }
-                            webView.onPause()
-                        }
-                    },
-                    resume = {
-                        nativeGps?.setForeground(true)
-                        if (!backgroundMediaPlayback) {
-                            webView.onResume()
-                        }
-                    },
+                    pause = { nativeGps.setForeground(false) },
+                    resume = { nativeGps.setForeground(true) },
                 )
             } else {
                 null
             }
-        val backgroundObserver =
-            if (backgroundMediaPlayback) {
-                LifecycleEventObserver { _, event ->
-                    val controller =
-                        webView.getTag(R.id.background_media_playback_controller)
-                            as? BackgroundMediaPlaybackController
-                    if (
-                        event == Lifecycle.Event.ON_PAUSE ||
-                            event == Lifecycle.Event.ON_STOP
-                    ) {
-                        controller?.onHostBackgroundChanged(true)
-                    }
-                    if (
-                        event == Lifecycle.Event.ON_START ||
-                            event == Lifecycle.Event.ON_RESUME
-                    ) {
-                        controller?.onActivityStarted()
-                    }
+        controller?.attach()
+        onDispose {
+            controller?.detach()
+            nativeGps?.setForeground(false)
+        }
+    }
+
+    // The default is intentionally foreground-only. Pause HTML media when the
+    // host Activity becomes invisible, not when a picker/dialog briefly takes
+    // focus. Leave enabled WebViews running and let their playback service own
+    // background lifetime.
+    DisposableEffect(activity, webView, userSettings.backgroundMediaPlayback) {
+        val activityLifecycle = (activity as? LifecycleOwner)?.lifecycle
+        val observer = LifecycleEventObserver { _, event ->
+            if (userSettings.backgroundMediaPlayback) {
+                val controller =
+                    webView.getTag(R.id.background_media_playback_controller)
+                        as? BackgroundMediaPlaybackController
+                if (
+                    event == Lifecycle.Event.ON_PAUSE ||
+                        event == Lifecycle.Event.ON_STOP
+                ) {
+                    controller?.onHostBackgroundChanged(true)
+                }
+                if (
+                    event == Lifecycle.Event.ON_START ||
+                        event == Lifecycle.Event.ON_RESUME
+                ) {
+                    controller?.onActivityStarted()
                 }
             } else {
-                null
+                when (event) {
+                    Lifecycle.Event.ON_STOP -> {
+                        if (userSettings.enableJavaScript) {
+                            webView.evaluateJavascript(PAUSE_MEDIA_SCRIPT, null)
+                        }
+                        webView.onPause()
+                    }
+                    Lifecycle.Event.ON_START -> webView.onResume()
+                    else -> Unit
+                }
             }
-        foregroundController?.attach()
-        if (backgroundObserver != null) {
-            activityLifecycle?.addObserver(backgroundObserver)
         }
-        onDispose {
-            foregroundController?.detach()
-            nativeGps?.setForeground(false)
-            if (backgroundObserver != null) {
-                activityLifecycle?.removeObserver(backgroundObserver)
-            }
-        }
+        activityLifecycle?.addObserver(observer)
+        onDispose { activityLifecycle?.removeObserver(observer) }
     }
 
     DisposableEffect(webView) {

@@ -97,11 +97,6 @@ class MqttActivityHandoffTest {
     @Before
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
-        // Model Android granting the app's declared receiver signature permission.
-        shadowOf(context)
-            .grantPermissions(
-                "${context.packageName}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
-            )
         context
             .getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
