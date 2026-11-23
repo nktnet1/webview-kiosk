@@ -115,6 +115,7 @@ internal fun interceptAssetRequest(
     uri: Uri,
     localFileAssetLoader: WebViewAssetLoader?,
     pdfAssetLoader: WebViewAssetLoader?,
+    localFilesContext: Context? = null,
 ): WebResourceResponse? {
     if (
         !uri.isHierarchical ||
@@ -124,7 +125,20 @@ internal fun interceptAssetRequest(
     ) {
         return null
     }
-    return localFileAssetLoader?.shouldInterceptRequest(uri)
+    // Resolve manually entered, unique filename aliases to the stored UUID path.
+    // Generated links remain UUID-prefixed, and the storage handler reads the file.
+    val localUri =
+        if (localFileAssetLoader != null && localFilesContext != null) {
+            val file = uri.resolveLocalFileLink(localFilesContext)
+            if (file != null && uri.lastPathSegment != file.name) {
+                file.getLocalFileLink().toUri()
+            } else {
+                uri
+            }
+        } else {
+            uri
+        }
+    return localFileAssetLoader?.shouldInterceptRequest(localUri)
         ?: pdfAssetLoader?.shouldInterceptRequest(uri)
 }
 
@@ -1160,6 +1174,7 @@ fun createCustomWebview(
                                             request.url,
                                             localFileAssetLoader,
                                             pdfAssetLoader,
+                                            context,
                                         )
                                         ?.let {
                                             return it

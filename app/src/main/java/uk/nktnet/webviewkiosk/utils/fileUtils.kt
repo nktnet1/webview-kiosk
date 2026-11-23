@@ -358,6 +358,7 @@ fun File.getLegacyLocalFileUrl(): String {
     return "file://${Uri.encode(this.absolutePath, "/")}"
 }
 
+/** Always use the UUID-prefixed disk name for generated links. */
 fun File.getLocalFileLink(): String {
     return Uri.Builder()
         .scheme("https")
@@ -366,6 +367,46 @@ fun File.getLocalFileLink(): String {
         .appendPath(name)
         .build()
         .toString()
+}
+
+// A missing UUID URL must never be silently redirected to another file's alias.
+private val uuidFileNamePrefix =
+    Regex(
+        "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\|"
+    )
+
+/** Exact stored names take precedence over aliases, including UUID-based URLs. */
+private fun resolveLocalFileByName(directory: File, requestedName: String): File? {
+    if (requestedName.isBlank()) {
+        return null
+    }
+
+    return try {
+        val canonicalDir = directory.canonicalFile
+        val directFile = File(canonicalDir, requestedName).canonicalFile
+        if (directFile.parentFile != canonicalDir) {
+            return null
+        }
+        if (directFile.isFile) {
+            return directFile
+        }
+        if (uuidFileNamePrefix.containsMatchIn(requestedName)) {
+            return null
+        }
+
+        val matches =
+            listLocalFiles(canonicalDir).filter {
+                it.getDisplayName() == requestedName
+            }
+        if (matches.size != 1) {
+            return null
+        }
+        matches.single().canonicalFile.takeIf {
+            it.parentFile == canonicalDir && it.isFile
+        }
+    } catch (_: Exception) {
+        null
+    }
 }
 
 fun Uri.isLocalFileLink(): Boolean {
@@ -382,15 +423,7 @@ fun Uri.resolveLocalFileLink(context: Context): File? {
 
     val fileName =
         pathSegments.getOrNull(1)?.takeIf { it.isNotBlank() } ?: return null
-    val filesDir = getWebContentFilesDir(context)
-
-    return try {
-        val canonicalDir = filesDir.canonicalFile
-        val canonicalFile = File(canonicalDir, fileName).canonicalFile
-        canonicalFile.takeIf { it.parentFile == canonicalDir }
-    } catch (_: Exception) {
-        null
-    }
+    return resolveLocalFileByName(getWebContentFilesDir(context), fileName)
 }
 
 fun getDownloadLocation(): String {
