@@ -60,8 +60,11 @@ CI, but release verification runs the full Android checks.
 
 Android CI separately caches Robolectric's instrumented Android runtime JARs
 in `~/.m2/repository`. Before the JVM tests start, it verifies each download's
-SHA-512 checksum and retries missing or damaged artifacts with bounded backoff.
-This addresses transient Maven failures without retrying failed test assertions.
+SHA-512 checksum and retrieves missing or damaged artifacts from Google's
+Maven Central mirror first. Maven Central is a fallback for artifacts that the
+mirror does not yet contain. Both sources receive bounded retries if they fail.
+The verified cache is saved before unit tests so later failures do not force
+fresh multi-gigabyte downloads. Test assertions are never retried.
 When a test adds a new Android SDK level, update `ROBOLECTRIC_SDK_VERSIONS` in
 `scripts/android/export_android_test_assets.py` so the prefetch and offline
 asset export stay in sync.

@@ -16,10 +16,34 @@ sys.path.insert(0, str(ROOT))
 from scripts.android.export_android_test_assets import (  # noqa: E402
     ExportError,
     ROBOLECTRIC_SDK_VERSIONS,
+    ROBOLECTRIC_MAVEN_URL,
     robolectric_artifact,
 )
 
 RETRY_DELAYS = (15, 30)
+# Robolectric's own build downloads large Android runtimes from this mirror to
+# avoid the 429 rate limits Maven Central applies to frequent large downloads.
+# Retain Maven Central as a fallback for recently published or missing files.
+GOOGLE_MAVEN_MIRROR_URL = (
+    "https://maven-central.storage-download.googleapis.com/maven2/"
+    "org/robolectric/android-all-instrumented"
+)
+RUNTIME_REPOSITORIES = (
+    ("Google Maven Central mirror", GOOGLE_MAVEN_MIRROR_URL),
+    ("Maven Central", ROBOLECTRIC_MAVEN_URL),
+)
+
+
+def fetch_artifact(repository: Path, version: str, extension: str) -> None:
+    """Fetch from the mirror first, retaining verified local Maven artifacts."""
+    errors = []
+    for name, url in RUNTIME_REPOSITORIES:
+        try:
+            robolectric_artifact(repository, version, extension, repository_url=url)
+            return
+        except ExportError as error:
+            errors.append(f"{name}: {error}")
+    raise ExportError("Both Robolectric repositories failed: " + " | ".join(errors))
 
 
 def prefetch(repository: Path) -> None:
@@ -29,7 +53,7 @@ def prefetch(repository: Path) -> None:
             for attempt in range(len(RETRY_DELAYS) + 1):
                 try:
                     print(f"Robolectric API {sdk}: verifying {extension} ({version})", flush=True)
-                    robolectric_artifact(repository, version, extension)
+                    fetch_artifact(repository, version, extension)
                     break
                 except ExportError as error:
                     if attempt == len(RETRY_DELAYS):

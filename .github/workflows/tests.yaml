@@ -71,10 +71,12 @@ jobs:
         run: sh gradlew checkFormatting --build-cache --stacktrace
 
       # Robolectric fetches Android runtime JARs itself, outside Gradle's cache.
-      # Cache verified Maven artifacts between runs, then repair missing/corrupt
-      # entries and retry transient download errors before starting any test JVM.
-      - name: Cache Robolectric Android runtimes
-        uses: actions/cache@v4
+      # Restore verified Maven artifacts between runs, then repair missing/corrupt
+      # entries from Google's Maven Central mirror first, falling back to Maven
+      # Central and retrying transient errors before starting any test JVM.
+      - name: Restore Robolectric Android runtimes
+        id: robolectric-cache
+        uses: actions/cache/restore@v4
         with:
           path: ~/.m2/repository/org/robolectric/android-all-instrumented
           key: >-
@@ -83,6 +85,14 @@ jobs:
 
       - name: Prefetch and verify Robolectric Android runtimes
         run: python3 scripts/ci/prefetch_robolectric.py
+
+      # Save once all runtimes are verified, even if a later test assertion fails.
+      - name: Save verified Robolectric Android runtimes
+        if: steps.robolectric-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.m2/repository/org/robolectric/android-all-instrumented
+          key: ${{ steps.robolectric-cache.outputs.cache-primary-key }}
 
       - name: Run unit tests
         run: sh gradlew :adblock:test :app:testDebugUnitTest :app:testLegacyUnitTest --build-cache --profile --stacktrace

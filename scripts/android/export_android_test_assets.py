@@ -416,7 +416,7 @@ def verify_maven_checksum(target):
     )
 
 
-def robolectric_artifact(root, version, extension):
+def robolectric_artifact(root, version, extension, *, repository_url=ROBOLECTRIC_MAVEN_URL):
     directory = root / "org/robolectric/android-all-instrumented" / version
     directory.mkdir(parents=True, exist_ok=True)
     target = directory / f"android-all-instrumented-{version}.{extension}"
@@ -424,7 +424,7 @@ def robolectric_artifact(root, version, extension):
         return
     temporary = target.with_name(target.name + ".tmp")
     try:
-        url = f"{ROBOLECTRIC_MAVEN_URL}/{version}/{target.name}"
+        url = f"{repository_url.rstrip('/')}/{version}/{target.name}"
         download(url, temporary)
         download(url + ".sha512", temporary.with_name(temporary.name + ".sha512"))
         if not verify_maven_checksum(temporary):
