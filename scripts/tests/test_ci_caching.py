@@ -44,6 +44,26 @@ class CiWorkflowTest(unittest.TestCase):
         self.assertIn("uses: ./.github/workflows/tests.yaml", job_body(RELEASE, "verify"))
         self.assertIn("needs: [verify, build]", job_body(RELEASE, "release"))
 
+    def test_robolectric_runtimes_are_verified_and_cached_before_tests(self):
+        android = job_body(TESTS, "android")
+        self.assertIn("uses: actions/cache/restore@v4", android)
+        self.assertIn("id: robolectric-cache", android)
+        self.assertIn("uses: actions/cache/save@v4", android)
+        self.assertIn("if: steps.robolectric-cache.outputs.cache-hit != 'true'", android)
+        self.assertIn("key: ${{ steps.robolectric-cache.outputs.cache-primary-key }}", android)
+        self.assertIn("~/.m2/repository/org/robolectric/android-all-instrumented", android)
+        self.assertIn("hashFiles('scripts/android/export_android_test_assets.py', ", android)
+        self.assertIn("'gradle/libs.versions.toml')", android)
+        self.assertIn("restore-keys: robolectric-${{ runner.os }}-", android)
+        self.assertIn("run: python3 scripts/ci/prefetch_robolectric.py", android)
+        self.assertLess(android.index("Restore Robolectric Android runtimes"),
+                        android.index("Prefetch and verify Robolectric Android runtimes"))
+        self.assertLess(android.index("Prefetch and verify Robolectric Android runtimes"),
+                        android.index("Save verified Robolectric Android runtimes"))
+        self.assertLess(android.index("Save verified Robolectric Android runtimes"),
+                        android.index("- name: Run unit tests"))
+        self.assertNotIn("continue-on-error: true", android)
+
     def test_android_and_docs_checks_have_separate_change_scopes(self):
         for pattern in ("app/**", "adblock/**", "gradle/**", "scripts/**"):
             self.assertIn(f"- '{pattern}'", TESTS)

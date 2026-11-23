@@ -111,6 +111,24 @@ import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 private const val LOCAL_NETWORK_PERMISSION_ERROR =
     "ERR_LOCAL_NETWORK_PERMISSION_MISSING"
 
+/** WebViewAssetLoader assumes a hierarchical HTTP(S) URI with a host and path. */
+internal fun interceptAssetRequest(
+    uri: Uri,
+    localFileAssetLoader: WebViewAssetLoader?,
+    pdfAssetLoader: WebViewAssetLoader?,
+): WebResourceResponse? {
+    if (
+        !uri.isHierarchical ||
+            (uri.scheme != "http" && uri.scheme != "https") ||
+            uri.host.isNullOrEmpty() ||
+            uri.path == null
+    ) {
+        return null
+    }
+    return localFileAssetLoader?.shouldInterceptRequest(uri)
+        ?: pdfAssetLoader?.shouldInterceptRequest(uri)
+}
+
 /** Only read a compat error description after both the OS and WebView allow it. */
 internal fun matchesLocalNetworkPermissionError(
     sdkInt: Int,
@@ -1146,24 +1164,14 @@ fun createCustomWebview(
                                             return it
                                         }
 
-                                    if (localFileAssetLoader != null) {
-                                        val response =
-                                            localFileAssetLoader
-                                                .shouldInterceptRequest(request.url)
-                                        if (response != null) {
-                                            return response
+                                    interceptAssetRequest(
+                                            request.url,
+                                            localFileAssetLoader,
+                                            pdfAssetLoader,
+                                        )
+                                        ?.let {
+                                            return it
                                         }
-                                    }
-
-                                    if (pdfAssetLoader != null) {
-                                        val response =
-                                            pdfAssetLoader.shouldInterceptRequest(
-                                                request.url
-                                            )
-                                        if (response != null) {
-                                            return response
-                                        }
-                                    }
 
                                     // Preserve PDF and local-file handling before
                                     // applying document filters to web requests.
