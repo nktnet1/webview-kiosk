@@ -70,6 +70,20 @@ jobs:
       - name: Check Kotlin formatting and if/else braces
         run: sh gradlew checkFormatting --build-cache --stacktrace
 
+      # Robolectric fetches Android runtime JARs itself, outside Gradle's cache.
+      # Cache verified Maven artifacts between runs, then repair missing/corrupt
+      # entries and retry transient download errors before starting any test JVM.
+      - name: Cache Robolectric Android runtimes
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric/android-all-instrumented
+          key: >-
+            robolectric-${{ runner.os }}-${{ hashFiles('scripts/android/export_android_test_assets.py', 'gradle/libs.versions.toml') }}
+          restore-keys: robolectric-${{ runner.os }}-
+
+      - name: Prefetch and verify Robolectric Android runtimes
+        run: python3 scripts/ci/prefetch_robolectric.py
+
       - name: Run unit tests
         run: sh gradlew :adblock:test :app:testDebugUnitTest :app:testLegacyUnitTest --build-cache --profile --stacktrace
 

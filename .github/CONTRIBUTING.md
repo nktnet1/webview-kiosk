@@ -58,6 +58,14 @@ CI checks are defined in [Android CI](./workflows/tests.yaml) and
 [documentation CI](./workflows/docs-ci.yaml). Docs-only changes may skip Android
 CI, but release verification runs the full Android checks.
 
+Android CI separately caches Robolectric's instrumented Android runtime JARs
+in `~/.m2/repository`. Before the JVM tests start, it verifies each download's
+SHA-512 checksum and retries missing or damaged artifacts with bounded backoff.
+This addresses transient Maven failures without retrying failed test assertions.
+When a test adds a new Android SDK level, update `ROBOLECTRIC_SDK_VERSIONS` in
+`scripts/android/export_android_test_assets.py` so the prefetch and offline
+asset export stay in sync.
+
 The R8 audit can also run independently:
 
 ```bash
