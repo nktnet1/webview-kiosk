@@ -253,6 +253,10 @@ class FileUtilsTest {
 
             second.writeText("second")
             assertNull(alias.resolveLocalFileLink(context))
+            assertEquals(
+                listOf(first.canonicalFile, second.canonicalFile).toSet(),
+                alias.findLocalFileMatches(context).toSet(),
+            )
             for (file in listOf(first, second)) {
                 assertEquals(
                     file.name,
@@ -295,6 +299,7 @@ class FileUtilsTest {
 
             first.delete()
             assertNull(requestedLink.resolveLocalFileLink(context))
+            assertTrue(requestedLink.findLocalFileMatches(context).isEmpty())
         } finally {
             first.delete()
             second.delete()

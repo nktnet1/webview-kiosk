@@ -108,6 +108,7 @@ import uk.nktnet.webviewkiosk.utils.WebViewConfig
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
 import uk.nktnet.webviewkiosk.utils.exitImmersiveMode
+import uk.nktnet.webviewkiosk.utils.findLocalFileMatches
 import uk.nktnet.webviewkiosk.utils.getMimeType
 import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
@@ -536,7 +537,8 @@ fun WebviewScreen(navController: NavController) {
                 PdfJsManager.areAssetsReady(context))
         val isWebPdf =
             (schemeType == SchemeType.WEB &&
-                uri.path?.lowercase()?.endsWith(".pdf") == true)
+                uri.path?.lowercase()?.endsWith(".pdf") == true &&
+                uri.findLocalFileMatches(context).size <= 1)
         if (isPdfRenderingSupported && isWebPdf) {
             handlePdfUrlRendering(
                 webView,

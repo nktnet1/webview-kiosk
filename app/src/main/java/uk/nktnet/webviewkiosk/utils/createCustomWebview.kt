@@ -86,6 +86,7 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.isPdfSourceNavigation
 import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
+import uk.nktnet.webviewkiosk.utils.webview.html.generateLocalFileSelectionHtml
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
@@ -125,19 +126,28 @@ internal fun interceptAssetRequest(
     ) {
         return null
     }
-    // Resolve manually entered, unique filename aliases to the stored UUID path.
-    // Generated links remain UUID-prefixed, and the storage handler reads the file.
-    val localUri =
+    // Exact stored paths win. Only ambiguous short aliases receive an HTML chooser.
+    val matches =
         if (localFileAssetLoader != null && localFilesContext != null) {
-            val file = uri.resolveLocalFileLink(localFilesContext)
-            if (file != null && uri.lastPathSegment != file.name) {
-                file.getLocalFileLink().toUri()
-            } else {
-                uri
-            }
+            uri.findLocalFileMatches(localFilesContext)
         } else {
-            uri
+            emptyList()
         }
+    if (matches.size > 1) {
+        val html = generateLocalFileSelectionHtml(uri.pathSegments[1], matches)
+        return WebResourceResponse(
+                "text/html",
+                "UTF-8",
+                html.byteInputStream(Charsets.UTF_8),
+            )
+            .apply { responseHeaders = mapOf("Cache-Control" to "no-store") }
+    }
+    val localUri =
+        matches
+            .singleOrNull()
+            ?.takeIf { it.name != uri.lastPathSegment }
+            ?.getLocalFileLink()
+            ?.toUri() ?: uri
     return localFileAssetLoader?.shouldInterceptRequest(localUri)
         ?: pdfAssetLoader?.shouldInterceptRequest(uri)
 }
@@ -1357,7 +1367,11 @@ fun createCustomWebview(
                                         view != null &&
                                         userSettings.supportPdfRendering &&
                                         PdfJsManager.areAssetsReady(context) &&
-                                        isWebPdf(navigationUrl, null, null)
+                                        isWebPdf(navigationUrl, null, null) &&
+                                        navigationUrl
+                                            .toUri()
+                                            .findLocalFileMatches(context)
+                                            .size <= 1
                                 ) {
                                     config.onPdfUrlRequested(view, navigationUrl)
                                     return true

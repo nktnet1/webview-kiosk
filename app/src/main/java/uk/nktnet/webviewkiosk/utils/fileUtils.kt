@@ -376,36 +376,37 @@ private val uuidFileNamePrefix =
     )
 
 /** Exact stored names take precedence over aliases, including UUID-based URLs. */
-private fun resolveLocalFileByName(directory: File, requestedName: String): File? {
+private fun findLocalFilesByName(
+    directory: File,
+    requestedName: String,
+): List<File> {
     if (requestedName.isBlank()) {
-        return null
+        return emptyList()
     }
 
     return try {
         val canonicalDir = directory.canonicalFile
         val directFile = File(canonicalDir, requestedName).canonicalFile
         if (directFile.parentFile != canonicalDir) {
-            return null
+            return emptyList()
         }
         if (directFile.isFile) {
-            return directFile
+            return listOf(directFile)
         }
         if (uuidFileNamePrefix.containsMatchIn(requestedName)) {
-            return null
+            return emptyList()
         }
 
-        val matches =
-            listLocalFiles(canonicalDir).filter {
-                it.getDisplayName() == requestedName
+        listLocalFiles(canonicalDir).mapNotNull { file ->
+            if (file.getDisplayName() != requestedName) {
+                return@mapNotNull null
             }
-        if (matches.size != 1) {
-            return null
-        }
-        matches.single().canonicalFile.takeIf {
-            it.parentFile == canonicalDir && it.isFile
+            file.canonicalFile.takeIf {
+                it.parentFile == canonicalDir && it.isFile
+            }
         }
     } catch (_: Exception) {
-        null
+        emptyList()
     }
 }
 
@@ -416,15 +417,21 @@ fun Uri.isLocalFileLink(): Boolean {
         pathSegments[0] == Constants.WEB_CONTENT_FILES_DIR
 }
 
-fun Uri.resolveLocalFileLink(context: Context): File? {
-    if (!isLocalFileLink()) {
-        return null
+/**
+ * Returns multiple matches only for a non-UUID alias with duplicate display names.
+ */
+internal fun Uri.findLocalFileMatches(context: Context): List<File> {
+    if (!isLocalFileLink() || port !in listOf(-1, 443) || userInfo != null) {
+        return emptyList()
     }
 
     val fileName =
-        pathSegments.getOrNull(1)?.takeIf { it.isNotBlank() } ?: return null
-    return resolveLocalFileByName(getWebContentFilesDir(context), fileName)
+        pathSegments.getOrNull(1)?.takeIf { it.isNotBlank() } ?: return emptyList()
+    return findLocalFilesByName(getWebContentFilesDir(context), fileName)
 }
+
+fun Uri.resolveLocalFileLink(context: Context): File? =
+    findLocalFileMatches(context).singleOrNull()
 
 fun getDownloadLocation(): String {
     return Environment.getExternalStoragePublicDirectory(
