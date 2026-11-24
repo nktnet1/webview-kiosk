@@ -107,21 +107,17 @@ When enabled, long-pressing links or images will trigger a custom context menu.
 This will take precedence over the `Allow Default Long Press` setting
 (i.e. overrides it).
 
-For links, the options are:
+The available options are:
 
-- Copy Link
-- Open Link
-- Open in Browser (when unlocked)
-- Share Link (when unlocked)
-
-For images, the options are:
-
-- Copy Link
-- Open Image
-- Open in Browser (when unlocked, except for file URLs)
-- Refresh Image (always shown, regardless of whether the image has loaded)
-- Share Link (when unlocked)
-- Download Image (requires `web_engine.allow_file_download`)
+| Option          | Visibility                                              |
+| --------------- | ------------------------------------------------------- |
+| Copy Link       | Always                                                  |
+| Open Link       | Links only                                              |
+| Open Image      | Images only                                             |
+| Open in Browser | When unlocked, except for images with file URLs         |
+| Refresh Image   | Images only                                             |
+| Share Link      | When unlocked                                           |
+| Download Image  | Images only, requires `web_engine.allow_file_download`  |
 
 `Refresh Image` retries matching images in the current page without reloading
 that page. For HTTP(S) images, it adds a cache-busting query parameter. This
