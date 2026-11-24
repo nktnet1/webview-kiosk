@@ -146,11 +146,26 @@ class AssetLoaderRequestTest {
             assertTrue(html.contains("<th scope=\"col\">UUID</th>"))
             assertTrue(html.contains("<th scope=\"col\">Size</th>"))
             assertTrue(html.contains("<th scope=\"col\">Last modified</th>"))
-            assertTrue(html.contains("table-layout: fixed"))
-            assertTrue(html.contains("td:first-child { word-break: break-all; }"))
-            assertTrue(html.contains("td:nth-child(2) { white-space: nowrap; }"))
-            assertFalse(html.contains("class=\"table-wrap\""))
-            assertFalse(html.contains("min-width: 520px"))
+            assertTrue(html.contains("@media (max-width: 560px)"))
+            assertTrue(html.contains("thead { display: none; }"))
+            assertTrue(
+                html.contains(
+                    "td:first-child { grid-column: 1 / -1; min-width: 0; }"
+                )
+            )
+            assertTrue(html.contains("td:first-child a { font-family: monospace; }"))
+            assertTrue(
+                html.contains(
+                    "strong, td:first-child a { overflow-wrap: anywhere; }"
+                )
+            )
+            assertTrue(
+                html.contains(
+                    "td:nth-child(2), td:nth-child(3) { white-space: nowrap; }"
+                )
+            )
+            assertFalse(html.contains("table-layout: fixed"))
+            assertFalse(html.contains("<h2>Choose a local file</h2>"))
             assertFalse(html.contains("background:"))
             assertFalse(html.contains("<script"))
             for (file in listOf(first, second)) {
@@ -219,9 +234,7 @@ class AssetLoaderRequestTest {
             val html = response?.data?.bufferedReader()?.use { it.readText() }
             assertNotNull(html)
             val appName = context.getString(R.string.app_name)
-            assertTrue(
-                html!!.contains("<title>$appName - Choose a local file</title>")
-            )
+            assertTrue(html!!.contains("<title>$appName - Matching files</title>"))
             assertTrue(html.contains("<h1>$appName</h1>"))
 
             val dateFormat =

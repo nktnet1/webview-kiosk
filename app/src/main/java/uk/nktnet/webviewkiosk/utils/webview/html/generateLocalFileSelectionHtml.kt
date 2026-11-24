@@ -39,23 +39,30 @@ internal fun generateLocalFileSelectionHtml(
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>$appName - Choose a local file</title>
+            <title>$appName - Matching files</title>
             <style>
-              body { margin: 0; padding: 16px; font-family: sans-serif; }
+              body { margin: 0; padding: 16px; font-family: sans-serif; line-height: 1.4; }
               main { max-width: 720px; margin: auto; }
-              strong { overflow-wrap: anywhere; }
-              table { width: 100%; table-layout: fixed; border-collapse: collapse; }
-              th, td { padding: 8px; text-align: left; vertical-align: top; }
-              th:first-child { width: 38%; }
-              th:nth-child(2) { width: 28%; }
-              td:first-child { word-break: break-all; }
-              td:nth-child(2) { white-space: nowrap; }
+              h1 { margin: 0 0 16px; font-size: 1.5rem; }
+              p { margin: 0 0 16px; }
+              strong, td:first-child a { overflow-wrap: anywhere; }
+              td:first-child a { font-family: monospace; }
+              table { width: 100%; border-collapse: collapse; }
+              th, td { padding: 12px 8px; text-align: left; vertical-align: top; }
+              td:nth-child(2), td:nth-child(3) { white-space: nowrap; }
+              tbody tr { border-top: 1px solid #ddd; }
+              @media (max-width: 560px) {
+                thead { display: none; }
+                tbody tr { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; padding: 12px 0; }
+                td { padding: 0; }
+                td:first-child { grid-column: 1 / -1; min-width: 0; }
+                td:last-child { text-align: right; }
+              }
             </style>
           </head>
           <body>
             <main>
               <h1>$appName</h1>
-              <h2>Choose a local file</h2>
               <p>Multiple files are named <strong>${Html.escapeHtml(name)}</strong>. Select a UUID:</p>
               <table>
                 <thead>
