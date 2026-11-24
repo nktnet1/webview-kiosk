@@ -5,6 +5,9 @@ import android.net.Uri
 import android.webkit.WebResourceResponse
 import androidx.webkit.WebViewAssetLoader
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -15,6 +18,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 
 @RunWith(RobolectricTestRunner::class)
@@ -138,7 +142,13 @@ class AssetLoaderRequestTest {
             assertEquals("no-store", response?.responseHeaders?.get("Cache-Control"))
             val html = response?.data?.bufferedReader()?.use { it.readText() }
             assertNotNull(html)
-            assertTrue(html!!.contains("<ul>"))
+            assertTrue(html!!.contains("<table>"))
+            assertTrue(html.contains("<th scope=\"col\">UUID</th>"))
+            assertTrue(html.contains("<th scope=\"col\">Size</th>"))
+            assertTrue(html.contains("<th scope=\"col\">Last modified</th>"))
+            assertTrue(html.contains("class=\"table-wrap\""))
+            assertTrue(html.contains("overflow-x: auto"))
+            assertFalse(html.contains("<script"))
             for (file in listOf(first, second)) {
                 assertTrue(html.contains("href=\"${file.getLocalFileLink()}\""))
                 assertTrue(html.contains(">${file.getUUID()}</a>"))
@@ -173,6 +183,60 @@ class AssetLoaderRequestTest {
                     ?.bufferedReader()
                     ?.use { it.readText() },
             )
+        } finally {
+            first.delete()
+            second.delete()
+        }
+    }
+
+    @Test
+    fun chooserIncludesAppNameSizeAndLastModifiedTimestampForEachFile() {
+        val context = RuntimeEnvironment.getApplication()
+        val dir = getWebContentFilesDir(context)
+        val first = File(dir, "first-id|metadata-chooser-test.txt")
+        val second = File(dir, "second-id|metadata-chooser-test.txt")
+        first.writeBytes(ByteArray(123))
+        second.writeBytes(ByteArray(2048))
+        try {
+            assertTrue(first.setLastModified(1_700_000_000_000L))
+            assertTrue(second.setLastModified(1_750_000_000_000L))
+            val alias =
+                Uri.parse(
+                    "https://appassets.androidplatform.net/web-content-files/metadata-chooser-test.txt"
+                )
+            val response =
+                interceptAssetRequest(
+                    alias,
+                    localFilesLoader(context),
+                    null,
+                    context,
+                )
+            assertEquals("text/html", response?.mimeType)
+            val html = response?.data?.bufferedReader()?.use { it.readText() }
+            assertNotNull(html)
+            val appName = context.getString(R.string.app_name)
+            assertTrue(
+                html!!.contains("<title>$appName - Choose a local file</title>")
+            )
+            assertTrue(html.contains("<h1>$appName</h1>"))
+
+            val dateFormat =
+                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            for (file in listOf(first, second)) {
+                val expected =
+                    """
+                    <tr>
+                      <td><a href="${file.getLocalFileLink()}">${file.getUUID()}</a></td>
+                      <td>${humanReadableSize(context, file.length())}</td>
+                      <td>${dateFormat.format(Date(file.lastModified()))}</td>
+                    </tr>
+                    """
+                        .trimIndent()
+                assertTrue(
+                    "Missing metadata for ${file.name}",
+                    html.contains(expected),
+                )
+            }
         } finally {
             first.delete()
             second.delete()

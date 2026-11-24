@@ -133,8 +133,13 @@ internal fun interceptAssetRequest(
         } else {
             emptyList()
         }
-    if (matches.size > 1) {
-        val html = generateLocalFileSelectionHtml(uri.pathSegments[1], matches)
+    if (matches.size > 1 && localFilesContext != null) {
+        val html =
+            generateLocalFileSelectionHtml(
+                localFilesContext,
+                uri.pathSegments[1],
+                matches,
+            )
         return WebResourceResponse(
                 "text/html",
                 "UTF-8",
