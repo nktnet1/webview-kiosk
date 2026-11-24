@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RELEASE = (ROOT / ".github/workflows/release.yaml").read_text(encoding="utf-8")
+APP_BUILD = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
 
 
 class ReleaseArtifactsTest(unittest.TestCase):
@@ -34,6 +35,29 @@ class ReleaseArtifactsTest(unittest.TestCase):
             RELEASE,
         )
         self.assertNotIn("mv app/build/outputs/apk/release/", RELEASE)
+
+    def test_release_signing_always_sets_keystore_path(self):
+        signing_configs = APP_BUILD.split("    signingConfigs {", 1)[1].split(
+            "    buildTypes {", 1
+        )[0]
+        self.assertIn('storeFile = file("keystore.jks")', signing_configs)
+        self.assertNotIn("keystore.exists()", signing_configs)
+
+    def test_release_is_always_signed_and_smoke_uses_debug_key(self):
+        build_types = APP_BUILD.split("    buildTypes {", 1)[1]
+        production = build_types.split("        release {", 1)[1].split(
+            '        create("smokeRelease")', 1
+        )[0]
+        smoke = build_types.split('        create("smokeRelease")', 1)[1]
+        self.assertIn('signingConfig = signingConfigs.getByName("release")', production)
+        self.assertNotIn("keystore.jks", production)
+        self.assertIn('signingConfig = signingConfigs.getByName("debug")', smoke)
+
+    def test_missing_release_credentials_report_environment_variables(self):
+        self.assertIn('it.name == "validateSigningRelease"', APP_BUILD)
+        for variable in ("KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD"):
+            self.assertIn(f'"{variable}"', APP_BUILD)
+        self.assertIn("Gradle does not load .env automatically.", APP_BUILD)
 
     def test_draft_release_contains_both_apks(self):
         self.assertIn("name: Create Draft GitHub Release", RELEASE)
