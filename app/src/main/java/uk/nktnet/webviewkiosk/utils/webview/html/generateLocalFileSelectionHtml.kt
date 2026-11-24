@@ -41,33 +41,15 @@ internal fun generateLocalFileSelectionHtml(
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>$appName - Choose a local file</title>
             <style>
-              :root { font-family: system-ui, sans-serif; color-scheme: light dark; }
-              * { box-sizing: border-box; }
-              body { margin: 0; padding: 24px 16px; background: #f3f4f6; color: #111827; line-height: 1.5; }
-              main { max-width: 800px; margin: 0 auto; padding: 24px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; }
-              h1 { margin: 0 0 4px; font-size: 1rem; color: #4b5563; }
-              h2 { margin: 0 0 12px; font-size: 1.5rem; }
-              p { margin: 0 0 20px; }
-              strong, a { overflow-wrap: anywhere; }
-              .table-wrap { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
-              table { width: 100%; min-width: 520px; border-collapse: collapse; text-align: left; }
-              th, td { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
-              th { background: #f9fafb; }
-              tbody tr:last-child td { border-bottom: 0; }
-              a { color: #1d4ed8; font-weight: 600; }
-              a:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
-              @media (max-width: 600px) {
-                body { padding: 12px; }
-                main { padding: 16px; }
-              }
-              @media (prefers-color-scheme: dark) {
-                body { background: #111827; color: #f9fafb; }
-                main { background: #1f2937; border-color: #374151; }
-                h1 { color: #d1d5db; }
-                .table-wrap, th, td { border-color: #4b5563; }
-                th { background: #374151; }
-                a { color: #93c5fd; }
-              }
+              body { margin: 0; padding: 16px; font-family: sans-serif; }
+              main { max-width: 720px; margin: auto; }
+              strong { overflow-wrap: anywhere; }
+              table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+              th, td { padding: 8px; text-align: left; vertical-align: top; }
+              th:first-child { width: 38%; }
+              th:nth-child(2) { width: 28%; }
+              td:first-child { word-break: break-all; }
+              td:nth-child(2) { white-space: nowrap; }
             </style>
           </head>
           <body>
@@ -75,16 +57,14 @@ internal fun generateLocalFileSelectionHtml(
               <h1>$appName</h1>
               <h2>Choose a local file</h2>
               <p>Multiple files are named <strong>${Html.escapeHtml(name)}</strong>. Select a UUID:</p>
-              <div class="table-wrap" role="region" aria-label="Matching files" tabindex="0">
-                <table>
-                  <thead>
-                    <tr><th scope="col">UUID</th><th scope="col">Size</th><th scope="col">Last modified</th></tr>
-                  </thead>
-                  <tbody>
-                    $rows
-                  </tbody>
-                </table>
-              </div>
+              <table>
+                <thead>
+                  <tr><th scope="col">UUID</th><th scope="col">Size</th><th scope="col">Last modified</th></tr>
+                </thead>
+                <tbody>
+                  $rows
+                </tbody>
+              </table>
             </main>
           </body>
         </html>

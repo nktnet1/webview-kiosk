@@ -131,9 +131,9 @@ For convenience, you can manually enter
 `https://appassets.androidplatform.net/web-content-files/index.html`. If one
 uploaded file has that name, it opens directly. If multiple files share the name,
 a simple HTML table from {APP_NAME} lets you choose one by UUID. The table
-shows file sizes and last-modified timestamps, and scrolls horizontally on narrow
-screens. UUID-prefixed paths always take precedence over short aliases. A missing
-UUID-prefixed path will not fall back to an alias.
+shows file sizes and last-modified timestamps, wrapping long UUIDs while keeping
+file sizes on one line. UUID-prefixed paths always take precedence over short
+aliases. A missing UUID-prefixed path will not fall back to an alias.
 
 **Default:** true
 
