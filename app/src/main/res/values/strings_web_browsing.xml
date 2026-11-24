@@ -21,7 +21,8 @@ For links, the options are:
 - Open in Browser (when unlocked)
 - Share Link (when unlocked)
 
-For images, there is an additional option:
+For images, there are additional options:
+- Refresh Image
 - Download Image (requires %1$s)"</string>
     <string name="setting_info_allow_other_url_schemes" formatted="false">"Allow the handling of non-http/https URL schemes (i.e. intents) such as intent:, mailto:, sms:, tel:, spotify:, whatsapp:, unifiedpush:, etc in other apps.
 
@@ -86,6 +87,7 @@ For example, when searching for \"new\", you may get suggested
     <string name="ui_disabled_2" formatted="false">"disabled."</string>
     <string name="ui_download_file" formatted="false">"Download File"</string>
     <string name="ui_download_image" formatted="false">"Download Image"</string>
+    <string name="ui_refresh_image">Refresh Image</string>
     <string name="ui_download_is_disabled_in_settings_value">"Download is disabled in settings (%1$s)"</string>
     <string name="ui_downloading_file" tools:ignore="TypographyEllipsis" formatted="false">"Downloading file..."</string>
     <string name="ui_enabled_2" formatted="false">"enabled."</string>
