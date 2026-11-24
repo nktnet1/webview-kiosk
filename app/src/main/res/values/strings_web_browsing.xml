@@ -21,8 +21,12 @@ For links, the options are:
 - Open in Browser (when unlocked)
 - Share Link (when unlocked)
 
-For images, there are additional options:
+For images, the options are:
+- Copy Link
+- Open Image
+- Open in Browser (when unlocked, except for file URLs)
 - Refresh Image
+- Share Link (when unlocked)
 - Download Image (requires %1$s)"</string>
     <string name="setting_info_allow_other_url_schemes" formatted="false">"Allow the handling of non-http/https URL schemes (i.e. intents) such as intent:, mailto:, sms:, tel:, spotify:, whatsapp:, unifiedpush:, etc in other apps.
 

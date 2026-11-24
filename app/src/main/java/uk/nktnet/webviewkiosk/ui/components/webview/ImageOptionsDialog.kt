@@ -82,19 +82,6 @@ fun ImageOptionsDialog(
 
                     Button(
                         onClick = {
-                            webView.evaluateJavascript(
-                                refreshImageScript(imageUrl),
-                                null,
-                            )
-                            onDismiss()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(stringResource(R.string.ui_refresh_image))
-                    }
-
-                    Button(
-                        onClick = {
                             scope.launch {
                                 val clipData =
                                     ClipData.newPlainText(
@@ -134,7 +121,22 @@ fun ImageOptionsDialog(
                                 Text(stringResource(R.string.ui_open_in_browser))
                             }
                         }
+                    }
 
+                    Button(
+                        onClick = {
+                            webView.evaluateJavascript(
+                                refreshImageScript(imageUrl),
+                                null,
+                            )
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(R.string.ui_refresh_image))
+                    }
+
+                    if (!isLocked) {
                         Button(
                             onClick = {
                                 val intent =
