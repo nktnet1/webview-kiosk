@@ -142,29 +142,14 @@ class AssetLoaderRequestTest {
             assertEquals("no-store", response?.responseHeaders?.get("Cache-Control"))
             val html = response?.data?.bufferedReader()?.use { it.readText() }
             assertNotNull(html)
-            assertTrue(html!!.contains("<table>"))
-            assertTrue(html.contains("<th scope=\"col\">UUID</th>"))
-            assertTrue(html.contains("<th scope=\"col\">Size</th>"))
-            assertTrue(html.contains("<th scope=\"col\">Last modified</th>"))
-            assertTrue(html.contains("@media (max-width: 560px)"))
-            assertTrue(html.contains("thead { display: none; }"))
-            assertTrue(
-                html.contains(
-                    "td:first-child { grid-column: 1 / -1; min-width: 0; }"
-                )
-            )
-            assertTrue(html.contains("td:first-child a { font-family: monospace; }"))
-            assertTrue(
-                html.contains(
-                    "strong, td:first-child a { overflow-wrap: anywhere; }"
-                )
-            )
-            assertTrue(
-                html.contains(
-                    "td:nth-child(2), td:nth-child(3) { white-space: nowrap; }"
-                )
-            )
-            assertFalse(html.contains("table-layout: fixed"))
+            assertTrue(html!!.contains("<ul>"))
+            assertTrue(html.contains("<dt>UUID</dt>"))
+            assertTrue(html.contains("<dt>Size</dt>"))
+            assertTrue(html.contains("<dt>Time</dt>"))
+            assertTrue(html.contains("grid-template-columns: 3.5rem minmax(0, 1fr)"))
+            assertTrue(html.contains("dd a { overflow-wrap: anywhere; }"))
+            assertTrue(html.contains("dd:nth-of-type(2) { white-space: nowrap; }"))
+            assertFalse(html.contains("<table>"))
             assertFalse(html.contains("<h2>Choose a local file</h2>"))
             assertFalse(html.contains("background:"))
             assertFalse(html.contains("<script"))
@@ -242,11 +227,13 @@ class AssetLoaderRequestTest {
             for (file in listOf(first, second)) {
                 val expected =
                     """
-                    <tr>
-                      <td><a href="${file.getLocalFileLink()}">${file.getUUID()}</a></td>
-                      <td>${humanReadableSize(context, file.length())}</td>
-                      <td>${dateFormat.format(Date(file.lastModified()))}</td>
-                    </tr>
+                    <li>
+                      <dl>
+                        <dt>UUID</dt><dd><a href="${file.getLocalFileLink()}">${file.getUUID()}</a></dd>
+                        <dt>Size</dt><dd>${humanReadableSize(context, file.length())}</dd>
+                        <dt>Time</dt><dd>${dateFormat.format(Date(file.lastModified()))}</dd>
+                      </dl>
+                    </li>
                     """
                         .trimIndent()
                 assertTrue(

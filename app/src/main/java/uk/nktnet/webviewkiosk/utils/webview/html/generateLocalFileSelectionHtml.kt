@@ -25,11 +25,13 @@ internal fun generateLocalFileSelectionHtml(
             val lastModified =
                 Html.escapeHtml(dateFormat.format(Date(file.lastModified())))
             """
-                <tr>
-                  <td><a href="${Html.escapeHtml(file.getLocalFileLink())}">${Html.escapeHtml(file.getUUID())}</a></td>
-                  <td>$size</td>
-                  <td>$lastModified</td>
-                </tr>
+                <li>
+                  <dl>
+                    <dt>UUID</dt><dd><a href="${Html.escapeHtml(file.getLocalFileLink())}">${Html.escapeHtml(file.getUUID())}</a></dd>
+                    <dt>Size</dt><dd>$size</dd>
+                    <dt>Time</dt><dd>$lastModified</dd>
+                  </dl>
+                </li>
             """
                 .trimIndent()
         }
@@ -45,33 +47,23 @@ internal fun generateLocalFileSelectionHtml(
               main { max-width: 720px; margin: auto; }
               h1 { margin: 0 0 16px; font-size: 1.5rem; }
               p { margin: 0 0 16px; }
-              strong, td:first-child a { overflow-wrap: anywhere; }
-              td:first-child a { font-family: monospace; }
-              table { width: 100%; border-collapse: collapse; }
-              th, td { padding: 12px 8px; text-align: left; vertical-align: top; }
-              td:nth-child(2), td:nth-child(3) { white-space: nowrap; }
-              tbody tr { border-top: 1px solid #ddd; }
-              @media (max-width: 560px) {
-                thead { display: none; }
-                tbody tr { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; padding: 12px 0; }
-                td { padding: 0; }
-                td:first-child { grid-column: 1 / -1; min-width: 0; }
-                td:last-child { text-align: right; }
-              }
+              strong, dd a { overflow-wrap: anywhere; }
+              dd a { font-family: monospace; }
+              ul { margin: 0; padding: 0; list-style: none; }
+              li { border-top: 1px solid #ddd; padding: 16px 0; }
+              dl { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 8px 12px; margin: 0; }
+              dt { font-weight: bold; }
+              dd { margin: 0; min-width: 0; }
+              dd:nth-of-type(2) { white-space: nowrap; }
             </style>
           </head>
           <body>
             <main>
               <h1>$appName</h1>
               <p>Multiple files are named <strong>${Html.escapeHtml(name)}</strong>. Select a UUID:</p>
-              <table>
-                <thead>
-                  <tr><th scope="col">UUID</th><th scope="col">Size</th><th scope="col">Last modified</th></tr>
-                </thead>
-                <tbody>
-                  $rows
-                </tbody>
-              </table>
+              <ul>
+                $rows
+              </ul>
             </main>
           </body>
         </html>
