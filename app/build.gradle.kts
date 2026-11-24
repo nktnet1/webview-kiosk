@@ -103,13 +103,11 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystore = file("keystore.jks")
-            if (keystore.exists()) {
-                storeFile = keystore
-                storePassword = System.getenv("KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
-            }
+            // Assign the path even when the keystore is decoded after configuration.
+            storeFile = file("keystore.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
         }
     }
 
@@ -125,9 +123,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            if (file("keystore.jks").exists()) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            signingConfig = signingConfigs.getByName("release")
         }
         // Locally test the release shrinker without a production signing key.
         // This builds a separate APK: the ordinary release variant is unchanged.
@@ -144,6 +140,26 @@ android {
         }
     }
 }
+
+// AGP reports a generic keystore error when any signing credential is missing.
+// Diagnose missing environment variables before its release signing validator runs.
+tasks
+    .matching { it.name == "validateSigningRelease" }
+    .configureEach {
+        doFirst {
+            val missing =
+                listOf("KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD").filter {
+                    System.getenv(it).isNullOrBlank()
+                }
+            if (missing.isNotEmpty()) {
+                throw GradleException(
+                    "Missing release signing environment variables: " +
+                        missing.joinToString(", ") +
+                        ". Gradle does not load .env automatically."
+                )
+            }
+        }
+    }
 
 // AGP 9 exposes per-variant host-test enablement through this incubating API.
 // Keep both the debug Robolectric suite and the smokeRelease R8 probes active.
