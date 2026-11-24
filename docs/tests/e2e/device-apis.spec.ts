@@ -537,7 +537,11 @@ test("a failing battery read does not stop the brightness poll", async ({
     };
   });
   await page.goto("tools/device-apis/");
-  await expect(page.getByText("No reading")).toHaveCount(1);
+  const battery = page.locator('[data-slot="card"]').filter({
+    has: page.locator('[data-slot="card-title"]', { hasText: /^Battery$/ }),
+  });
+  await expect(battery.getByText("Detected", { exact: true })).toBeVisible();
+  await expect(battery.getByText("No reading", { exact: true })).toBeVisible();
   await expect(page.getByText("Current: 35%")).toBeVisible();
   await expect(page.locator("[data-sonner-toast]")).toHaveCount(0);
 });
