@@ -142,7 +142,16 @@ class AssetLoaderRequestTest {
             assertEquals("no-store", response?.responseHeaders?.get("Cache-Control"))
             val html = response?.data?.bufferedReader()?.use { it.readText() }
             assertNotNull(html)
-            assertTrue(html!!.contains("<ul>"))
+            assertTrue(html!!.contains("<ol>"))
+            assertTrue(html.contains("</ol>"))
+            assertTrue(html.contains("ol { margin: 0; padding-left: 1.75rem; }"))
+            assertTrue(html.contains("li::marker { font-weight: bold; }"))
+            assertTrue(
+                html.contains(
+                    "<p>Multiple files are named <strong>ambiguous-name-test.txt</strong>.</p>"
+                )
+            )
+            assertFalse(html.contains("<ul>"))
             assertTrue(html.contains("<dt>UUID</dt>"))
             assertTrue(html.contains("<dt>Size</dt>"))
             assertTrue(html.contains("<dt>Time</dt>"))
@@ -151,6 +160,7 @@ class AssetLoaderRequestTest {
             assertTrue(html.contains("dd:nth-of-type(2) { white-space: nowrap; }"))
             assertFalse(html.contains("<table>"))
             assertFalse(html.contains("<h2>Choose a local file</h2>"))
+            assertFalse(html.contains("Select a UUID:"))
             assertFalse(html.contains("background:"))
             assertFalse(html.contains("<script"))
             for (file in listOf(first, second)) {
@@ -221,6 +231,10 @@ class AssetLoaderRequestTest {
             val appName = context.getString(R.string.app_name)
             assertTrue(html!!.contains("<title>$appName - Matching files</title>"))
             assertTrue(html.contains("<h1>$appName</h1>"))
+            assertEquals(2, "<li>".toRegex().findAll(html).count())
+            assertTrue(
+                html.indexOf(second.getUUID()) < html.indexOf(first.getUUID())
+            )
 
             val dateFormat =
                 SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())

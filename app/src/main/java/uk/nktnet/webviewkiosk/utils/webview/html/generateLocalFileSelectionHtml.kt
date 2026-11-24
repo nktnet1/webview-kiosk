@@ -49,7 +49,8 @@ internal fun generateLocalFileSelectionHtml(
               p { margin: 0 0 16px; }
               strong, dd a { overflow-wrap: anywhere; }
               dd a { font-family: monospace; }
-              ul { margin: 0; padding: 0; list-style: none; }
+              ol { margin: 0; padding-left: 1.75rem; }
+              li::marker { font-weight: bold; }
               li { border-top: 1px solid #ddd; padding: 16px 0; }
               dl { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 8px 12px; margin: 0; }
               dt { font-weight: bold; }
@@ -60,10 +61,10 @@ internal fun generateLocalFileSelectionHtml(
           <body>
             <main>
               <h1>$appName</h1>
-              <p>Multiple files are named <strong>${Html.escapeHtml(name)}</strong>. Select a UUID:</p>
-              <ul>
+              <p>Multiple files are named <strong>${Html.escapeHtml(name)}</strong>.</p>
+              <ol>
                 $rows
-              </ul>
+              </ol>
             </main>
           </body>
         </html>
