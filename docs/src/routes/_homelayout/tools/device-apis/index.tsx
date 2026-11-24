@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import InterfaceTester from "#/components/interfaces/InterfaceTester";
+import { APP_NAME } from "#/config/app";
 
 export const Route = createFileRoute("/_homelayout/tools/device-apis/")({
   component: DeviceApisPage,
@@ -13,7 +14,8 @@ function DeviceApisPage() {
           Device APIs
         </h1>
         <p className="max-w-3xl text-muted-foreground">
-          Test device APIs inside WebView Kiosk.
+          Test battery, brightness, location, NFC, vibration, and downloads
+          inside {APP_NAME}.
         </p>
       </header>
       <InterfaceTester />

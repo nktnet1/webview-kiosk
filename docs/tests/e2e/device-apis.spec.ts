@@ -88,10 +88,12 @@ test("device API readings poll and native actions work", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Device APIs", exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("Detected", { exact: true })).toHaveCount(5);
+  await expect(page.getByText("Detected", { exact: true })).toHaveCount(6);
   for (const setting of [
     "js_scripts.enable_battery_api",
     "js_scripts.enable_brightness_api",
+    "device.allow_location",
+    "device.use_direct_gps",
     "device.allow_nfc",
     "js_scripts.enable_vibration_api",
     "web_engine.allow_file_download",
@@ -360,9 +362,19 @@ test("unavailable bridges are detected automatically", async ({ page }) => {
       configurable: true,
       value: undefined,
     });
+    Object.defineProperty(navigator, "geolocation", {
+      configurable: true,
+      value: undefined,
+    });
   });
   await page.goto("tools/device-apis/");
-  await expect(page.getByText("Not detected", { exact: true })).toHaveCount(5);
+  await expect(page.getByText("Not detected", { exact: true })).toHaveCount(6);
+  await expect(
+    page.getByRole("button", { name: "Get location" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Start watch" }),
+  ).toBeDisabled();
   await expect(page.getByRole("button", { name: "Set" })).toBeDisabled();
   await expect(
     page.getByRole("button", { name: "Select system default (-1)" }),
@@ -385,7 +397,7 @@ test("browser vibration does not imply native bridge availability", async ({
   });
   await page.goto("tools/device-apis/");
   await expect(page.getByText("Not detected", { exact: true })).toHaveCount(4);
-  await expect(page.getByText("Detected", { exact: true })).toHaveCount(1);
+  await expect(page.getByText("Detected", { exact: true })).toHaveCount(2);
   await expect(page.getByRole("button", { name: "Vibrate" })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Set" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Start scan" })).toBeDisabled();

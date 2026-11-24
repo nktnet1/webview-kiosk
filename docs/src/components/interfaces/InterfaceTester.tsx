@@ -1,6 +1,15 @@
-import { Battery, Download, MonitorCog, Nfc, Sun, Vibrate } from "lucide-react";
+import {
+  Battery,
+  Download,
+  MapPin,
+  MonitorCog,
+  Nfc,
+  Sun,
+  Vibrate,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { joinURL } from "ufo";
 import { Button } from "#/components/ui/button";
 import {
   Card,
@@ -11,6 +20,8 @@ import {
 } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { APP_NAME } from "#/config/app";
+import { getBasePath } from "#/lib/basePath";
 import {
   type BatteryStatus,
   decodeTag,
@@ -27,6 +38,7 @@ import {
   VIBRATION_MAX_MS,
   VIBRATION_MIN_MS,
 } from "./bridge";
+import { startLocationRequest } from "./location";
 import { type DeviceSnapshot, subscribeDeviceSnapshots } from "./polling";
 
 function currentHost(): InterfaceHost {
@@ -245,6 +257,151 @@ function BrightnessPanel({
             Set
           </Button>
         </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LocationPanel() {
+  const [available, setAvailable] = useState(false);
+  const [mode, setMode] = useState<"idle" | "once" | "watch">("idle");
+  const [status, setStatus] = useState("No reading");
+  const [position, setPosition] = useState<GeolocationPosition | null>(null);
+  const session = useRef<ReturnType<typeof startLocationRequest> | null>(null);
+
+  useEffect(() => {
+    setAvailable(
+      window.isSecureContext
+        && typeof navigator.geolocation?.getCurrentPosition === "function"
+        && typeof navigator.geolocation?.watchPosition === "function"
+        && typeof navigator.geolocation?.clearWatch === "function",
+    );
+    return () => {
+      session.current?.stop();
+      session.current = null;
+    };
+  }, []);
+
+  function handleStart(watch: boolean) {
+    if (!available || session.current?.active) return;
+    setMode(watch ? "watch" : "once");
+    setPosition(null);
+    setStatus("Waiting for location…");
+    try {
+      session.current = startLocationRequest(
+        navigator.geolocation,
+        watch,
+        (next) => {
+          setPosition(next);
+          setStatus(watch ? "Watching location" : "Location received");
+          if (!watch) setMode("idle");
+        },
+        (error) => {
+          setPosition(null);
+          setStatus(`Location error (${error.code}): ${error.message}`);
+          if (!watch || error.code === 1) setMode("idle");
+        },
+      );
+    } catch (cause) {
+      session.current = null;
+      setMode("idle");
+      setStatus(describeError(cause));
+    }
+  }
+
+  function handleStop() {
+    session.current?.stop();
+    session.current = null;
+    setMode("idle");
+    setStatus("Location watch stopped");
+  }
+
+  return (
+    <Card role="region" aria-label="Location">
+      <PanelHeading
+        title="Location"
+        description="Request a location or watch for updates."
+        setting="device.allow_location"
+        available={available}
+        icon={MapPin}
+      />
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Allow the website&apos;s location prompt. To test{" "}
+          <a
+            href={joinURL(
+              getBasePath(),
+              "/docs/settings/device#use-direct-gps",
+            )}
+            className="text-primary underline"
+          >
+            Use Direct GPS
+          </a>{" "}
+          (<code>device.use_direct_gps</code>, default: false), open this HTTPS
+          page inside {APP_NAME}, grant precise location, enable GPS and restart
+          the app after changing the setting. API detection does not confirm
+          permission or the active provider.
+        </p>
+        <p role="status" className="text-sm">
+          {status}
+        </p>
+        {position && (
+          <dl className="grid grid-cols-2 gap-3 rounded-lg border p-4 text-sm">
+            <div>
+              <dt className="text-muted-foreground">Latitude</dt>
+              <dd className="mt-0.5 break-all font-medium">
+                {position.coords.latitude}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Longitude</dt>
+              <dd className="mt-0.5 break-all font-medium">
+                {position.coords.longitude}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Accuracy</dt>
+              <dd className="mt-0.5 break-all font-medium">
+                {position.coords.accuracy} m
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Fix time</dt>
+              <dd className="mt-0.5 break-all font-medium">
+                <time dateTime={new Date(position.timestamp).toISOString()}>
+                  {new Date(position.timestamp).toLocaleTimeString()}
+                </time>
+              </dd>
+            </div>
+          </dl>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Start a watch and compare the fix time before sleep and after wake.
+          Direct GPS pauses while the app is hidden or the screen is off and
+          resumes with a fresh fix. A timeout or unavailable fix may recover
+          while watching.
+        </p>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            disabled={!available || mode !== "idle"}
+            onClick={() => handleStart(false)}
+          >
+            Get location
+          </Button>
+          {mode === "watch" ? (
+            <Button variant="outline" onClick={handleStop}>
+              Stop watch
+            </Button>
+          ) : (
+            <Button
+              disabled={!available || mode !== "idle"}
+              onClick={() => handleStart(true)}
+            >
+              Start watch
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -556,6 +713,7 @@ export default function InterfaceTester() {
           available={snapshot?.availability.brightness ?? false}
           brightness={snapshot?.brightness ?? null}
         />
+        <LocationPanel />
         <NfcPanel available={snapshot?.availability.nfc ?? false} />
         <VibrationPanel available={snapshot?.availability.vibration ?? false} />
         <BlobPanel available={snapshot?.availability.blob ?? false} />
