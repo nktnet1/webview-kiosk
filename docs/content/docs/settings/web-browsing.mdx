@@ -114,9 +114,15 @@ For links, the options are:
 - Open in Browser (when unlocked)
 - Share Link (when unlocked)
 
-For images, there is an additional option:
+For images, the menu also includes:
 
+- Refresh Image (always shown, regardless of whether the image has loaded)
 - Download Image (requires `web_engine.allow_file_download`)
+
+`Refresh Image` retries matching images in the current page without reloading
+that page. For HTTP(S) images, it adds a cache-busting query parameter. This
+action requires `Web Engine -> Enable JavaScript` and does not refresh images
+inside iframes or used as CSS backgrounds.
 
 **Default:** true
 
