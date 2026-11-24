@@ -38,6 +38,7 @@ import uk.nktnet.webviewkiosk.utils.getMimeType
 import uk.nktnet.webviewkiosk.utils.safeStartActivity
 import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
+import uk.nktnet.webviewkiosk.utils.webview.refreshImageScript
 
 @Composable
 fun ImageOptionsDialog(
@@ -57,7 +58,6 @@ fun ImageOptionsDialog(
     }
 
     val isLocked by LockStateSingleton.isLocked
-
     if (imageUrl != null) {
         Dialog(onDismissRequest = onDismiss) {
             Surface(
@@ -121,7 +121,22 @@ fun ImageOptionsDialog(
                                 Text(stringResource(R.string.ui_open_in_browser))
                             }
                         }
+                    }
 
+                    Button(
+                        onClick = {
+                            webView.evaluateJavascript(
+                                refreshImageScript(imageUrl),
+                                null,
+                            )
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(R.string.ui_refresh_image))
+                    }
+
+                    if (!isLocked) {
                         Button(
                             onClick = {
                                 val intent =
