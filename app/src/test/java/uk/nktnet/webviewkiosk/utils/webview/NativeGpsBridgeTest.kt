@@ -188,6 +188,58 @@ class NativeGpsBridgeTest {
     }
 
     @Test
+    fun foregroundWatchRecoversWhenGpsProviderReturnsAfterWake() {
+        grant()
+        send("subscribe")
+        bridge.setForeground(false)
+        locations.removeProvider(LocationManager.GPS_PROVIDER)
+        bridge.setForeground(true)
+        assertTrue(listeners().isEmpty())
+        assertEquals(2, reply.messages.last().getInt("code"))
+        val replies = reply.messages.size
+        main.idleFor(Duration.ofSeconds(5))
+        assertEquals(replies, reply.messages.size)
+
+        locations.setProviderEnabled(LocationManager.GPS_PROVIDER, true)
+        main.idleFor(Duration.ofSeconds(5))
+        listeners().single().onLocationChanged(fix())
+        assertEquals("position", reply.messages.last().getString("type"))
+    }
+
+    @Test
+    fun gpsRetryCannotRegisterWhenHiddenOrUnsubscribed() {
+        grant()
+        locations.removeProvider(LocationManager.GPS_PROVIDER)
+        send("subscribe")
+        bridge.setForeground(false)
+        locations.setProviderEnabled(LocationManager.GPS_PROVIDER, true)
+        main.idleFor(Duration.ofSeconds(5))
+        assertTrue(listeners().isEmpty())
+
+        locations.removeProvider(LocationManager.GPS_PROVIDER)
+        bridge.setForeground(true)
+        send("unsubscribe")
+        locations.setProviderEnabled(LocationManager.GPS_PROVIDER, true)
+        main.idleFor(Duration.ofSeconds(5))
+        assertTrue(listeners().isEmpty())
+    }
+
+    @Test
+    fun aNewRequestCanStartGpsBeforeTheNextScheduledRetry() {
+        grant()
+        locations.removeProvider(LocationManager.GPS_PROVIDER)
+        send("subscribe")
+        assertTrue(listeners().isEmpty())
+
+        locations.setProviderEnabled(LocationManager.GPS_PROVIDER, true)
+        send("validate", JSONObject().put("id", 42))
+        assertEquals(1, listeners().size)
+        val listener = listeners().single()
+        main.idleFor(Duration.ofSeconds(5))
+        assertEquals(listener, listeners().single())
+    }
+
+    @Test
     fun bothAppSettingsAndPrecisePermissionAreCheckedBeforeReturningACachedPosition() {
         for (restriction in listOf("location", "direct", "precise")) {
             settings.allowLocation = true

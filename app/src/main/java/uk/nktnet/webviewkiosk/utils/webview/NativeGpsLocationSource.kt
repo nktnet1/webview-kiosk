@@ -9,6 +9,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
@@ -22,20 +23,22 @@ internal class NativeGpsLocationSource(
     private val onPosition: (JSONObject) -> Unit,
     private val onError: (Int, String) -> Unit,
 ) {
-    private val manager = runCatching {
-        context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
-    }
-        .onFailure { Log.w(TAG, "Unable to get Android location service", it) }
-        .getOrNull()
-    private var listener: LocationListener? = null
+    private class Registration(
+        val manager: LocationManager,
+        val listener: LocationListener,
+    )
+
+    private val main = Handler(Looper.getMainLooper())
+    private val retry = Runnable { register(reportFailure = false) }
+    private var registration: Registration? = null
 
     fun start() {
-        if (listener != null) {
-            return
-        }
-        val manager = manager
-        if (manager == null) {
-            onError(2, "Android location service is unavailable")
+        main.removeCallbacks(retry)
+        register(reportFailure = true)
+    }
+
+    private fun register(reportFailure: Boolean) {
+        if (registration != null) {
             return
         }
         if (
@@ -51,12 +54,28 @@ internal class NativeGpsLocationSource(
             )
             return
         }
+        val manager = runCatching {
+            context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+        }
+            .onFailure {
+                if (reportFailure) {
+                    Log.w(TAG, "Unable to get Android location service", it)
+                }
+            }
+            .getOrNull()
+        if (manager == null) {
+            registrationFailed(
+                "Android location service is unavailable",
+                reportFailure,
+            )
+            return
+        }
         val startedAt = SystemClock.elapsedRealtimeNanos()
         var lastFixAt = startedAt - 1
         val request =
             object : LocationListener {
                 override fun onLocationChanged(location: Location) {
-                    if (listener !== this) {
+                    if (registration?.listener !== this) {
                         return
                     }
                     if (
@@ -140,7 +159,7 @@ internal class NativeGpsLocationSource(
                 }
 
                 override fun onProviderDisabled(provider: String) {
-                    if (listener === this) {
+                    if (registration?.listener === this) {
                         onError(2, "GPS is disabled")
                     }
                 }
@@ -154,13 +173,12 @@ internal class NativeGpsLocationSource(
                     extras: Bundle?,
                 ) = Unit
             }
-        listener = request
         try {
             if (LocationManager.GPS_PROVIDER !in manager.allProviders) {
-                stop()
-                onError(2, "This device has no GPS provider")
+                registrationFailed("This device has no GPS provider", reportFailure)
                 return
             }
+            registration = Registration(manager, request)
             // Explicitly name GPS so the legacy Criteria overload cannot select
             // fused.
             manager.requestLocationUpdates(
@@ -170,7 +188,10 @@ internal class NativeGpsLocationSource(
                 request,
                 Looper.getMainLooper(),
             )
-            if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            if (
+                reportFailure &&
+                    !manager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            ) {
                 onError(2, "GPS is disabled")
             }
         } catch (_: SecurityException) {
@@ -178,21 +199,33 @@ internal class NativeGpsLocationSource(
             onError(1, "Precise location permission is unavailable")
         } catch (_: IllegalArgumentException) {
             stop()
-            onError(2, "This device has no GPS provider")
+            registrationFailed("This device has no GPS provider", reportFailure)
         } catch (error: RuntimeException) {
             stop()
-            Log.w(TAG, "Unable to start Direct GPS", error)
-            onError(2, "Android GPS provider is unavailable")
+            if (reportFailure) {
+                Log.w(TAG, "Unable to start Direct GPS", error)
+            }
+            registrationFailed("Android GPS provider is unavailable", reportFailure)
+        }
+    }
+
+    private fun registrationFailed(message: String, reportFailure: Boolean) {
+        // Check again after the provider has had time to return. Stop cancels
+        // this work on unsubscribe, backgrounding, navigation or disposal.
+        main.postDelayed(retry, RETRY_DELAY_MS)
+        if (reportFailure) {
+            onError(2, message)
         }
     }
 
     // Cleanup must still be attempted after Android revokes location permission.
     @SuppressLint("MissingPermission")
     fun stop() {
-        val previous = listener ?: return
-        listener = null
+        main.removeCallbacks(retry)
+        val previous = registration ?: return
+        registration = null
         try {
-            manager?.removeUpdates(previous)
+            previous.manager.removeUpdates(previous.listener)
         } catch (error: RuntimeException) {
             // Queued callbacks are rejected by listener identity.
             Log.w(TAG, "Unable to remove Direct GPS listener", error)
@@ -208,5 +241,6 @@ internal class NativeGpsLocationSource(
 
     companion object {
         private const val TAG = "NativeGpsLocationSource"
+        private const val RETRY_DELAY_MS = 5_000L
     }
 }

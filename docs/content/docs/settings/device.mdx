@@ -106,6 +106,8 @@ granting access. Embedded frames retain standard WebView geolocation.
 Requests share one GPS listener. Location collection stops while the app is
 hidden or the screen is off, including when Background Media Playback is enabled.
 Active watches resume with a new listener and require a fresh fix after wake.
+If Android's GPS provider is temporarily unavailable, active watches retry
+while the app and the page are visible.
 GPS can use more battery than WebView's usual location provider. The
 `enableHighAccuracy` option remains a hint and this backend always requests GPS.
 An approximate-only Android permission cannot use this backend.

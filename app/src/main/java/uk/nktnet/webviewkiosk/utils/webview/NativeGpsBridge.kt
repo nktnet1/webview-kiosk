@@ -166,6 +166,11 @@ internal class NativeGpsBridge(
                         .put("id", message.optInt("id"))
                         .put("allowed", allowed),
                 )
+                if (allowed) {
+                    // An existing watch may be subscribed while GPS registration
+                    // is pending. Let the new request try the provider immediately.
+                    updateSubscription()
+                }
             }
             "subscribe" -> {
                 current.subscribed = true
