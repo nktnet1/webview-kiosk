@@ -43,6 +43,8 @@
     <string name="ui_cannot_launch_apps_while_screen_pinned">Other apps cannot be launched while screen pinning is active.</string>
     <string name="ui_management_native">Native</string>
     <string name="ui_management_lock_task_available">Lock Task policies available</string>
+    <string name="ui_status_bar_requires_android_6">Requires Android 6+</string>
+    <string name="ui_status_bar_requires_device_owner">Requires native Device Owner</string>
     <string name="ui_lock_task_requires_android_8">Requires Android 8+</string>
     <string name="ui_lock_task_requires_android_9">Requires Android 9+</string>
     <string name="ui_lock_task_requires_android_11">Requires Android 11+</string>

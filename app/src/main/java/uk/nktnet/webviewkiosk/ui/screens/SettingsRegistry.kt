@@ -474,6 +474,11 @@ internal val settingsPages: List<SettingsPage> = buildList {
                         R.string.setting_info_lock_on_launch,
                     ),
                     SettingDefinition(
+                        R.string.web_lifecycle_relock_on_unexpected_exit_title,
+                        UserSettingsKeys.WebLifecycle.RELOCK_ON_UNEXPECTED_EXIT,
+                        R.string.setting_info_relock_on_unexpected_exit,
+                    ),
+                    SettingDefinition(
                         R.string.web_lifecycle_reset_on_launch_title,
                         UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH,
                         R.string.setting_info_reset_on_launch,
@@ -717,6 +722,13 @@ internal val settingsPages: List<SettingsPage> = buildList {
             aliasesRes = R.string.settings_search_alias_lock_task_mode,
             settings =
                 listOf(
+                    SettingDefinition(
+                        R.string
+                            .device_owner_disable_status_bar_outside_lock_task_title,
+                        UserSettingsKeys.Device.Owner
+                            .DISABLE_STATUS_BAR_OUTSIDE_LOCK_TASK,
+                        R.string.setting_info_disable_status_bar_outside_lock_task,
+                    ),
                     SettingDefinition(
                         R.string.device_owner_lock_task_feature_home_title,
                         UserSettingsKeys.Device.Owner.LockTaskFeature.HOME,

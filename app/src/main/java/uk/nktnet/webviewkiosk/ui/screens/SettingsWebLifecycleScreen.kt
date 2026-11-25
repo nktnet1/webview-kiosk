@@ -21,6 +21,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.Lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.RefreshOnLoadingErrorIntervalSecondsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.RefreshOnNetworkAvailableSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.RefreshOnScreenWakeSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.RelockOnUnexpectedExitSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.ResetActionsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.ResetOnInactivitySecondsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.ResetOnLaunchSetting
@@ -44,6 +45,7 @@ fun SettingsWebLifecycleScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
             LockOnLaunchSetting()
+            RelockOnUnexpectedExitSetting()
             ResetOnLaunchSetting()
             ResetOnInactivitySecondsSetting()
             ResetActionsSetting()

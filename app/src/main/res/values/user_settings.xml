@@ -112,6 +112,8 @@
     <!-- Web Lifecycle -->
     <string name="web_lifecycle_lock_on_launch_title">Lock on Launch</string>
 
+    <string name="web_lifecycle_relock_on_unexpected_exit_title">Re-lock After Unexpected Exit</string>
+
     <string name="web_lifecycle_reset_on_launch_title">Reset on Launch</string>
 
     <string name="web_lifecycle_reset_on_inactivity_seconds_title">Reset on Inactivity (seconds)</string>
@@ -185,6 +187,8 @@
     <string name="device_block_volume_keys_title">Block Volume Keys</string>
 
     <!-- Device Owner -->
+    <string name="device_owner_disable_status_bar_outside_lock_task_title">Disable Status Bar Outside Lock Task</string>
+
     <string name="device_owner_lock_task_feature_home_title">Show Home Button</string>
 
     <string name="device_owner_lock_task_feature_overview_title">Show Overview Button</string>
