@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Build
 import android.os.Looper
@@ -11,6 +12,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,7 +72,7 @@ class ForegroundWebViewLifecycleControllerTest {
 
     @After fun tearDown() = controller.detach()
 
-    private fun newController() =
+    private fun newController(context: Context = this.context) =
         ForegroundWebViewLifecycleController(
             context,
             owner.lifecycle,
@@ -78,6 +80,27 @@ class ForegroundWebViewLifecycleControllerTest {
             pause = { pauses++ },
             resume = { resumes++ },
         )
+
+    @Test
+    fun missingPowerServiceLeavesDirectGpsUnavailable() {
+        controller.detach()
+        controller =
+            newController(
+                object : ContextWrapper(context) {
+                    override fun getSystemService(name: String): Any? =
+                        if (name == Context.POWER_SERVICE) {
+                            null
+                        } else {
+                            super.getSystemService(name)
+                        }
+                }
+            )
+        assertFalse(controller.attach())
+        screenOff()
+        screenOn()
+        assertEquals(0, pauses)
+        assertEquals(0, resumes)
+    }
 
     @Test
     fun attachingWhileStartedResumesWebViewEvenIfPreviouslyPaused() {

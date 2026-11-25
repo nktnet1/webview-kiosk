@@ -113,6 +113,8 @@ An approximate-only Android permission cannot use this backend.
 Managed configurations and remote settings use the `device.use_direct_gps`
 key. WebView providers without support for both document-start scripts and web
 messages retain standard geolocation. Update Android System WebView if needed.
+If the direct GPS connection to WebView fails, the website receives a
+position unavailable error and can retry the request.
 
 Test location requests and watch updates using the [Device APIs tool](/tools/device-apis)
 from inside {APP_NAME}. Compare the fix timestamp before sleep and after wake

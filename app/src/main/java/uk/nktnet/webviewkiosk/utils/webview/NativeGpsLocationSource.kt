@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.os.SystemClock
+import android.util.Log
 import androidx.core.content.ContextCompat
 import org.json.JSONObject
 
@@ -21,12 +22,20 @@ internal class NativeGpsLocationSource(
     private val onPosition: (JSONObject) -> Unit,
     private val onError: (Int, String) -> Unit,
 ) {
-    private val manager =
-        context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    private val manager = runCatching {
+        context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+    }
+        .onFailure { Log.w(TAG, "Unable to get Android location service", it) }
+        .getOrNull()
     private var listener: LocationListener? = null
 
     fun start() {
         if (listener != null) {
+            return
+        }
+        val manager = manager
+        if (manager == null) {
+            onError(2, "Android location service is unavailable")
             return
         }
         if (
@@ -170,6 +179,10 @@ internal class NativeGpsLocationSource(
         } catch (_: IllegalArgumentException) {
             stop()
             onError(2, "This device has no GPS provider")
+        } catch (error: RuntimeException) {
+            stop()
+            Log.w(TAG, "Unable to start Direct GPS", error)
+            onError(2, "Android GPS provider is unavailable")
         }
     }
 
@@ -179,11 +192,10 @@ internal class NativeGpsLocationSource(
         val previous = listener ?: return
         listener = null
         try {
-            manager.removeUpdates(previous)
-        } catch (_: SecurityException) {
+            manager?.removeUpdates(previous)
+        } catch (error: RuntimeException) {
             // Queued callbacks are rejected by listener identity.
-        } catch (_: IllegalArgumentException) {
-            // Some head units remove the provider during suspend.
+            Log.w(TAG, "Unable to remove Direct GPS listener", error)
         }
     }
 
@@ -193,4 +205,8 @@ internal class NativeGpsLocationSource(
         } else {
             JSONObject.NULL
         }
+
+    companion object {
+        private const val TAG = "NativeGpsLocationSource"
+    }
 }

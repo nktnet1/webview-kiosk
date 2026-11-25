@@ -408,7 +408,9 @@ fun WebviewScreen(navController: NavController) {
             } else {
                 null
             }
-        controller?.attach()
+        if (nativeGps != null && controller?.attach() != true) {
+            nativeGps.dispose()
+        }
         onDispose {
             controller?.detach()
             nativeGps?.setForeground(false)

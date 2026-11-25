@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.location.LocationManager
@@ -11,6 +12,7 @@ import android.os.SystemClock
 import android.webkit.GeolocationPermissions
 import android.webkit.WebView
 import androidx.webkit.JavaScriptReplyProxy
+import androidx.webkit.WebMessageCompat
 import java.time.Duration
 import org.json.JSONObject
 import org.junit.After
@@ -128,9 +130,9 @@ class NativeGpsBridgeTest {
                 "null",
                 "file:///tmp/x",
             )) {
-            bridge.receive(forged, Uri.parse(sender), true, reply)
+            bridge.receive(WebMessageCompat(forged), Uri.parse(sender), true, reply)
         }
-        bridge.receive(forged, Uri.parse(origin), false, reply)
+        bridge.receive(WebMessageCompat(forged), Uri.parse(origin), false, reply)
         assertEquals(1, listeners().size)
     }
 
@@ -139,9 +141,9 @@ class NativeGpsBridgeTest {
         grant()
         val message =
             JSONObject().put("type", "subscribe").put("token", "stale").toString()
-        bridge.receive(message, Uri.parse(origin), true, reply)
+        bridge.receive(WebMessageCompat(message), Uri.parse(origin), true, reply)
         bridge.receive(
-            message.replace("stale", token),
+            WebMessageCompat(message.replace("stale", token)),
             Uri.parse(origin),
             true,
             Reply(),
@@ -254,11 +256,25 @@ class NativeGpsBridgeTest {
     }
 
     @Test
+    @SuppressLint(
+        "RequiresFeature"
+    ) // Construct a binary message without a live WebView.
     fun malformedAndOversizedMessagesAreIgnored() {
+        val previous = reply.messages.toList()
+        bridge.receive(
+            WebMessageCompat(byteArrayOf()),
+            Uri.parse(origin),
+            true,
+            reply,
+        )
         for (message in listOf(null, "{", "[]", "x".repeat(4097))) {
-            bridge.receive(message, Uri.parse(origin), true, reply)
+            bridge.receive(WebMessageCompat(message), Uri.parse(origin), true, reply)
         }
+        assertEquals(previous, reply.messages)
         assertTrue(listeners().isEmpty())
+        grant()
+        send("subscribe")
+        assertEquals(1, listeners().size)
     }
 
     @Test
@@ -297,7 +313,7 @@ class NativeGpsBridgeTest {
 
     private fun hello() {
         bridge.receive(
-            "{\"type\":\"hello\",\"nonce\":\"test\"}",
+            WebMessageCompat("{\"type\":\"hello\",\"nonce\":\"test\"}"),
             Uri.parse(origin),
             true,
             reply,
@@ -307,7 +323,9 @@ class NativeGpsBridgeTest {
 
     private fun send(type: String, payload: JSONObject = JSONObject()) {
         bridge.receive(
-            payload.put("type", type).put("token", token).toString(),
+            WebMessageCompat(
+                payload.put("type", type).put("token", token).toString()
+            ),
             Uri.parse(origin),
             true,
             reply,

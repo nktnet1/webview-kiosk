@@ -4,19 +4,24 @@
   const bridge = window.WebviewKioskGps;
   const geo = navigator.geolocation;
   if (window !== window.top || !window.isSecureContext ||
-      location.protocol !== 'https:' || !bridge || !geo) return;
+      location.protocol !== 'https:' || typeof bridge?.postMessage !== 'function' || !geo) return;
 
   const browserWatch = geo.watchPosition.bind(geo);
   const browserClear = geo.clearWatch.bind(geo);
   const requests = new Map();
   const maximum = 0xffffffff;
+  const replyTimeout = 3000;
+  const helloRetryInterval = 250;
+  const unavailable = 'Direct GPS could not connect to WebView';
   let nextId = 1;
-  let nonce;
+  let nonce = null;
+  let helloTimer = null;
   let token = null;
   let allowed = false;
   let hostVisible = false;
   let subscription = false;
   let permissionWatch = null;
+  let permissionTimer = null;
   let permissionAttempt = 0;
   let cache = null;
   let suspended = false;
@@ -25,15 +30,46 @@
     return !suspended && hostVisible && !document.hidden;
   }
 
+  function send(message) {
+    try {
+      bridge.postMessage(JSON.stringify(message));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function post(type, data = {}) {
-    if (!token) return;
-    bridge.postMessage(JSON.stringify({ ...data, type, token }));
+    return token !== null && send({ ...data, type, token });
+  }
+
+  function clearBrowserWatch(id) {
+    try { browserClear(id); } catch { /* WebView may have detached. */ }
   }
 
   function stopPermissionWatch() {
     permissionAttempt++;
-    if (permissionWatch !== null) browserClear(permissionWatch);
+    if (permissionWatch !== null) clearBrowserWatch(permissionWatch);
+    if (permissionTimer !== null) clearTimeout(permissionTimer);
     permissionWatch = null;
+    permissionTimer = null;
+  }
+
+  function stopHello() {
+    if (helloTimer !== null) clearTimeout(helloTimer);
+    helloTimer = null;
+    nonce = null;
+  }
+
+  function disconnect() {
+    stopHello();
+    stopPermissionWatch();
+    post('release');
+    token = null;
+    allowed = false;
+    hostVisible = false;
+    subscription = false;
+    cache = null;
   }
 
   function stopTimer(request) {
@@ -41,6 +77,23 @@
     clearTimeout(request.timer);
     request.timer = null;
     request.remaining = Math.max(0, request.remaining - (performance.now() - request.since));
+  }
+
+  function stopValidation(request) {
+    if (request.validationTimer !== null) clearTimeout(request.validationTimer);
+    request.validationTimer = null;
+  }
+
+  function stopDelivery(request) {
+    if (request.deliveryTimer !== null) clearTimeout(request.deliveryTimer);
+    request.deliveryTimer = null;
+  }
+
+  function removeRequest(request) {
+    stopTimer(request);
+    stopValidation(request);
+    stopDelivery(request);
+    requests.delete(request.id);
   }
 
   function errorValue(code, message) {
@@ -57,7 +110,7 @@
 
   function report(request, code, message, terminal = false) {
     stopTimer(request);
-    if (!request.watch || terminal) requests.delete(request.id);
+    if (!request.watch || terminal) removeRequest(request);
     if (request.error) {
       setTimeout(() => {
         if (!request.cancelled) {
@@ -73,6 +126,11 @@
     stopPermissionWatch();
     if (subscription) post('unsubscribe');
     subscription = false;
+  }
+
+  function failBridge() {
+    disconnect();
+    for (const request of requests.values()) report(request, 2, unavailable, true);
   }
 
   function startTimer(request) {
@@ -92,16 +150,15 @@
   }
 
   function deliver(request, position) {
-    if (request.deliveryPending) return;
-    request.deliveryPending = true;
+    if (request.deliveryTimer !== null) return;
     stopTimer(request);
-    request.remaining = request.timeout;
-    request.timedOut = false;
-    setTimeout(() => {
-      request.deliveryPending = false;
+    request.deliveryTimer = setTimeout(() => {
+      request.deliveryTimer = null;
       if (request.cancelled || requests.get(request.id) !== request) return;
       if (visible()) {
-        if (!request.watch) requests.delete(request.id);
+        request.remaining = request.timeout;
+        request.timedOut = false;
+        if (!request.watch) removeRequest(request);
         const callback = request.success;
         try { callback(position); } finally { refresh(); }
       } else {
@@ -116,17 +173,30 @@
     // Permissions Policy and the app's existing site permission dialog. The native
     // permission callback authorizes GPS and lets us cancel this temporary watch.
     const attempt = ++permissionAttempt;
-    permissionWatch = browserWatch(
-      () => {},
-      error => {
-        if (attempt !== permissionAttempt || allowed) return;
-        if (error.code === 1) {
-          allowed = false;
-          failAll(1, error.message || 'Location permission denied');
-        }
-      },
-      { enableHighAccuracy: false, maximumAge: 0, timeout: 0x7fffffff },
-    );
+    const onProbeResult = () => {
+      if (attempt !== permissionAttempt || allowed || permissionTimer !== null) return;
+      // The probe result never grants access. It only bounds the wait for a
+      // missing native reply once Chromium has finished asking for permission.
+      permissionTimer = setTimeout(failBridge, replyTimeout);
+    };
+    try {
+      const id = browserWatch(
+        onProbeResult,
+        error => {
+          if (attempt !== permissionAttempt || allowed) return;
+          if (error.code === 1) {
+            failAll(1, error.message || 'Location permission denied');
+          } else {
+            onProbeResult();
+          }
+        },
+        { enableHighAccuracy: false, maximumAge: 0, timeout: replyTimeout },
+      );
+      if (attempt === permissionAttempt) permissionWatch = id;
+      else clearBrowserWatch(id);
+    } catch {
+      failBridge();
+    }
   }
 
   function refresh() {
@@ -135,19 +205,27 @@
       if (!visible()) {
         stopPermissionWatch();
         cache = null;
+        for (const request of requests.values()) {
+          stopDelivery(request);
+          stopValidation(request);
+        }
       }
       for (const request of requests.values()) stopTimer(request);
       if (subscription) post('unsubscribe');
       subscription = false;
       if (visible()) askBrowserPermission();
+      else if (!token && requests.size) hello();
       return;
     }
     for (const request of requests.values()) {
-      if (request.deliveryPending) continue;
+      if (request.deliveryTimer !== null) continue;
       if (request.awaitingValidation) {
-        if (!request.validationSent) {
-          request.validationSent = true;
-          post('validate', { id: request.id });
+        if (request.validationTimer === null) {
+          request.validationTimer = setTimeout(failBridge, replyTimeout);
+          if (!post('validate', { id: request.id })) {
+            failBridge();
+            return;
+          }
         }
         continue;
       }
@@ -158,13 +236,16 @@
           deliver(request, cache.position);
         }
       }
-      if (requests.has(request.id) && !request.deliveryPending) startTimer(request);
+      if (requests.has(request.id) && request.deliveryTimer === null) startTimer(request);
     }
     const needed = Array.from(requests.values()).some(request =>
-      !request.awaitingValidation && (request.watch || !request.deliveryPending));
+      !request.awaitingValidation && (request.watch || request.deliveryTimer === null));
     if (subscription !== needed) {
       subscription = needed;
-      post(needed ? 'subscribe' : 'unsubscribe');
+      if (!post(needed ? 'subscribe' : 'unsubscribe')) {
+        failBridge();
+        return;
+      }
     }
     if (!needed) stopPermissionWatch();
   }
@@ -196,8 +277,8 @@
     requests.set(id, {
       id, watch, success, error, timeout, maximumAge, remaining: timeout,
       timer: null, since: 0, timedOut: false, cancelled: false, useCache: true,
-      awaitingValidation: true, validationSent: false,
-      deliveryPending: false,
+      awaitingValidation: true, validationTimer: null,
+      deliveryTimer: null,
     });
     refresh();
     return id;
@@ -219,8 +300,7 @@
         const request = requests.get(Number(id) >> 0);
         if (!request) return;
         request.cancelled = true;
-        stopTimer(request);
-        requests.delete(request.id);
+        removeRequest(request);
         refresh();
       },
     },
@@ -246,8 +326,12 @@
   bridge.onmessage = event => {
     let message;
     try { message = JSON.parse(event.data); } catch { return; }
+    if (!message || typeof message !== 'object') return;
     if (message.type === 'hello') {
-      if (message.nonce !== nonce) return;
+      if (nonce === null || message.nonce !== nonce ||
+          typeof message.token !== 'string' || !message.token ||
+          typeof message.visible !== 'boolean') return;
+      stopHello();
       token = message.token;
       hostVisible = message.visible;
       refresh();
@@ -267,7 +351,8 @@
         break;
       case 'validated': {
         const request = requests.get(message.id);
-        if (!request || !request.awaitingValidation) return;
+        if (!request || request.validationTimer === null) return;
+        stopValidation(request);
         if (message.allowed !== true) {
           allowed = false;
           cache = null;
@@ -280,7 +365,10 @@
       }
       case 'position': {
         if (!allowed || !visible()) return;
-        const position = positionValue(message);
+        if (!Number.isFinite(message.timestamp) || Math.abs(message.timestamp) > 8.64e15 ||
+            !Number.isFinite(message.ageMs) || message.ageMs < 0) return;
+        let position;
+        try { position = positionValue(message); } catch { return; }
         cache = { position, acquiredAt: performance.now() - message.ageMs };
         for (const request of requests.values()) {
           if (!request.awaitingValidation) deliver(request, position);
@@ -302,22 +390,30 @@
   };
 
   function hello() {
-    nonce = Array.from(crypto.getRandomValues(new Uint32Array(4)), n => n.toString(16)).join('-');
-    bridge.postMessage(JSON.stringify({ type: 'hello', nonce }));
+    if (suspended || token || nonce !== null) return;
+    const pending = Array.from(crypto.getRandomValues(new Uint32Array(4)), n => n.toString(16)).join('-');
+    const deadline = performance.now() + replyTimeout;
+    nonce = pending;
+    function attempt() {
+      if (nonce !== pending) return;
+      const remaining = deadline - performance.now();
+      if (remaining <= 0) {
+        failBridge();
+        return;
+      }
+      helloTimer = setTimeout(attempt, Math.min(helloRetryInterval, remaining));
+      send({ type: 'hello', nonce: pending });
+    }
+    attempt();
   }
 
   document.addEventListener('visibilitychange', refresh);
   window.addEventListener('pagehide', () => {
     suspended = true;
     refresh();
-    stopPermissionWatch();
-    post('release');
-    token = null;
-    allowed = false;
-    cache = null;
+    disconnect();
     for (const request of requests.values()) {
       request.awaitingValidation = true;
-      request.validationSent = false;
     }
   });
   window.addEventListener('pageshow', event => {

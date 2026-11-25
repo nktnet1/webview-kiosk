@@ -101,6 +101,84 @@ test('only secure HTTPS main frames override the browser API', () => {
   }
 });
 
+test('a dropped hello is retried and a later reply starts the pending request', () => {
+  const p = page();
+  const first = p.messages[0];
+  let fix;
+  p.geo.getCurrentPosition(position => { fix = position; });
+  p.advance(250);
+  assert.equal(p.messages.filter(message => message.type === 'hello').length, 2);
+  assert.equal(p.messages.at(-1).nonce, first.nonce);
+  p.ack();
+  p.grant();
+  p.fix();
+  p.advance(6000);
+  assert.equal(fix.coords.latitude, 12.3);
+  assert.equal(p.messages.filter(message => message.type === 'hello').length, 2);
+  assert.equal(p.tasks.size, 0);
+});
+
+test('a missing reply or failed transport returns position unavailable within the deadline', () => {
+  const p = page();
+  const errors = [];
+  const oldNonce = p.messages[0].nonce;
+  p.geo.getCurrentPosition(() => assert.fail('unexpected position'), e => errors.push(e), { timeout: 30000 });
+  p.advance(3000);
+  assert.deepEqual(errors.map(error => error.code), [2]);
+  assert.equal(p.watches.length, 0);
+  assert.equal(p.tasks.size, 0);
+  p.context.WebviewKioskGps.postMessage = () => { throw new Error('WebView detached'); };
+  p.send({ type: 'hello', nonce: oldNonce, visible: true });
+  let secondError;
+  p.geo.getCurrentPosition(() => assert.fail('unexpected position'), error => { secondError = error; });
+  p.advance(3000);
+  assert.equal(secondError.code, 2);
+  assert.equal(p.tasks.size, 0);
+});
+
+test('a new request reconnects after the previous handshake timed out', () => {
+  const p = page();
+  const first = p.messages[0];
+  p.advance(3000);
+  let calls = 0;
+  p.geo.getCurrentPosition(() => calls++);
+  assert.notEqual(p.messages.at(-1).nonce, first.nonce);
+  p.send({ type: 'hello', nonce: first.nonce, visible: true });
+  assert.equal(p.watches.length, 0);
+  p.ack();
+  p.grant();
+  p.fix();
+  p.advance();
+  assert.equal(calls, 1);
+});
+
+test('a missing validation reply ends the request and releases the session', () => {
+  const p = page({ validate: false });
+  p.ack();
+  let error;
+  p.geo.watchPosition(() => assert.fail('unvalidated fix'), e => { error = e; });
+  p.grant();
+  p.advance(3000);
+  assert.equal(error.code, 2);
+  assert.equal(p.messages.at(-1).type, 'release');
+  assert.equal(p.messages.some(message => message.type === 'subscribe'), false);
+  assert.equal(p.tasks.size, 0);
+});
+
+test('a finished browser probe cannot grant GPS and a missing permission reply returns an error', () => {
+  const p = page();
+  p.ack();
+  let error;
+  p.geo.watchPosition(() => assert.fail('unapproved fix'), e => { error = e; });
+  p.advance(10000);
+  assert.equal(error, undefined, 'An open permission prompt is not a bridge failure');
+  p.watches[0].success();
+  p.advance(3000);
+  assert.equal(error.code, 2);
+  assert.equal(p.messages.some(message => message.type === 'subscribe'), false);
+  assert.deepEqual(p.cleared, [1]);
+});
+
 test('native subscription waits for the genuine browser permission callback, not a fused fix', () => {
   const p = page();
   p.ack();
@@ -466,6 +544,30 @@ test('a queued one-shot fix waits for visibility and a fresh fix after wake', ()
   p.fix();
   p.advance();
   assert.equal(calls, 1);
+});
+
+test('a watch and one-shot both discard pre-sleep fixes when wake precedes callback delivery', () => {
+  for (const watch of [false, true]) {
+    for (const changeVisibility of [false, true]) {
+      const p = page();
+      p.ack();
+      const fixes = [];
+      const method = watch ? 'watchPosition' : 'getCurrentPosition';
+      p.geo[method](fix => fixes.push(fix.timestamp));
+      p.grant();
+      p.fix({ timestamp: 100 });
+      if (changeVisibility) {
+        p.visibility(true);
+        p.visibility(false);
+      } else {
+        p.send({ type: 'foreground', visible: false });
+        p.send({ type: 'foreground', visible: true });
+      }
+      p.fix({ timestamp: 200 });
+      p.advance();
+      assert.deepEqual(fixes, [200]);
+    }
+  }
 });
 
 test('permission revocation cancels an already queued position callback', () => {

@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.utils.webview
 
 import android.Manifest
 import android.content.Context
+import android.content.ContextWrapper
 import android.location.Location
 import android.location.LocationManager
 import android.os.Build
@@ -228,6 +229,36 @@ class NativeGpsLocationSourceTest {
         source.start()
         assertEquals(listOf(2), errors)
         assertTrue(listeners().isEmpty())
+    }
+
+    @Test
+    fun unavailableAndroidLocationServiceReportsAnErrorAndCanBeStopped() {
+        for (throwOnLookup in listOf(false, true)) {
+            val context =
+                object : ContextWrapper(app) {
+                    override fun getSystemService(name: String): Any? {
+                        if (name != Context.LOCATION_SERVICE) {
+                            return super.getSystemService(name)
+                        }
+                        if (throwOnLookup) {
+                            throw IllegalStateException(
+                                "Location service unavailable"
+                            )
+                        }
+                        return null
+                    }
+                }
+            val errors = mutableListOf<Int>()
+            val unavailable =
+                NativeGpsLocationSource(context, { true }, positions::add) { code, _
+                    ->
+                    errors.add(code)
+                }
+            unavailable.start()
+            unavailable.stop()
+            assertEquals(listOf(2), errors)
+            assertTrue(positions.isEmpty())
+        }
     }
 
     // Retain callbacks to check rejection after cancellation and wake.

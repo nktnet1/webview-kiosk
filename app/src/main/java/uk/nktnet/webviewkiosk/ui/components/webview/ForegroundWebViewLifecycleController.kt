@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.PowerManager
+import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.core.content.ContextCompat
@@ -34,8 +35,10 @@ internal class ForegroundWebViewLifecycleController(
     private val pause: () -> Unit,
     private val resume: () -> Unit,
 ) : LifecycleEventObserver {
-    private val power =
-        context.getSystemService(Context.POWER_SERVICE) as PowerManager
+    private val power = runCatching {
+        context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+    }
+        .getOrNull()
     private var attached = false
     private var started = false
     // Unknown until attach samples lifecycle and current device interactivity.
@@ -50,26 +53,40 @@ internal class ForegroundWebViewLifecycleController(
 
     private val receiver = ForegroundScreenStateReceiver { updatePauseState() }
 
-    fun attach() {
-        if (attached || lifecycle.currentState == Lifecycle.State.DESTROYED) {
-            return
+    fun attach(): Boolean {
+        if (attached) {
+            return true
         }
-        ContextCompat.registerReceiver(
-            context,
-            receiver,
-            IntentFilter().apply {
-                addAction(Intent.ACTION_SCREEN_OFF)
-                addAction(Intent.ACTION_SCREEN_ON)
-            },
-            ContextCompat.RECEIVER_NOT_EXPORTED,
-        )
-        // The host may have changed state while this controller was detached.
-        started = lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
-        attached = true
-        focusObserver = windowView.viewTreeObserver
-        focusObserver?.addOnWindowFocusChangeListener(focusListener)
-        lifecycle.addObserver(this)
-        updatePauseState()
+        if (power == null || lifecycle.currentState == Lifecycle.State.DESTROYED) {
+            return false
+        }
+        return try {
+            ContextCompat.registerReceiver(
+                context,
+                receiver,
+                IntentFilter().apply {
+                    addAction(Intent.ACTION_SCREEN_OFF)
+                    addAction(Intent.ACTION_SCREEN_ON)
+                },
+                ContextCompat.RECEIVER_NOT_EXPORTED,
+            )
+            attached = true
+            // The host may have changed state while this controller was detached.
+            started = lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+            focusObserver = windowView.viewTreeObserver
+            focusObserver?.addOnWindowFocusChangeListener(focusListener)
+            lifecycle.addObserver(this)
+            updatePauseState()
+            true
+        } catch (error: RuntimeException) {
+            detach()
+            Log.w(
+                TAG,
+                "Unable to observe Android screen state for Direct GPS",
+                error,
+            )
+            false
+        }
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
@@ -95,7 +112,9 @@ internal class ForegroundWebViewLifecycleController(
         }
         // Screen broadcasts can arrive after another power transition. Sample
         // current interactivity on every signal instead of retaining a stale flag.
-        val shouldPause = !started || !power.isInteractive
+        val shouldPause =
+            !started ||
+                !runCatching { power?.isInteractive == true }.getOrDefault(false)
         if (webViewPaused != shouldPause) {
             webViewPaused = shouldPause
             if (shouldPause) {
@@ -112,11 +131,17 @@ internal class ForegroundWebViewLifecycleController(
         }
         attached = false
         lifecycle.removeObserver(this)
-        val observer =
-            focusObserver?.takeIf { it.isAlive } ?: windowView.viewTreeObserver
-        observer.removeOnWindowFocusChangeListener(focusListener)
+        runCatching {
+            val observer =
+                focusObserver?.takeIf { it.isAlive } ?: windowView.viewTreeObserver
+            observer.removeOnWindowFocusChangeListener(focusListener)
+        }
         focusObserver = null
-        context.unregisterReceiver(receiver)
+        runCatching { context.unregisterReceiver(receiver) }
         webViewPaused = null
+    }
+
+    companion object {
+        private const val TAG = "ForegroundWebView"
     }
 }

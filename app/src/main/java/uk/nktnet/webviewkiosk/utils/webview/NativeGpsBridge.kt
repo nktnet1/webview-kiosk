@@ -9,6 +9,7 @@ import android.webkit.WebView
 import androidx.core.content.ContextCompat
 import androidx.webkit.JavaScriptReplyProxy
 import androidx.webkit.ScriptHandler
+import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import java.util.UUID
@@ -98,22 +99,24 @@ internal class NativeGpsBridge(
     }
 
     internal fun receive(
-        data: String?,
+        incoming: WebMessageCompat,
         origin: Uri,
         isMainFrame: Boolean,
         reply: JavaScriptReplyProxy,
     ) {
-        val sender = httpsOrigin(origin.toString()) ?: return
         if (
-            disposed ||
-                !isMainFrame ||
-                sender != pageOrigin ||
-                sender != httpsOrigin(webView.url) ||
-                data == null ||
-                data.length > 4096
+            disposed || !isMainFrame || incoming.type != WebMessageCompat.TYPE_STRING
         ) {
             return
         }
+        val sender = httpsOrigin(origin.toString()) ?: return
+        if (
+            sender != pageOrigin ||
+                sender != runCatching { httpsOrigin(webView.url) }.getOrNull()
+        ) {
+            return
+        }
+        val data = incoming.data?.takeIf { it.length <= 4096 } ?: return
         val message = runCatching { JSONObject(data) }.getOrNull() ?: return
         if (message.optString("type") == "hello") {
             val nonce = message.optString("nonce")
@@ -214,24 +217,22 @@ internal class NativeGpsBridge(
         source.stop()
         session = null
         if (!rendererGone) {
-            withOptionalWebViewFeature(WebViewFeature.DOCUMENT_START_SCRIPT) {
+            runCatching {
                 if (
                     WebViewFeature.isFeatureSupported(
                         WebViewFeature.DOCUMENT_START_SCRIPT
                     )
                 ) {
-                    runCatching { script?.remove() }
+                    script?.remove()
                 }
             }
-            withOptionalWebViewFeature(WebViewFeature.WEB_MESSAGE_LISTENER) {
+            runCatching {
                 if (
                     WebViewFeature.isFeatureSupported(
                         WebViewFeature.WEB_MESSAGE_LISTENER
                     )
                 ) {
-                    runCatching {
-                        WebViewCompat.removeWebMessageListener(webView, NAME)
-                    }
+                    WebViewCompat.removeWebMessageListener(webView, NAME)
                 }
             }
         }
@@ -257,46 +258,33 @@ internal class NativeGpsBridge(
             if (!userSettings.allowLocation || !userSettings.useDirectGps) {
                 return null
             }
-            var result: NativeGpsBridge? = null
-            withOptionalWebViewFeature(WebViewFeature.DOCUMENT_START_SCRIPT) {
+            var candidate: NativeGpsBridge? = null
+            return runCatching {
                 if (
                     WebViewFeature.isFeatureSupported(
                         WebViewFeature.DOCUMENT_START_SCRIPT
-                    ) &&
+                    )
+                ) {
+                    if (
                         WebViewFeature.isFeatureSupported(
                             WebViewFeature.WEB_MESSAGE_LISTENER
                         )
-                ) {
-                    val bridge = NativeGpsBridge(webView, userSettings)
-                    runCatching {
+                    ) {
+                        val bridge = NativeGpsBridge(webView, userSettings)
+                        candidate = bridge
                         val js =
                             webView.context.assets
                                 .open("native-gps.js")
                                 .bufferedReader()
                                 .use { it.readText() }
-                        // Sites can navigate across origins. Native checks require
-                        // HTTPS, the current main frame and its document session.
-                        if (
-                            WebViewFeature.isFeatureSupported(
-                                WebViewFeature.WEB_MESSAGE_LISTENER
-                            )
-                        ) {
-                            WebViewCompat.addWebMessageListener(
-                                webView,
-                                NAME,
-                                setOf("*"),
-                            ) { _, message, origin, mainFrame, reply ->
-                                bridge.receive(
-                                    message.data,
-                                    origin,
-                                    mainFrame,
-                                    reply,
-                                )
-                            }
-                        } else {
-                            throw UnsupportedOperationException(
-                                "Web messages are unavailable"
-                            )
+                        // Sites can navigate across origins. Check HTTPS, the main
+                        // frame and the current document session on receipt.
+                        WebViewCompat.addWebMessageListener(
+                            webView,
+                            NAME,
+                            setOf("*"),
+                        ) { _, message, origin, mainFrame, reply ->
+                            bridge.receive(message, origin, mainFrame, reply)
                         }
                         bridge.script =
                             WebViewCompat.addDocumentStartJavaScript(
@@ -304,19 +292,20 @@ internal class NativeGpsBridge(
                                 js,
                                 setOf("*"),
                             )
-                        result = bridge
+                        return@runCatching bridge
                     }
-                        .onFailure {
-                            bridge.dispose()
-                            Log.w(
-                                NAME,
-                                "Direct GPS unavailable, using WebView geolocation",
-                                it,
-                            )
-                        }
                 }
+                null
             }
-            return result
+                .getOrElse { error ->
+                    candidate?.dispose()
+                    Log.w(
+                        NAME,
+                        "Direct GPS unavailable, using WebView geolocation",
+                        error,
+                    )
+                    null
+                }
         }
 
         internal fun httpsOrigin(url: String?): String? {
