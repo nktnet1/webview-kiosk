@@ -358,6 +358,7 @@ fun File.getLegacyLocalFileUrl(): String {
     return "file://${Uri.encode(this.absolutePath, "/")}"
 }
 
+/** Always use the UUID-prefixed disk name for generated links. */
 fun File.getLocalFileLink(): String {
     return Uri.Builder()
         .scheme("https")
@@ -368,6 +369,47 @@ fun File.getLocalFileLink(): String {
         .toString()
 }
 
+// A missing UUID URL must never be silently redirected to another file's alias.
+private val uuidFileNamePrefix =
+    Regex(
+        "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\|"
+    )
+
+/** Exact stored names take precedence over aliases, including UUID-based URLs. */
+private fun findLocalFilesByName(
+    directory: File,
+    requestedName: String,
+): List<File> {
+    if (requestedName.isBlank()) {
+        return emptyList()
+    }
+
+    return try {
+        val canonicalDir = directory.canonicalFile
+        val directFile = File(canonicalDir, requestedName).canonicalFile
+        if (directFile.parentFile != canonicalDir) {
+            return emptyList()
+        }
+        if (directFile.isFile) {
+            return listOf(directFile)
+        }
+        if (uuidFileNamePrefix.containsMatchIn(requestedName)) {
+            return emptyList()
+        }
+
+        listLocalFiles(canonicalDir).mapNotNull { file ->
+            if (file.getDisplayName() != requestedName) {
+                return@mapNotNull null
+            }
+            file.canonicalFile.takeIf {
+                it.parentFile == canonicalDir && it.isFile
+            }
+        }
+    } catch (_: Exception) {
+        emptyList()
+    }
+}
+
 fun Uri.isLocalFileLink(): Boolean {
     return scheme.equals("https", ignoreCase = true) &&
         host.equals(WebViewAssetLoader.DEFAULT_DOMAIN, ignoreCase = true) &&
@@ -375,23 +417,21 @@ fun Uri.isLocalFileLink(): Boolean {
         pathSegments[0] == Constants.WEB_CONTENT_FILES_DIR
 }
 
-fun Uri.resolveLocalFileLink(context: Context): File? {
-    if (!isLocalFileLink()) {
-        return null
+/**
+ * Returns multiple matches only for a non-UUID alias with duplicate display names.
+ */
+internal fun Uri.findLocalFileMatches(context: Context): List<File> {
+    if (!isLocalFileLink() || port !in listOf(-1, 443) || userInfo != null) {
+        return emptyList()
     }
 
     val fileName =
-        pathSegments.getOrNull(1)?.takeIf { it.isNotBlank() } ?: return null
-    val filesDir = getWebContentFilesDir(context)
-
-    return try {
-        val canonicalDir = filesDir.canonicalFile
-        val canonicalFile = File(canonicalDir, fileName).canonicalFile
-        canonicalFile.takeIf { it.parentFile == canonicalDir }
-    } catch (_: Exception) {
-        null
-    }
+        pathSegments.getOrNull(1)?.takeIf { it.isNotBlank() } ?: return emptyList()
+    return findLocalFilesByName(getWebContentFilesDir(context), fileName)
 }
+
+fun Uri.resolveLocalFileLink(context: Context): File? =
+    findLocalFileMatches(context).singleOrNull()
 
 fun getDownloadLocation(): String {
     return Environment.getExternalStoragePublicDirectory(
