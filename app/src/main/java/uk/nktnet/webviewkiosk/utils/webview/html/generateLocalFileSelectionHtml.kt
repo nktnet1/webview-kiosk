@@ -51,8 +51,8 @@ internal fun generateLocalFileSelectionHtml(
               dd a { font-family: monospace; }
               ol { margin: 0; padding-left: 1.75rem; }
               li::marker { font-weight: bold; }
-              li { border-top: 1px solid #ddd; padding: 16px 0; }
-              dl { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 8px 12px; margin: 0; }
+              li { border-top: 1px solid #ddd; padding: 8px 0; }
+              dl { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 2px 8px; margin: 0; line-height: 1.25; }
               dt { font-weight: bold; }
               dd { margin: 0; min-width: 0; }
               dd:nth-of-type(2) { white-space: nowrap; }
@@ -61,7 +61,7 @@ internal fun generateLocalFileSelectionHtml(
           <body>
             <main>
               <h1>$appName</h1>
-              <p>Multiple files are named <strong>${Html.escapeHtml(name)}</strong>.</p>
+              <p>${matches.size} files are named <strong>${Html.escapeHtml(name)}</strong>.</p>
               <ol>
                 $rows
               </ol>

@@ -147,8 +147,12 @@ class AssetLoaderRequestTest {
             assertTrue(html.contains("ol { margin: 0; padding-left: 1.75rem; }"))
             assertTrue(html.contains("li::marker { font-weight: bold; }"))
             assertTrue(
+                html.contains("li { border-top: 1px solid #ddd; padding: 8px 0; }")
+            )
+            assertTrue(html.contains("gap: 2px 8px; margin: 0; line-height: 1.25;"))
+            assertTrue(
                 html.contains(
-                    "<p>Multiple files are named <strong>ambiguous-name-test.txt</strong>.</p>"
+                    "<p>2 files are named <strong>ambiguous-name-test.txt</strong>.</p>"
                 )
             )
             assertFalse(html.contains("<ul>"))
@@ -200,6 +204,42 @@ class AssetLoaderRequestTest {
         } finally {
             first.delete()
             second.delete()
+        }
+    }
+
+    @Test
+    fun chooserShowsExactCountForThreeFiles() {
+        val context = RuntimeEnvironment.getApplication()
+        val dir = getWebContentFilesDir(context)
+        val files =
+            (1..3).map { number ->
+                File(dir, "$number-id|three-matches-test.txt")
+            }
+        files.forEach { it.writeText("content") }
+        try {
+            val response =
+                interceptAssetRequest(
+                    Uri.parse(
+                        "https://appassets.androidplatform.net/web-content-files/three-matches-test.txt"
+                    ),
+                    localFilesLoader(context),
+                    null,
+                    context,
+                )
+            assertEquals("text/html", response?.mimeType)
+            val html = response?.data?.bufferedReader()?.use { it.readText() }
+            assertNotNull(html)
+            assertTrue(
+                html!!.contains(
+                    "<p>3 files are named <strong>three-matches-test.txt</strong>.</p>"
+                )
+            )
+            assertEquals(3, "<li>".toRegex().findAll(html).count())
+            for (file in files) {
+                assertTrue(html.contains("href=\"${file.getLocalFileLink()}\""))
+            }
+        } finally {
+            files.forEach { it.delete() }
         }
     }
 
