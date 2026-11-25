@@ -121,6 +121,11 @@
     }
   }
 
+  function reportProviderError(request, message) {
+    if (request.awaitingValidation || (!request.watch && request.deliveryTimer !== null)) return;
+    report(request, 2, message);
+  }
+
   function failAll(code, message) {
     for (const request of requests.values()) report(request, code, message, true);
     stopPermissionWatch();
@@ -229,14 +234,7 @@
         }
         continue;
       }
-      if (request.useCache) {
-        request.useCache = false;
-        if (cache && request.maximumAge > 0 &&
-            performance.now() - cache.acquiredAt <= request.maximumAge) {
-          deliver(request, cache.position);
-        }
-      }
-      if (requests.has(request.id) && request.deliveryTimer === null) startTimer(request);
+      startTimer(request);
     }
     const needed = Array.from(requests.values()).some(request =>
       !request.awaitingValidation && (request.watch || request.deliveryTimer === null));
@@ -351,7 +349,7 @@
         break;
       case 'validated': {
         const request = requests.get(message.id);
-        if (!request || request.validationTimer === null) return;
+        if (!request || request.validationTimer === null || !visible()) return;
         stopValidation(request);
         if (message.allowed !== true) {
           allowed = false;
@@ -360,6 +358,14 @@
           return;
         }
         request.awaitingValidation = false;
+        if (request.useCache) {
+          request.useCache = false;
+          if (cache && request.maximumAge > 0 &&
+              performance.now() - cache.acquiredAt <= request.maximumAge) {
+            deliver(request, cache.position);
+          }
+        }
+        if (typeof message.unavailable === 'string') reportProviderError(request, message.unavailable);
         refresh();
         break;
       }
@@ -381,8 +387,8 @@
           allowed = false;
           cache = null;
           failAll(1, message.message);
-        } else {
-          for (const request of requests.values()) report(request, message.code, message.message);
+        } else if (message.code === 2 && visible()) {
+          for (const request of requests.values()) reportProviderError(request, message.message);
         }
         refresh();
         break;

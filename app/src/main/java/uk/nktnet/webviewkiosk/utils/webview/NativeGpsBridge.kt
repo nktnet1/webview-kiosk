@@ -160,17 +160,19 @@ internal class NativeGpsBridge(
                     current.subscribed = false
                     source.stop()
                 }
+                val unavailable =
+                    if (allowed && foreground && current.subscribed) {
+                        source.start(reportFailure = false)
+                    } else {
+                        null
+                    }
                 send(
                     "validated",
                     JSONObject()
                         .put("id", message.optInt("id"))
-                        .put("allowed", allowed),
+                        .put("allowed", current.allowed)
+                        .put("unavailable", unavailable),
                 )
-                if (allowed) {
-                    // An existing watch may be subscribed while GPS registration
-                    // is pending. Let the new request try the provider immediately.
-                    updateSubscription()
-                }
             }
             "subscribe" -> {
                 current.subscribed = true

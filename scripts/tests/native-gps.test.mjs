@@ -386,6 +386,42 @@ test('a provider error terminates one-shots but an active watch can recover', ()
   assert.equal(fixes, 1);
 });
 
+test('new requests learn that GPS is unavailable and can still use a recent fix', () => {
+  const p = page({ validate: false });
+  p.ack();
+  const watch = p.geo.watchPosition(() => {});
+  p.grant();
+  p.send({ type: 'validated', id: watch, allowed: true });
+  p.fix();
+  p.advance();
+
+  const unavailable = 'GPS is disabled';
+  let error;
+  p.geo.getCurrentPosition(() => assert.fail('GPS did not produce a fresh fix'), e => { error = e; });
+  p.send({ type: 'validated', id: p.messages.at(-1).id, allowed: true, unavailable });
+  p.advance();
+  assert.equal(error?.code, 2);
+  assert.equal(error.message, unavailable);
+
+  let cached = 0;
+  p.geo.getCurrentPosition(() => cached++, () => assert.fail('A recent fix is available'), { maximumAge: 100 });
+  p.send({ type: 'validated', id: p.messages.at(-1).id, allowed: true, unavailable });
+  p.advance();
+  assert.equal(cached, 1);
+});
+
+test('a provider error cannot replace a one-shot fix already queued for delivery', () => {
+  const p = page();
+  p.ack();
+  let fixes = 0;
+  p.geo.getCurrentPosition(() => fixes++, () => assert.fail('A fix was already acquired'));
+  p.grant();
+  p.fix();
+  p.send({ type: 'error', code: 2, message: 'GPS is disabled' });
+  p.advance();
+  assert.equal(fixes, 1);
+});
+
 test('stale documents cannot supply permission, positions or host state', () => {
   const p = page();
   p.ack();

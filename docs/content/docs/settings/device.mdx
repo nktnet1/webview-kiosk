@@ -91,37 +91,21 @@ Test website location using the [Device APIs tool](/tools/device-apis) from insi
 
 ## 7. Use Direct GPS [#use-direct-gps]
 
-Set to true to use Android's GPS provider for website location. This can help
-head units where website location stops working after sleep.
+Set to true to use Android's GPS for website location. This can help head units
+where location stops working after sleep. GPS can use more battery.
 
-This requires a GPS receiver, [Allow Location](#allow-location), precise
-location permission and the device's GPS to be enabled. Restart the app after
-changing this setting and allow the website's location prompt as usual.
+Enable [Allow Location](#allow-location) and the device's GPS, grant precise
+location permission and restart the app. Allow the website's location prompt
+as usual.
 
-Only the main HTTPS page uses direct GPS for
-`navigator.geolocation.getCurrentPosition()`, `watchPosition()` and
-`clearWatch()` calls. The browser still checks Permissions Policy before
-granting access. Embedded frames retain standard WebView geolocation.
+Direct GPS applies to main HTTPS pages on supported WebViews. Embedded frames
+and unsupported WebViews use standard geolocation. Location collection pauses
+while the app is hidden or the screen is off. Active watches wait for a fresh
+fix after wake.
 
-Requests share one GPS listener. Location collection stops while the app is
-hidden or the screen is off, including when Background Media Playback is enabled.
-Active watches resume with a new listener and require a fresh fix after wake.
-If Android's GPS provider is temporarily unavailable, active watches retry
-while the app and the page are visible.
-GPS can use more battery than WebView's usual location provider. The
-`enableHighAccuracy` option remains a hint and this backend always requests GPS.
-An approximate-only Android permission cannot use this backend.
+Test with the [Device APIs tool](/tools/device-apis) inside {APP_NAME}.
 
-Managed configurations and remote settings use the `device.use_direct_gps`
-key. WebView providers without support for both document-start scripts and web
-messages retain standard geolocation. Update Android System WebView if needed.
-If the direct GPS connection to WebView fails, the website receives a
-position unavailable error and can retry the request.
-
-Test location requests and watch updates using the [Device APIs tool](/tools/device-apis)
-from inside {APP_NAME}. Compare the fix timestamp before sleep and after wake
-to check that a watch receives a fresh location. The tool uses the standard
-geolocation API and cannot identify which provider is active.
+Managed configurations and remote settings use `device.use_direct_gps`.
 
 **Default:** false
 

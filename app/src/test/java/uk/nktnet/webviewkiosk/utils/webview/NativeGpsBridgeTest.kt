@@ -231,11 +231,40 @@ class NativeGpsBridgeTest {
         send("subscribe")
         assertTrue(listeners().isEmpty())
 
+        reply.messages.clear()
+        send("validate", JSONObject().put("id", 41))
+        assertEquals(
+            "This device has no GPS provider",
+            reply.messages.single().getString("unavailable"),
+        )
+
         locations.setProviderEnabled(LocationManager.GPS_PROVIDER, true)
         send("validate", JSONObject().put("id", 42))
         assertEquals(1, listeners().size)
         val listener = listeners().single()
         main.idleFor(Duration.ofSeconds(5))
+        assertEquals(listener, listeners().single())
+    }
+
+    @Test
+    fun validationReportsDisabledGpsWhileTheExistingWatchCanStillRecover() {
+        grant()
+        locations.setProviderEnabled(LocationManager.GPS_PROVIDER, false)
+        send("subscribe")
+        main.idle()
+        val listener = listeners().single()
+
+        reply.messages.clear()
+        send("validate", JSONObject().put("id", 42))
+        val replyWhenDisabled = reply.messages.single()
+        assertEquals("validated", replyWhenDisabled.getString("type"))
+        assertTrue(replyWhenDisabled.getBoolean("allowed"))
+        assertEquals("GPS is disabled", replyWhenDisabled.getString("unavailable"))
+
+        locations.setProviderEnabled(LocationManager.GPS_PROVIDER, true)
+        main.idle()
+        send("validate", JSONObject().put("id", 43))
+        assertFalse(reply.messages.last().has("unavailable"))
         assertEquals(listener, listeners().single())
     }
 

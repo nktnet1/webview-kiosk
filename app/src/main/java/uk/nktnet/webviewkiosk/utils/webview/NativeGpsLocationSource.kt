@@ -26,21 +26,27 @@ internal class NativeGpsLocationSource(
     private class Registration(
         val manager: LocationManager,
         val listener: LocationListener,
-    )
-
-    private val main = Handler(Looper.getMainLooper())
-    private val retry = Runnable { register(reportFailure = false) }
-    private var registration: Registration? = null
-
-    fun start() {
-        main.removeCallbacks(retry)
-        register(reportFailure = true)
+    ) {
+        var unavailable: String? = null
     }
 
-    private fun register(reportFailure: Boolean) {
-        if (registration != null) {
-            return
+    private val main = Handler(Looper.getMainLooper())
+    private val retry = Runnable { register(logFailure = false) }
+    private var registration: Registration? = null
+
+    fun start(reportFailure: Boolean = true): String? {
+        registration?.let {
+            return it.unavailable
         }
+        main.removeCallbacks(retry)
+        val unavailable = register(logFailure = reportFailure)
+        if (reportFailure && unavailable != null) {
+            onError(2, unavailable)
+        }
+        return unavailable
+    }
+
+    private fun register(logFailure: Boolean): String? {
         if (
             !isAllowed() ||
                 ContextCompat.checkSelfPermission(
@@ -52,23 +58,19 @@ internal class NativeGpsLocationSource(
                 1,
                 "Direct GPS requires Allow Location and precise location permission",
             )
-            return
+            return null
         }
         val manager = runCatching {
             context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
         }
             .onFailure {
-                if (reportFailure) {
+                if (logFailure) {
                     Log.w(TAG, "Unable to get Android location service", it)
                 }
             }
             .getOrNull()
         if (manager == null) {
-            registrationFailed(
-                "Android location service is unavailable",
-                reportFailure,
-            )
-            return
+            return retryAfterFailure("Android location service is unavailable")
         }
         val startedAt = SystemClock.elapsedRealtimeNanos()
         var lastFixAt = startedAt - 1
@@ -159,12 +161,16 @@ internal class NativeGpsLocationSource(
                 }
 
                 override fun onProviderDisabled(provider: String) {
-                    if (registration?.listener === this) {
-                        onError(2, "GPS is disabled")
+                    val current = registration ?: return
+                    if (current.listener === this && current.unavailable == null) {
+                        current.unavailable = GPS_DISABLED
+                        onError(2, GPS_DISABLED)
                     }
                 }
 
-                override fun onProviderEnabled(provider: String) = Unit
+                override fun onProviderEnabled(provider: String) {
+                    registration?.takeIf { it.listener === this }?.unavailable = null
+                }
 
                 @Suppress("OVERRIDE_DEPRECATION")
                 override fun onStatusChanged(
@@ -173,12 +179,12 @@ internal class NativeGpsLocationSource(
                     extras: Bundle?,
                 ) = Unit
             }
-        try {
+        return try {
             if (LocationManager.GPS_PROVIDER !in manager.allProviders) {
-                registrationFailed("This device has no GPS provider", reportFailure)
-                return
+                return retryAfterFailure("This device has no GPS provider")
             }
-            registration = Registration(manager, request)
+            val current = Registration(manager, request)
+            registration = current
             // Explicitly name GPS so the legacy Criteria overload cannot select
             // fused.
             manager.requestLocationUpdates(
@@ -188,34 +194,29 @@ internal class NativeGpsLocationSource(
                 request,
                 Looper.getMainLooper(),
             )
-            if (
-                reportFailure &&
-                    !manager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-            ) {
-                onError(2, "GPS is disabled")
+            if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                current.unavailable = GPS_DISABLED
             }
+            current.unavailable
         } catch (_: SecurityException) {
             stop()
             onError(1, "Precise location permission is unavailable")
+            null
         } catch (_: IllegalArgumentException) {
             stop()
-            registrationFailed("This device has no GPS provider", reportFailure)
+            retryAfterFailure("This device has no GPS provider")
         } catch (error: RuntimeException) {
             stop()
-            if (reportFailure) {
+            if (logFailure) {
                 Log.w(TAG, "Unable to start Direct GPS", error)
             }
-            registrationFailed("Android GPS provider is unavailable", reportFailure)
+            retryAfterFailure("Android GPS provider is unavailable")
         }
     }
 
-    private fun registrationFailed(message: String, reportFailure: Boolean) {
-        // Check again after the provider has had time to return. Stop cancels
-        // this work on unsubscribe, backgrounding, navigation or disposal.
+    private fun retryAfterFailure(message: String): String {
         main.postDelayed(retry, RETRY_DELAY_MS)
-        if (reportFailure) {
-            onError(2, message)
-        }
+        return message
     }
 
     // Cleanup must still be attempted after Android revokes location permission.
@@ -241,6 +242,7 @@ internal class NativeGpsLocationSource(
 
     companion object {
         private const val TAG = "NativeGpsLocationSource"
+        private const val GPS_DISABLED = "GPS is disabled"
         private const val RETRY_DELAY_MS = 5_000L
     }
 }
