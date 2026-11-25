@@ -212,15 +212,104 @@ class FileUtilsTest {
     }
 
     @Test
-    fun localFileLinksRoundTripNamesWithUrlReservedCharacters() {
+    fun canonicalLinksAlwaysUseUuidAndManualAliasesDecodeReservedCharacters() {
         val context = RuntimeEnvironment.getApplication()
         val file = File(getWebContentFilesDir(context), "id|report #+%.html")
-        val uri = Uri.parse(file.getLocalFileLink())
+        file.writeText("report")
+        try {
+            val canonicalLink = Uri.parse(file.getLocalFileLink())
+            val shortAlias = manualAlias(file.getDisplayName())
 
-        assertTrue(uri.isLocalFileLink())
-        assertEquals(file.name, uri.lastPathSegment)
-        assertEquals(file.canonicalFile, uri.resolveLocalFileLink(context))
+            assertTrue(canonicalLink.isLocalFileLink())
+            assertEquals(file.name, canonicalLink.lastPathSegment)
+            assertEquals("report #+%.html", shortAlias.lastPathSegment)
+            assertEquals(
+                file.canonicalFile,
+                canonicalLink.resolveLocalFileLink(context),
+            )
+            assertEquals(
+                file.canonicalFile,
+                shortAlias.resolveLocalFileLink(context),
+            )
+        } finally {
+            file.delete()
+        }
     }
+
+    @Test
+    fun duplicateDisplayNamesOnlyResolveThroughTheirUuidLinks() {
+        val context = RuntimeEnvironment.getApplication()
+        val filesDir = getWebContentFilesDir(context)
+        val first = File(filesDir, "id-first|duplicate-asset-test.html")
+        val second = File(filesDir, "id-second|duplicate-asset-test.html")
+        first.writeText("first")
+        try {
+            val alias = manualAlias("duplicate-asset-test.html")
+            assertEquals(
+                first.name,
+                Uri.parse(first.getLocalFileLink()).lastPathSegment,
+            )
+            assertEquals(first.canonicalFile, alias.resolveLocalFileLink(context))
+
+            second.writeText("second")
+            assertNull(alias.resolveLocalFileLink(context))
+            assertEquals(
+                listOf(first.canonicalFile, second.canonicalFile).toSet(),
+                alias.findLocalFileMatches(context).toSet(),
+            )
+            for (file in listOf(first, second)) {
+                assertEquals(
+                    file.name,
+                    Uri.parse(file.getLocalFileLink()).lastPathSegment,
+                )
+                assertEquals(
+                    file.canonicalFile,
+                    Uri.parse(file.getLocalFileLink()).resolveLocalFileLink(context),
+                )
+            }
+
+            second.delete()
+            assertEquals(first.canonicalFile, alias.resolveLocalFileLink(context))
+        } finally {
+            first.delete()
+            second.delete()
+        }
+    }
+
+    @Test
+    fun existingUuidPathWinsOverAliasAndMissingUuidPathIsNeverAnAlias() {
+        val context = RuntimeEnvironment.getApplication()
+        val filesDir = getWebContentFilesDir(context)
+        val uuid = "12345678-1234-1234-1234-123456789abc"
+        val first = File(filesDir, "$uuid|index.html")
+        val second =
+            File(filesDir, "87654321-4321-4321-4321-cba987654321|$uuid|index.html")
+        first.writeText("first")
+        second.writeText("second")
+        try {
+            val requestedLink = manualAlias("$uuid|index.html")
+            assertEquals(
+                first.canonicalFile,
+                requestedLink.resolveLocalFileLink(context),
+            )
+            assertEquals(
+                second.canonicalFile,
+                Uri.parse(second.getLocalFileLink()).resolveLocalFileLink(context),
+            )
+
+            first.delete()
+            assertNull(requestedLink.resolveLocalFileLink(context))
+            assertTrue(requestedLink.findLocalFileMatches(context).isEmpty())
+        } finally {
+            first.delete()
+            second.delete()
+        }
+    }
+
+    private fun manualAlias(name: String): Uri =
+        Uri.parse(
+            "https://appassets.androidplatform.net/web-content-files/${Uri.encode(name)}"
+        )
 
     @Test
     fun rejectsLocalFileLinkTraversalAndForeignOrigins() {
@@ -243,11 +332,17 @@ class FileUtilsTest {
     fun rejectsLocalFileLinksThroughSymlinksOutsideTheContentDirectory() {
         val context = RuntimeEnvironment.getApplication()
         val target = temporaryFolder.newFile("outside.txt")
-        val link = File(getWebContentFilesDir(context), "link.txt")
+        val link = File(getWebContentFilesDir(context), "id|link.txt")
         Files.createSymbolicLink(link.toPath(), target.toPath())
         try {
             assertNull(
                 Uri.parse(link.getLocalFileLink()).resolveLocalFileLink(context)
+            )
+            assertNull(
+                Uri.parse(
+                        "https://appassets.androidplatform.net/web-content-files/link.txt"
+                    )
+                    .resolveLocalFileLink(context)
             )
         } finally {
             Files.deleteIfExists(link.toPath())
