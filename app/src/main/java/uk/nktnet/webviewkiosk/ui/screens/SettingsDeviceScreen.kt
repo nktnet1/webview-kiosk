@@ -35,6 +35,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.DeviceRota
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.KeepScreenOnSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.SettingsAuthRequirementSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.UnlockAuthRequirementSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.UseDirectGpsSetting
 
 @Composable
 fun SettingsDeviceScreen(navController: NavController) {
@@ -60,6 +61,7 @@ fun SettingsDeviceScreen(navController: NavController) {
             AllowCameraSetting()
             AllowMicrophoneSetting()
             AllowLocationSetting()
+            UseDirectGpsSetting()
             AllowNfcSetting()
             AllowNotificationsSetting()
             BackButtonHoldActionSetting()

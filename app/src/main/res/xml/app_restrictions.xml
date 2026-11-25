@@ -488,6 +488,13 @@
         android:description="@string/setting_info_allow_location"
     />
     <restriction
+        android:key="device.use_direct_gps"
+        android:restrictionType="bool"
+        android:defaultValue="false"
+        android:title="@string/device_use_direct_gps_title"
+        android:description="@string/setting_info_use_direct_gps"
+    />
+    <restriction
         android:key="device.allow_nfc"
         android:restrictionType="bool"
         android:title="@string/device_allow_nfc_title"

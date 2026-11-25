@@ -17,7 +17,8 @@ export const toolDirectory = [
   {
     id: "interfaces",
     title: "Device APIs",
-    description: "Try battery, brightness, NFC, vibration, and downloads.",
+    description:
+      "Try battery, brightness, location, NFC, vibration, and downloads.",
     href: "/tools/device-apis",
   },
   {

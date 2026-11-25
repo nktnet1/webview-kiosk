@@ -647,6 +647,11 @@ internal val settingsPages: List<SettingsPage> = buildList {
                         R.string.setting_info_allow_location,
                     ),
                     SettingDefinition(
+                        R.string.device_use_direct_gps_title,
+                        UserSettingsKeys.Device.USE_DIRECT_GPS,
+                        R.string.setting_info_use_direct_gps,
+                    ),
+                    SettingDefinition(
                         R.string.device_allow_nfc_title,
                         UserSettingsKeys.Device.ALLOW_NFC,
                         R.string.setting_info_allow_nfc,

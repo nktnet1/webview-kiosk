@@ -106,6 +106,7 @@ object UserSettingsKeys {
         const val ALLOW_CAMERA = "device.allow_camera"
         const val ALLOW_MICROPHONE = "device.allow_microphone"
         const val ALLOW_LOCATION = "device.allow_location"
+        const val USE_DIRECT_GPS = "device.use_direct_gps"
         const val ALLOW_NFC = "device.allow_nfc"
         const val ALLOW_NOTIFICATIONS = "device.allow_notifications"
         const val BACK_BUTTON_HOLD_ACTION = "device.back_button_hold_action"

@@ -94,6 +94,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBarSearchSuggestions
 import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
+import uk.nktnet.webviewkiosk.ui.components.webview.ForegroundWebViewLifecycleController
 import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.ImageOptionsDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.KioskControlPanel
@@ -117,6 +118,7 @@ import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaPlaybackController
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
+import uk.nktnet.webviewkiosk.utils.webview.NativeGpsBridge
 import uk.nktnet.webviewkiosk.utils.webview.PAUSE_MEDIA_SCRIPT
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
@@ -389,6 +391,30 @@ fun WebviewScreen(navController: NavController) {
     if (webView == null) {
         WebViewUnavailable(navController, webViewError)
         return
+    }
+
+    DisposableEffect(activity, webView) {
+        val nativeGps = webView.getTag(R.id.native_gps_bridge) as? NativeGpsBridge
+        val activityLifecycle = (activity as? LifecycleOwner)?.lifecycle
+        val controller =
+            if (nativeGps != null && activityLifecycle != null) {
+                ForegroundWebViewLifecycleController(
+                    context = context,
+                    lifecycle = activityLifecycle,
+                    windowView = activity.window.decorView,
+                    pause = { nativeGps.setForeground(false) },
+                    resume = { nativeGps.setForeground(true) },
+                )
+            } else {
+                null
+            }
+        if (nativeGps != null && controller?.attach() != true) {
+            nativeGps.dispose()
+        }
+        onDispose {
+            controller?.detach()
+            nativeGps?.setForeground(false)
+        }
     }
 
     // The default is intentionally foreground-only. Pause HTML media when the

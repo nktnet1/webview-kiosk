@@ -14,6 +14,8 @@ describe("device API tester", () => {
     expect(settings).toEqual([
       "js_scripts.enable_battery_api",
       "js_scripts.enable_brightness_api",
+      "device.allow_location",
+      "device.use_direct_gps",
       "device.allow_nfc",
       "js_scripts.enable_vibration_api",
       "web_engine.allow_file_download",

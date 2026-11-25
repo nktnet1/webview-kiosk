@@ -1,6 +1,6 @@
 ---
 title: Device
-description: Rotation, camera, microphone, location, unlock controls
+description: Rotation, camera, microphone, location, direct GPS, unlock controls
 ---
 
 ## 1. Keep Screen On [#keep-screen-on]
@@ -85,9 +85,31 @@ or
 required for the WebView's
 [GeolocationPermissions](https://developer.android.com/reference/android/webkit/GeolocationPermissions).
 
+Test website location using the [Device APIs tool](/tools/device-apis) from inside {APP_NAME}.
+
 **Default:** false
 
-## 7. Allow NFC [#allow-nfc]
+## 7. Use Direct GPS [#use-direct-gps]
+
+Set to true to use Android's GPS for website location. This can help head units
+where location stops working after sleep. GPS can use more battery.
+
+Enable [Allow Location](#allow-location) and the device's GPS, grant precise
+location permission and restart the app. Allow the website's location prompt
+as usual.
+
+Direct GPS applies to main HTTPS pages on supported WebViews. Embedded frames
+and unsupported WebViews use standard geolocation. Location collection pauses
+while the app is hidden or the screen is off. Active watches wait for a fresh
+fix after wake.
+
+Test with the [Device APIs tool](/tools/device-apis) inside {APP_NAME}.
+
+Managed configurations and remote settings use `device.use_direct_gps`.
+
+**Default:** false
+
+## 8. Allow NFC [#allow-nfc]
 
 Set to true to enable NFC support in {APP_NAME} via a Web NFC compatibility bridge.
 
@@ -103,7 +125,7 @@ Test NFC tag scanning using the [Device APIs tool](/tools/device-apis) from insi
 
 **Default:** false
 
-## 8. Allow Notifications [#allow-notifications]
+## 9. Allow Notifications [#allow-notifications]
 
 Set to true to allow {APP_NAME} to send notifications. For example, this
 will allow the MQTT notify command to create alerts.
@@ -119,7 +141,7 @@ do not want them.
 
 **Default:** false
 
-## 9. Back Button Hold Action [#back-button-hold-action]
+## 10. Back Button Hold Action [#back-button-hold-action]
 
 Customise the behaviour when the back button is held down (long pressed).
 
@@ -131,7 +153,7 @@ Customise the behaviour when the back button is held down (long pressed).
 
 **Default:** Open Kiosk Control Panel
 
-## 10. Custom Unlock Shortcut [#custom-unlock-shortcut]
+## 11. Custom Unlock Shortcut [#custom-unlock-shortcut]
 
 Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)
 in combination with another standard key to unlock/unpin the application.
@@ -143,7 +165,7 @@ has a physical keyboard connected.
 
 **Default:** *(blank)*
 
-## 11. Custom Auth Password [#custom-auth-password]
+## 12. Custom Auth Password [#custom-auth-password]
 
 Specify a custom password to protect your settings or when unlocking from
 the kiosk state.
@@ -160,7 +182,7 @@ Leave this setting blank to use your device's biometrics or credentials.
 
 **Default:** *(blank)*
 
-## 12. Unlock Auth Requirement [#unlock-auth-requirement]
+## 13. Unlock Auth Requirement [#unlock-auth-requirement]
 
 This setting only applies to in-app unlock methods, e.g. when unlocking
 using `Kiosk Control Panel` or `Custom Unlock Shortcut`.
@@ -176,7 +198,7 @@ unpinning, which is outside the control of {APP_NAME}.
 
 **Default:** Default
 
-## 13. Settings Auth Requirement [#settings-auth-requirement]
+## 14. Settings Auth Requirement [#settings-auth-requirement]
 
 Choose whether a custom password, device credentials, or biometrics are needed
 to access Settings.
@@ -213,7 +235,7 @@ re-authentication.
 
 **Default:** Require
 
-## 14. Block Screen Capture [#block-screen-capture]
+## 15. Block Screen Capture [#block-screen-capture]
 
 Prevent screenshots, screen recording and content previews in Recent Apps.
 This is done by setting the FLAG_SECURE window flag.
@@ -223,7 +245,7 @@ For more information, see
 
 **Default:** false
 
-## 15. Block Volume Keys [#block-volume-keys]
+## 16. Block Volume Keys [#block-volume-keys]
 
 Disable the volume control buttons, specifically:
 
@@ -233,7 +255,7 @@ Disable the volume control buttons, specifically:
 
 **Default:** false
 
-## 16. Device Policies [#device-owner]
+## 17. Device Policies [#device-owner]
 
 Open **Device → Device Policies** to see the actual owner role, whether
 it is native or shared through Dhizuku, and whether it manages a full user or a
@@ -256,7 +278,7 @@ actions for testing: policies and user data can remain, so use your managed rese
 process for production unenrollment. Handle Dhizuku ownership in Dhizuku itself. See [Owner Activation](/docs/activation) for setup and
 [Security](/docs/security#owner-capabilities) for capabilities and restrictions.
 
-### 16.1. Lock Task Features [#lock-task-features]
+### 17.1. Lock Task Features [#lock-task-features]
 
 The following settings are based on Android's lock-task documentation:
 - [Lock Task Mode -> Customise UI](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#customize-ui)
@@ -374,7 +396,7 @@ The following settings are based on Android's lock-task documentation:
   </tbody>
 </table>
 
-### 16.2. Dhizuku Request Permission on Launch [#dhizuku-request-permission-on-launch]
+### 17.2. Dhizuku Request Permission on Launch [#dhizuku-request-permission-on-launch]
 
 When enabled, if [Dhizuku](https://github.com/iamr0s/Dhizuku) is installed and
 has not granted {APP_NAME} access through the
@@ -382,7 +404,7 @@ has not granted {APP_NAME} access through the
 
 **Default:** true
 
-### 16.3. Dhizuku [#dhizuku]
+### 17.3. Dhizuku [#dhizuku]
 
 **Request Permission on Launch** requests shared Device Owner or Profile Owner
 permission when Dhizuku is available. Open Dhizuku and grant access from this

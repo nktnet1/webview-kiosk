@@ -60,6 +60,7 @@ const KEYS = {
     "device.allow_camera",
     "device.allow_microphone",
     "device.allow_location",
+    "device.use_direct_gps",
     "device.allow_nfc",
     "device.allow_notifications",
     "device.block_screen_capture",
@@ -340,6 +341,7 @@ const MULTI_SELECT_KEYS = new Set<string>([
 const ACRONYMS = new Set([
   "API",
   "DOM",
+  "GPS",
   "HTML",
   "ID",
   "JS",
