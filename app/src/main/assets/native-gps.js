@@ -9,11 +9,13 @@
   const browserWatch = geo.watchPosition.bind(geo);
   const browserClear = geo.clearWatch.bind(geo);
   const requests = new Map();
+  const terminalWatches = new Map();
   const maximum = 0xffffffff;
   const replyTimeout = 3000;
   const helloRetryInterval = 250;
   const unavailable = 'Direct GPS could not connect to WebView';
   let nextId = 1;
+  let nextValidationId = 1;
   let nonce = null;
   let helloTimer = null;
   let token = null;
@@ -82,6 +84,7 @@
   function stopValidation(request) {
     if (request.validationTimer !== null) clearTimeout(request.validationTimer);
     request.validationTimer = null;
+    request.validationId = null;
   }
 
   function stopDelivery(request) {
@@ -112,7 +115,10 @@
     stopTimer(request);
     if (!request.watch || terminal) removeRequest(request);
     if (request.error) {
+      // Keep a terminated watch cancellable until its final callback runs.
+      if (terminal && request.watch) terminalWatches.set(request.id, request);
       setTimeout(() => {
+        if (terminal && terminalWatches.get(request.id) === request) terminalWatches.delete(request.id);
         if (!request.cancelled) {
           const callback = request.error;
           callback(errorValue(code, message));
@@ -226,8 +232,9 @@
       if (request.deliveryTimer !== null) continue;
       if (request.awaitingValidation) {
         if (request.validationTimer === null) {
+          request.validationId = nextValidationId++;
           request.validationTimer = setTimeout(failBridge, replyTimeout);
-          if (!post('validate', { id: request.id })) {
+          if (!post('validate', { id: request.id, validationId: request.validationId })) {
             failBridge();
             return;
           }
@@ -269,13 +276,13 @@
     const maximumAge = clamp(options?.maximumAge, 0);
     // GPS always requests precise fixes, including when this hint is false.
     Boolean(options?.enableHighAccuracy);
-    while (requests.has(nextId)) nextId = nextId === 0x7fffffff ? 1 : nextId + 1;
+    while (requests.has(nextId) || terminalWatches.has(nextId)) nextId = nextId === 0x7fffffff ? 1 : nextId + 1;
     const id = nextId;
     nextId = nextId === 0x7fffffff ? 1 : nextId + 1;
     requests.set(id, {
       id, watch, success, error, timeout, maximumAge, remaining: timeout,
       timer: null, since: 0, timedOut: false, cancelled: false, useCache: true,
-      awaitingValidation: true, validationTimer: null,
+      awaitingValidation: true, validationTimer: null, validationId: null,
       deliveryTimer: null,
     });
     refresh();
@@ -295,9 +302,11 @@
       configurable: true, writable: true, enumerable: true,
       value(id) {
         if (!arguments.length) throw new TypeError('clearWatch requires an ID');
-        const request = requests.get(Number(id) >> 0);
-        if (!request) return;
+        const key = Number(id) >> 0;
+        const request = requests.get(key) || terminalWatches.get(key);
+        if (!request || !request.watch) return;
         request.cancelled = true;
+        terminalWatches.delete(key);
         removeRequest(request);
         refresh();
       },
@@ -349,7 +358,10 @@
         break;
       case 'validated': {
         const request = requests.get(message.id);
-        if (!request || request.validationTimer === null || !visible()) return;
+        // The same request can be validated again after sleep. Never accept a
+        // delayed reply from an earlier attempt, even within the same session.
+        if (!request || request.validationTimer === null ||
+            message.validationId !== request.validationId || !visible()) return;
         stopValidation(request);
         if (message.allowed !== true) {
           allowed = false;

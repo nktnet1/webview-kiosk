@@ -43,7 +43,7 @@ async function fixture(policy = 'geolocation=(self)') {
         type: 'hello', nonce: message.nonce, visible: true,
       }));
       if (message.type === 'validate') queueMicrotask(() => nativeReply({
-        type: 'validated', id: message.id, allowed: true,
+        type: 'validated', id: message.id, validationId: message.validationId, allowed: true,
       }));
     } };
     ${script}

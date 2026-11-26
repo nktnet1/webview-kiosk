@@ -171,6 +171,61 @@ class NativeGpsBridgeTest {
     }
 
     @Test
+    fun newDocumentReceivesOnlyItsOwnRepliesAfterSameOriginNavigation() {
+        grant()
+        send("subscribe")
+        val oldToken = token
+        val oldListener = listeners().single()
+        val pending = bridge.permissionCallback(origin, null)
+        val nextReply = Reply()
+        bridge.onNavigationStarted("$origin/next")
+        view.loadUrl("$origin/next")
+        hello(nextReply)
+        assertFalse(oldToken == token)
+        val oldCount = reply.messages.size
+        val newCount = nextReply.messages.size
+
+        // A delayed hello, message, permission grant or fix from the old page
+        // must not replace the new endpoint or authorize its session.
+        bridge.receive(
+            WebMessageCompat("{\"type\":\"hello\",\"nonce\":\"old\"}"),
+            Uri.parse(origin),
+            true,
+            reply,
+        )
+        send("subscribe", endpoint = reply)
+        send("subscribe", endpoint = nextReply, sessionToken = oldToken)
+        pending.invoke(origin, true, false)
+        oldListener.onLocationChanged(fix())
+        assertTrue(listeners().isEmpty())
+        assertEquals(oldCount, reply.messages.size)
+        assertEquals(newCount, nextReply.messages.size)
+
+        grant()
+        send("subscribe", endpoint = nextReply)
+        listeners().single().onLocationChanged(fix())
+        assertEquals("position", nextReply.messages.last().getString("type"))
+        assertEquals(token, nextReply.messages.last().getString("token"))
+        assertEquals(oldCount, reply.messages.size)
+    }
+
+    @Test
+    fun validationRepliesEchoEachAttemptIdentifier() {
+        grant()
+        for (validationId in listOf(1L, Int.MAX_VALUE.toLong() + 1)) {
+            send(
+                "validate",
+                JSONObject().put("id", 42).put("validationId", validationId),
+            )
+            val checked = reply.messages.last()
+            assertEquals("validated", checked.getString("type"))
+            assertEquals(42, checked.getInt("id"))
+            assertEquals(validationId, checked.getLong("validationId"))
+            assertTrue(checked.getBoolean("allowed"))
+        }
+    }
+
+    @Test
     fun backgroundAndScreenSleepStopGpsAndWakeRegistersAFreshListener() {
         grant()
         send("subscribe")
@@ -392,24 +447,29 @@ class NativeGpsBridgeTest {
         }
     }
 
-    private fun hello() {
+    private fun hello(endpoint: Reply = reply) {
         bridge.receive(
             WebMessageCompat("{\"type\":\"hello\",\"nonce\":\"test\"}"),
             Uri.parse(origin),
             true,
-            reply,
+            endpoint,
         )
-        token = reply.messages.last().getString("token")
+        token = endpoint.messages.last().getString("token")
     }
 
-    private fun send(type: String, payload: JSONObject = JSONObject()) {
+    private fun send(
+        type: String,
+        payload: JSONObject = JSONObject(),
+        endpoint: Reply = reply,
+        sessionToken: String = token,
+    ) {
         bridge.receive(
             WebMessageCompat(
-                payload.put("type", type).put("token", token).toString()
+                payload.put("type", type).put("token", sessionToken).toString()
             ),
             Uri.parse(origin),
             true,
-            reply,
+            endpoint,
         )
     }
 
