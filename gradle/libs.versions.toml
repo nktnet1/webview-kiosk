@@ -1,9 +1,9 @@
 [versions]
-agp = "9.5.2"
+agp = "9.5.3"
 androidRetrofix = "1.1.0"
 androidRetrostreams = "1.7.4"
 biometric = "1.1.0"
-connector = "3.3.5"
+connector = "3.3.6"
 dhizukuApi = "2.7.0"
 detekt = "1.23.8"
 hiddenapibypass = "6.2"
@@ -17,14 +17,14 @@ okhttp = "5.5.1"
 reorderable = "3.1.0"
 re2j = "1.8"
 swiperefreshlayout = "1.2.0"
-spotless = "8.11.0"
+spotless = "8.12.0"
 slf4j = "2.0.20"
 shizuku = "13.1.5"
 
 # Used directly from app/build.gradle.kts for the Android 5.0-6.0 test suite.
 #noinspection UnusedVersionCatalogEntry
 robolectricLegacy = "4.15.1"
-robolectric = "4.18"
+robolectric = "4.18.1"
 
 #noinspection GradleDependency
 activityCompose = "1.11.0"

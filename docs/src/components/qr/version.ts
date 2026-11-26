@@ -19,8 +19,8 @@ export type DiscoveredQrInstallationVersion = Pick<
 >;
 
 export const QR_INSTALLATION_FALLBACK_VERSION = {
-  code: 142,
-  tag: "v0.26.27",
+  code: 143,
+  tag: "v0.26.28",
   adminSignatureChecksum: "L-EN4OxwoH84OoeJLKRWZyFOoTxO7qSjJU86Mxp6axU=",
 } as const;
 

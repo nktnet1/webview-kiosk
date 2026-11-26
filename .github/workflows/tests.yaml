@@ -24,8 +24,8 @@ on:
       - '.github/workflows/release.yaml'
   pull_request:
     paths: *android_paths
-  workflow_dispatch:
-  # Release verification must always run, regardless of changed paths.
+  workflow_dispatch: # Release verification must always run, regardless of changed paths.
+
   workflow_call:
 
 concurrency:
@@ -38,10 +38,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Node.js for cosmetic script tests
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24
 
@@ -49,7 +49,7 @@ jobs:
         run: python3 scripts/ci/test_local.py checks
 
       - name: Setup JetBrains JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: jetbrains
           java-version: 21
@@ -64,8 +64,7 @@ jobs:
         with:
           cache-provider: enhanced
           cache-read-only: >-
-            ${{ github.event_name == 'pull_request'
-            && github.event.pull_request.head.repo.full_name != github.repository }}
+            ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
 
       - name: Check Kotlin formatting and if/else braces
         run: sh gradlew checkFormatting --build-cache --stacktrace
@@ -76,7 +75,7 @@ jobs:
       # Central and retrying transient errors before starting any test JVM.
       - name: Restore Robolectric Android runtimes
         id: robolectric-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: ~/.m2/repository/org/robolectric/android-all-instrumented
           key: >-
@@ -89,7 +88,7 @@ jobs:
       # Save once all runtimes are verified, even if a later test assertion fails.
       - name: Save verified Robolectric Android runtimes
         if: steps.robolectric-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: ~/.m2/repository/org/robolectric/android-all-instrumented
           key: ${{ steps.robolectric-cache.outputs.cache-primary-key }}
@@ -106,7 +105,7 @@ jobs:
 
       - name: Upload JVM test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-unit-results
           path: |
