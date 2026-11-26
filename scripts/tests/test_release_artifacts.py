@@ -64,7 +64,10 @@ class ReleaseArtifactsTest(unittest.TestCase):
         self.assertIn("app/build/outputs/apk/release/*.apk", RELEASE)
         self.assertIn("app/build/outputs/apk/debug/app-debug.apk", RELEASE)
         self.assertIn("artifactErrorsFailBuild: true", RELEASE)
-        self.assertIn("needs: [verify, build]", RELEASE)
+        self.assertRegex(
+            RELEASE,
+            r"(?m)^    needs:[ \t]*\[[ \t]*verify[ \t]*,[ \t]*build[ \t]*\][ \t]*$",
+        )
         self.assertIn("if: startsWith(github.ref, 'refs/tags/v')", RELEASE)
 
 
