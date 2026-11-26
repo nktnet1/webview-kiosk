@@ -1,3 +1,5 @@
+@file:Suppress("UsePropertyAccessSyntax")
+
 package uk.nktnet.webviewkiosk.utils.webview
 
 import android.Manifest
@@ -237,7 +239,7 @@ class NativeGpsLocationSourceTest {
             val context =
                 object : ContextWrapper(app) {
                     override fun getSystemService(name: String): Any? {
-                        if (name != Context.LOCATION_SERVICE) {
+                        if (name != LOCATION_SERVICE) {
                             return super.getSystemService(name)
                         }
                         if (throwOnLookup) {

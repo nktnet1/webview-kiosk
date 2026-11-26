@@ -1,3 +1,5 @@
+@file:Suppress("UsePropertyAccessSyntax")
+
 package uk.nktnet.webviewkiosk.utils.webview
 
 import android.Manifest
@@ -9,7 +11,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Looper
 import android.os.SystemClock
-import android.webkit.GeolocationPermissions
 import android.webkit.WebView
 import androidx.webkit.JavaScriptReplyProxy
 import androidx.webkit.WebMessageCompat
@@ -104,13 +105,10 @@ class NativeGpsBridgeTest {
         send("subscribe")
         var result: Boolean? = null
         bridge
-            .permissionCallback(
-                origin,
-                GeolocationPermissions.Callback { _, allowed, retained ->
-                    result = allowed
-                    assertFalse(retained)
-                },
-            )
+            .permissionCallback(origin) { _, allowed, retained ->
+                result = allowed
+                assertFalse(retained)
+            }
             .invoke(origin, false, true)
         assertEquals(false, result)
         assertTrue(listeners().isEmpty())
