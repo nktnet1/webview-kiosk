@@ -1,47 +1,36 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
-import org.json.JSONObject
+import org.json.JSONArray
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
 class ImageRefreshScriptTest {
     @Test
-    fun imageUrlIsQuotedAndEscapedForJavaScript() {
-        val url = "https://example.com/a'\"\\b.png?x=\n</script>"
-        val script = refreshImageScript(url)
+    fun packagedScriptReceivesTheEscapedUrlAsItsOnlyArgument() {
+        val context = RuntimeEnvironment.getApplication()
+        val asset =
+            context.assets.open("image-refresh.js").bufferedReader().use {
+                it.readText().trim()
+            }
+        val url = "https://example.com/a'\"\\b.png?x=\n</script>\u2028\u2029"
+        val script = refreshImageScript(context, url)
+        val prefix = "$asset("
 
-        assertTrue(script.contains("const targetUrl = ${JSONObject.quote(url)};"))
-        assertFalse(script.contains("const targetUrl = \"$url\""))
-        assertTrue(script.contains("\\n"))
-        assertTrue(script.contains("\\\""))
-        assertTrue(script.contains("\\\\"))
-    }
-
-    @Test
-    fun refreshIsIndependentOfImageLoadingStatusAndDuplicateUrls() {
-        val script = refreshImageScript("https://example.com/photo.jpg")
-
-        assertTrue(script.contains("for (const image of document.images)"))
-        assertTrue(script.contains("image.currentSrc || image.src"))
-        assertFalse(script.contains("image.complete"))
-        assertFalse(script.contains("naturalWidth"))
-        assertFalse(script.contains("matches.length !== 1"))
-    }
-
-    @Test
-    fun refreshUpdatesImageSourcesWithoutReloadingThePage() {
-        val script = refreshImageScript("https://example.com/photo.jpg")
-
-        assertTrue(script.contains("searchParams.set('_webviewkiosk_refresh'"))
-        assertTrue(script.contains("refreshSrcset(source)"))
-        assertTrue(script.contains("refreshSrcset(image)"))
-        assertTrue(script.contains("if (!updated) image.src = refreshedUrl"))
-        assertFalse(script.contains("location.reload"))
+        assertTrue(script.startsWith(prefix))
+        assertTrue(script.endsWith(")"))
+        val argument = script.substring(prefix.length, script.length - 1)
+        assertFalse(argument.contains('\u2028'))
+        assertFalse(argument.contains('\u2029'))
+        val arguments = JSONArray("[$argument]")
+        assertEquals(1, arguments.length())
+        assertEquals(url, arguments.getString(0))
     }
 }

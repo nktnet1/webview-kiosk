@@ -88,7 +88,7 @@ class ForegroundWebViewLifecycleControllerTest {
             newController(
                 object : ContextWrapper(context) {
                     override fun getSystemService(name: String): Any? =
-                        if (name == Context.POWER_SERVICE) {
+                        if (name == POWER_SERVICE) {
                             null
                         } else {
                             super.getSystemService(name)

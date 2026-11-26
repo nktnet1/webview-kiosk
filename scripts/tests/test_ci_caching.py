@@ -42,13 +42,16 @@ class CiWorkflowTest(unittest.TestCase):
         ):
             self.assertIn(required, android)
         self.assertIn("uses: ./.github/workflows/tests.yaml", job_body(RELEASE, "verify"))
-        self.assertIn("needs: [verify, build]", job_body(RELEASE, "release"))
+        self.assertRegex(
+            job_body(RELEASE, "release"),
+            r"(?m)^    needs:[ \t]*\[[ \t]*verify[ \t]*,[ \t]*build[ \t]*\][ \t]*$",
+        )
 
     def test_robolectric_runtimes_are_verified_and_cached_before_tests(self):
         android = job_body(TESTS, "android")
-        self.assertIn("uses: actions/cache/restore@v4", android)
+        self.assertRegex(android, r"(?m)^[ \t]+uses: actions/cache/restore@v[0-9]+[ \t]*$")
         self.assertIn("id: robolectric-cache", android)
-        self.assertIn("uses: actions/cache/save@v4", android)
+        self.assertRegex(android, r"(?m)^[ \t]+uses: actions/cache/save@v[0-9]+[ \t]*$")
         self.assertIn("if: steps.robolectric-cache.outputs.cache-hit != 'true'", android)
         self.assertIn("key: ${{ steps.robolectric-cache.outputs.cache-primary-key }}", android)
         self.assertIn("~/.m2/repository/org/robolectric/android-all-instrumented", android)

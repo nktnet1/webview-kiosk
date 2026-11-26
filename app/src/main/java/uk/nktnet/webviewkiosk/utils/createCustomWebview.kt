@@ -64,6 +64,7 @@ import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.utils.webview.ActionModeSafeWebView
 import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaFullscreenContainer
 import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaPlaybackController
 import uk.nktnet.webviewkiosk.utils.webview.BackgroundMediaWindowVisibility
@@ -457,6 +458,7 @@ fun createCustomWebview(
             val released =
                 lifetime.release(view, rendererGone) {
                     navigation.dispose()
+                    (view as? ActionModeSafeWebView)?.disposeActionModes()
                     if (rendererGone && wasActive) {
                         finishLoadingProgress()
                     }
@@ -526,7 +528,13 @@ fun createCustomWebview(
         ServiceWorkerBlocker.install(contentBlocker)
         val mediaWindowVisibility = BackgroundMediaWindowVisibility()
         val webView =
-            object : WebView(context) {
+            object :
+                    ActionModeSafeWebView(
+                        context,
+                        isHostActive = {
+                            navigation.isActive() && dialogs.isActive()
+                        },
+                    ) {
                     var awaitingPdfPageStart = false
 
                     override fun onWindowVisibilityChanged(visibility: Int) {

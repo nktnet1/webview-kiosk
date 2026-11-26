@@ -32,7 +32,8 @@ function page({ secure = true, mainFrame = true, protocol = 'https:', validate =
     messages.push(message);
     if (message.type === 'validate' && validate) {
       bridge.onmessage({ data: JSON.stringify({
-        type: 'validated', id: message.id, token: message.token, allowed: true,
+        type: 'validated', id: message.id, validationId: message.validationId,
+        token: message.token, allowed: true,
       }) });
     }
   } };
@@ -59,6 +60,11 @@ function page({ secure = true, mainFrame = true, protocol = 'https:', validate =
   }
   return {
     geo, messages, watches, cleared, tasks, originalWatch, context, send, ack,
+    validated(id, extra = {}) {
+      const attempt = messages.findLast(m => m.type === 'validate' && m.id === id);
+      assert.ok(attempt, `No validation for request ${id}`);
+      send({ type: 'validated', id, validationId: attempt.validationId, allowed: true, ...extra });
+    },
     deny() { permissionError({ code: 1, message: 'Blocked by Permissions Policy' }); },
     grant() { send({ type: 'permission', allowed: true }); },
     fix({ timestamp = 1700000000000, ageMs = 0, latitude = 12.3 } = {}) {
@@ -391,21 +397,21 @@ test('new requests learn that GPS is unavailable and can still use a recent fix'
   p.ack();
   const watch = p.geo.watchPosition(() => {});
   p.grant();
-  p.send({ type: 'validated', id: watch, allowed: true });
+  p.validated(watch);
   p.fix();
   p.advance();
 
   const unavailable = 'GPS is disabled';
   let error;
   p.geo.getCurrentPosition(() => assert.fail('GPS did not produce a fresh fix'), e => { error = e; });
-  p.send({ type: 'validated', id: p.messages.at(-1).id, allowed: true, unavailable });
+  p.validated(p.messages.at(-1).id, { unavailable });
   p.advance();
   assert.equal(error?.code, 2);
   assert.equal(error.message, unavailable);
 
   let cached = 0;
   p.geo.getCurrentPosition(() => cached++, () => assert.fail('A recent fix is available'), { maximumAge: 100 });
-  p.send({ type: 'validated', id: p.messages.at(-1).id, allowed: true, unavailable });
+  p.validated(p.messages.at(-1).id, { unavailable });
   p.advance();
   assert.equal(cached, 1);
 });
@@ -486,7 +492,7 @@ test('each request validates current Android and app permissions before exposing
   p.grant();
   let validation = p.messages.at(-1);
   assert.equal(validation.type, 'validate');
-  p.send({ type: 'validated', id: validation.id, allowed: true });
+  p.validated(validation.id);
   p.fix();
   p.advance();
   let error;
@@ -495,7 +501,7 @@ test('each request validates current Android and app permissions before exposing
   }, { maximumAge: 10000 });
   validation = p.messages.at(-1);
   assert.equal(validation.type, 'validate');
-  p.send({ type: 'validated', id: validation.id, allowed: false });
+  p.validated(validation.id, { allowed: false });
   p.advance();
   assert.equal(error.code, 1);
 });
@@ -507,14 +513,14 @@ test('pending validation cannot receive another watcher fix', () => {
   let pending = 0;
   const id = p.geo.watchPosition(() => approved++);
   p.grant();
-  p.send({ type: 'validated', id, allowed: true });
+  p.validated(id);
   p.geo.getCurrentPosition(() => pending++);
   const validation = p.messages.at(-1);
   p.fix();
   p.advance();
   assert.equal(approved, 1);
   assert.equal(pending, 0);
-  p.send({ type: 'validated', id: validation.id, allowed: true });
+  p.validated(validation.id);
   p.fix();
   p.advance();
   assert.equal(pending, 1);
@@ -634,4 +640,95 @@ test('sleep clears the JavaScript fix cache even if its monotonic clock barely a
   p.fix();
   p.advance();
   assert.equal(calls, 1);
+});
+
+test('clearWatch ignores one-shot request IDs before and after validation', () => {
+  const p = page({ validate: false });
+  p.ack();
+  let oneShots = 0;
+  p.geo.getCurrentPosition(() => oneShots++);
+  const watch = p.geo.watchPosition(() => assert.fail('cleared watch'));
+  p.geo.clearWatch(watch - 1);
+  p.grant();
+  const validations = p.messages.filter(message => message.type === 'validate');
+  assert.equal(validations.length, 2);
+  const oneShot = validations.find(message => message.id !== watch);
+  p.validated(oneShot.id);
+  p.validated(watch);
+  p.fix();
+  p.geo.clearWatch(oneShot.id);
+  p.geo.clearWatch(watch);
+  p.advance();
+  assert.equal(oneShots, 1);
+  assert.equal(p.messages.at(-1).type, 'unsubscribe');
+  assert.equal(p.tasks.size, 0);
+});
+
+test('clearWatch cancels a queued terminal error without affecting a one-shot error', () => {
+  const p = page();
+  p.ack();
+  const errors = [];
+  const cancelled = p.geo.watchPosition(() => assert.fail('denied'), e => errors.push(['watch', e.code]));
+  p.geo.watchPosition(() => assert.fail('denied'), e => errors.push(['other watch', e.code]));
+  p.geo.getCurrentPosition(() => assert.fail('denied'), e => errors.push(['one-shot', e.code]));
+  p.grant();
+  // Queue a non-terminal watch error before terminating the requests.
+  p.send({ type: 'error', code: 2, message: 'GPS disabled' });
+  p.send({ type: 'error', code: 1, message: 'Revoked' });
+  p.geo.clearWatch(cancelled);
+  p.advance();
+  assert.deepEqual(errors, [['other watch', 2], ['one-shot', 2], ['other watch', 1]]);
+  assert.equal(p.tasks.size, 0);
+});
+
+test('validation replies from before sleep cannot authorize or deny a new attempt after wake', () => {
+  for (const oldAllowed of [true, false]) {
+    for (const useVisibility of [true, false]) {
+      const p = page({ validate: false });
+      p.ack();
+      const fixes = [];
+      const watch = p.geo.watchPosition(fix => fixes.push(fix.timestamp), () => assert.fail('stale denial'));
+      p.grant();
+      const before = p.messages.at(-1);
+      if (useVisibility) {
+        p.visibility(true);
+        p.visibility(false);
+      } else {
+        p.send({ type: 'foreground', visible: false });
+        p.send({ type: 'foreground', visible: true });
+      }
+      const after = p.messages.at(-1);
+      assert.equal(after.type, 'validate');
+      assert.equal(after.id, before.id);
+      assert.notEqual(after.validationId, before.validationId);
+      p.validated(watch, { validationId: before.validationId, allowed: oldAllowed });
+      p.fix({ timestamp: 100 });
+      p.advance();
+      assert.deepEqual(fixes, []);
+      assert.equal(p.messages.some(message => message.type === 'subscribe'), false);
+      p.validated(watch);
+      assert.equal(p.messages.at(-1).type, 'subscribe');
+      p.fix({ timestamp: 200 });
+      p.advance();
+      assert.deepEqual(fixes, [200]);
+      p.geo.clearWatch(watch);
+      assert.equal(p.tasks.size, 0);
+    }
+  }
+});
+
+test('a non-terminal error callback can clear a watch with a queued terminal error', () => {
+  const p = page();
+  p.ack();
+  const errors = [];
+  const id = p.geo.watchPosition(() => assert.fail('unexpected fix'), error => {
+    errors.push(error.code);
+    p.geo.clearWatch(id);
+  });
+  p.grant();
+  p.send({ type: 'error', code: 2, message: 'GPS disabled' });
+  p.send({ type: 'error', code: 1, message: 'Revoked' });
+  p.advance();
+  assert.deepEqual(errors, [2]);
+  assert.equal(p.tasks.size, 0);
 });

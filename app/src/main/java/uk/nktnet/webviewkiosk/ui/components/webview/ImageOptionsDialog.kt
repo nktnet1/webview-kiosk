@@ -123,17 +123,19 @@ fun ImageOptionsDialog(
                         }
                     }
 
-                    Button(
-                        onClick = {
-                            webView.evaluateJavascript(
-                                refreshImageScript(imageUrl),
-                                null,
-                            )
-                            onDismiss()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(stringResource(R.string.ui_refresh_image))
+                    if (webView.settings.javaScriptEnabled) {
+                        Button(
+                            onClick = {
+                                webView.evaluateJavascript(
+                                    refreshImageScript(context, imageUrl),
+                                    null,
+                                )
+                                onDismiss()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(stringResource(R.string.ui_refresh_image))
+                        }
                     }
 
                     if (!isLocked) {

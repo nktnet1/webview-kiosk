@@ -170,6 +170,7 @@ internal class NativeGpsBridge(
                     "validated",
                     JSONObject()
                         .put("id", message.optInt("id"))
+                        .put("validationId", message.optLong("validationId"))
                         .put("allowed", current.allowed)
                         .put("unavailable", unavailable),
                 )
