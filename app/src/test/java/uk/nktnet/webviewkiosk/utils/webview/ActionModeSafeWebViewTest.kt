@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Rect
 import android.os.Build
+import android.util.AttributeSet
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuInflater
@@ -53,6 +54,47 @@ class ActionModeSafeWebViewTest {
         parent.removeView(webView)
         webView.destroy()
         activityController.pause().stop().destroy()
+    }
+
+    @Test
+    fun layoutToolConstructorsExposeJavaSignaturesAndRejectUnmanagedModes() {
+        val type = ActionModeSafeWebView::class.java
+        val views =
+            listOf(
+                type.getConstructor(Context::class.java).newInstance(activity),
+                type
+                    .getConstructor(Context::class.java, AttributeSet::class.java)
+                    .newInstance(activity, null),
+                type
+                    .getConstructor(
+                        Context::class.java,
+                        AttributeSet::class.java,
+                        Int::class.javaPrimitiveType!!,
+                    )
+                    .newInstance(activity, null, android.R.attr.webViewStyle),
+            )
+        val callback = RecordingCallback()
+        try {
+            for (view in views) {
+                parent.addView(view)
+                assertTrue(view.isAttachedToWindow)
+                assertNotNull(view.windowToken)
+                assertNull(view.startActionMode(callback))
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    assertNull(
+                        view.startActionMode(callback, ActionMode.TYPE_FLOATING)
+                    )
+                }
+            }
+            assertEquals(0, parent.starts)
+            assertEquals(0, callback.creates)
+        } finally {
+            for (view in views) {
+                view.disposeActionModes()
+                parent.removeView(view)
+                view.destroy()
+            }
+        }
     }
 
     @Test

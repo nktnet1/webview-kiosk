@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.utils.webview
 import android.content.Context
 import android.graphics.Rect
 import android.os.Build
+import android.util.AttributeSet
 import android.util.Log
 import android.view.ActionMode
 import android.view.Menu
@@ -14,10 +15,23 @@ import androidx.annotation.RequiresApi
 import uk.nktnet.webviewkiosk.config.Constants
 
 /** Keeps native selection toolbars within the lifetime of their host window. */
-internal open class ActionModeSafeWebView(
+internal open class ActionModeSafeWebView
+@JvmOverloads
+constructor(
     context: Context,
-    private val isHostActive: () -> Boolean,
-) : WebView(context) {
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = android.R.attr.webViewStyle,
+) : WebView(context, attrs, defStyleAttr) {
+    // Layout tools have no navigation or dialog lifecycle to validate.
+    private var isHostActive: () -> Boolean = { false }
+
+    constructor(
+        context: Context,
+        isHostActive: () -> Boolean,
+    ) : this(context) {
+        this.isHostActive = isHostActive
+    }
+
     private val activeModes = mutableSetOf<ActionMode>()
     private var detaching = false
     private var disposed = false
