@@ -71,11 +71,85 @@ class FileUtilsTest {
     }
 
     @Test
-    fun oversizedWritesPreserveTheOriginalFileAndCreateNoTemporaryFiles() {
+    @Config(shadows = [ShadowOsWithRename::class])
+    fun createsTextAndEmptyFilesWithDistinctIdsForTheSameName() {
+        val directory = temporaryFolder.root
+        val content = "<h1>Hello 你好</h1>"
+
+        assertTrue(saveLocalFile(directory, null, "page.html", content))
+        assertTrue(saveLocalFile(directory, null, "page.html", ""))
+
+        val files = listLocalFiles(directory)
+        assertEquals(2, files.size)
+        assertEquals(2, files.map { it.getUUID() }.toSet().size)
+        assertEquals(setOf("page.html"), files.map { it.getDisplayName() }.toSet())
+        assertEquals(setOf(content, ""), files.map(::readEditableTextFile).toSet())
+        assertEquals(files.toSet(), directory.listFiles().orEmpty().toSet())
+    }
+
+    @Test
+    @Config(shadows = [ShadowOsWithRename::class])
+    fun savesNameAndContentsTogetherAndPreservesTheFileId() {
+        val directory = temporaryFolder.root
+        val original = temporaryFolder.newFile(generateUuidFileName("original.txt"))
+        original.writeText("original")
+
+        assertTrue(
+            saveLocalFile(directory, original, "updated.html", "new contents")
+        )
+
+        val updated = File(directory, "${original.getUUID()}|updated.html")
+        assertEquals(listOf(updated), directory.listFiles().orEmpty().toList())
+        assertEquals("new contents", updated.readText())
+
+        assertTrue(saveLocalFile(directory, updated, "updated.html", ""))
+        assertEquals(listOf(updated), listLocalFiles(directory))
+        assertEquals("", updated.readText())
+    }
+
+    @Test
+    fun renamesNonEditableFilesWithoutChangingTheirBytes() {
+        val directory = temporaryFolder.root
+        val original = temporaryFolder.newFile(generateUuidFileName("original.png"))
+        val bytes = byteArrayOf(0x00, 0x41, 0x7F)
+        original.writeBytes(bytes)
+        assertNull(readEditableTextFile(original))
+
+        assertTrue(saveLocalFile(directory, original, "renamed.png", null))
+
+        val renamed = File(directory, "${original.getUUID()}|renamed.png")
+        assertEquals(listOf(renamed), listLocalFiles(directory))
+        assertArrayEquals(bytes, renamed.readBytes())
+    }
+
+    @Test
+    fun rejectsEmptyNamesAndPathsForNewFilesAndRenames() {
+        val directory = temporaryFolder.root
+        val original = temporaryFolder.newFile(generateUuidFileName("original.txt"))
+        original.writeText("original")
+
+        for (name in listOf("", " ", ".", "..", "a/b", "a\\b", "a\u0000b")) {
+            assertFalse(saveLocalFile(directory, null, name, "new contents"))
+            assertFalse(saveLocalFile(directory, original, name, null))
+        }
+
+        assertEquals(listOf(original), directory.listFiles().orEmpty().toList())
+        assertEquals("original", original.readText())
+    }
+
+    @Test
+    fun oversizedWritesPreserveTheOriginalNameAndContents() {
         val file =
             temporaryFolder.newFile("original.txt").apply { writeText("original") }
 
-        assertFalse(writeEditableTextFile(file, "é".repeat(512 * 1024 + 1)))
+        assertFalse(
+            saveLocalFile(
+                temporaryFolder.root,
+                file,
+                "renamed.txt",
+                "é".repeat(512 * 1024 + 1),
+            )
+        )
 
         assertEquals("original", file.readText())
         assertEquals(

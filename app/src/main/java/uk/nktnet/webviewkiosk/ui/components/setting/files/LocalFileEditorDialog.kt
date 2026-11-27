@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,7 +29,6 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import java.io.File
@@ -38,20 +39,53 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
 import uk.nktnet.webviewkiosk.utils.getDisplayName
-import uk.nktnet.webviewkiosk.utils.writeEditableTextFile
+import uk.nktnet.webviewkiosk.utils.isValidLocalFileName
+import uk.nktnet.webviewkiosk.utils.readEditableTextFile
+import uk.nktnet.webviewkiosk.utils.saveLocalFile
 
 @Composable
 fun LocalFileEditorDialog(
-    file: File,
-    initialText: String,
+    filesDir: File,
+    file: File? = null,
     onDismiss: () -> Unit,
     onSaved: () -> Unit,
 ) {
     val context = LocalContext.current
-    val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
-    var text by remember(file, initialText) { mutableStateOf(initialText) }
+    val initialName = file?.getDisplayName().orEmpty()
+    var name by remember(file) { mutableStateOf(initialName) }
+    var initialText by remember(file) { mutableStateOf("".takeIf { file == null }) }
+    var text by remember(file) { mutableStateOf("") }
+    var isLoading by remember(file) { mutableStateOf(file != null) }
     var isSaving by remember(file) { mutableStateOf(false) }
+
+    LaunchedEffect(file) {
+        if (file != null) {
+            val contents = withContext(Dispatchers.IO) { readEditableTextFile(file) }
+            text = contents.orEmpty()
+            initialText = contents
+            isLoading = false
+        }
+    }
+
+    val nameChanged = name != initialName
+    val validName = (file != null && !nameChanged) || isValidLocalFileName(name)
+    val nameError = name.isNotEmpty() && !validName
+    val nameMessage =
+        when {
+            nameError -> R.string.ui_invalid_local_file_name
+            file != null && nameChanged && validName ->
+                R.string.ui_local_file_rename_warning
+            else -> null
+        }
+    val contentMessage =
+        when {
+            isLoading -> R.string.ui_loading_file_contents
+            initialText == null -> R.string.ui_file_contents_unavailable
+            else -> null
+        }
+    val canEditContents = !isSaving && initialText != null
+    val contentsChanged = initialText != null && text != initialText
 
     Dialog(
         onDismissRequest = {
@@ -61,6 +95,7 @@ fun LocalFileEditorDialog(
         },
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
+        val clipboard = LocalClipboard.current
         Surface(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             color = MaterialTheme.colorScheme.background,
@@ -69,16 +104,46 @@ fun LocalFileEditorDialog(
         ) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 Text(
-                    text = stringResource(R.string.ui_edit_file),
+                    text =
+                        stringResource(
+                            if (file == null) {
+                                R.string.ui_new_file
+                            } else {
+                                R.string.ui_edit_file
+                            }
+                        ),
                     style = MaterialTheme.typography.headlineSmall,
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = file.getDisplayName(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isSaving,
+                    label = { Text(stringResource(R.string.ui_local_file_name)) },
+                    singleLine = true,
+                    isError = nameError,
+                    supportingText =
+                        if (nameMessage != null) {
+                            { Text(stringResource(nameMessage)) }
+                        } else {
+                            null
+                        },
+                    trailingIcon = {
+                        IconButton(
+                            enabled = !isSaving && name.isNotEmpty(),
+                            onClick = { name = "" },
+                        ) {
+                            Icon(
+                                painter =
+                                    painterResource(R.drawable.baseline_clear_24),
+                                contentDescription =
+                                    stringResource(
+                                        R.string.ui_clear_local_file_name
+                                    ),
+                            )
+                        }
+                    },
                 )
                 Spacer(Modifier.height(12.dp))
 
@@ -86,7 +151,14 @@ fun LocalFileEditorDialog(
                     value = text,
                     onValueChange = { text = it },
                     modifier = Modifier.fillMaxWidth().weight(1f),
-                    enabled = !isSaving,
+                    enabled = canEditContents,
+                    label = { Text(stringResource(R.string.ui_file_contents)) },
+                    supportingText =
+                        if (contentMessage != null) {
+                            { Text(stringResource(contentMessage)) }
+                        } else {
+                            null
+                        },
                     textStyle = MaterialTheme.typography.bodySmall,
                 )
 
@@ -95,46 +167,58 @@ fun LocalFileEditorDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(
-                        enabled = !isSaving && text != initialText,
-                        onClick = { text = initialText },
+                        enabled = canEditContents && contentsChanged,
+                        onClick = { text = initialText.orEmpty() },
+                        colors =
+                            IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
                     ) {
                         Icon(
                             painter =
                                 painterResource(R.drawable.baseline_refresh_24),
                             contentDescription = stringResource(R.string.ui_reset),
-                            tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                     Spacer(Modifier.weight(1f))
                     IconButton(
-                        enabled = !isSaving && text.isNotEmpty(),
+                        enabled = canEditContents && text.isNotEmpty(),
                         onClick = { text = "" },
+                        colors =
+                            IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_clear_24),
                             contentDescription = stringResource(R.string.ui_clear),
-                            tint = MaterialTheme.colorScheme.error,
                         )
                     }
                     IconButton(
-                        enabled = !isSaving,
+                        enabled = canEditContents,
                         onClick = {
                             scope.launch {
                                 val clipEntry = clipboard.getClipEntry()
-                                text =
-                                    clipEntry
-                                        ?.clipData
-                                        ?.getItemAt(0)
-                                        ?.text
-                                        ?.toString() ?: ""
+                                if (!isSaving) {
+                                    text =
+                                        clipEntry
+                                            ?.clipData
+                                            ?.getItemAt(0)
+                                            ?.text
+                                            ?.toString()
+                                            .orEmpty()
+                                }
                             }
                         },
+                        colors =
+                            IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
                     ) {
                         Icon(
                             painter =
                                 painterResource(R.drawable.outline_content_paste_24),
                             contentDescription = stringResource(R.string.ui_paste),
-                            tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
@@ -155,11 +239,21 @@ fun LocalFileEditorDialog(
                             if (isSaving) {
                                 return@TextButton
                             }
+                            val savedName = name
+                            val savedContents = text.takeIf {
+                                file == null ||
+                                    (initialText != null && it != initialText)
+                            }
                             isSaving = true
                             scope.launch {
                                 val saved =
                                     withContext(Dispatchers.IO) {
-                                        writeEditableTextFile(file, text)
+                                        saveLocalFile(
+                                            filesDir,
+                                            file,
+                                            savedName,
+                                            savedContents,
+                                        )
                                     }
                                 isSaving = false
                                 if (saved) {
@@ -178,14 +272,20 @@ fun LocalFileEditorDialog(
                                 }
                             }
                         },
-                        enabled = !isSaving && text != initialText,
+                        enabled =
+                            !isLoading &&
+                                !isSaving &&
+                                validName &&
+                                (file == null || nameChanged || contentsChanged),
                     ) {
                         Text(
-                            if (isSaving) {
-                                stringResource(R.string.ui_saving)
-                            } else {
-                                stringResource(R.string.ui_save)
-                            }
+                            stringResource(
+                                when {
+                                    isSaving -> R.string.ui_saving
+                                    file == null -> R.string.ui_create
+                                    else -> R.string.ui_save
+                                }
+                            )
                         )
                     }
                 }

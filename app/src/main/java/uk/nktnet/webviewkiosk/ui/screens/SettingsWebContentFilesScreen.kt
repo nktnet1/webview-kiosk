@@ -22,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -29,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -50,6 +52,7 @@ import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.files.LocalFileEditorDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.files.LocalFileList
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
@@ -62,7 +65,11 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
     val filesDir = getWebContentFilesDir(context)
     val systemSettings = remember(context) { SystemSettings(context) }
 
-    var filesList by remember { mutableStateOf(listLocalFiles(filesDir)) }
+    var filesList by remember {
+        // A contents-only edit changes file metadata even when the paths are equal.
+        mutableStateOf(listLocalFiles(filesDir), neverEqualPolicy())
+    }
+    var showCreateDialog by remember { mutableStateOf(false) }
     var uploading by remember { mutableStateOf(false) }
     var progress by remember { mutableFloatStateOf(0f) }
     var showLegacyLocalFileLinks by remember {
@@ -84,7 +91,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                     uploadFile(context, uri, filesDir) { p ->
                         progress = p
                     }
-                    filesList = listLocalFiles(filesDir)
+                    refreshFiles()
                     ToastManager.show(
                         context,
                         context.getString(R.string.ui_file_uploaded),
@@ -134,11 +141,11 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
         )
         SettingDivider()
 
-        Box(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Button(
                     onClick = {
                         try {
@@ -159,27 +166,38 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                             )
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.weight(1f),
                     enabled = !uploading,
                 ) {
                     Text(stringResource(R.string.ui_upload))
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         painter = painterResource(R.drawable.outline_upload_file_24),
-                        contentDescription = stringResource(R.string.ui_upload),
+                        contentDescription = null,
                     )
                 }
+                OutlinedButton(
+                    onClick = { showCreateDialog = true },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(R.string.ui_new_file))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_add_24),
+                        contentDescription = null,
+                    )
+                }
+            }
 
-                if (uploading) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier.fillMaxWidth(),
-                        color = ProgressIndicatorDefaults.linearColor,
-                        trackColor = ProgressIndicatorDefaults.linearTrackColor,
-                        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-                    )
-                }
+            if (uploading) {
+                Spacer(modifier = Modifier.height(8.dp))
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = ProgressIndicatorDefaults.linearColor,
+                    trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                    strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                )
             }
         }
 
@@ -225,7 +243,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 contentAlignment = Alignment.TopCenter,
             ) {
                 Text(
-                    text = stringResource(R.string.ui_no_files_uploaded_yet),
+                    text = stringResource(R.string.ui_no_local_files_available),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -240,5 +258,16 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 refreshFiles = ::refreshFiles,
             )
         }
+    }
+
+    if (showCreateDialog) {
+        LocalFileEditorDialog(
+            filesDir = filesDir,
+            onDismiss = { showCreateDialog = false },
+            onSaved = {
+                refreshFiles()
+                showCreateDialog = false
+            },
+        )
     }
 }

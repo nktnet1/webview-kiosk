@@ -118,26 +118,78 @@ fun readEditableTextFile(file: File): String? {
     return text
 }
 
-fun writeEditableTextFile(file: File, content: String): Boolean {
+fun isValidLocalFileName(name: String): Boolean {
+    return name.isNotBlank() &&
+        name != "." &&
+        name != ".." &&
+        name.none { it == '/' || it == '\\' || it.isISOControl() }
+}
+
+/**
+ * Creates a local file or updates an existing one. Null content preserves its bytes.
+ */
+@Synchronized
+fun saveLocalFile(
+    filesDir: File,
+    file: File?,
+    name: String,
+    content: String?,
+): Boolean {
+    val fileToRename = file?.takeIf { it.getDisplayName() != name }
+    if ((file == null || fileToRename != null) && !isValidLocalFileName(name)) {
+        return false
+    }
+
+    val targetFile =
+        when {
+            fileToRename != null -> File(filesDir, "${fileToRename.getUUID()}|$name")
+            file != null -> file
+            else -> File(filesDir, generateUuidFileName(name))
+        }
+    if (
+        (file != null && !file.isFile) || (targetFile != file && targetFile.exists())
+    ) {
+        return false
+    }
+
+    if (content == null) {
+        return file != null &&
+            (fileToRename == null || fileToRename.renameTo(targetFile))
+    }
+
     val bytes = content.toByteArray(Charsets.UTF_8)
     if (bytes.size > MAX_EDITABLE_TEXT_FILE_BYTES) {
         return false
     }
 
-    val parent = file.parentFile ?: return false
-    val tempFile = File(parent, ".wk-edit-${UUID.randomUUID()}.tmp")
+    val tempFile = File(filesDir, ".wk-edit-${UUID.randomUUID()}.tmp")
+    var renamed = false
 
     return try {
         FileOutputStream(tempFile).use { output ->
             output.write(bytes)
             output.fd.sync()
         }
-        Os.rename(tempFile.absolutePath, file.absolutePath)
+        // Stage the new contents before moving the original file.
+        if (fileToRename != null) {
+            if (!fileToRename.renameTo(targetFile)) {
+                return false
+            }
+            renamed = true
+        }
+        Os.rename(tempFile.absolutePath, targetFile.absolutePath)
         true
     } catch (e: Exception) {
-        tempFile.delete()
-        Log.e(Constants.APP_SCHEME, "Failed to save edited local file", e)
+        if (renamed && fileToRename != null && !targetFile.renameTo(fileToRename)) {
+            Log.e(
+                Constants.APP_SCHEME,
+                "Failed to restore the original local file name",
+            )
+        }
+        Log.e(Constants.APP_SCHEME, "Failed to save local file", e)
         false
+    } finally {
+        tempFile.delete()
     }
 }
 
