@@ -119,10 +119,26 @@ class UiStringResourcesTest {
     }
 
     @Test
+    fun localFileEditingMessagesExplainUnavailableContents() {
+        assertEquals(
+            "Can't edit contents (not UTF-8 text).",
+            context.getString(R.string.ui_file_contents_not_text),
+        )
+        assertEquals(
+            "Can't edit contents (file exceeds 7 MiB).",
+            context.getString(R.string.ui_file_contents_too_large, 7),
+        )
+        assertEquals(
+            "Can't edit contents (file unreadable).",
+            context.getString(R.string.ui_file_contents_unreadable),
+        )
+    }
+
+    @Test
     fun multilineDialogMessagesRetainWhitespaceAndDynamicFields() {
         assertEquals(
             "Are you sure you want to delete this file?\n\n  notes.txt\n\n" +
-                "This will only remove the app's copy and not the original file on your device.",
+                "This only deletes the file stored in the app.",
             context.getString(R.string.ui_confirm_delete_local_file, "notes.txt"),
         )
         assertEquals(

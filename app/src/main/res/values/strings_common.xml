@@ -51,7 +51,6 @@
     <string name="ui_previous" formatted="false">"Previous"</string>
     <string name="ui_refresh" formatted="false">"Refresh"</string>
     <string name="ui_remove" formatted="false">"Remove"</string>
-    <string name="ui_rename" formatted="false">"Rename"</string>
     <string name="ui_reset" formatted="false">"Reset"</string>
     <string name="ui_retry" formatted="false">"Retry"</string>
     <string name="ui_save" formatted="false">"Save"</string>
