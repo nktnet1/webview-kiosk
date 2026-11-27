@@ -10,7 +10,6 @@
     <string name="ui_failed_to_delete_value">"Failed to delete %1$s"</string>
     <string name="ui_failed_to_save_file" formatted="false">"Failed to save file"</string>
     <string name="ui_file_contents" formatted="false">"Contents"</string>
-    <string name="ui_file_contents_unavailable" formatted="false">"The contents of this file can\'t be edited."</string>
     <string name="ui_file_link" formatted="false">"File Link"</string>
     <string name="ui_file_picker_is_disabled_in_value_s_web_engine_settings">"File picker is disabled in %1$s\'s Web Engine settings."</string>
     <string name="ui_file_saved" formatted="false">"File saved"</string>

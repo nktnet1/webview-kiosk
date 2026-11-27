@@ -78,14 +78,14 @@ fun LocalFileEditorDialog(
                 R.string.ui_local_file_rename_warning
             else -> null
         }
-    val contentMessage =
-        when {
-            isLoading -> R.string.ui_loading_file_contents
-            initialText == null -> R.string.ui_file_contents_unavailable
-            else -> null
+    val showContentsEditor = initialText != null
+    val contentsChanged = showContentsEditor && text != initialText
+    val dialogSize =
+        if (showContentsEditor) {
+            Modifier.fillMaxSize()
+        } else {
+            Modifier.fillMaxWidth()
         }
-    val canEditContents = !isSaving && initialText != null
-    val contentsChanged = initialText != null && text != initialText
 
     Dialog(
         onDismissRequest = {
@@ -93,16 +93,15 @@ fun LocalFileEditorDialog(
                 onDismiss()
             }
         },
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        properties = DialogProperties(usePlatformDefaultWidth = !showContentsEditor),
     ) {
-        val clipboard = LocalClipboard.current
         Surface(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = dialogSize.padding(16.dp),
             color = MaterialTheme.colorScheme.background,
             shape = MaterialTheme.shapes.medium,
             tonalElevation = 6.dp,
         ) {
-            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text =
                         stringResource(
@@ -145,82 +144,92 @@ fun LocalFileEditorDialog(
                         }
                     },
                 )
-                Spacer(Modifier.height(12.dp))
+                if (showContentsEditor) {
+                    val clipboard = LocalClipboard.current
+                    Spacer(Modifier.height(12.dp))
 
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    modifier = Modifier.fillMaxWidth().weight(1f),
-                    enabled = canEditContents,
-                    label = { Text(stringResource(R.string.ui_file_contents)) },
-                    supportingText =
-                        if (contentMessage != null) {
-                            { Text(stringResource(contentMessage)) }
-                        } else {
-                            null
-                        },
-                    textStyle = MaterialTheme.typography.bodySmall,
-                )
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        enabled = !isSaving,
+                        label = { Text(stringResource(R.string.ui_file_contents)) },
+                        textStyle = MaterialTheme.typography.bodySmall,
+                    )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(
-                        enabled = canEditContents && contentsChanged,
-                        onClick = { text = initialText.orEmpty() },
-                        colors =
-                            IconButtonDefaults.iconButtonColors(
-                                contentColor = MaterialTheme.colorScheme.primary
-                            ),
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            painter =
-                                painterResource(R.drawable.baseline_refresh_24),
-                            contentDescription = stringResource(R.string.ui_reset),
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    IconButton(
-                        enabled = canEditContents && text.isNotEmpty(),
-                        onClick = { text = "" },
-                        colors =
-                            IconButtonDefaults.iconButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            ),
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_clear_24),
-                            contentDescription = stringResource(R.string.ui_clear),
-                        )
-                    }
-                    IconButton(
-                        enabled = canEditContents,
-                        onClick = {
-                            scope.launch {
-                                val clipEntry = clipboard.getClipEntry()
-                                if (!isSaving) {
-                                    text =
-                                        clipEntry
-                                            ?.clipData
-                                            ?.getItemAt(0)
-                                            ?.text
-                                            ?.toString()
-                                            .orEmpty()
+                        IconButton(
+                            enabled = !isSaving && contentsChanged,
+                            onClick = { text = initialText.orEmpty() },
+                            colors =
+                                IconButtonDefaults.iconButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                ),
+                        ) {
+                            Icon(
+                                painter =
+                                    painterResource(R.drawable.baseline_refresh_24),
+                                contentDescription =
+                                    stringResource(R.string.ui_reset),
+                            )
+                        }
+                        Spacer(Modifier.weight(1f))
+                        IconButton(
+                            enabled = !isSaving && text.isNotEmpty(),
+                            onClick = { text = "" },
+                            colors =
+                                IconButtonDefaults.iconButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                ),
+                        ) {
+                            Icon(
+                                painter =
+                                    painterResource(R.drawable.baseline_clear_24),
+                                contentDescription =
+                                    stringResource(R.string.ui_clear),
+                            )
+                        }
+                        IconButton(
+                            enabled = !isSaving,
+                            onClick = {
+                                scope.launch {
+                                    val clipEntry = clipboard.getClipEntry()
+                                    if (!isSaving) {
+                                        text =
+                                            clipEntry
+                                                ?.clipData
+                                                ?.getItemAt(0)
+                                                ?.text
+                                                ?.toString()
+                                                .orEmpty()
+                                    }
                                 }
-                            }
-                        },
-                        colors =
-                            IconButtonDefaults.iconButtonColors(
-                                contentColor = MaterialTheme.colorScheme.primary
-                            ),
-                    ) {
-                        Icon(
-                            painter =
-                                painterResource(R.drawable.outline_content_paste_24),
-                            contentDescription = stringResource(R.string.ui_paste),
-                        )
+                            },
+                            colors =
+                                IconButtonDefaults.iconButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                ),
+                        ) {
+                            Icon(
+                                painter =
+                                    painterResource(
+                                        R.drawable.outline_content_paste_24
+                                    ),
+                                contentDescription =
+                                    stringResource(R.string.ui_paste),
+                            )
+                        }
                     }
+                } else if (isLoading) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.ui_loading_file_contents),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
 
                 Spacer(Modifier.height(12.dp))
