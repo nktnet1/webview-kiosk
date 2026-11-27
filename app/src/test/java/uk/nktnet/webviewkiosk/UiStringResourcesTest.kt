@@ -119,17 +119,18 @@ class UiStringResourcesTest {
     }
 
     @Test
-    fun localFileEditingMessagesShowTheMimeTypeAndSizeLimit() {
+    fun localFileEditingMessagesExplainUnavailableContents() {
         assertEquals(
-            "The contents aren't plain UTF-8 text. The filename suggests the MIME type image/png.",
-            context.getString(
-                R.string.ui_file_contents_not_text_with_mime_type,
-                "image/png",
-            ),
+            "Can't edit contents (not UTF-8 text).",
+            context.getString(R.string.ui_file_contents_not_text),
         )
         assertEquals(
-            "The file exceeds the 7 MiB editing limit.",
+            "Can't edit contents (file exceeds 7 MiB).",
             context.getString(R.string.ui_file_contents_too_large, 7),
+        )
+        assertEquals(
+            "Can't edit contents (file unreadable).",
+            context.getString(R.string.ui_file_contents_unreadable),
         )
     }
 

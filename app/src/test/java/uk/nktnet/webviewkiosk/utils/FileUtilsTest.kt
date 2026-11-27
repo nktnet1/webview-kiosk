@@ -459,7 +459,7 @@ class FileUtilsTest {
     @Implements(Os::class)
     class ShadowOsWithFailedRename {
         companion object {
-            @Suppress("unused", "UNUSED_PARAMETER")
+            @Suppress("UNUSED_PARAMETER")
             @JvmStatic
             @Implementation
             fun rename(oldPath: String, newPath: String) {

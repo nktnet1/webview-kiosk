@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.files
 
-import android.webkit.MimeTypeMap
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,19 +31,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
 import uk.nktnet.webviewkiosk.utils.LocalFileContents
 import uk.nktnet.webviewkiosk.utils.MAX_EDITABLE_TEXT_FILE_MIB
 import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.isValidLocalFileName
 import uk.nktnet.webviewkiosk.utils.readEditableTextFile
 import uk.nktnet.webviewkiosk.utils.saveLocalFile
-import java.io.File
-import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
 
 @Composable
 fun LocalFileEditorDialog(
@@ -96,23 +95,8 @@ fun LocalFileEditorDialog(
                     R.string.ui_file_contents_too_large,
                     MAX_EDITABLE_TEXT_FILE_MIB,
                 )
-            LocalFileContents.NotUtf8Text -> {
-                val mimeType =
-                    remember(file) {
-                        file?.let {
-                            MimeTypeMap.getSingleton()
-                                .getMimeTypeFromExtension(it.extension.lowercase())
-                        }
-                    }
-                if (mimeType == null) {
-                    stringResource(R.string.ui_file_contents_not_text)
-                } else {
-                    stringResource(
-                        R.string.ui_file_contents_not_text_with_mime_type,
-                        mimeType,
-                    )
-                }
-            }
+            LocalFileContents.NotUtf8Text ->
+                stringResource(R.string.ui_file_contents_not_text)
             LocalFileContents.Unreadable ->
                 stringResource(R.string.ui_file_contents_unreadable)
             is LocalFileContents.Text -> null
