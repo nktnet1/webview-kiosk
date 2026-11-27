@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Lifecycle 2.9.4 supports API 21. The compatible lint checks shipped with
+         Lifecycle 2.10.0, which requires API 23. -->
+    <issue id="ObsoleteLintCustomCheck">
+        <ignore regexp="(?s)androidx\.lifecycle\.lint\.LifecycleRuntimeIssueRegistry.*KtLightModifierList#getKotlinOrigin\(\)" />
+    </issue>
+</lint>

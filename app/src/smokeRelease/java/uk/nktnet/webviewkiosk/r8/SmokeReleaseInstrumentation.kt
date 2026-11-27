@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.r8
 
+import android.annotation.SuppressLint
 import android.app.Instrumentation
 import android.content.Context
 import android.content.ContextWrapper
@@ -7,6 +8,7 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.core.content.edit
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.util.ArrayList
@@ -152,12 +154,12 @@ open class SmokeReleaseInstrumentation : Instrumentation() {
             // Keep test cleanup compatible with the app's minimum SDK.
             targetContext
                 .getSharedPreferences(preferenceName, Context.MODE_PRIVATE)
-                .edit()
-                .clear()
-                .apply()
+                .edit { clear() }
         }
     }
 
+    // The bridge probe runs JavaScript against a fixed, in-memory HTML page.
+    @SuppressLint("SetJavaScriptEnabled")
     private fun webViewJavascript() {
         val completed = CountDownLatch(1)
         val result = AtomicReference<String?>()
