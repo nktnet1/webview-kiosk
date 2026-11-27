@@ -1,0 +1,8 @@
+## Changes
+
+- Added local file creation and combined renaming and UTF-8 editing in one dialog
+- Added local file links by name, with a chooser for duplicate names
+- Added image refresh to the long-press menu
+- Added optional direct GPS for web pages, with recovery after sleep
+- Fixed WebView crashes from malformed URLs and the text selection toolbar
+- Improved Shizuku activation and content filter cache reliability
