@@ -10,6 +10,10 @@
     <string name="ui_failed_to_delete_value">"Failed to delete %1$s"</string>
     <string name="ui_failed_to_save_file" formatted="false">"Failed to save file"</string>
     <string name="ui_file_contents" formatted="false">"Contents"</string>
+    <string name="ui_file_contents_not_text" formatted="false">"The contents aren\'t plain UTF-8 text."</string>
+    <string name="ui_file_contents_not_text_with_mime_type">"The contents aren\'t plain UTF-8 text. The filename suggests the MIME type %1$s."</string>
+    <string name="ui_file_contents_too_large">"The file exceeds the %1$d MiB editing limit."</string>
+    <string name="ui_file_contents_unreadable" formatted="false">"Couldn\'t read the file contents."</string>
     <string name="ui_file_link" formatted="false">"File Link"</string>
     <string name="ui_file_picker_is_disabled_in_value_s_web_engine_settings">"File picker is disabled in %1$s\'s Web Engine settings."</string>
     <string name="ui_file_saved" formatted="false">"File saved"</string>

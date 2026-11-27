@@ -119,10 +119,25 @@ class UiStringResourcesTest {
     }
 
     @Test
+    fun localFileEditingMessagesShowTheMimeTypeAndSizeLimit() {
+        assertEquals(
+            "The contents aren't plain UTF-8 text. The filename suggests the MIME type image/png.",
+            context.getString(
+                R.string.ui_file_contents_not_text_with_mime_type,
+                "image/png",
+            ),
+        )
+        assertEquals(
+            "The file exceeds the 7 MiB editing limit.",
+            context.getString(R.string.ui_file_contents_too_large, 7),
+        )
+    }
+
+    @Test
     fun multilineDialogMessagesRetainWhitespaceAndDynamicFields() {
         assertEquals(
             "Are you sure you want to delete this file?\n\n  notes.txt\n\n" +
-                "This will only remove the app's copy and not the original file on your device.",
+                "This only deletes the file stored in the app.",
             context.getString(R.string.ui_confirm_delete_local_file, "notes.txt"),
         )
         assertEquals(

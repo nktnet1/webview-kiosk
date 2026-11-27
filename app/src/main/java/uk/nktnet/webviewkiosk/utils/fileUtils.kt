@@ -18,6 +18,7 @@ import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.ByteBuffer
+import java.nio.charset.CharacterCodingException
 import java.nio.charset.CodingErrorAction
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
@@ -40,11 +41,23 @@ val supportedMimeTypesArray =
         "application/xml",
     )
 
-private const val MAX_EDITABLE_TEXT_FILE_BYTES = 1024 * 1024
+internal const val MAX_EDITABLE_TEXT_FILE_MIB = 1
+private const val MAX_EDITABLE_TEXT_FILE_BYTES =
+    MAX_EDITABLE_TEXT_FILE_MIB * 1024 * 1024
+
+internal sealed interface LocalFileContents {
+    data class Text(val value: String) : LocalFileContents
+
+    data object TooLarge : LocalFileContents
+
+    data object NotUtf8Text : LocalFileContents
+
+    data object Unreadable : LocalFileContents
+}
 
 private fun readFileBytesUpTo(file: File): ByteArray? {
     val maxBytes = MAX_EDITABLE_TEXT_FILE_BYTES
-    if (!file.isFile || file.length() > maxBytes) {
+    if (file.length() > maxBytes) {
         return null
     }
 
@@ -71,26 +84,29 @@ private fun readFileBytesUpTo(file: File): ByteArray? {
 }
 
 /**
- * Returns UTF-8 text when a local file is safe to expose in the text editor.
+ * Reads editable UTF-8 text or reports why the contents are unavailable.
  *
  * File names and MIME metadata are not trusted. The actual contents are bounded and
  * validated so a binary file cannot become editable just by being renamed.
  */
-fun readEditableTextFile(file: File): String? {
+internal fun readEditableTextFile(file: File): LocalFileContents {
     val bytes =
         try {
-            readFileBytesUpTo(file)
+            if (!file.isFile) {
+                return LocalFileContents.Unreadable
+            }
+            readFileBytesUpTo(file) ?: return LocalFileContents.TooLarge
         } catch (e: Exception) {
             Log.e(
                 Constants.APP_SCHEME,
                 "Failed to inspect local file for editing",
                 e,
             )
-            null
-        } ?: return null
+            return LocalFileContents.Unreadable
+        }
 
     if (bytes.any { it == 0.toByte() }) {
-        return null
+        return LocalFileContents.NotUtf8Text
     }
 
     val text =
@@ -100,8 +116,8 @@ fun readEditableTextFile(file: File): String? {
                 .onUnmappableCharacter(CodingErrorAction.REPORT)
                 .decode(ByteBuffer.wrap(bytes))
                 .toString()
-        } catch (_: Exception) {
-            return null
+        } catch (_: CharacterCodingException) {
+            return LocalFileContents.NotUtf8Text
         }
 
     val hasBinaryControlCharacters = text.any { character ->
@@ -112,10 +128,10 @@ fun readEditableTextFile(file: File): String? {
             character != '\r') || code == 0x7F
     }
     if (hasBinaryControlCharacters) {
-        return null
+        return LocalFileContents.NotUtf8Text
     }
 
-    return text
+    return LocalFileContents.Text(text)
 }
 
 fun isValidLocalFileName(name: String): Boolean {
@@ -163,7 +179,7 @@ fun saveLocalFile(
     }
 
     val tempFile = File(filesDir, ".wk-edit-${UUID.randomUUID()}.tmp")
-    var renamed = false
+    var renamedFrom: File? = null
 
     return try {
         FileOutputStream(tempFile).use { output ->
@@ -175,12 +191,12 @@ fun saveLocalFile(
             if (!fileToRename.renameTo(targetFile)) {
                 return false
             }
-            renamed = true
+            renamedFrom = fileToRename
         }
         Os.rename(tempFile.absolutePath, targetFile.absolutePath)
         true
     } catch (e: Exception) {
-        if (renamed && fileToRename != null && !targetFile.renameTo(fileToRename)) {
+        if (renamedFrom != null && !targetFile.renameTo(renamedFrom)) {
             Log.e(
                 Constants.APP_SCHEME,
                 "Failed to restore the original local file name",

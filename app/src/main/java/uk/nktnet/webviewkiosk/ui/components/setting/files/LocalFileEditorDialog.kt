@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.files
 
+import android.webkit.MimeTypeMap
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,17 +32,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
+import uk.nktnet.webviewkiosk.utils.LocalFileContents
+import uk.nktnet.webviewkiosk.utils.MAX_EDITABLE_TEXT_FILE_MIB
 import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.isValidLocalFileName
 import uk.nktnet.webviewkiosk.utils.readEditableTextFile
 import uk.nktnet.webviewkiosk.utils.saveLocalFile
+import java.io.File
+import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
 
 @Composable
 fun LocalFileEditorDialog(
@@ -54,17 +57,21 @@ fun LocalFileEditorDialog(
     val scope = rememberCoroutineScope()
     val initialName = file?.getDisplayName().orEmpty()
     var name by remember(file) { mutableStateOf(initialName) }
-    var initialText by remember(file) { mutableStateOf("".takeIf { file == null }) }
+    var contents by
+        remember(file) {
+            mutableStateOf<LocalFileContents?>(
+                LocalFileContents.Text("").takeIf { file == null }
+            )
+        }
     var text by remember(file) { mutableStateOf("") }
-    var isLoading by remember(file) { mutableStateOf(file != null) }
     var isSaving by remember(file) { mutableStateOf(false) }
 
     LaunchedEffect(file) {
         if (file != null) {
-            val contents = withContext(Dispatchers.IO) { readEditableTextFile(file) }
-            text = contents.orEmpty()
-            initialText = contents
-            isLoading = false
+            val loadedContents =
+                withContext(Dispatchers.IO) { readEditableTextFile(file) }
+            text = (loadedContents as? LocalFileContents.Text)?.value.orEmpty()
+            contents = loadedContents
         }
     }
 
@@ -78,8 +85,38 @@ fun LocalFileEditorDialog(
                 R.string.ui_local_file_rename_warning
             else -> null
         }
+    val initialText = (contents as? LocalFileContents.Text)?.value
     val showContentsEditor = initialText != null
     val contentsChanged = showContentsEditor && text != initialText
+    val contentsMessage =
+        when (contents) {
+            null -> stringResource(R.string.ui_loading_file_contents)
+            LocalFileContents.TooLarge ->
+                stringResource(
+                    R.string.ui_file_contents_too_large,
+                    MAX_EDITABLE_TEXT_FILE_MIB,
+                )
+            LocalFileContents.NotUtf8Text -> {
+                val mimeType =
+                    remember(file) {
+                        file?.let {
+                            MimeTypeMap.getSingleton()
+                                .getMimeTypeFromExtension(it.extension.lowercase())
+                        }
+                    }
+                if (mimeType == null) {
+                    stringResource(R.string.ui_file_contents_not_text)
+                } else {
+                    stringResource(
+                        R.string.ui_file_contents_not_text_with_mime_type,
+                        mimeType,
+                    )
+                }
+            }
+            LocalFileContents.Unreadable ->
+                stringResource(R.string.ui_file_contents_unreadable)
+            is LocalFileContents.Text -> null
+        }
     val dialogSize =
         if (showContentsEditor) {
             Modifier.fillMaxSize()
@@ -111,9 +148,9 @@ fun LocalFileEditorDialog(
                                 R.string.ui_edit_file
                             }
                         ),
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleMedium,
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -163,7 +200,7 @@ fun LocalFileEditorDialog(
                     ) {
                         IconButton(
                             enabled = !isSaving && contentsChanged,
-                            onClick = { text = initialText.orEmpty() },
+                            onClick = { text = initialText },
                             colors =
                                 IconButtonDefaults.iconButtonColors(
                                     contentColor = MaterialTheme.colorScheme.primary
@@ -223,10 +260,10 @@ fun LocalFileEditorDialog(
                             )
                         }
                     }
-                } else if (isLoading) {
+                } else if (contentsMessage != null) {
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        text = stringResource(R.string.ui_loading_file_contents),
+                        text = contentsMessage,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -282,7 +319,7 @@ fun LocalFileEditorDialog(
                             }
                         },
                         enabled =
-                            !isLoading &&
+                            contents != null &&
                                 !isSaving &&
                                 validName &&
                                 (file == null || nameChanged || contentsChanged),

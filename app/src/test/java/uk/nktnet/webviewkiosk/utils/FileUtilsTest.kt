@@ -1,6 +1,9 @@
 package uk.nktnet.webviewkiosk.utils
 
 import android.net.Uri
+import android.system.ErrnoException
+import android.system.Os
+import android.system.OsConstants
 import java.io.File
 import java.io.FileNotFoundException
 import java.nio.file.Files
@@ -21,6 +24,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
 import uk.nktnet.webviewkiosk.testing.ShadowOsWithRename
 
 @RunWith(RobolectricTestRunner::class)
@@ -28,14 +33,14 @@ class FileUtilsTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
 
     @Test
-    fun readsUtf8TextIncludingWhitespaceAndEmptyFiles() {
-        val file = temporaryFolder.newFile("page.html")
+    fun readsUtf8TextIncludingWhitespaceAndEmptyFilesRegardlessOfExtension() {
+        val file = temporaryFolder.newFile("page.png")
         val content = "Hello 你好 😀\t\r\nnext line"
         file.writeText(content)
 
-        assertEquals(content, readEditableTextFile(file))
+        assertEquals(LocalFileContents.Text(content), readEditableTextFile(file))
         file.writeText("")
-        assertEquals("", readEditableTextFile(file))
+        assertEquals(LocalFileContents.Text(""), readEditableTextFile(file))
     }
 
     @Test
@@ -49,7 +54,11 @@ class FileUtilsTest {
                 byteArrayOf(0x41, 0x7F, 0x42),
             )) {
             file.writeBytes(bytes)
-            assertNull(bytes.contentToString(), readEditableTextFile(file))
+            assertEquals(
+                bytes.contentToString(),
+                LocalFileContents.NotUtf8Text,
+                readEditableTextFile(file),
+            )
         }
     }
 
@@ -58,16 +67,22 @@ class FileUtilsTest {
         val file = temporaryFolder.newFile("large.txt")
         val atLimit = "é".repeat(512 * 1024)
         file.writeText(atLimit)
-        assertEquals(atLimit, readEditableTextFile(file))
+        assertEquals(LocalFileContents.Text(atLimit), readEditableTextFile(file))
 
         file.appendText("é")
-        assertNull(readEditableTextFile(file))
+        assertEquals(LocalFileContents.TooLarge, readEditableTextFile(file))
     }
 
     @Test
     fun rejectsDirectoriesAndMissingFiles() {
-        assertNull(readEditableTextFile(temporaryFolder.root))
-        assertNull(readEditableTextFile(File(temporaryFolder.root, "missing.txt")))
+        assertEquals(
+            LocalFileContents.Unreadable,
+            readEditableTextFile(temporaryFolder.root),
+        )
+        assertEquals(
+            LocalFileContents.Unreadable,
+            readEditableTextFile(File(temporaryFolder.root, "missing.txt")),
+        )
     }
 
     @Test
@@ -83,7 +98,10 @@ class FileUtilsTest {
         assertEquals(2, files.size)
         assertEquals(2, files.map { it.getUUID() }.toSet().size)
         assertEquals(setOf("page.html"), files.map { it.getDisplayName() }.toSet())
-        assertEquals(setOf(content, ""), files.map(::readEditableTextFile).toSet())
+        assertEquals(
+            setOf(LocalFileContents.Text(content), LocalFileContents.Text("")),
+            files.map(::readEditableTextFile).toSet(),
+        )
         assertEquals(files.toSet(), directory.listFiles().orEmpty().toSet())
     }
 
@@ -108,12 +126,27 @@ class FileUtilsTest {
     }
 
     @Test
+    @Config(shadows = [ShadowOsWithFailedRename::class])
+    fun restoresTheOriginalNameIfPublishingTheNewContentsFails() {
+        val directory = temporaryFolder.root
+        val original = temporaryFolder.newFile(generateUuidFileName("original.txt"))
+        original.writeText("original")
+
+        assertFalse(
+            saveLocalFile(directory, original, "updated.txt", "new contents")
+        )
+
+        assertEquals(listOf(original), directory.listFiles().orEmpty().toList())
+        assertEquals("original", original.readText())
+    }
+
+    @Test
     fun renamesNonEditableFilesWithoutChangingTheirBytes() {
         val directory = temporaryFolder.root
         val original = temporaryFolder.newFile(generateUuidFileName("original.png"))
         val bytes = byteArrayOf(0x00, 0x41, 0x7F)
         original.writeBytes(bytes)
-        assertNull(readEditableTextFile(original))
+        assertEquals(LocalFileContents.NotUtf8Text, readEditableTextFile(original))
 
         assertTrue(saveLocalFile(directory, original, "renamed.png", null))
 
@@ -420,6 +453,18 @@ class FileUtilsTest {
             )
         } finally {
             Files.deleteIfExists(link.toPath())
+        }
+    }
+
+    @Implements(Os::class)
+    class ShadowOsWithFailedRename {
+        companion object {
+            @Suppress("unused", "UNUSED_PARAMETER")
+            @JvmStatic
+            @Implementation
+            fun rename(oldPath: String, newPath: String) {
+                throw ErrnoException("rename", OsConstants.EIO)
+            }
         }
     }
 }
