@@ -76,6 +76,20 @@ test('does not refresh an unrelated active image just because it shares the fall
   assert.deepEqual(second.changes, []);
 });
 
+test('retries the failed responsive source when WebView reports its fallback URL', () => {
+  const source = element({ srcset: 'retina.jpg 2x' });
+  const broken = Object.assign(image({ src: 'fallback.jpg' }, 'retina.jpg', [source]), {
+    complete: true, naturalWidth: 0,
+  });
+  const loaded = Object.assign(image({ src: 'fallback.jpg', srcset: 'other.jpg 2x' }, 'other.jpg'), {
+    complete: true, naturalWidth: 200,
+  });
+  assert.equal(refresh(absolute('fallback.jpg'), broken, loaded), true);
+  assert.deepEqual(source.changes, [['srcset', `${absolute(`retina.jpg?${suffix}`)} 2x`]]);
+  assert.deepEqual(broken.changes, []);
+  assert.deepEqual(loaded.changes, []);
+});
+
 test('updates only matching picture and img candidates, including repeated matches and matching fallback', () => {
   const source = element({ srcset: 'photo.jpg 480w, large.jpg 960w' });
   const other = element({ srcset: 'other.jpg 1x' });

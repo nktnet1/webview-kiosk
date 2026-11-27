@@ -22,6 +22,8 @@
   let allowed = false;
   let hostVisible = false;
   let subscription = false;
+  let permissionRequested = false;
+  let resettingPermission = false;
   let permissionWatch = null;
   let permissionTimer = null;
   let permissionAttempt = 0;
@@ -71,6 +73,8 @@
     allowed = false;
     hostVisible = false;
     subscription = false;
+    permissionRequested = false;
+    resettingPermission = false;
     cache = null;
   }
 
@@ -132,11 +136,11 @@
     report(request, 2, message);
   }
 
-  function failAll(code, message) {
-    for (const request of requests.values()) report(request, code, message, true);
-    stopPermissionWatch();
-    if (subscription) post('unsubscribe');
-    subscription = false;
+  function denyRequests(message) {
+    allowed = false;
+    cache = null;
+    for (const request of requests.values()) report(request, 1, message, true);
+    refresh();
   }
 
   function failBridge() {
@@ -180,9 +184,14 @@
 
   function askBrowserPermission() {
     if (permissionWatch !== null || allowed || !requests.size || !token || !visible()) return;
+    if (resettingPermission) {
+      if (permissionTimer === null) permissionTimer = setTimeout(failBridge, replyTimeout);
+      return;
+    }
     // Do not wait for a fused fix. Chromium's real request enforces secure context,
     // Permissions Policy and the app's existing site permission dialog. The native
     // permission callback authorizes GPS and lets us cancel this temporary watch.
+    permissionRequested = true;
     const attempt = ++permissionAttempt;
     const onProbeResult = () => {
       if (attempt !== permissionAttempt || allowed || permissionTimer !== null) return;
@@ -196,7 +205,7 @@
         error => {
           if (attempt !== permissionAttempt || allowed) return;
           if (error.code === 1) {
-            failAll(1, error.message || 'Location permission denied');
+            denyRequests(error.message || 'Location permission denied');
           } else {
             onProbeResult();
           }
@@ -211,7 +220,19 @@
   }
 
   function refresh() {
-    if (!requests.size) stopPermissionWatch();
+    if (!requests.size) {
+      stopPermissionWatch();
+      if (!visible()) cache = null;
+      if (permissionRequested) {
+        // Wait for native to revoke the grant before starting another browser probe.
+        permissionRequested = false;
+        allowed = false;
+        subscription = false;
+        resettingPermission = true;
+        if (!post('idle')) failBridge();
+      }
+      return;
+    }
     if (!visible() || !allowed) {
       if (!visible()) {
         stopPermissionWatch();
@@ -276,6 +297,8 @@
     const maximumAge = clamp(options?.maximumAge, 0);
     // GPS always requests precise fixes, including when this hint is false.
     Boolean(options?.enableHighAccuracy);
+    // A callback can start a new request before the previous callback returns.
+    if (!requests.size && permissionRequested) refresh();
     while (requests.has(nextId) || terminalWatches.has(nextId)) nextId = nextId === 0x7fffffff ? 1 : nextId + 1;
     const id = nextId;
     nextId = nextId === 0x7fffffff ? 1 : nextId + 1;
@@ -345,11 +368,22 @@
       return;
     }
     if (!token || message.token !== token || suspended) return;
+    if (resettingPermission && message.type !== 'foreground' && message.type !== 'idle') return;
     switch (message.type) {
+      case 'idle':
+        if (!resettingPermission) return;
+        resettingPermission = false;
+        stopPermissionWatch();
+        refresh();
+        break;
       case 'permission':
+        if (!permissionRequested) return;
         allowed = message.allowed === true;
         stopPermissionWatch();
-        if (!allowed) failAll(1, 'Location permission denied');
+        if (!allowed) {
+          denyRequests('Location permission denied');
+          return;
+        }
         refresh();
         break;
       case 'foreground':
@@ -364,9 +398,7 @@
             message.validationId !== request.validationId || !visible()) return;
         stopValidation(request);
         if (message.allowed !== true) {
-          allowed = false;
-          cache = null;
-          failAll(1, 'Direct GPS requires Allow Location and precise location permission');
+          denyRequests('Direct GPS requires Allow Location and precise location permission');
           return;
         }
         request.awaitingValidation = false;
@@ -396,9 +428,8 @@
       }
       case 'error':
         if (message.code === 1) {
-          allowed = false;
-          cache = null;
-          failAll(1, message.message);
+          denyRequests(message.message);
+          return;
         } else if (message.code === 2 && visible()) {
           for (const request of requests.values()) reportProviderError(request, message.message);
         }

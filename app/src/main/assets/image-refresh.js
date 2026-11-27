@@ -81,20 +81,24 @@
     var base = image.ownerDocument.baseURI;
     var selected = resolve(image.currentSrc || image.src, base);
     var target = resolve(targetUrl, base);
-    if (!selected || !target || selected.href !== target.href) continue;
+    if (!selected || !target) continue;
+    var fallback = resolve(image.getAttribute('src'), base);
+    // A WebView hit test can report the src attribute for a broken linked image.
+    var brokenWithMatchingFallback = image.complete && image.naturalWidth === 0 &&
+      fallback && fallback.href === target.href;
+    if (selected.href !== target.href && !brokenWithMatchingFallback) continue;
     var replacement = refreshUrl(selected);
     var updated = false;
     var parent = image.parentElement;
     if (parent && parent.tagName === 'PICTURE') {
       var sources = parent.querySelectorAll('source');
       for (var j = 0; j < sources.length; j++) {
-        updated = refreshSrcset(sources[j], base, target.href, replacement) || updated;
+        updated = refreshSrcset(sources[j], base, selected.href, replacement) || updated;
       }
     }
-    updated = refreshSrcset(image, base, target.href, replacement) || updated;
-    var fallback = resolve(image.getAttribute('src'), base);
-    if (fallback && fallback.href === target.href) {
-      image.setAttribute('src', replacement === target.href ? image.getAttribute('src') : replacement);
+    updated = refreshSrcset(image, base, selected.href, replacement) || updated;
+    if (fallback && fallback.href === selected.href) {
+      image.setAttribute('src', replacement === selected.href ? image.getAttribute('src') : replacement);
       updated = true;
     }
     refreshed = updated || refreshed;

@@ -9,6 +9,15 @@ plugins {
     alias(libs.plugins.android.retrofix)
 }
 
+val releaseSigningVariables =
+    listOf("KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD")
+val useEnvironmentReleaseSigning =
+    !providers.gradleProperty("android.injected.signing.store.file").isPresent &&
+        (providers.gradleProperty("requireReleaseSigning").orNull == "true" ||
+            releaseSigningVariables.any {
+                !providers.environmentVariable(it).orNull.isNullOrBlank()
+            })
+
 android {
     compileSdk {
         version =
@@ -123,7 +132,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName("release")
+            if (useEnvironmentReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         // Locally test the release shrinker without a production signing key.
         // This builds a separate APK: the ordinary release variant is unchanged.
@@ -141,25 +152,24 @@ android {
     }
 }
 
-// AGP reports a generic keystore error when any signing credential is missing.
-// Diagnose missing environment variables before its release signing validator runs.
-tasks
-    .matching { it.name == "validateSigningRelease" }
-    .configureEach {
-        doFirst {
-            val missing =
-                listOf("KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD").filter {
-                    System.getenv(it).isNullOrBlank()
-                }
+if (useEnvironmentReleaseSigning) {
+    tasks
+        .matching { it.name == "validateSigningRelease" }
+        .configureEach {
+            val missing = releaseSigningVariables.filter {
+                System.getenv(it).isNullOrBlank()
+            }
             if (missing.isNotEmpty()) {
-                throw GradleException(
-                    "Missing release signing environment variables: " +
-                        missing.joinToString(", ") +
-                        ". Gradle does not load .env automatically."
-                )
+                doFirst {
+                    throw GradleException(
+                        "Missing release signing environment variables: " +
+                            missing.joinToString(", ") +
+                            ". Gradle does not load .env automatically."
+                    )
+                }
             }
         }
-    }
+}
 
 // AGP 9 exposes per-variant host-test enablement through this incubating API.
 // Keep both the debug Robolectric suite and the smokeRelease R8 probes active.

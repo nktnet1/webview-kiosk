@@ -7,6 +7,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.InetSocketAddress
 import java.util.concurrent.CopyOnWriteArrayList
@@ -32,6 +33,8 @@ import org.robolectric.RuntimeEnvironment
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.utils.getLocalFileLink
+import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 
 /**
@@ -176,6 +179,34 @@ class PdfSourceRequestTest {
         assertNotNull(response)
         assertEquals("application/pdf", response?.mimeType)
         assertArrayEquals(bytes, response!!.data.use { it.readBytes() })
+    }
+
+    @Test
+    fun localPdfAliasesRespectTheStoredUrlPolicy() {
+        settings.allowLocalFiles = true
+        val file =
+            File(getWebContentFilesDir(context), "stored-id|policy-source.pdf")
+        val storedUrl = file.getLocalFileLink()
+        val alias = storedUrl.substringBeforeLast('/') + "/policy-source.pdf"
+        try {
+            file.writeText("%PDF-1.7")
+            val token = register(alias)
+            val response = requireNotNull(load(token))
+            assertEquals("application/pdf", response.mimeType)
+            response.data.close()
+
+            assertEquals(
+                403,
+                load(token, blacklist = listOf("^${Regex.escape(storedUrl)}$"))
+                    ?.statusCode,
+            )
+            assertEquals(
+                403,
+                load(token, isDocumentBlocked = { it == storedUrl })?.statusCode,
+            )
+        } finally {
+            file.delete()
+        }
     }
 
     @Test

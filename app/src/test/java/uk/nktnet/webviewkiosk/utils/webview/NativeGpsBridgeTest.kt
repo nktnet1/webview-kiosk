@@ -101,6 +101,26 @@ class NativeGpsBridgeTest {
     }
 
     @Test
+    fun idleStopsGpsAndInvalidatesThePreviousPermissionCallback() {
+        grant()
+        send("subscribe")
+        val previous = bridge.permissionCallback(origin, null)
+        assertEquals(1, listeners().size)
+
+        send("idle")
+        assertEquals("idle", reply.messages.last().getString("type"))
+        assertTrue(listeners().isEmpty())
+
+        send("subscribe")
+        previous.invoke(origin, true, false)
+        assertTrue(listeners().isEmpty())
+        assertEquals("idle", reply.messages.last().getString("type"))
+
+        grant()
+        assertEquals(1, listeners().size)
+    }
+
+    @Test
     fun permissionDenialNeverStartsGpsAndTheOriginalBrowserCallbackIsResolved() {
         send("subscribe")
         var result: Boolean? = null

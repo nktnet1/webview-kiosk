@@ -407,6 +407,34 @@ class CompiledFilterCacheTest {
     }
 
     @Test
+    fun cacheKeepsRecurringScopesCompactAfterTheDictionaryFills() {
+        val file = File(folder.root, "recurring-scopes.bin")
+        val cache = CompiledFilterCache(file)
+        val key = cache.key(listOf("recurring-scopes"))
+        val scope =
+            DomainScope(
+                included =
+                    (1..4)
+                        .map {
+                            "publisher$it.${"x".repeat(55)}.${"y".repeat(55)}.example"
+                        }
+                        .toSet()
+            )
+        val unique =
+            (0..17_000).map { CosmeticRule(".unique-$it", DomainScope.ANY, false) }
+        val recurring = (0..2_000).map { CosmeticRule(".scoped-$it", scope, false) }
+        val cosmetics = unique + recurring
+
+        cache.write(key, CompiledRuleSet(emptyList(), cosmetics, skippedRules = 0))
+
+        assertEquals(cosmetics, requireNotNull(cache.read(key)).cosmetics.toList())
+        assertTrue(
+            "The recurring domains should share dictionary entries",
+            file.length() < 1_000_000,
+        )
+    }
+
+    @Test
     fun maximumLengthCacheStringsRoundTripWithoutTruncation() {
         val file = File(folder.root, "maximum-length-selectors.bin")
         val cache = CompiledFilterCache(file)

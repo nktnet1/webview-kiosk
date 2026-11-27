@@ -32,6 +32,7 @@ internal class NativeGpsBridge(
         val token: String = UUID.randomUUID().toString(),
         var allowed: Boolean = false,
         var subscribed: Boolean = false,
+        var permissionGeneration: Long = 0,
     )
 
     private var session: Session? = null
@@ -83,6 +84,7 @@ internal class NativeGpsBridge(
         callback: GeolocationPermissions.Callback?,
     ): GeolocationPermissions.Callback {
         val pending = session?.takeIf { it.origin == httpsOrigin(origin) }
+        val generation = pending?.permissionGeneration
         return GeolocationPermissions.Callback { requestedOrigin, allow, _ ->
             val current = pending != null && session === pending && !disposed
             callback?.invoke(
@@ -90,7 +92,7 @@ internal class NativeGpsBridge(
                 allow && (pending == null || current),
                 false,
             )
-            if (current) {
+            if (current && pending.permissionGeneration == generation) {
                 pending.allowed = allow
                 send("permission", JSONObject().put("allowed", allow))
                 updateSubscription()
@@ -182,6 +184,13 @@ internal class NativeGpsBridge(
             "unsubscribe" -> {
                 current.subscribed = false
                 source.stop()
+            }
+            "idle" -> {
+                current.permissionGeneration++
+                current.allowed = false
+                current.subscribed = false
+                source.stop()
+                send("idle", JSONObject())
             }
             "release" -> {
                 source.stop()
