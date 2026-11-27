@@ -20,6 +20,8 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -109,16 +111,80 @@ class AssetLoaderRequestTest {
                 Uri.parse(file.getLocalFileLink()).lastPathSegment,
             )
             for (url in listOf(file.getLocalFileLink(), alias)) {
+                val response =
+                    requireNotNull(
+                        interceptAssetRequest(Uri.parse(url), loader, null, context)
+                    )
+                if (url == alias) {
+                    assertEquals(
+                        "no-store",
+                        response.responseHeaders["Cache-Control"],
+                    )
+                }
                 assertEquals(
                     "local asset",
-                    interceptAssetRequest(Uri.parse(url), loader, null, context)
-                        ?.data
-                        ?.bufferedReader()
-                        ?.use { it.readText() },
+                    response.data.bufferedReader().use { it.readText() },
                 )
             }
         } finally {
             file.delete()
+        }
+    }
+
+    @Test
+    fun aliasDeniesBlockedStoredUrlsAndOmitsThemFromTheChooser() {
+        val context = RuntimeEnvironment.getApplication()
+        val settings = UserSettings(context).apply { allowLocalFiles = true }
+        val directory = getWebContentFilesDir(context)
+        val first = File(directory, "restricted-id|policy-test.html")
+        val second = File(directory, "allowed-id|policy-test.html")
+        val loader = localFilesLoader(context)
+        val alias =
+            Uri.parse(
+                first.getLocalFileLink().substringBeforeLast('/') +
+                    "/policy-test.html"
+            )
+        val blacklist = listOf("^${Regex.escape(first.getLocalFileLink())}$")
+        fun request() =
+            requireNotNull(
+                interceptAssetRequest(
+                    alias,
+                    loader,
+                    null,
+                    context,
+                    localFileBlockCause = {
+                        getBlockInfo(it, blacklist, emptyList(), settings).second
+                    },
+                )
+            )
+
+        try {
+            first.writeText("First file")
+            assertNull(
+                getBlockInfo(alias.toString(), blacklist, emptyList(), settings)
+                    .second
+            )
+            val denied = request()
+            assertEquals(403, denied.statusCode)
+            assertEquals("no-store", denied.responseHeaders["Cache-Control"])
+            assertFalse(
+                denied.data
+                    .bufferedReader()
+                    .use { it.readText() }
+                    .contains("First file")
+            )
+
+            second.writeText("Second file")
+            val chooser = request()
+            val html = chooser.data.bufferedReader().use { it.readText() }
+            assertEquals(200, chooser.statusCode)
+            assertTrue(html.contains(second.getLocalFileLink()))
+            assertTrue(html.contains("1 file is named"))
+            assertFalse(html.contains(first.getLocalFileLink()))
+            assertFalse(html.contains(first.getUUID()))
+        } finally {
+            first.delete()
+            second.delete()
         }
     }
 

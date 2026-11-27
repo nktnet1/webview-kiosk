@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.net.ssl.HttpsURLConnection
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.utils.getLocalFileLink
 import uk.nktnet.webviewkiosk.utils.isLocalFileLink
 import uk.nktnet.webviewkiosk.utils.resolveLocalFileLink
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
@@ -201,21 +202,35 @@ fun handlePdfSourceRequest(
         if (!source.isActive(sourceToken)) {
             return errorResponse(410, "PDF viewer closed")
         }
-        val (schemeType, blockCause) =
+        fun blockInfo(url: String) =
             getBlockInfo(
-                url = sourceUrl,
+                url = url,
                 blacklistRegexes = blacklistRegexes,
                 whitelistRegexes = whitelistRegexes,
                 userSettings = userSettings,
             )
+        val (schemeType, blockCause) = blockInfo(sourceUrl)
         if (blockCause != null || isDocumentBlocked(sourceUrl)) {
             return errorResponse(403, "PDF source is blocked")
         }
 
         val sourceUri = sourceUrl.toUri()
         when {
-            sourceUri.isLocalFileLink() ->
-                localPdfResponse(sourceUri.resolveLocalFileLink(context))
+            sourceUri.isLocalFileLink() -> {
+                val file = sourceUri.resolveLocalFileLink(context)
+                val storedUrl =
+                    file
+                        ?.takeIf { it.name != sourceUri.lastPathSegment }
+                        ?.getLocalFileLink()
+                if (
+                    storedUrl != null &&
+                        (blockInfo(storedUrl).second != null ||
+                            isDocumentBlocked(storedUrl))
+                ) {
+                    return errorResponse(403, "PDF source is blocked")
+                }
+                localPdfResponse(file)
+            }
             schemeType == SchemeType.FILE ->
                 localPdfResponse(sourceUri.path?.let(::File))
             schemeType == SchemeType.WEB ->

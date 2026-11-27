@@ -6,7 +6,7 @@ import { runInNewContext } from 'node:vm';
 
 const script = readFileSync(new URL('../../app/src/main/assets/native-gps.js', import.meta.url), 'utf8');
 
-function page({ secure = true, mainFrame = true, protocol = 'https:', validate = true } = {}) {
+function page({ secure = true, mainFrame = true, protocol = 'https:', validate = true, acknowledgeIdle = true } = {}) {
   let now = 0;
   let counter = 0;
   let permissionError;
@@ -30,6 +30,9 @@ function page({ secure = true, mainFrame = true, protocol = 'https:', validate =
   const bridge = { postMessage(data) {
     const message = JSON.parse(data);
     messages.push(message);
+    if (message.type === 'idle' && acknowledgeIdle) {
+      bridge.onmessage({ data: JSON.stringify({ type: 'idle', token: message.token }) });
+    }
     if (message.type === 'validate' && validate) {
       bridge.onmessage({ data: JSON.stringify({
         type: 'validated', id: message.id, validationId: message.validationId,
@@ -253,7 +256,7 @@ test('one fix serves a one-shot and multiple watches with one native subscriptio
   p.advance();
   assert.equal(values.length, 4);
   p.geo.clearWatch(b);
-  assert.equal(p.messages.at(-1).type, 'unsubscribe');
+  assert.equal(p.messages.at(-1).type, 'idle');
 });
 
 test('clearWatch suppresses queued callbacks and cancels a pending permission probe', () => {
@@ -264,10 +267,12 @@ test('clearWatch suppresses queued callbacks and cancels a pending permission pr
   assert.deepEqual(p.cleared, [1]);
   p.grant();
   const next = p.geo.watchPosition(() => assert.fail('queued callback'));
+  assert.equal(p.watches.length, 2);
+  p.grant();
   p.fix();
   p.geo.clearWatch(next);
   p.advance();
-  assert.equal(p.messages.at(-1).type, 'unsubscribe');
+  assert.equal(p.messages.at(-1).type, 'idle');
 });
 
 test('one-shot unsubscribes immediately after its fresh fix', () => {
@@ -281,6 +286,49 @@ test('one-shot unsubscribes immediately after its fresh fix', () => {
   p.fix();
   p.advance();
   assert.equal(calls, 1);
+  assert.equal(p.messages.at(-1).type, 'idle');
+});
+
+test('a later one-shot waits for native revocation and fresh browser authorization', () => {
+  const p = page({ acknowledgeIdle: false });
+  p.ack();
+  const values = [];
+  p.geo.getCurrentPosition(value => {
+    values.push(value.coords.latitude);
+    p.geo.getCurrentPosition(next => values.push(next.coords.latitude));
+  });
+  p.grant();
+  p.fix();
+  p.advance();
+  assert.deepEqual(values, [12.3]);
+  assert.equal(p.messages.at(-1).type, 'idle');
+
+  p.grant();
+  p.fix({ latitude: 1 });
+  p.advance();
+  assert.deepEqual(values, [12.3]);
+  assert.equal(p.watches.length, 1);
+
+  p.send({ type: 'idle' });
+  assert.equal(p.watches.length, 2);
+  p.grant();
+  p.fix({ latitude: 2 });
+  p.advance();
+  assert.deepEqual(values, [12.3, 2]);
+});
+
+test('a missing idle acknowledgement ends a later request instead of leaving it pending', () => {
+  const p = page({ acknowledgeIdle: false });
+  p.ack();
+  const watch = p.geo.watchPosition(() => {});
+  p.grant();
+  p.geo.clearWatch(watch);
+  let error;
+  p.geo.getCurrentPosition(() => assert.fail('Permission was never renewed'), result => { error = result; });
+  p.advance(3000);
+  assert.equal(error.code, 2);
+  assert.equal(p.messages.at(-1).type, 'release');
+  assert.equal(p.watches.length, 1);
 });
 
 test('one-shot times out and a timed-out watch can recover with a later fix', () => {
@@ -351,11 +399,13 @@ test('maximumAge uses monotonic fix age and the default always waits for a new f
   p.advance(20);
   let cached = 0;
   p.geo.getCurrentPosition(() => cached++, null, { maximumAge: 31 });
+  p.grant();
   p.advance();
   assert.equal(cached, 1);
   let fresh = 0;
   p.geo.getCurrentPosition(() => fresh++);
   p.geo.getCurrentPosition(() => fresh++, null, { maximumAge: 29 });
+  p.grant();
   p.advance();
   assert.equal(fresh, 0);
   p.fix();
@@ -372,7 +422,7 @@ test('zero timeout reports asynchronously and leaves no one-shot subscription', 
   assert.equal(error, undefined);
   p.advance();
   assert.equal(error.code, 3);
-  assert.equal(p.messages.at(-1).type, 'unsubscribe');
+  assert.equal(p.messages.at(-1).type, 'idle');
 });
 
 test('a provider error terminates one-shots but an active watch can recover', () => {
@@ -499,6 +549,7 @@ test('each request validates current Android and app permissions before exposing
   p.geo.getCurrentPosition(() => assert.fail('Revoked permission must block cached coordinates'), e => {
     error = e;
   }, { maximumAge: 10000 });
+  p.grant();
   validation = p.messages.at(-1);
   assert.equal(validation.type, 'validate');
   p.validated(validation.id, { allowed: false });
@@ -635,6 +686,7 @@ test('sleep clears the JavaScript fix cache even if its monotonic clock barely a
   p.send({ type: 'foreground', visible: true });
   let calls = 0;
   p.geo.getCurrentPosition(() => calls++, null, { maximumAge: 100000 });
+  p.grant();
   p.advance();
   assert.equal(calls, 0);
   p.fix();
@@ -660,7 +712,7 @@ test('clearWatch ignores one-shot request IDs before and after validation', () =
   p.geo.clearWatch(watch);
   p.advance();
   assert.equal(oneShots, 1);
-  assert.equal(p.messages.at(-1).type, 'unsubscribe');
+  assert.equal(p.messages.at(-1).type, 'idle');
   assert.equal(p.tasks.size, 0);
 });
 

@@ -127,9 +127,17 @@ fun ImageOptionsDialog(
                         Button(
                             onClick = {
                                 webView.evaluateJavascript(
-                                    refreshImageScript(context, imageUrl),
-                                    null,
-                                )
+                                    refreshImageScript(context, imageUrl)
+                                ) { result ->
+                                    if (result != "true") {
+                                        ToastManager.show(
+                                            context,
+                                            context.getString(
+                                                R.string.ui_image_refresh_unavailable
+                                            ),
+                                        )
+                                    }
+                                }
                                 onDismiss()
                             },
                             modifier = Modifier.fillMaxWidth(),

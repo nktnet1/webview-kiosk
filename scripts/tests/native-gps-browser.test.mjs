@@ -42,6 +42,7 @@ async function fixture(policy = 'geolocation=(self)') {
       if (message.type === 'hello') queueMicrotask(() => nativeReply({
         type: 'hello', nonce: message.nonce, visible: true,
       }));
+      if (message.type === 'idle') queueMicrotask(() => nativeReply({ type: 'idle' }));
       if (message.type === 'validate') queueMicrotask(() => nativeReply({
         type: 'validated', id: message.id, validationId: message.validationId, allowed: true,
       }));
@@ -88,7 +89,7 @@ test('real browser geolocation accepts the hook and receives native fixes after 
     assert.equal(await page.evaluate(() => values[0].coords.latitude), 12.3);
     assert.equal(await page.evaluate(() => errors.length), 0);
     await page.evaluate(() => navigator.geolocation.clearWatch(watchId));
-    await page.waitForFunction(() => nativeMessages.at(-1).type === 'unsubscribe');
+    await page.waitForFunction(() => nativeMessages.at(-1).type === 'idle');
   } finally { await context.close(); }
 });
 

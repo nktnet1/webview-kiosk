@@ -11,7 +11,7 @@ APP_BUILD = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
 class ReleaseArtifactsTest(unittest.TestCase):
     def test_builds_both_variants_once(self):
         self.assertIn(
-            "run: sh gradlew :app:assembleRelease :app:assembleDebug --stacktrace",
+            "run: sh gradlew :app:assembleRelease :app:assembleDebug -PrequireReleaseSigning=true --stacktrace",
             RELEASE,
         )
 
@@ -43,17 +43,23 @@ class ReleaseArtifactsTest(unittest.TestCase):
         self.assertIn('storeFile = file("keystore.jks")', signing_configs)
         self.assertNotIn("keystore.exists()", signing_configs)
 
-    def test_release_is_always_signed_and_smoke_uses_debug_key(self):
+    def test_release_uses_environment_signing_only_when_selected(self):
         build_types = APP_BUILD.split("    buildTypes {", 1)[1]
         production = build_types.split("        release {", 1)[1].split(
             '        create("smokeRelease")', 1
         )[0]
         smoke = build_types.split('        create("smokeRelease")', 1)[1]
+        self.assertIn("if (useEnvironmentReleaseSigning)", production)
         self.assertIn('signingConfig = signingConfigs.getByName("release")', production)
         self.assertNotIn("keystore.jks", production)
         self.assertIn('signingConfig = signingConfigs.getByName("debug")', smoke)
+        self.assertIn(
+            '!providers.gradleProperty("android.injected.signing.store.file").isPresent',
+            APP_BUILD,
+        )
 
     def test_missing_release_credentials_report_environment_variables(self):
+        self.assertIn("if (useEnvironmentReleaseSigning) {\n    tasks", APP_BUILD)
         self.assertIn('it.name == "validateSigningRelease"', APP_BUILD)
         for variable in ("KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD"):
             self.assertIn(f'"{variable}"', APP_BUILD)

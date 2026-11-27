@@ -119,6 +119,8 @@ internal fun interceptAssetRequest(
     localFileAssetLoader: WebViewAssetLoader?,
     pdfAssetLoader: WebViewAssetLoader?,
     localFilesContext: Context? = null,
+    localFileBlockCause: (String) -> BlockCause? = { null },
+    blockedLocalFileHtml: (BlockCause) -> String? = { null },
 ): WebResourceResponse? {
     if (
         !uri.isHierarchical ||
@@ -128,35 +130,66 @@ internal fun interceptAssetRequest(
     ) {
         return null
     }
-    // Exact stored paths win. Only ambiguous short aliases receive an HTML chooser.
-    val matches =
-        if (localFileAssetLoader != null && localFilesContext != null) {
-            uri.findLocalFileMatches(localFilesContext)
-        } else {
-            emptyList()
-        }
-    if (matches.size > 1 && localFilesContext != null) {
-        val html =
-            generateLocalFileSelectionHtml(
-                localFilesContext,
-                uri.pathSegments[1],
-                matches,
-            )
+    fun blockedResponse(cause: BlockCause): WebResourceResponse {
+        val html = blockedLocalFileHtml(cause)
+        val mimeType =
+            if (html == null) {
+                "text/plain"
+            } else {
+                "text/html"
+            }
         return WebResourceResponse(
-                "text/html",
-                "UTF-8",
-                html.byteInputStream(Charsets.UTF_8),
-            )
-            .apply { responseHeaders = mapOf("Cache-Control" to "no-store") }
+            mimeType,
+            "UTF-8",
+            403,
+            "Forbidden",
+            mapOf("Cache-Control" to "no-store"),
+            (html ?: "Local file is blocked").byteInputStream(Charsets.UTF_8),
+        )
     }
-    val localUri =
-        matches
-            .singleOrNull()
-            ?.takeIf { it.name != uri.lastPathSegment }
-            ?.getLocalFileLink()
-            ?.toUri() ?: uri
-    return localFileAssetLoader?.shouldInterceptRequest(localUri)
-        ?: pdfAssetLoader?.shouldInterceptRequest(uri)
+
+    var localUri = uri
+    if (localFileAssetLoader != null && localFilesContext != null) {
+        val matches = uri.findLocalFileMatches(localFilesContext)
+        if (
+            matches.isNotEmpty() && matches.none { it.name == uri.lastPathSegment }
+        ) {
+            // An alias must satisfy the same policy as each stored URL it exposes.
+            localFileBlockCause(uri.toString())?.let {
+                return blockedResponse(it)
+            }
+            val checked = matches.map {
+                it to localFileBlockCause(it.getLocalFileLink())
+            }
+            val allowed = checked.filter { it.second == null }.map { it.first }
+            if (allowed.isEmpty()) {
+                return blockedResponse(requireNotNull(checked.first().second))
+            }
+            if (matches.size > 1) {
+                val html =
+                    generateLocalFileSelectionHtml(
+                        localFilesContext,
+                        uri.pathSegments[1],
+                        allowed,
+                    )
+                return WebResourceResponse(
+                    "text/html",
+                    "UTF-8",
+                    200,
+                    "OK",
+                    mapOf("Cache-Control" to "no-store"),
+                    html.byteInputStream(Charsets.UTF_8),
+                )
+            }
+            localUri = allowed.single().getLocalFileLink().toUri()
+        }
+    }
+    val localResponse = localFileAssetLoader?.shouldInterceptRequest(localUri)
+    if (localUri != uri && localResponse != null) {
+        localResponse.responseHeaders =
+            localResponse.responseHeaders.orEmpty() + ("Cache-Control" to "no-store")
+    }
+    return localResponse ?: pdfAssetLoader?.shouldInterceptRequest(uri)
 }
 
 /** Only read a compat error description after both the OS and WebView allow it. */
@@ -1206,6 +1239,37 @@ fun createCustomWebview(
                                             localFileAssetLoader,
                                             pdfAssetLoader,
                                             context,
+                                            localFileBlockCause = { url ->
+                                                getBlockInfo(
+                                                        url,
+                                                        config.blacklistRegexes,
+                                                        config.whitelistRegexes,
+                                                        userSettings,
+                                                    )
+                                                    .second
+                                                    ?: BlockCause.CONTENT_BLOCKING
+                                                        .takeIf {
+                                                            request.isForMainFrame &&
+                                                                WebViewBlocker
+                                                                    .shouldBlockDocument(
+                                                                        url,
+                                                                        request
+                                                                            .method,
+                                                                        contentBlocker,
+                                                                    )
+                                                        }
+                                            },
+                                            blockedLocalFileHtml = { cause ->
+                                                if (request.isForMainFrame) {
+                                                    blockedPageHtml(
+                                                        userSettings,
+                                                        request.url.toString(),
+                                                        cause,
+                                                    )
+                                                } else {
+                                                    null
+                                                }
+                                            },
                                         )
                                         ?.let {
                                             return it

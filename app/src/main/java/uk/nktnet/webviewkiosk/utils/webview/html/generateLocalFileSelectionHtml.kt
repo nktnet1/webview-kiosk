@@ -18,6 +18,12 @@ internal fun generateLocalFileSelectionHtml(
     matches: List<File>,
 ): String {
     val appName = Html.escapeHtml(context.getString(R.string.app_name))
+    val summary =
+        if (matches.size == 1) {
+            "1 file is named"
+        } else {
+            "${matches.size} files are named"
+        }
     val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
     val rows =
         matches.joinToString("\n") { file ->
@@ -61,7 +67,7 @@ internal fun generateLocalFileSelectionHtml(
           <body>
             <main>
               <h1>$appName</h1>
-              <p>${matches.size} files are named <strong>${Html.escapeHtml(name)}</strong>.</p>
+              <p>$summary <strong>${Html.escapeHtml(name)}</strong>.</p>
               <ol>
                 $rows
               </ol>

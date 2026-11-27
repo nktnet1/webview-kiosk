@@ -44,7 +44,7 @@ jobs:
           printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > app/keystore.jks
 
       - name: Build release and debug APKs
-        run: sh gradlew :app:assembleRelease :app:assembleDebug --stacktrace
+        run: sh gradlew :app:assembleRelease :app:assembleDebug -PrequireReleaseSigning=true --stacktrace
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}

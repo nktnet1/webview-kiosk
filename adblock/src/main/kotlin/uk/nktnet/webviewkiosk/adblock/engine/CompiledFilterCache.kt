@@ -622,7 +622,7 @@ internal class CompiledFilterCache(
     }
 
     private class StringWriter(private val output: DataOutputStream) {
-        private val strings = HashMap<String, Int>()
+        private val strings = LinkedHashMap<String, Int>(16, 0.75f, true)
         private val encoding = CacheStringWriter(output)
 
         fun write(value: String) {
@@ -638,8 +638,13 @@ internal class CompiledFilterCache(
                     encoding.write(value)
                 }
                 else -> {
-                    // Keep unique selectors from retaining an unbounded map.
-                    output.writeInt(INLINE_STRING)
+                    // Reuse the least recently used slot so recurring fields
+                    // remain compact even after the dictionary fills.
+                    val entries = strings.entries.iterator()
+                    val slot = entries.next().value
+                    entries.remove()
+                    strings[value] = slot
+                    output.writeInt(slot.inv())
                     encoding.write(value)
                 }
             }
@@ -698,8 +703,12 @@ internal class CompiledFilterCache(
 
         fun read(): String {
             val index = input.readInt()
-            if (index == INLINE_STRING) {
-                return input.readString()
+            if (index < 0) {
+                val slot = index.inv()
+                require(
+                    values.size == MAX_INTERNED_STRINGS && slot in values.indices
+                )
+                return input.readString().also { values[slot] = it }
             }
             require(index in 0..values.size)
             if (index == values.size) {
@@ -755,12 +764,11 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 21
+        private const val VERSION = 22
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
         private const val CHECKSUM_BYTES = Long.SIZE_BYTES.toLong()
         private const val MAX_INTERNED_STRINGS = 16_384
-        private const val INLINE_STRING = -1
 
         private fun CacheDataInput.count(max: Int): Int =
             readInt().also {
